@@ -2,11 +2,31 @@ type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
+type ChatSpeakerData = unknown;
+
+type ChatMessageCreateData = {
+  speaker?: ChatSpeakerData;
+  content: string;
+};
+
 declare const game: {
   system: {
     id: string;
   };
+  user?: {
+    character?: Actor | null;
+  } | null;
 };
+
+declare const canvas:
+  | {
+      tokens?: {
+        controlled?: Array<{
+          actor?: Actor | null;
+        }>;
+      };
+    }
+  | undefined;
 
 declare const ui: {
   notifications?: {
@@ -22,6 +42,11 @@ declare const Hooks: {
   callAll(hook: string, ...args: unknown[]): void;
 };
 
+declare const ChatMessage: {
+  create(data: ChatMessageCreateData): Promise<unknown>;
+  getSpeaker(options: { actor?: Actor | null }): ChatSpeakerData;
+};
+
 declare const foundry: {
   utils: {
     getProperty(object: unknown, path: string): unknown;
@@ -29,6 +54,14 @@ declare const foundry: {
 };
 
 declare class Actor {
+  id: string | null;
+  name: string;
+  type: string;
   system: Record<string, unknown>;
   update(data: Record<string, unknown>): Promise<this>;
+}
+
+declare global {
+  // eslint-disable-next-line no-var
+  var ParanormalToolkit: unknown;
 }

@@ -6,3 +6,28 @@
 .paranormal-toolkit-hidden {
   display: none !important;
 }
+
+.paranormal-toolkit-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.paranormal-toolkit-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.paranormal-toolkit-card__header strong {
+  font-size: 1.05rem;
+}
+
+.paranormal-toolkit-card__header span {
+  opacity: 0.8;
+}
+
+.paranormal-toolkit-card__body p {
+  margin: 4px 0;
+}

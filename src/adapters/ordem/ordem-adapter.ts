@@ -1,6 +1,7 @@
+import { failure, Result, success } from "../../core/result";
 import { ORDEM_PATHS } from "./ordem-paths";
 
-type ResourceSnapshot = {
+export type ResourceSnapshot = {
   value: number;
   max: number;
 };
@@ -12,7 +13,52 @@ export type ActorResourcesSnapshot = {
   pd: ResourceSnapshot;
 };
 
+export type OrdemActorSnapshot = {
+  id: string | null;
+  name: string;
+  type: string;
+  resources: ActorResourcesSnapshot;
+  ritualDT: number;
+};
+
+export type ResourceSpendSuccess = {
+  actor: Actor;
+  resource: "PE";
+  amount: number;
+  before: number;
+  after: number;
+  snapshot: OrdemActorSnapshot;
+};
+
+export type ResourceSpendFailureReason =
+  | "invalid-amount"
+  | "insufficient-resource"
+  | "update-failed";
+
+export type ResourceSpendFailure = {
+  actor: Actor;
+  resource: "PE";
+  reason: ResourceSpendFailureReason;
+  message: string;
+  amount: number;
+  current?: number;
+  required?: number;
+  cause?: unknown;
+};
+
+export type ResourceSpendResult = Result<ResourceSpendSuccess, ResourceSpendFailure>;
+
 export class OrdemAdapter {
+  getActorSnapshot(actor: Actor): OrdemActorSnapshot {
+    return {
+      id: actor.id ?? null,
+      name: actor.name ?? "Ator sem nome",
+      type: actor.type ?? "unknown",
+      resources: this.getResources(actor),
+      ritualDT: this.getRitualDT(actor)
+    };
+  }
+
   getResources(actor: Actor): ActorResourcesSnapshot {
     return {
       pv: this.getResource(actor, ORDEM_PATHS.resources.pv),
@@ -26,15 +72,56 @@ export class OrdemAdapter {
     return this.getNumber(actor, ORDEM_PATHS.ritual.dt, 0);
   }
 
-  async spendPE(actor: Actor, amount: number): Promise<void> {
+  async spendPE(actor: Actor, amount: number): Promise<ResourceSpendResult> {
     if (!Number.isInteger(amount) || amount <= 0) {
-      throw new Error("A quantidade de PE deve ser um inteiro positivo.");
+      return failure({
+        actor,
+        resource: "PE",
+        reason: "invalid-amount",
+        message: "A quantidade de PE deve ser um inteiro positivo.",
+        amount
+      });
     }
 
-    const current = this.getNumber(actor, `${ORDEM_PATHS.resources.pe}.value`, 0);
-    const next = Math.max(0, current - amount);
+    const before = this.getNumber(actor, `${ORDEM_PATHS.resources.pe}.value`, 0);
 
-    await actor.update({ [`${ORDEM_PATHS.resources.pe}.value`]: next });
+    if (before < amount) {
+      return failure({
+        actor,
+        resource: "PE",
+        reason: "insufficient-resource",
+        message: `PE insuficiente. Atual: ${before}; custo: ${amount}.`,
+        amount,
+        current: before,
+        required: amount
+      });
+    }
+
+    const after = before - amount;
+
+    try {
+      await actor.update({ [`${ORDEM_PATHS.resources.pe}.value`]: after });
+    } catch (cause) {
+      return failure({
+        actor,
+        resource: "PE",
+        reason: "update-failed",
+        message: "Falha ao atualizar PE no ator.",
+        amount,
+        current: before,
+        required: amount,
+        cause
+      });
+    }
+
+    return success({
+      actor,
+      resource: "PE",
+      amount,
+      before,
+      after,
+      snapshot: this.getActorSnapshot(actor)
+    });
   }
 
   private getResource(actor: Actor, path: string): ResourceSnapshot {

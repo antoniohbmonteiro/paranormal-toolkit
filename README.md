@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão inicial experimental: `v0.1.0`.
+Versão inicial experimental: `v0.1.4`.
 
 Esta primeira versão contém apenas a fundação do módulo:
 
@@ -16,7 +16,10 @@ Esta primeira versão contém apenas a fundação do módulo:
 - detecção do sistema `ordemparanormal`;
 - adapter inicial para isolar paths do sistema;
 - logger interno;
-- CSS inicial.
+- CSS inicial;
+- chat card simples para gasto de PE via debug;
+- API de debug organizada por domínio (`debug.actor.*`);
+- resultado controlado para gasto de PE, sem exception para regra esperada como PE insuficiente.
 
 ## Requisitos
 
@@ -58,6 +61,40 @@ mklink /D "C:\Users\SEU_USUARIO\AppData\Local\FoundryVTT\Data\modules\paranormal
 ```
 
 Depois, ative o módulo no mundo do Foundry.
+
+
+## Debug inicial
+
+Com um token de Agente selecionado na cena, abra o console do Foundry e rode:
+
+```js
+ParanormalToolkit.debug.actor.logResources();
+```
+
+Isso deve imprimir um snapshot com:
+
+- PV;
+- SAN;
+- PE;
+- PD;
+- DT de ritual.
+
+Também dá para testar gasto de PE:
+
+```js
+await ParanormalToolkit.debug.actor.spendPE(1);
+```
+
+Esse comando deve reduzir o PE do ator selecionado e criar uma mensagem simples no chat. Se o ator não tiver PE suficiente, o módulo mostra um aviso controlado e não deixa o valor ficar negativo.
+
+Os comandos antigos continuam funcionando como aliases temporários:
+
+```js
+ParanormalToolkit.debug.logSelectedActorResources();
+await ParanormalToolkit.debug.spendSelectedActorPE(1);
+```
+
+Se nenhum token estiver selecionado, o módulo tenta usar o personagem vinculado ao usuário (`game.user.character`).
 
 ## Próximos passos planejados
 
