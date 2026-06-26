@@ -203,14 +203,16 @@ await ParanormalToolkit.debug.workflow.runFirstAutomation();
 
 ## v0.5 — Basic Ritual Automations
 
+Status: implementado em `0.5.0`.
+
 Objetivo: criar presets genéricos de ritual básico sem distribuir conteúdo oficial.
 
-Escopo planejado:
+Escopo:
 
 - automação genérica de cura simples;
 - automação genérica de dano simples;
 - ambas usando `spendRitualCost`;
-- fórmulas configuráveis por flag;
+- fórmula customizável nos helpers de debug;
 - alvo via targets do Foundry;
 - chat card rico;
 - nenhum ritual oficial pronto.
@@ -227,6 +229,16 @@ Ritual de dano simples:
 - gasta custo do ritual
 - rola 1d8
 - causa dano em PV do alvo
+```
+
+Critérios de aceite:
+
+```js
+await ParanormalToolkit.debug.ritual.setTestHealingAutomationOnFirstRitual();
+await ParanormalToolkit.debug.ritual.runFirstRitualAutomation();
+
+await ParanormalToolkit.debug.ritual.setTestDamageAutomationOnFirstRitual();
+await ParanormalToolkit.debug.ritual.runFirstRitualAutomation();
 ```
 
 ## v0.6 — Weapon Modifications

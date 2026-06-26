@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0
+
+### Adicionado
+
+- Automação básica de ritual de cura.
+- Automação básica de ritual de dano.
+- Helpers de debug:
+  - `ParanormalToolkit.debug.ritual.setTestHealingAutomationOnFirstRitual(formula?)`;
+  - `ParanormalToolkit.debug.ritual.setTestDamageAutomationOnFirstRitual(formula?)`;
+  - `ParanormalToolkit.debug.ritual.runFirstRitualAutomation()`.
+- Presets genéricos usando `spendRitualCost`, `rollFormula`, `modifyResource` e `chatCard`.
+- Suporte a fórmula customizada nos helpers de debug de cura/dano simples.
+
+### Decisões
+
+- As automações de ritual são presets genéricos de teste, não conteúdo oficial.
+- O workflow de ritual usa custo calculado por círculo ou override por flag.
+- Resistência, área, duração, condições e Active Effects continuam fora de escopo desta versão.
+
 ## 0.4.2
 
 ### Corrigido

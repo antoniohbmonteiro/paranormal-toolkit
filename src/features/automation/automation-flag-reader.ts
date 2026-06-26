@@ -61,6 +61,64 @@ export function getTestRitualCostAutomationDefinition(): AutomationDefinition {
   };
 }
 
+export function getTestRitualHealingAutomationDefinition(formula = "1d8"): AutomationDefinition {
+  return {
+    version: 1,
+    label: "Ritual de cura simples",
+    steps: [
+      {
+        type: "spendRitualCost"
+      },
+      {
+        type: "rollFormula",
+        id: "healing",
+        formula
+      },
+      {
+        type: "modifyResource",
+        actor: "target",
+        resource: "PV",
+        operation: "heal",
+        amountFrom: "healing.total"
+      },
+      {
+        type: "chatCard",
+        title: "Ritual de cura simples",
+        message: "Gasta o custo do ritual, rola a fórmula de cura e recupera PV do alvo."
+      }
+    ]
+  };
+}
+
+export function getTestRitualDamageAutomationDefinition(formula = "1d8"): AutomationDefinition {
+  return {
+    version: 1,
+    label: "Ritual de dano simples",
+    steps: [
+      {
+        type: "spendRitualCost"
+      },
+      {
+        type: "rollFormula",
+        id: "damage",
+        formula
+      },
+      {
+        type: "modifyResource",
+        actor: "target",
+        resource: "PV",
+        operation: "damage",
+        amountFrom: "damage.total"
+      },
+      {
+        type: "chatCard",
+        title: "Ritual de dano simples",
+        message: "Gasta o custo do ritual, rola a fórmula de dano e causa dano em PV do alvo."
+      }
+    ]
+  };
+}
+
 export function getTestHealingAutomationDefinition(): AutomationDefinition {
   return {
     version: 1,

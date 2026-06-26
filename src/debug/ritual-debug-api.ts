@@ -1,8 +1,16 @@
 import { MODULE_ID } from "../constants";
 import { ActorResolver } from "../core/actor-resolver";
+import type { AutomationRunFailure } from "../core/automation/automation-runner";
 import { ModuleLogger } from "../core/module-logger";
 import type { RitualCostResource } from "../core/rituals/ritual-types";
-import { getTestRitualCostAutomationDefinition, setAutomationDefinition } from "../features/automation/automation-flag-reader";
+import {
+  getTestRitualCostAutomationDefinition,
+  getTestRitualDamageAutomationDefinition,
+  getTestRitualHealingAutomationDefinition,
+  readAutomationDefinition,
+  setAutomationDefinition
+} from "../features/automation/automation-flag-reader";
+import { getCurrentSourceTokenRef, getCurrentWorkflowTargets } from "../features/automation/workflow-target-resolver";
 import { getFirstActorRitual } from "../features/rituals/ritual-item-resolver";
 import type { ToolkitServices } from "../toolkit-services";
 
@@ -11,6 +19,9 @@ export type RitualDebugApi = {
   setCustomCostOnFirstRitual(amount: number, resource?: RitualCostResource): Promise<void>;
   clearCustomCostOnFirstRitual(): Promise<void>;
   setTestCostAutomationOnFirstRitual(): Promise<void>;
+  setTestHealingAutomationOnFirstRitual(formula?: string): Promise<void>;
+  setTestDamageAutomationOnFirstRitual(formula?: string): Promise<void>;
+  runFirstRitualAutomation(): Promise<void>;
 };
 
 export function createRitualDebugApi(services: ToolkitServices): RitualDebugApi {
@@ -86,8 +97,97 @@ export function createRitualDebugApi(services: ToolkitServices): RitualDebugApi 
 
       ModuleLogger.info(`Automação de custo aplicada ao ritual: ${ritual.name}.`);
       ui.notifications?.info(`Paranormal Toolkit: automação de custo aplicada em ${ritual.name}.`);
+    },
+
+    async setTestHealingAutomationOnFirstRitual(formula = "1d8"): Promise<void> {
+      const actor = getSelectedActorOrNotify("Nenhum ator encontrado para configurar ritual de cura simples.");
+      if (!actor) return;
+
+      const ritual = getFirstRitualOrNotify(actor);
+      if (!ritual) return;
+
+      if (!isValidFormula(formula)) {
+        ui.notifications?.warn("Paranormal Toolkit: fórmula de cura inválida.");
+        return;
+      }
+
+      await setAutomationDefinition(ritual, getTestRitualHealingAutomationDefinition(formula));
+
+      ModuleLogger.info(`Automação de cura simples aplicada ao ritual: ${ritual.name}.`, { formula });
+      ui.notifications?.info(`Paranormal Toolkit: ritual de cura simples aplicado em ${ritual.name}.`);
+    },
+
+    async setTestDamageAutomationOnFirstRitual(formula = "1d8"): Promise<void> {
+      const actor = getSelectedActorOrNotify("Nenhum ator encontrado para configurar ritual de dano simples.");
+      if (!actor) return;
+
+      const ritual = getFirstRitualOrNotify(actor);
+      if (!ritual) return;
+
+      if (!isValidFormula(formula)) {
+        ui.notifications?.warn("Paranormal Toolkit: fórmula de dano inválida.");
+        return;
+      }
+
+      await setAutomationDefinition(ritual, getTestRitualDamageAutomationDefinition(formula));
+
+      ModuleLogger.info(`Automação de dano simples aplicada ao ritual: ${ritual.name}.`, { formula });
+      ui.notifications?.info(`Paranormal Toolkit: ritual de dano simples aplicado em ${ritual.name}.`);
+    },
+
+    async runFirstRitualAutomation(): Promise<void> {
+      const actor = getSelectedActorOrNotify("Nenhum ator encontrado para executar automação de ritual.");
+      if (!actor) return;
+
+      const ritual = getFirstRitualOrNotify(actor);
+      if (!ritual) return;
+
+      await runRitualAutomation(services, actor, ritual);
     }
   };
+}
+
+async function runRitualAutomation(services: ToolkitServices, actor: Actor, ritual: Item): Promise<void> {
+  const definition = readAutomationDefinition(ritual);
+
+  if (!definition.ok) {
+    ModuleLogger.warn(definition.error.message, definition.error);
+    ui.notifications?.warn(`Paranormal Toolkit: ${definition.error.message}`);
+    return;
+  }
+
+  const result = await services.automation.run(definition.value, {
+    sourceActor: actor,
+    sourceToken: getCurrentSourceTokenRef(),
+    item: ritual,
+    targets: getCurrentWorkflowTargets()
+  });
+
+  if (!result.ok) {
+    handleAutomationFailure(result.error);
+    return;
+  }
+
+  ModuleLogger.info("Automação de ritual executada com sucesso.", result.value);
+}
+
+function handleAutomationFailure(failure: AutomationRunFailure): void {
+  const message = `Automação de ritual falhou: ${failure.message}`;
+
+  if (failure.reason === "resource-operation-failed") {
+    ModuleLogger.warn(message, failure.cause ?? failure);
+    ui.notifications?.warn(`Paranormal Toolkit: ${failure.message}`);
+    return;
+  }
+
+  if (failure.reason === "chat-card-failed") {
+    ModuleLogger.error(message, failure.cause ?? failure);
+    ui.notifications?.error(`Paranormal Toolkit: ${failure.message}`);
+    return;
+  }
+
+  ModuleLogger.warn(message, failure);
+  ui.notifications?.warn(`Paranormal Toolkit: ${failure.message}`);
 }
 
 function getSelectedActorOrNotify(warningMessage: string): Actor | null {
@@ -116,4 +216,8 @@ function getFirstRitualOrNotify(actor: Actor): Item | null {
 
 function isValidCustomCost(amount: number, resource: RitualCostResource): boolean {
   return Number.isInteger(amount) && amount > 0 && (resource === "PE" || resource === "PD");
+}
+
+function isValidFormula(formula: string): boolean {
+  return typeof formula === "string" && formula.trim().length > 0;
 }
