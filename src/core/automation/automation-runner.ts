@@ -3,6 +3,13 @@ import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
 import type { ActorResource } from "../resources/actor-resource";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
 import type { ResourceOperation } from "../resources/resource-operation";
+import type { ResourceTransaction } from "../resources/resource-transaction";
+import type { WorkflowContext } from "../workflow/workflow-context";
+import type { WorkflowDamageInstance } from "../workflow/workflow-damage";
+import type { WorkflowHealingInstance } from "../workflow/workflow-healing";
+import type { WorkflowHookEmitter } from "../workflow/workflow-hook-emitter";
+import type { WorkflowPhase } from "../workflow/workflow-phase";
+import type { WorkflowRollIntent, WorkflowRollRequest, WorkflowRollResult } from "../workflow/workflow-roll";
 import type {
   AutomationActorSelector,
   AutomationDefinition,
@@ -13,9 +20,6 @@ import type {
   SpendResourceStep,
   SpendRitualCostStep
 } from "./automation-definition";
-import type { WorkflowContext } from "../workflow/workflow-context";
-import type { WorkflowHookEmitter } from "../workflow/workflow-hook-emitter";
-import type { WorkflowPhase } from "../workflow/workflow-phase";
 import type { WorkflowMessageService } from "./workflow-message-service";
 
 export type AutomationRunSuccess = {
@@ -56,7 +60,6 @@ export class AutomationRunner {
   ) {}
 
   async run(definition: AutomationDefinition, context: WorkflowContext): Promise<AutomationRunResult> {
-
     if (definition.steps.length === 0) {
       return failure({
         reason: "empty-automation",
@@ -77,7 +80,22 @@ export class AutomationRunner {
   }
 
   private async runStep(step: AutomationStep, context: WorkflowContext, stepIndex: number): Promise<Result<void, AutomationRunFailure>> {
-    const phases = getStepLifecyclePhases(step);
+    switch (step.type) {
+      case "rollFormula":
+        return this.runRollFormulaStepWithLifecycle(step, context, stepIndex);
+      case "modifyResource":
+        return this.runModifyResourceStepWithLifecycle(step, context, stepIndex);
+      default:
+        return this.runGenericStepWithLifecycle(step, context, stepIndex);
+    }
+  }
+
+  private async runGenericStepWithLifecycle(
+    step: AutomationStep,
+    context: WorkflowContext,
+    stepIndex: number
+  ): Promise<Result<void, AutomationRunFailure>> {
+    const phases = getGenericStepLifecyclePhases(step);
 
     for (const phase of phases.before) {
       this.lifecycle.emit(phase, context, { stepIndex, step });
@@ -131,7 +149,8 @@ export class AutomationRunner {
     }
 
     const result = await this.resources.spend(context.sourceActor, step.resource, amount.value);
-    return this.handleResourceOperationResult(result, context, stepIndex, step);
+    const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
+    return handled.ok ? success(undefined) : handled;
   }
 
   private async runSpendRitualCostStep(
@@ -164,7 +183,35 @@ export class AutomationRunner {
     });
 
     const result = await this.resources.spend(context.sourceActor, cost.resource, cost.amount);
-    return this.handleResourceOperationResult(result, context, stepIndex, step);
+    const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
+    return handled.ok ? success(undefined) : handled;
+  }
+
+  private async runRollFormulaStepWithLifecycle(
+    step: RollFormulaStep,
+    context: WorkflowContext,
+    stepIndex: number
+  ): Promise<Result<void, AutomationRunFailure>> {
+    const rollRequest = this.createRollRequest(step, stepIndex);
+    context.rollRequests[rollRequest.id] = rollRequest;
+
+    this.lifecycle.emit("beforeRoll", context, { stepIndex, step, rollRequest });
+    this.emitSpecificRollPhase("before", rollRequest, context, stepIndex, step);
+    this.lifecycle.emit("roll", context, { stepIndex, step, rollRequest });
+    this.emitSpecificRollPhase("roll", rollRequest, context, stepIndex, step);
+
+    const result = await this.runRollFormulaStep(step, context, stepIndex);
+
+    if (!result.ok) {
+      return result;
+    }
+
+    const rollResult = context.rolls[rollRequest.id];
+
+    this.emitSpecificRollPhase("after", rollRequest, context, stepIndex, step, rollResult);
+    this.lifecycle.emit("afterRoll", context, { stepIndex, step, rollRequest, rollResult });
+
+    return success(undefined);
   }
 
   private async runRollFormulaStep(
@@ -197,9 +244,10 @@ export class AutomationRunner {
         });
       }
 
+      const rollRequest = context.rollRequests[step.id] ?? this.createRollRequest(step, stepIndex);
+
       context.rolls[step.id] = {
-        id: step.id,
-        formula: step.formula,
+        ...rollRequest,
         total,
         roll: evaluatedRoll
       };
@@ -215,6 +263,54 @@ export class AutomationRunner {
         cause
       });
     }
+  }
+
+  private async runModifyResourceStepWithLifecycle(
+    step: ModifyResourceStep,
+    context: WorkflowContext,
+    stepIndex: number
+  ): Promise<Result<void, AutomationRunFailure>> {
+    const amount = this.resolveAmount(step, context);
+
+    if (!amount.ok) {
+      return failure({ ...amount.error, stepIndex, step, context });
+    }
+
+    const metadata = this.createApplyMetadata(step, context, amount.value);
+
+    this.lifecycle.emit("beforeApply", context, { stepIndex, step, metadata });
+    this.emitSpecificApplyPhase("before", step, context, stepIndex, metadata);
+    this.emitDamageResolutionPhase("before", step, context, stepIndex, metadata);
+    this.emitDamageResolutionPhase("resolve", step, context, stepIndex, metadata);
+    this.lifecycle.emit("apply", context, { stepIndex, step, metadata });
+    this.emitSpecificApplyPhase("apply", step, context, stepIndex, metadata);
+
+    const actors = this.resolveActors(step.actor, context);
+
+    if (actors.length === 0) {
+      return failure({
+        reason: "no-target",
+        message: "Nenhum alvo válido encontrado para modificar recurso.",
+        stepIndex,
+        step,
+        context
+      });
+    }
+
+    for (const actor of actors) {
+      const result = await this.runResourceOperation(actor, step.resource, step.operation, amount.value);
+      const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
+
+      if (!handled.ok) {
+        return handled;
+      }
+
+      this.recordTypedApplication(step, context, handled.value, stepIndex);
+    }
+
+    this.lifecycle.emit("afterApply", context, { stepIndex, step, metadata });
+
+    return success(undefined);
   }
 
   private async runModifyResourceStep(
@@ -325,7 +421,7 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number,
     step: AutomationStep
-  ): Result<void, AutomationRunFailure> {
+  ): Result<ResourceTransaction, AutomationRunFailure> {
     if (!result.ok) {
       return failure({
         reason: "resource-operation-failed",
@@ -338,7 +434,192 @@ export class AutomationRunner {
     }
 
     context.resourceTransactions.push(result.value);
-    return success(undefined);
+    return success(result.value);
+  }
+
+  private createRollRequest(step: RollFormulaStep, stepIndex: number): WorkflowRollRequest {
+    const intent = step.intent ?? inferRollIntent(step.id);
+
+    return {
+      id: step.id,
+      formula: step.formula,
+      intent,
+      damageType: step.damageType,
+      sourceStepIndex: stepIndex
+    };
+  }
+
+  private emitSpecificRollPhase(
+    timing: "before" | "roll" | "after",
+    rollRequest: WorkflowRollRequest,
+    context: WorkflowContext,
+    stepIndex: number,
+    step: RollFormulaStep,
+    rollResult?: WorkflowRollResult
+  ): void {
+    const phase = getSpecificRollPhase(timing, rollRequest.intent);
+
+    if (!phase) return;
+
+    this.lifecycle.emit(phase, context, {
+      stepIndex,
+      step,
+      rollRequest,
+      rollResult
+    });
+  }
+
+  private createApplyMetadata(step: ModifyResourceStep, context: WorkflowContext, amount: number): Record<string, unknown> {
+    const rollId = getRollIdFromAmountSource(step.amountFrom);
+    const roll = rollId ? context.rolls[rollId] : undefined;
+
+    return {
+      actorSelector: step.actor,
+      resource: step.resource,
+      operation: step.operation,
+      amount,
+      amountFrom: step.amountFrom,
+      rollId,
+      rollIntent: roll?.intent,
+      damageType: roll?.damageType
+    };
+  }
+
+  private emitSpecificApplyPhase(
+    timing: "before" | "apply" | "after",
+    step: ModifyResourceStep,
+    context: WorkflowContext,
+    stepIndex: number,
+    metadata: Record<string, unknown>
+  ): void {
+    const phase = getSpecificApplyPhase(timing, step.operation);
+
+    if (!phase) return;
+
+    this.lifecycle.emit(phase, context, {
+      stepIndex,
+      step,
+      metadata
+    });
+  }
+
+  private emitDamageResolutionPhase(
+    timing: "before" | "resolve",
+    step: ModifyResourceStep,
+    context: WorkflowContext,
+    stepIndex: number,
+    metadata: Record<string, unknown>
+  ): void {
+    if (step.operation !== "damage") return;
+
+    this.lifecycle.emit(timing === "before" ? "beforeDamageResolution" : "damageResolution", context, {
+      stepIndex,
+      step,
+      metadata
+    });
+  }
+
+  private recordTypedApplication(
+    step: ModifyResourceStep,
+    context: WorkflowContext,
+    transaction: ResourceTransaction,
+    stepIndex: number
+  ): void {
+    if (step.operation === "damage") {
+      const damage = this.createDamageInstance(step, context, transaction, stepIndex);
+      context.damageInstances.push(damage);
+
+      this.lifecycle.emit("afterDamageResolution", context, {
+        stepIndex,
+        step,
+        damage,
+        resourceTransaction: transaction,
+        metadata: {
+          rawAmount: damage.rawAmount,
+          finalAmount: damage.finalAmount,
+          appliedAmount: damage.appliedAmount,
+          damageType: damage.damageType
+        }
+      });
+      this.lifecycle.emit("afterApplyDamage", context, {
+        stepIndex,
+        step,
+        damage,
+        resourceTransaction: transaction,
+        metadata: {
+          rawAmount: damage.rawAmount,
+          finalAmount: damage.finalAmount,
+          appliedAmount: damage.appliedAmount,
+          damageType: damage.damageType
+        }
+      });
+      return;
+    }
+
+    if (step.operation === "heal") {
+      const healing = this.createHealingInstance(step, context, transaction, stepIndex);
+      context.healingInstances.push(healing);
+
+      this.lifecycle.emit("afterApplyHealing", context, {
+        stepIndex,
+        step,
+        healing,
+        resourceTransaction: transaction,
+        metadata: {
+          rawAmount: healing.rawAmount,
+          finalAmount: healing.finalAmount,
+          appliedAmount: healing.appliedAmount
+        }
+      });
+    }
+  }
+
+  private createDamageInstance(
+    step: ModifyResourceStep,
+    context: WorkflowContext,
+    transaction: ResourceTransaction,
+    stepIndex: number
+  ): WorkflowDamageInstance {
+    const rollId = getRollIdFromAmountSource(step.amountFrom);
+    const roll = rollId ? context.rolls[rollId] : undefined;
+
+    return {
+      id: createWorkflowChildId(context.id, "damage", stepIndex, context.damageInstances.length),
+      source: context.item.type === "ritual" ? "ritual" : "automation",
+      sourceId: context.item.id ?? null,
+      sourceName: context.item.name ?? "Item sem nome",
+      targetActorId: transaction.actorId,
+      targetActorName: transaction.actorName,
+      rollId: rollId ?? undefined,
+      damageType: roll?.damageType,
+      rawAmount: transaction.requestedAmount,
+      finalAmount: transaction.requestedAmount,
+      appliedAmount: transaction.appliedAmount,
+      tags: ["workflow", "resource", step.resource]
+    };
+  }
+
+  private createHealingInstance(
+    step: ModifyResourceStep,
+    context: WorkflowContext,
+    transaction: ResourceTransaction,
+    stepIndex: number
+  ): WorkflowHealingInstance {
+    const rollId = getRollIdFromAmountSource(step.amountFrom);
+
+    return {
+      id: createWorkflowChildId(context.id, "healing", stepIndex, context.healingInstances.length),
+      source: context.item.type === "ritual" ? "ritual" : "automation",
+      sourceId: context.item.id ?? null,
+      sourceName: context.item.name ?? "Item sem nome",
+      targetActorId: transaction.actorId,
+      targetActorName: transaction.actorName,
+      rollId: rollId ?? undefined,
+      rawAmount: transaction.requestedAmount,
+      finalAmount: transaction.requestedAmount,
+      appliedAmount: transaction.appliedAmount,
+      tags: ["workflow", "resource", step.resource]
+    };
   }
 
   private resolveActors(selector: AutomationActorSelector, context: WorkflowContext): Actor[] {
@@ -366,8 +647,7 @@ export class AutomationRunner {
     }
 
     if (typeof step.amountFrom === "string") {
-      const match = /^(?<rollId>[A-Za-z0-9_-]+)\.total$/.exec(step.amountFrom);
-      const rollId = match?.groups?.rollId;
+      const rollId = getRollIdFromAmountSource(step.amountFrom);
 
       if (!rollId) {
         return failure({
@@ -404,23 +684,13 @@ export class AutomationRunner {
   }
 }
 
-function getStepLifecyclePhases(step: AutomationStep): { before: WorkflowPhase[]; after: WorkflowPhase[] } {
+function getGenericStepLifecyclePhases(step: AutomationStep): { before: WorkflowPhase[]; after: WorkflowPhase[] } {
   switch (step.type) {
     case "spendResource":
     case "spendRitualCost":
       return {
         before: ["beforeCost", "spendCost"],
         after: ["afterCost"]
-      };
-    case "rollFormula":
-      return {
-        before: ["beforeRoll", "roll"],
-        after: ["afterRoll"]
-      };
-    case "modifyResource":
-      return {
-        before: ["beforeApply", "apply"],
-        after: ["afterApply"]
       };
     case "chatCard":
       return {
@@ -433,6 +703,60 @@ function getStepLifecyclePhases(step: AutomationStep): { before: WorkflowPhase[]
         after: []
       };
   }
+}
+
+function getSpecificRollPhase(timing: "before" | "roll" | "after", intent: WorkflowRollIntent): WorkflowPhase | null {
+  if (intent === "damage") {
+    if (timing === "before") return "beforeDamageRoll";
+    if (timing === "roll") return "damageRoll";
+    return "afterDamageRoll";
+  }
+
+  if (intent === "healing") {
+    if (timing === "before") return "beforeHealingRoll";
+    if (timing === "roll") return "healingRoll";
+    return "afterHealingRoll";
+  }
+
+  return null;
+}
+
+function getSpecificApplyPhase(timing: "before" | "apply" | "after", operation: ResourceOperation): WorkflowPhase | null {
+  if (operation === "damage") {
+    if (timing === "before") return "beforeApplyDamage";
+    if (timing === "apply") return "applyDamage";
+    return "afterApplyDamage";
+  }
+
+  if (operation === "heal") {
+    if (timing === "before") return "beforeApplyHealing";
+    if (timing === "apply") return "applyHealing";
+    return "afterApplyHealing";
+  }
+
+  return null;
+}
+
+function inferRollIntent(rollId: string): WorkflowRollIntent {
+  const normalized = rollId.toLowerCase();
+
+  if (normalized.includes("damage") || normalized.includes("dano")) return "damage";
+  if (normalized.includes("healing") || normalized.includes("heal") || normalized.includes("cura")) return "healing";
+  if (normalized.includes("attack") || normalized.includes("ataque")) return "attack";
+  if (normalized.includes("resistance") || normalized.includes("resistencia") || normalized.includes("resistência")) return "resistance";
+
+  return "generic";
+}
+
+function getRollIdFromAmountSource(amountFrom: string | undefined): string | null {
+  if (!amountFrom) return null;
+
+  const match = /^(?<rollId>[A-Za-z0-9_-]+)\.total$/.exec(amountFrom);
+  return match?.groups?.rollId ?? null;
+}
+
+function createWorkflowChildId(workflowId: string, type: string, stepIndex: number, index: number): string {
+  return `${workflowId}.${type}.${stepIndex}.${index}`;
 }
 
 function isNonEmptyString(value: unknown): value is string {

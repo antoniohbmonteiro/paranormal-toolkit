@@ -68,11 +68,19 @@ export class ChatMessageService {
     const itemName = escapeHtml(context.item.name ?? "Item sem nome");
     const targets = context.targets.length > 0 ? context.targets.map((target) => escapeHtml(target.name)).join(", ") : "Nenhum";
     const rollRows = Object.values(context.rolls).map(
-      (roll) => `<li><strong>${escapeHtml(roll.id)}:</strong> ${escapeHtml(roll.formula)} = ${roll.total}</li>`
+      (roll) => `<li><strong>${escapeHtml(roll.id)}:</strong> ${escapeHtml(roll.formula)} = ${roll.total} <em>(${escapeHtml(getRollIntentLabel(roll.intent))})</em>${roll.damageType ? ` — ${escapeHtml(roll.damageType)}` : ""}</li>`
     );
     const ritualCostRows = context.ritualCosts.map(
       (cost) =>
         `<li><strong>${escapeHtml(cost.itemName)}:</strong> ${cost.circle}º círculo — ${cost.amount} ${escapeHtml(cost.resource)} (${escapeHtml(getRitualCostSourceLabel(cost.source))})</li>`
+    );
+    const damageRows = context.damageInstances.map(
+      (damage) =>
+        `<li><strong>${escapeHtml(damage.targetActorName)}:</strong> bruto ${damage.rawAmount}${damage.damageType ? ` ${escapeHtml(damage.damageType)}` : ""} &rarr; final ${damage.finalAmount} &rarr; aplicado ${damage.appliedAmount}</li>`
+    );
+    const healingRows = context.healingInstances.map(
+      (healing) =>
+        `<li><strong>${escapeHtml(healing.targetActorName)}:</strong> bruto ${healing.rawAmount} &rarr; final ${healing.finalAmount} &rarr; aplicado ${healing.appliedAmount}</li>`
     );
     const transactionRows = context.resourceTransactions.map(
       (transaction) =>
@@ -92,6 +100,8 @@ export class ChatMessageService {
           <p><strong>Alvo:</strong> ${targets}</p>
           ${ritualCostRows.length > 0 ? `<p><strong>Custo de ritual:</strong></p><ul>${ritualCostRows.join("")}</ul>` : ""}
           ${rollRows.length > 0 ? `<p><strong>Rolagens:</strong></p><ul>${rollRows.join("")}</ul>` : ""}
+          ${damageRows.length > 0 ? `<p><strong>Dano:</strong></p><ul>${damageRows.join("")}</ul>` : ""}
+          ${healingRows.length > 0 ? `<p><strong>Cura:</strong></p><ul>${healingRows.join("")}</ul>` : ""}
           ${transactionRows.length > 0 ? `<p><strong>Recursos:</strong></p><ul>${transactionRows.join("")}</ul>` : ""}
           ${phases.length > 0 ? `<p class="${MODULE_ID}-workflow-card__phases"><strong>Fases:</strong> ${phases}</p>` : ""}
         </div>
@@ -127,9 +137,18 @@ function serializeWorkflowSummary(context: WorkflowContext): Record<string, unkn
       sceneId: target.sceneId,
       name: target.name
     })),
+    rollRequests: Object.values(context.rollRequests).map((roll) => ({
+      id: roll.id,
+      formula: roll.formula,
+      intent: roll.intent,
+      damageType: roll.damageType,
+      sourceStepIndex: roll.sourceStepIndex
+    })),
     rolls: Object.values(context.rolls).map((roll) => ({
       id: roll.id,
       formula: roll.formula,
+      intent: roll.intent,
+      damageType: roll.damageType,
       total: roll.total
     })),
     ritualCosts: context.ritualCosts.map((cost) => ({
@@ -140,10 +159,60 @@ function serializeWorkflowSummary(context: WorkflowContext): Record<string, unkn
       amount: cost.amount,
       source: cost.source
     })),
+    damageInstances: context.damageInstances.map((damage) => ({
+      id: damage.id,
+      source: damage.source,
+      sourceId: damage.sourceId,
+      sourceName: damage.sourceName,
+      targetActorId: damage.targetActorId,
+      targetActorName: damage.targetActorName,
+      rollId: damage.rollId,
+      damageType: damage.damageType,
+      rawAmount: damage.rawAmount,
+      resistance: damage.resistance,
+      vulnerability: damage.vulnerability,
+      reduction: damage.reduction,
+      immune: damage.immune,
+      finalAmount: damage.finalAmount,
+      appliedAmount: damage.appliedAmount,
+      tags: damage.tags
+    })),
+    healingInstances: context.healingInstances.map((healing) => ({
+      id: healing.id,
+      source: healing.source,
+      sourceId: healing.sourceId,
+      sourceName: healing.sourceName,
+      targetActorId: healing.targetActorId,
+      targetActorName: healing.targetActorName,
+      rollId: healing.rollId,
+      rawAmount: healing.rawAmount,
+      finalAmount: healing.finalAmount,
+      appliedAmount: healing.appliedAmount,
+      tags: healing.tags
+    })),
     resourceTransactions: context.resourceTransactions.map(serializeResourceTransaction),
     phases: context.phases,
     lifecycleEvents: context.lifecycleEvents
   };
+}
+
+function getRollIntentLabel(intent: string): string {
+  switch (intent) {
+    case "damage":
+      return "dano";
+    case "healing":
+      return "cura";
+    case "attack":
+      return "ataque";
+    case "resistance":
+      return "resistência";
+    case "skill":
+      return "perícia";
+    case "ritual":
+      return "ritual";
+    default:
+      return "genérica";
+  }
 }
 
 function getOperationTitle(transaction: ResourceTransaction): string {

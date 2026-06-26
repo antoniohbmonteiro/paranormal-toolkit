@@ -4,13 +4,20 @@ import { createWorkflowContext, type WorkflowContext, type WorkflowContextInput 
 import type { WorkflowHookEmitter } from "./workflow-hook-emitter";
 
 export class WorkflowEngine {
+  private lastContext: WorkflowContext | null = null;
+
   constructor(
     private readonly automation: AutomationRunner,
     private readonly hooks: WorkflowHookEmitter
   ) {}
 
+  getLastContext(): WorkflowContext | null {
+    return this.lastContext;
+  }
+
   async runAutomation(definition: AutomationDefinition, input: WorkflowContextInput): Promise<AutomationRunResult> {
     const context = createWorkflowContext(input);
+    this.lastContext = context;
 
     this.hooks.emit("created", context, {
       metadata: {

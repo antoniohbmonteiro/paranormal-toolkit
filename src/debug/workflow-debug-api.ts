@@ -13,6 +13,7 @@ import { WORKFLOW_PHASES, type WorkflowPhase } from "../core/workflow/workflow-p
 
 export type WorkflowDebugApi = {
   phases(): readonly WorkflowPhase[];
+  lastContext(): unknown;
   runFirstAutomation(): Promise<void>;
   runSelectedItemAutomation(): Promise<void>;
   runItemAutomationByUuid(uuid: string): Promise<void>;
@@ -23,6 +24,10 @@ export function createWorkflowDebugApi(services: ToolkitServices): WorkflowDebug
   return {
     phases(): readonly WorkflowPhase[] {
       return WORKFLOW_PHASES;
+    },
+
+    lastContext(): unknown {
+      return services.workflow.getLastContext();
     },
     async runFirstAutomation(): Promise<void> {
       const actor = getSelectedActorOrNotify("Nenhum ator encontrado para executar automação.");

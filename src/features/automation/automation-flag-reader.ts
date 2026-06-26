@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../../constants";
 import type { ActorResource } from "../../core/resources/actor-resource";
 import type { ResourceOperation } from "../../core/resources/resource-operation";
+import type { WorkflowRollIntent } from "../../core/workflow/workflow-roll";
 import type {
   AutomationActorSelector,
   AutomationDefinition,
@@ -72,7 +73,8 @@ export function getTestRitualHealingAutomationDefinition(formula = "1d8"): Autom
       {
         type: "rollFormula",
         id: "healing",
-        formula
+        formula,
+        intent: "healing"
       },
       {
         type: "modifyResource",
@@ -101,7 +103,9 @@ export function getTestRitualDamageAutomationDefinition(formula = "1d8"): Automa
       {
         type: "rollFormula",
         id: "damage",
-        formula
+        formula,
+        intent: "damage",
+        damageType: "generic"
       },
       {
         type: "modifyResource",
@@ -133,7 +137,8 @@ export function getTestHealingAutomationDefinition(): AutomationDefinition {
       {
         type: "rollFormula",
         id: "healing",
-        formula: "1d8"
+        formula: "1d8",
+        intent: "healing"
       },
       {
         type: "modifyResource",
@@ -204,7 +209,13 @@ function isSpendRitualCostStep(value: Partial<AutomationStep>): value is SpendRi
 function isRollFormulaStep(value: Partial<AutomationStep>): value is RollFormulaStep {
   const candidate = value as Partial<RollFormulaStep>;
 
-  return candidate.type === "rollFormula" && isNonEmptyString(candidate.id) && isNonEmptyString(candidate.formula);
+  return (
+    candidate.type === "rollFormula" &&
+    isNonEmptyString(candidate.id) &&
+    isNonEmptyString(candidate.formula) &&
+    (candidate.intent === undefined || isWorkflowRollIntent(candidate.intent)) &&
+    (candidate.damageType === undefined || isNonEmptyString(candidate.damageType))
+  );
 }
 
 function isModifyResourceStep(value: Partial<AutomationStep>): value is ModifyResourceStep {
@@ -246,6 +257,18 @@ function isActorResource(value: unknown): value is ActorResource {
 
 function isResourceOperation(value: unknown): value is ResourceOperation {
   return value === "spend" || value === "damage" || value === "heal" || value === "recover";
+}
+
+function isWorkflowRollIntent(value: unknown): value is WorkflowRollIntent {
+  return (
+    value === "attack" ||
+    value === "damage" ||
+    value === "healing" ||
+    value === "resistance" ||
+    value === "skill" ||
+    value === "ritual" ||
+    value === "generic"
+  );
 }
 
 function isNonEmptyString(value: unknown): value is string {

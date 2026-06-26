@@ -6,10 +6,25 @@ export type WorkflowPhase =
   | "spendCost"
   | "afterCost"
   | "beforeRoll"
+  | "beforeDamageRoll"
+  | "beforeHealingRoll"
   | "roll"
+  | "damageRoll"
+  | "healingRoll"
+  | "afterDamageRoll"
+  | "afterHealingRoll"
   | "afterRoll"
+  | "beforeDamageResolution"
+  | "damageResolution"
+  | "afterDamageResolution"
   | "beforeApply"
+  | "beforeApplyDamage"
+  | "beforeApplyHealing"
   | "apply"
+  | "applyDamage"
+  | "applyHealing"
+  | "afterApplyDamage"
+  | "afterApplyHealing"
   | "afterApply"
   | "beforeChat"
   | "chat"
@@ -24,10 +39,25 @@ export const WORKFLOW_PHASES = [
   "spendCost",
   "afterCost",
   "beforeRoll",
+  "beforeDamageRoll",
+  "beforeHealingRoll",
   "roll",
+  "damageRoll",
+  "healingRoll",
+  "afterDamageRoll",
+  "afterHealingRoll",
   "afterRoll",
+  "beforeDamageResolution",
+  "damageResolution",
+  "afterDamageResolution",
   "beforeApply",
+  "beforeApplyDamage",
+  "beforeApplyHealing",
   "apply",
+  "applyDamage",
+  "applyHealing",
+  "afterApplyDamage",
+  "afterApplyHealing",
   "afterApply",
   "beforeChat",
   "chat",

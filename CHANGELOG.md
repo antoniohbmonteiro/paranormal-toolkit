@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.6.1
+
+### Adicionado
+
+- Intenções tipadas de rolagem (`damage`, `healing`, `attack`, `resistance`, `skill`, `ritual` e `generic`).
+- `WorkflowRollRequest` e `WorkflowRollResult` no contexto do workflow.
+- Fases especializadas de rolagem: `beforeDamageRoll`, `damageRoll`, `afterDamageRoll`, `beforeHealingRoll`, `healingRoll` e `afterHealingRoll`.
+- Fases iniciais de resolução/aplicação de dano: `beforeDamageResolution`, `damageResolution`, `afterDamageResolution`, `beforeApplyDamage`, `applyDamage` e `afterApplyDamage`.
+- Fases iniciais de aplicação de cura: `beforeApplyHealing`, `applyHealing` e `afterApplyHealing`.
+- `damageInstances` e `healingInstances` no `WorkflowContext`, preparando suporte futuro para resistência, vulnerabilidade, redução e dano final.
+- `ParanormalToolkit.debug.workflow.lastContext()` para inspecionar o último contexto executado.
+
+### Alterado
+
+- Steps `rollFormula` agora aceitam `intent` e `damageType`.
+- Presets de teste de ritual agora marcam rolagens de cura como `healing` e rolagens de dano como `damage`.
+- Chat card de debug de workflow mostra intenção da rolagem e instâncias simples de dano/cura quando disponíveis.
+
+### Decisões
+
+- A camada geral de lifecycle continua existindo, mas dano e cura começam a ganhar eventos especializados.
+- Resistência/vulnerabilidade ainda não é aplicada automaticamente; a estrutura de `DamageInstance` foi criada para receber essa lógica em versão futura.
+
 ## 0.6.0
 
 ### Adicionado

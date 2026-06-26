@@ -100,10 +100,25 @@ export type WorkflowPhase =
   | "spendCost"
   | "afterCost"
   | "beforeRoll"
+  | "beforeDamageRoll"
+  | "beforeHealingRoll"
   | "roll"
+  | "damageRoll"
+  | "healingRoll"
+  | "afterDamageRoll"
+  | "afterHealingRoll"
   | "afterRoll"
+  | "beforeDamageResolution"
+  | "damageResolution"
+  | "afterDamageResolution"
   | "beforeApply"
+  | "beforeApplyDamage"
+  | "beforeApplyHealing"
   | "apply"
+  | "applyDamage"
+  | "applyHealing"
+  | "afterApplyDamage"
+  | "afterApplyHealing"
   | "afterApply"
   | "beforeChat"
   | "chat"
@@ -148,6 +163,31 @@ Esses eventos serão a base para:
 - integração com Paranormal FX;
 - integrações futuras com Active Effects e Template Regions;
 - customizações de mesa.
+
+
+## v0.6.1 — Typed Workflow Events
+
+Status: fechado.
+
+Objetivo: enriquecer o lifecycle com intenção de rolagem e eventos especializados para dano/cura, sem ainda automatizar resistência.
+
+Escopo entregue:
+
+- `WorkflowRollIntent`;
+- `WorkflowRollRequest`;
+- `WorkflowRollResult`;
+- `damageInstances`;
+- `healingInstances`;
+- fases especializadas de dano/cura;
+- estrutura inicial para futura resolução de resistência/vulnerabilidade/redução;
+- debug `ParanormalToolkit.debug.workflow.lastContext()`.
+
+Fora de escopo:
+
+- aplicar resistência automaticamente;
+- ler resistência do sistema;
+- botão de aplicar dano;
+- interceptar clique normal da ficha.
 
 ## v0.6.0 — Workflow Lifecycle Foundation
 

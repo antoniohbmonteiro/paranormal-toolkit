@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.6.0`.
+Versão experimental atual: `v0.6.1`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -23,6 +23,8 @@ O projeto ainda está em fase inicial, mas já possui:
 - step `spendRitualCost` para automações de ritual;
 - automações básicas de ritual: cura simples e dano simples;
 - `WorkflowEngine` inicial com ciclo de vida/fases estilo mini Midi-QOL;
+- rolagens tipadas por intenção (`damage`, `healing`, `generic`, etc.);
+- instâncias iniciais de dano/cura no contexto de workflow;
 - hooks públicos por fase de workflow;
 - direção de presets estilo mini Chris Premades, com aplicação por flags;
 - settings de debug/output configuráveis no Foundry;
@@ -81,10 +83,17 @@ beforeCost
 spendCost
 afterCost
 beforeRoll
+beforeDamageRoll / beforeHealingRoll
 roll
+damageRoll / healingRoll
+afterDamageRoll / afterHealingRoll
 afterRoll
+beforeDamageResolution / damageResolution / afterDamageResolution
 beforeApply
+beforeApplyDamage / beforeApplyHealing
 apply
+applyDamage / applyHealing
+afterApplyDamage / afterApplyHealing
 afterApply
 beforeChat
 chat
@@ -129,10 +138,17 @@ beforeCost
 spendCost
 afterCost
 beforeRoll
+beforeDamageRoll / beforeHealingRoll
 roll
+damageRoll / healingRoll
+afterDamageRoll / afterHealingRoll
 afterRoll
+beforeDamageResolution / damageResolution / afterDamageResolution
 beforeApply
+beforeApplyDamage / beforeApplyHealing
 apply
+applyDamage / applyHealing
+afterApplyDamage / afterApplyHealing
 afterApply
 beforeChat
 chat
@@ -152,7 +168,13 @@ Hooks.on("paranormal-toolkit.workflow.afterApply", (event) => {
 });
 ```
 
-Cada evento recebe `{ phase, context, stepIndex?, step?, metadata? }`.
+Cada evento recebe `{ phase, context, stepIndex?, step?, rollRequest?, rollResult?, damage?, healing?, resourceTransaction?, metadata? }`.
+
+Para inspecionar o último workflow executado:
+
+```js
+ParanormalToolkit.debug.workflow.lastContext();
+```
 
 Com debug/chat ligado, o chat card de workflow mostra a lista de fases executadas. Isso é diagnóstico de desenvolvimento, não UX final de jogo.
 

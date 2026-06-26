@@ -1,5 +1,6 @@
 import type { ActorResource } from "../resources/actor-resource";
 import type { ResourceOperation } from "../resources/resource-operation";
+import type { WorkflowRollIntent } from "../workflow/workflow-roll";
 
 export type AutomationDefinition = {
   version: 1;
@@ -24,6 +25,8 @@ export type RollFormulaStep = {
   type: "rollFormula";
   id: string;
   formula: string;
+  intent?: WorkflowRollIntent;
+  damageType?: string;
 };
 
 export type ModifyResourceStep = AutomationAmountSource & {
