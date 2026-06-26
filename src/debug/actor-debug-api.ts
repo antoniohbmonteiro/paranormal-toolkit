@@ -1,9 +1,9 @@
-import { OrdemAdapter } from "../adapters/ordem/ordem-adapter";
 import { ActorResolver } from "../core/actor-resolver";
-import { ChatMessageService } from "../core/chat-message-service";
 import { ModuleLogger } from "../core/module-logger";
 import type { ResourceOperationResult } from "../core/resources/resource-engine";
 import type { ResourceOperationFailure } from "../core/resources/resource-transaction";
+import type { ToolkitServices } from "../toolkit-services";
+import { ChatMessageService } from "../ui/chat-message-service";
 
 export type ActorDebugApi = {
   getSelected(): Actor | null;
@@ -16,7 +16,7 @@ export type ActorDebugApi = {
   recoverSAN(amount: number): Promise<void>;
 };
 
-export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
+export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
   return {
     getSelected(): Actor | null {
       return ActorResolver.getSelectedActor();
@@ -29,15 +29,19 @@ export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
 
       if (!actor) return;
 
-      const snapshot = adapter.getActorSnapshot(actor);
+      const snapshot = services.ordem.getActorSnapshot(actor);
       ModuleLogger.info("Recursos do ator selecionado:", snapshot);
+
+      if (snapshot.resourceErrors.length > 0) {
+        ModuleLogger.warn("Alguns recursos não puderam ser lidos pelo adapter.", snapshot.resourceErrors);
+      }
     },
 
     async spendPE(amount: number): Promise<void> {
       await runResourceOperation(
         "Gasto de PE",
         getSelectedActorOrNotify("Nenhum ator encontrado para gastar PE."),
-        (actor) => adapter.spendPE(actor, amount)
+        (actor) => services.resources.spend(actor, "PE", amount)
       );
     },
 
@@ -45,7 +49,7 @@ export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
       await runResourceOperation(
         "Gasto de PD",
         getSelectedActorOrNotify("Nenhum ator encontrado para gastar PD."),
-        (actor) => adapter.spendPD(actor, amount)
+        (actor) => services.resources.spend(actor, "PD", amount)
       );
     },
 
@@ -53,7 +57,7 @@ export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
       await runResourceOperation(
         "Dano em PV",
         getSelectedActorOrNotify("Nenhum ator encontrado para causar dano em PV."),
-        (actor) => adapter.damagePV(actor, amount)
+        (actor) => services.resources.damage(actor, "PV", amount)
       );
     },
 
@@ -61,7 +65,7 @@ export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
       await runResourceOperation(
         "Cura de PV",
         getSelectedActorOrNotify("Nenhum ator encontrado para curar PV."),
-        (actor) => adapter.healPV(actor, amount)
+        (actor) => services.resources.heal(actor, "PV", amount)
       );
     },
 
@@ -69,7 +73,7 @@ export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
       await runResourceOperation(
         "Dano em SAN",
         getSelectedActorOrNotify("Nenhum ator encontrado para causar dano em SAN."),
-        (actor) => adapter.damageSAN(actor, amount)
+        (actor) => services.resources.damage(actor, "SAN", amount)
       );
     },
 
@@ -77,7 +81,7 @@ export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
       await runResourceOperation(
         "Recuperação de SAN",
         getSelectedActorOrNotify("Nenhum ator encontrado para recuperar SAN."),
-        (actor) => adapter.recoverSAN(actor, amount)
+        (actor) => services.resources.recover(actor, "SAN", amount)
       );
     }
   };
@@ -124,6 +128,12 @@ function getSelectedActorOrNotify(warningMessage: string): Actor | null {
 function handleResourceFailure(failure: ResourceOperationFailure): void {
   if (failure.reason === "update-failed") {
     ModuleLogger.error(failure.message, failure.cause ?? failure);
+    ui.notifications?.error(`Paranormal Toolkit: ${failure.message}`);
+    return;
+  }
+
+  if (failure.reason === "resource-path-not-found" || failure.reason === "invalid-resource-value") {
+    ModuleLogger.error("Falha de adapter ao ler recurso.", failure);
     ui.notifications?.error(`Paranormal Toolkit: ${failure.message}`);
     return;
   }

@@ -1,35 +1,11 @@
 import { MODULE_ID } from "../constants";
-import type { ResourceTransaction } from "./resources/resource-transaction";
-
-export type ResourceSpendChatData = {
-  actor: Actor;
-  resourceLabel: string;
-  amount: number;
-  before: number;
-  after: number;
-};
+import type { ResourceTransaction } from "../core/resources/resource-transaction";
 
 export type ResourceOperationChatData = {
   transaction: ResourceTransaction;
 };
 
 export class ChatMessageService {
-  static async createResourceSpendMessage(data: ResourceSpendChatData): Promise<void> {
-    await this.createResourceOperationMessage({
-      transaction: {
-        actor: data.actor,
-        actorId: data.actor.id ?? null,
-        actorName: data.actor.name ?? "Ator sem nome",
-        resource: data.resourceLabel === "PD" ? "PD" : "PE",
-        operation: "spend",
-        requestedAmount: data.amount,
-        appliedAmount: data.amount,
-        before: { value: data.before, max: data.before },
-        after: { value: data.after, max: data.before }
-      }
-    });
-  }
-
   static async createResourceOperationMessage(data: ResourceOperationChatData): Promise<void> {
     const content = this.createResourceOperationContent(data.transaction);
 

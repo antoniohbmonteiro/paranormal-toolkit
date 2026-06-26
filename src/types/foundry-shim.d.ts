@@ -35,9 +35,7 @@ declare const game: {
 declare const canvas:
   | {
       tokens?: {
-        controlled?: Array<{
-          actor?: Actor | null;
-        }>;
+        controlled?: TokenLike[];
       };
     }
   | undefined;

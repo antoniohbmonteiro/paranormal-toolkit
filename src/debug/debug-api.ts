@@ -1,4 +1,4 @@
-import { OrdemAdapter } from "../adapters/ordem/ordem-adapter";
+import type { ToolkitServices } from "../toolkit-services";
 import { ActorDebugApi, createActorDebugApi } from "./actor-debug-api";
 
 export type DebugApi = {
@@ -14,8 +14,8 @@ export type DebugApi = {
   spendSelectedActorPE(amount: number): Promise<void>;
 };
 
-export function createDebugApi(adapter: OrdemAdapter): DebugApi {
-  const actor = createActorDebugApi(adapter);
+export function createDebugApi(services: ToolkitServices): DebugApi {
+  const actor = createActorDebugApi(services);
 
   return {
     actor,

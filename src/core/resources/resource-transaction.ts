@@ -24,5 +24,7 @@ export type ResourceOperationFailure = {
   requestedAmount: number;
   current?: number;
   required?: number;
+  path?: string;
+  value?: unknown;
   cause?: unknown;
 };

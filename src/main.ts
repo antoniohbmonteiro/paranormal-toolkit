@@ -1,12 +1,12 @@
 import { MODULE_ID, MODULE_TITLE } from "./constants";
-import { OrdemAdapter } from "./adapters/ordem/ordem-adapter";
 import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
 import { SystemGuard } from "./core/system-guard";
 import { registerChatEnrichmentRenderer } from "./features/chat/chat-enrichment-renderer";
 import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
+import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
 
-let ordemAdapter: OrdemAdapter | null = null;
+let services: ToolkitServices | null = null;
 
 Hooks.once("init", () => {
   ModuleLogger.info("Inicializando módulo.");
@@ -20,8 +20,8 @@ Hooks.once("ready", () => {
     return;
   }
 
-  ordemAdapter = new OrdemAdapter();
-  registerGlobalApi(ordemAdapter);
+  services = createToolkitServices();
+  registerGlobalApi(services);
   registerChatTargetCapture();
   registerChatEnrichmentRenderer();
 
@@ -30,10 +30,10 @@ Hooks.once("ready", () => {
   ui.notifications?.info(`${MODULE_TITLE} inicializado.`);
 });
 
-export function getOrdemAdapter(): OrdemAdapter {
-  if (!ordemAdapter) {
+export function getToolkitServices(): ToolkitServices {
+  if (!services) {
     throw new Error("Paranormal Toolkit ainda não foi inicializado para Ordem Paranormal.");
   }
 
-  return ordemAdapter;
+  return services;
 }

@@ -44,17 +44,19 @@ Somente o adapter do sistema deve saber que, hoje, PV fica em `system.PV.value`.
 
 ## Camadas
 
+Estrutura travada a partir da v0.2.1:
+
 ```txt
 src/
   main.ts
   constants.ts
+  toolkit-services.ts
 
   adapters/
     ordem/
-      ordem-adapter.ts
-      ordem-paths.ts
+      ordem-system-adapter.ts
       ordem-resource-adapter.ts
-      ordem-ritual-cost-provider.ts
+      ordem-paths.ts
 
   core/
     result.ts
@@ -68,25 +70,7 @@ src/
       resource-operation.ts
       resource-transaction.ts
 
-    automation/
-      automation-definition.ts
-      automation-runner.ts
-      automation-step.ts
-      workflow-context.ts
-
-    rituals/
-      ritual-cost-provider.ts
-      ritual-types.ts
-
   features/
-    weapons/
-      weapon-modification-engine.ts
-      weapon-category-engine.ts
-      weapon-damage-engine.ts
-
-    rituals/
-      ritual-automation-engine.ts
-
     chat/
       chat-target-capture.ts
       chat-enrichment-renderer.ts
@@ -98,25 +82,44 @@ src/
   debug/
     debug-api.ts
     actor-debug-api.ts
-    workflow-debug-api.ts
 
   types/
     foundry-shim.d.ts
 ```
 
+Regra de dependência:
+
+```txt
+core não cria ChatMessage
+core não conhece paths do sistema
+features orquestram comportamento de módulo
+adapters falam com Foundry/sistema
+ui renderiza/apresenta
+debug é API temporária de desenvolvimento
+```
+
+`main.ts` é o composition root do módulo. Ele cria `ToolkitServices` e injeta as dependências onde precisa.
+
 ## Responsabilidades
 
-### `OrdemAdapter`
+### `OrdemSystemAdapter`
 
-Sabe conversar com o sistema `ordemparanormal`.
+Sabe ler informações gerais do sistema `ordemparanormal`, como snapshot de ator e DT de ritual.
+
+Não deve executar regra de domínio.
+
+### `OrdemResourceAdapter`
+
+Sabe ler e atualizar PV, SAN, PE e PD nos paths atuais do sistema.
 
 Responsável por:
 
-- ler paths atuais do sistema;
-- atualizar recursos;
-- obter snapshot de ator;
-- abstrair diferenças futuras do data model;
-- ser a única camada acoplada ao formato atual de `actor.system`.
+- mapear `PV`, `SAN`, `PE` e `PD` para paths reais do sistema;
+- validar se os paths existem;
+- falhar explicitamente quando o data model mudar;
+- atualizar apenas o valor atual do recurso.
+
+Se um path esperado não existir, o adapter deve retornar falha controlada. Ele não deve mascarar path quebrado como `0`.
 
 ### `ResourceEngine`
 
@@ -242,7 +245,7 @@ Por isso:
 ## Paralelo com Android/Kotlin
 
 ```txt
-OrdemAdapter = Repository/DataSource específico do sistema
+OrdemSystemAdapter/OrdemResourceAdapter = Repository/DataSource específico do sistema
 ResourceEngine = UseCase de domínio
 AutomationRunner = Orquestrador de caso de uso
 ChatMessageService = Presenter/View adapter

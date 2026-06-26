@@ -1,16 +1,20 @@
 import { MODULE_ID } from "../constants";
-import { OrdemAdapter } from "../adapters/ordem/ordem-adapter";
 import { createDebugApi, DebugApi } from "../debug/debug-api";
+import type { ToolkitServices } from "../toolkit-services";
 
 export type ParanormalToolkitApi = {
-  adapter: OrdemAdapter;
+  services: ToolkitServices;
+  ordem: ToolkitServices["ordem"];
+  resources: ToolkitServices["resources"];
   debug: DebugApi;
 };
 
-export function registerGlobalApi(adapter: OrdemAdapter): ParanormalToolkitApi {
+export function registerGlobalApi(services: ToolkitServices): ParanormalToolkitApi {
   const api: ParanormalToolkitApi = {
-    adapter,
-    debug: createDebugApi(adapter)
+    services,
+    ordem: services.ordem,
+    resources: services.resources,
+    debug: createDebugApi(services)
   };
 
   const globalObject = globalThis as typeof globalThis & Record<string, unknown> & {

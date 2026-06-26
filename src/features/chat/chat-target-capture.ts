@@ -1,20 +1,31 @@
 import { ModuleLogger } from "../../core/module-logger";
-import { buildChatWorkflowFlag, getCurrentChatTargets, getWorkflowSourcePath } from "./chat-workflow-flags";
+import {
+  buildChatWorkflowFlag,
+  getCurrentChatTargets,
+  getCurrentWorkflowSource,
+  getWorkflowSourcePath,
+  hasSpeakerActor,
+  hasToolkitFlags
+} from "./chat-workflow-flags";
 
 export function registerChatTargetCapture(): void {
-  Hooks.on("preCreateChatMessage", (message: unknown, _data: unknown, _options: unknown, userId: unknown) => {
+  Hooks.on("preCreateChatMessage", (message: unknown, data: unknown, _options: unknown, userId: unknown) => {
     if (!isCurrentUser(userId)) return;
     if (!hasUpdateSource(message)) return;
+    if (hasToolkitFlags(message) || hasToolkitFlags(data)) return;
 
     const targets = getCurrentChatTargets();
 
     if (targets.length === 0) return;
+    if (!hasSpeakerActor(message) && !hasSpeakerActor(data)) return;
+
+    const source = getCurrentWorkflowSource();
 
     message.updateSource({
-      [getWorkflowSourcePath()]: buildChatWorkflowFlag(targets)
+      [getWorkflowSourcePath()]: buildChatWorkflowFlag(targets, source)
     });
 
-    ModuleLogger.info("Targets capturados para ChatMessage.", targets);
+    ModuleLogger.info("Targets capturados para ChatMessage.", { source, targets });
   });
 }
 

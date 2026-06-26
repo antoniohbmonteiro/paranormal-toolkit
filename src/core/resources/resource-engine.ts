@@ -48,7 +48,24 @@ export class ResourceEngine {
       });
     }
 
-    const before = this.adapter.getResource(actor, resource);
+    const readResult = this.adapter.getResource(actor, resource);
+
+    if (!readResult.ok) {
+      return failure({
+        actor,
+        actorId: actor.id ?? null,
+        actorName: actor.name ?? "Ator sem nome",
+        resource,
+        operation,
+        reason: readResult.error.reason,
+        message: readResult.error.message,
+        requestedAmount: amount,
+        path: readResult.error.path,
+        value: readResult.error.value
+      });
+    }
+
+    const before = readResult.value;
     const calculation = this.calculate(operation, before, amount);
 
     if (!calculation.ok) {

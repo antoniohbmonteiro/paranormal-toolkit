@@ -56,7 +56,7 @@ O sistema base deve receber melhorias de ficha/UX diretamente. Se esse módulo e
 
 ## v0.1 — Fundação do Toolkit
 
-Status: em fechamento.
+Status: fechado.
 
 Objetivo: provar que o módulo carrega, reconhece o sistema, lê dados reais de ator e executa a primeira automação simples.
 
@@ -91,6 +91,8 @@ Critérios de aceite:
 ## v0.2 — Resource Engine + Chat Enrichment
 
 Objetivo: transformar o gasto de PE em uma camada genérica de recursos e começar a enriquecer os chat cards existentes do sistema.
+
+Status: implementado e validado em mesa local.
 
 Escopo planejado:
 

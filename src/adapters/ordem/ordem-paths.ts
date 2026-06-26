@@ -1,14 +1,13 @@
+import type { ActorResource } from "../../core/resources/actor-resource";
+
+export const ORDEM_RESOURCE_PATHS: Record<ActorResource, string> = {
+  PV: "system.PV",
+  SAN: "system.SAN",
+  PE: "system.PE",
+  PD: "system.PD"
+} as const;
+
 export const ORDEM_PATHS = {
-  resources: {
-    PV: "system.PV",
-    SAN: "system.SAN",
-    PE: "system.PE",
-    PD: "system.PD",
-    pv: "system.PV",
-    san: "system.SAN",
-    pe: "system.PE",
-    pd: "system.PD"
-  },
   ritual: {
     dt: "system.ritual.DT"
   },
