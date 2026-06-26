@@ -6,20 +6,20 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão inicial experimental: `v0.1.4`.
+Versão experimental atual: `v0.3.0`.
 
-Esta primeira versão contém apenas a fundação do módulo:
+O projeto ainda está em fase inicial, mas já possui:
 
-- manifesto `module.json`;
+- manifesto `module.json` para Foundry v14+;
 - build ES Module em `dist/main.js`;
 - fontes TypeScript em `src/`;
 - detecção do sistema `ordemparanormal`;
-- adapter inicial para isolar paths do sistema;
-- logger interno;
-- CSS inicial;
-- chat card simples para gasto de PE via debug;
-- API de debug organizada por domínio (`debug.actor.*`);
-- resultado controlado para gasto de PE, sem exception para regra esperada como PE insuficiente.
+- adapters para isolar paths do sistema;
+- `ResourceEngine` para PV, SAN, PE e PD;
+- chat cards de operações de recurso;
+- captura/enriquecimento de targets em chat;
+- `AutomationRunner` inicial por flags de item;
+- API de debug organizada por domínio (`debug.actor.*` e `debug.workflow.*`).
 
 ## Requisitos
 
@@ -34,9 +34,10 @@ Instale as dependências:
 npm install
 ```
 
-Rode o build:
+Rode typecheck e build:
 
 ```bash
+npm run typecheck
 npm run build
 ```
 
@@ -48,11 +49,7 @@ npm run dev
 
 ## Instalação local para desenvolvimento
 
-Crie um link simbólico deste projeto dentro da pasta de módulos do Foundry:
-
-```bash
-ln -s /caminho/para/paranormal-toolkit /caminho/FoundryVTT/Data/modules/paranormal-toolkit
-```
+Crie um link simbólico deste projeto dentro da pasta de módulos do Foundry.
 
 No Windows, em um terminal com permissão de administrador:
 
@@ -62,8 +59,7 @@ mklink /D "C:\Users\SEU_USUARIO\AppData\Local\FoundryVTT\Data\modules\paranormal
 
 Depois, ative o módulo no mundo do Foundry.
 
-
-## Debug inicial
+## Debug de recursos
 
 Com um token de Agente selecionado na cena, abra o console do Foundry e rode:
 
@@ -71,54 +67,57 @@ Com um token de Agente selecionado na cena, abra o console do Foundry e rode:
 ParanormalToolkit.debug.actor.logResources();
 ```
 
-Isso deve imprimir um snapshot com:
-
-- PV;
-- SAN;
-- PE;
-- PD;
-- DT de ritual.
-
-Também dá para testar gasto de PE:
+Operações disponíveis:
 
 ```js
 await ParanormalToolkit.debug.actor.spendPE(1);
+await ParanormalToolkit.debug.actor.spendPD(1);
+await ParanormalToolkit.debug.actor.damagePV(3);
+await ParanormalToolkit.debug.actor.healPV(3);
+await ParanormalToolkit.debug.actor.damageSAN(2);
+await ParanormalToolkit.debug.actor.recoverSAN(2);
 ```
 
-Esse comando deve reduzir o PE do ator selecionado e criar uma mensagem simples no chat. Se o ator não tiver PE suficiente, o módulo mostra um aviso controlado e não deixa o valor ficar negativo.
+## Debug de workflow
 
-Os comandos antigos continuam funcionando como aliases temporários:
+Para testar a primeira automação genérica:
 
 ```js
-ParanormalToolkit.debug.logSelectedActorResources();
-await ParanormalToolkit.debug.spendSelectedActorPE(1);
+await ParanormalToolkit.debug.workflow.setTestHealingAutomationOnFirstItem();
 ```
 
-Se nenhum token estiver selecionado, o módulo tenta usar o personagem vinculado ao usuário (`game.user.character`).
+Depois selecione o conjurador, marque um alvo e rode:
 
-## Próximos passos planejados
+```js
+await ParanormalToolkit.debug.workflow.runFirstAutomation();
+```
 
-### v0.1.x
+A automação de teste:
 
-- Ler recursos do ator: PV, SAN, PE e PD.
-- Criar comandos internos para gastar PE/PD.
-- Criar chat card simples de gasto de recurso.
+```txt
+1. gasta 1 PE do ator de origem;
+2. rola 1d8;
+3. cura PV do alvo marcado;
+4. cria chat card de resumo.
+```
 
-### v0.2.x
+Também é possível executar por UUID de item:
 
-- Automatizar melhorias/modificações de armas.
-- Calcular categoria base, aumento por modificação e categoria final.
-- Validar categoria final contra limites de patente/categoria.
+```js
+await ParanormalToolkit.debug.workflow.runItemAutomationByUuid("Actor.x.Item.y");
+```
 
-### v0.3.x
+## Princípios
 
-- Automatizar conjuração de rituais.
-- Calcular custo por círculo.
-- Exibir DT, resistência, alvo, duração e área.
-- Preparar integração com Active Effects V2 e Template Regions.
+- O Toolkit é companion opcional, não substituto do sistema base.
+- Automação é opt-in por flags.
+- Não automatizar por nome de item.
+- Core não deve conhecer paths internos do sistema.
+- Paths ficam em adapters.
+- Não distribuir conteúdo oficial, textos, artes, compêndios ou assets protegidos.
 
 ## Licença
 
 Código sob licença MIT.
 
-Não copie textos, artes, compêndios, assets ou conteúdo protegido de Ordem Paranormal. Este projeto não é oficial e não possui afiliação com os detentores da marca.
+Este projeto não é oficial e não possui afiliação com os detentores da marca Ordem Paranormal.

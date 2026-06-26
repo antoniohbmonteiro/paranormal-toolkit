@@ -5,4 +5,5 @@ export type ResourceFailureReason =
   | "insufficient-resource"
   | "resource-path-not-found"
   | "invalid-resource-value"
-  | "update-failed";
+  | "update-failed"
+  | "invalid-resource-operation";

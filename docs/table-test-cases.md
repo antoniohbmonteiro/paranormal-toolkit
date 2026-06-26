@@ -170,11 +170,29 @@ Se o ataque for crítico, o atacante cura PV igual ao dano causado por esse +1d8
 - Cura usa apenas o dano extra da modificação, não necessariamente o dano total.
 - Chat card mostra dano base, dano extra e cura aplicada.
 
-## Caso 7 — Ritual simples de cura
+## Caso 7 — Automação simples de cura
 
 ### Objetivo
 
-Validar a primeira automação de ritual genérico.
+Validar o primeiro workflow genérico executado pelo `AutomationRunner`.
+
+### Setup rápido
+
+Selecionar um token de agente e rodar:
+
+```js
+await ParanormalToolkit.debug.workflow.setTestHealingAutomationOnFirstItem();
+```
+
+Depois marcar um alvo e rodar:
+
+```js
+await ParanormalToolkit.debug.workflow.runFirstAutomation();
+```
+
+### Objetivo futuro
+
+Esse fluxo serve como base para automações de itens, habilidades e rituais genéricos.
 
 ### Fluxo esperado
 

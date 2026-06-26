@@ -21,6 +21,8 @@ type TokenLike = {
   scene?: SceneLike | null;
 };
 
+type ItemCollectionLike = Iterable<Item> | { contents?: unknown } | Item[];
+
 declare const game: {
   system: {
     id: string;
@@ -65,12 +67,32 @@ declare const foundry: {
   };
 };
 
+declare function fromUuid(uuid: string): Promise<unknown>;
+
+declare class Roll {
+  constructor(formula: string, data?: Record<string, unknown>);
+  formula: string;
+  total: number | null;
+  evaluate(options?: Record<string, unknown>): Roll | Promise<Roll>;
+}
+
 declare class Actor {
   id: string | null;
   name: string;
   type: string;
   system: Record<string, unknown>;
+  items: ItemCollectionLike;
   update(data: Record<string, unknown>): Promise<this>;
+}
+
+declare class Item {
+  id: string | null;
+  name: string;
+  type: string;
+  uuid: string;
+  parent: Actor | null;
+  getFlag(scope: string, key: string): unknown;
+  setFlag(scope: string, key: string, value: unknown): Promise<this>;
 }
 
 declare global {

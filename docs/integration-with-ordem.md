@@ -26,6 +26,7 @@ O módulo deve abortar inicialização funcional caso o sistema ativo seja outro
 Paths atuais usados pelo adapter inicial:
 
 ```txt
+Agente:
 system.PV.value
 system.PV.max
 system.SAN.value
@@ -35,6 +36,10 @@ system.PE.max
 system.PD.value
 system.PD.max
 system.ritual.DT
+
+Ameaça:
+system.attributes.hp.value
+system.attributes.hp.max
 ```
 
 Esses paths são considerados detalhes de implementação atuais, não contrato permanente.

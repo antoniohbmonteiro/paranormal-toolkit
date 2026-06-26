@@ -131,9 +131,11 @@ E também:
 
 ## v0.3 — Automation Runner inicial
 
+Status: implementado em `0.3.0`.
+
 Objetivo: executar automações simples declaradas por flags em itens.
 
-Escopo planejado:
+Escopo:
 
 - `AutomationRunner` mínimo;
 - definição de automação versionada;
@@ -144,7 +146,8 @@ Escopo planejado:
   - `chatCard`;
 - execução sequencial de steps;
 - parada segura em caso de falha obrigatória;
-- debug API para rodar automação de item selecionado.
+- debug API para rodar automação por UUID ou primeiro item com flag;
+- helper de debug para aplicar uma automação de cura simples no primeiro item do ator selecionado.
 
 Primeira automação alvo:
 

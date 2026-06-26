@@ -15,6 +15,7 @@ export type ResourceReadFailure = {
   actor: Actor;
   actorId: string | null;
   actorName: string;
+  actorType: string;
   resource: ActorResource;
   reason: ResourceReadFailureReason;
   message: string;

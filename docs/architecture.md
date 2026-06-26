@@ -242,6 +242,28 @@ Por isso:
 - criar testes manuais de mesa;
 - preferir interfaces e providers para regras que podem virar nativas.
 
+
+## Automation Runner inicial
+
+A partir da v0.3, automações são declaradas por flag no item:
+
+```ts
+item.flags["paranormal-toolkit"].automation
+```
+
+A automação é versionada e executada sequencialmente pelo `AutomationRunner`.
+
+Steps suportados na primeira versão:
+
+- `spendResource`;
+- `rollFormula`;
+- `modifyResource`;
+- `chatCard`.
+
+O runner não deve automatizar item por nome. A configuração deve ser explícita e opt-in.
+
+O `WorkflowContext` guarda origem, item, targets, rolagens e transações de recurso para que versões futuras possam aplicar rituais, armas, triggers condicionais e eventos de FX sobre a mesma base.
+
 ## Paralelo com Android/Kotlin
 
 ```txt

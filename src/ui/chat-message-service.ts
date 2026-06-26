@@ -1,4 +1,6 @@
 import { MODULE_ID } from "../constants";
+import type { ChatCardStep } from "../core/automation/automation-definition";
+import type { WorkflowContext } from "../core/automation/workflow-context";
 import type { ResourceTransaction } from "../core/resources/resource-transaction";
 
 export type ResourceOperationChatData = {
@@ -15,6 +17,20 @@ export class ChatMessageService {
       flags: {
         [MODULE_ID]: {
           resourceTransaction: serializeResourceTransaction(data.transaction)
+        }
+      }
+    });
+  }
+
+  static async createWorkflowSummaryMessage(context: WorkflowContext, step: ChatCardStep): Promise<void> {
+    const content = this.createWorkflowSummaryContent(context, step);
+
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: context.sourceActor }),
+      content,
+      flags: {
+        [MODULE_ID]: {
+          workflowSummary: serializeWorkflowSummary(context)
         }
       }
     });
@@ -39,6 +55,37 @@ export class ChatMessageService {
       </section>
     `;
   }
+
+  private static createWorkflowSummaryContent(context: WorkflowContext, step: ChatCardStep): string {
+    const title = escapeHtml(step.title ?? "Automação");
+    const message = step.message ? `<p>${escapeHtml(step.message)}</p>` : "";
+    const sourceName = escapeHtml(context.sourceToken?.name ?? context.sourceActor.name ?? "Origem sem nome");
+    const itemName = escapeHtml(context.item.name ?? "Item sem nome");
+    const targets = context.targets.length > 0 ? context.targets.map((target) => escapeHtml(target.name)).join(", ") : "Nenhum";
+    const rollRows = Object.values(context.rolls).map(
+      (roll) => `<li><strong>${escapeHtml(roll.id)}:</strong> ${escapeHtml(roll.formula)} = ${roll.total}</li>`
+    );
+    const transactionRows = context.resourceTransactions.map(
+      (transaction) =>
+        `<li><strong>${escapeHtml(transaction.actorName)}:</strong> ${escapeHtml(getOperationTitle(transaction))} — ${transaction.before.value}/${transaction.before.max} &rarr; ${transaction.after.value}/${transaction.after.max}</li>`
+    );
+
+    return `
+      <section class="${MODULE_ID}-card ${MODULE_ID}-workflow-card">
+        <header class="${MODULE_ID}-card__header">
+          <strong>${title}</strong>
+          <span>${itemName}</span>
+        </header>
+        <div class="${MODULE_ID}-card__body">
+          ${message}
+          <p><strong>Origem:</strong> ${sourceName}</p>
+          <p><strong>Alvo:</strong> ${targets}</p>
+          ${rollRows.length > 0 ? `<p><strong>Rolagens:</strong></p><ul>${rollRows.join("")}</ul>` : ""}
+          ${transactionRows.length > 0 ? `<p><strong>Recursos:</strong></p><ul>${transactionRows.join("")}</ul>` : ""}
+        </div>
+      </section>
+    `;
+  }
 }
 
 function serializeResourceTransaction(transaction: ResourceTransaction): Record<string, unknown> {
@@ -51,6 +98,28 @@ function serializeResourceTransaction(transaction: ResourceTransaction): Record<
     appliedAmount: transaction.appliedAmount,
     before: transaction.before,
     after: transaction.after
+  };
+}
+
+function serializeWorkflowSummary(context: WorkflowContext): Record<string, unknown> {
+  return {
+    sourceActorId: context.sourceActor.id ?? null,
+    sourceActorName: context.sourceActor.name ?? "Ator sem nome",
+    sourceToken: context.sourceToken,
+    itemId: context.item.id ?? null,
+    itemName: context.item.name ?? "Item sem nome",
+    targets: context.targets.map((target) => ({
+      tokenId: target.tokenId,
+      actorId: target.actorId,
+      sceneId: target.sceneId,
+      name: target.name
+    })),
+    rolls: Object.values(context.rolls).map((roll) => ({
+      id: roll.id,
+      formula: roll.formula,
+      total: roll.total
+    })),
+    resourceTransactions: context.resourceTransactions.map(serializeResourceTransaction)
   };
 }
 
