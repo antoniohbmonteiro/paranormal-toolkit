@@ -714,10 +714,9 @@ function I(e) {
 //#endregion
 //#region src/features/chat/chat-enrichment-renderer.ts
 function Fe() {
-	let e = (e, t) => {
+	Hooks.on("renderChatMessageHTML", (e, t) => {
 		Ie(e, t);
-	};
-	Hooks.on("renderChatMessageHTML", e), Hooks.on("renderChatMessage", e);
+	});
 }
 function Ie(e, t) {
 	let n = je(e);

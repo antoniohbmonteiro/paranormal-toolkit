@@ -7,7 +7,6 @@ export function registerChatEnrichmentRenderer(): void {
   };
 
   Hooks.on("renderChatMessageHTML", render);
-  Hooks.on("renderChatMessage", render);
 }
 
 function enrichChatMessage(message: unknown, html: unknown): void {
