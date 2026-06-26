@@ -4,6 +4,7 @@ import { OrdemRitualCostProvider } from "./adapters/ordem/ordem-ritual-cost-prov
 import { OrdemSystemAdapter } from "./adapters/ordem/ordem-system-adapter";
 import { AutomationRunner } from "./core/automation/automation-runner";
 import { ResourceEngine } from "./core/resources/resource-engine";
+import { DebugOutputService } from "./debug/output/debug-output-service";
 import { ChatMessageService } from "./ui/chat-message-service";
 
 export type ToolkitServices = {
@@ -12,6 +13,8 @@ export type ToolkitServices = {
   ritualAdapter: OrdemRitualAdapter;
   ritualCosts: OrdemRitualCostProvider;
   resources: ResourceEngine;
+  debugOutput: DebugOutputService;
+  chatMessages: ChatMessageService;
   automation: AutomationRunner;
 };
 
@@ -21,7 +24,9 @@ export function createToolkitServices(): ToolkitServices {
   const ritualAdapter = new OrdemRitualAdapter();
   const ritualCosts = new OrdemRitualCostProvider(ritualAdapter);
   const ordem = new OrdemSystemAdapter(resourceAdapter);
-  const automation = new AutomationRunner(resources, ritualCosts, ChatMessageService);
+  const debugOutput = new DebugOutputService();
+  const chatMessages = new ChatMessageService(debugOutput);
+  const automation = new AutomationRunner(resources, ritualCosts, chatMessages);
 
   return {
     ordem,
@@ -29,6 +34,8 @@ export function createToolkitServices(): ToolkitServices {
     ritualAdapter,
     ritualCosts,
     resources,
+    debugOutput,
+    chatMessages,
     automation
   };
 }

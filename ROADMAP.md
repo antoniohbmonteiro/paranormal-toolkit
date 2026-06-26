@@ -147,6 +147,22 @@ Esses eventos serão a base para:
 - integrações futuras com Active Effects e Template Regions;
 - customizações de mesa.
 
+## v0.5.2 — Debug Output Settings
+
+Status: fechado.
+
+Objetivo: limpar a casa antes do `WorkflowEngine`, centralizando saídas de debug/teste e evitando cards de diagnóstico espalhados pelo chat.
+
+Escopo:
+
+- settings de debug/output no Foundry;
+- `DebugOutputService`;
+- canais configuráveis: console, notificação e chat;
+- chat de debug desligado por padrão;
+- chat de debug como whisper para GMs;
+- API `ParanormalToolkit.debug.output.*`;
+- cards de debug/teste de recurso e workflow controlados por settings.
+
 ## v0.1 — Fundação do Toolkit
 
 Status: fechado.

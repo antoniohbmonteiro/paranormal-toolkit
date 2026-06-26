@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.2
+
+### Adicionado
+
+- Settings de debug/output visíveis nas configurações do módulo.
+- `DebugOutputService` para centralizar saídas de debug em console, notificação e chat.
+- API `ParanormalToolkit.debug.output.*` para ligar/desligar debug e canais de saída pelo console.
+
+### Alterado
+
+- Cards de debug/teste de recurso e workflow agora passam pelo `DebugOutputService`.
+- Cards de debug no chat ficam desligados por padrão.
+- Quando ativado, o chat de debug é enviado como whisper para GMs.
+
+### Decisões
+
+- `ChatMessage.create` não deve ficar espalhado em helpers de debug.
+- Mensagens reais de gameplay e mensagens de diagnóstico devem continuar separadas antes da fundação do `WorkflowEngine`.
+
 ## 0.5.1
 
 ### Alterado

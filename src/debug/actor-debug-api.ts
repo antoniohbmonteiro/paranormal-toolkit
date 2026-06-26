@@ -3,7 +3,6 @@ import { ModuleLogger } from "../core/module-logger";
 import type { ResourceOperationResult } from "../core/resources/resource-engine";
 import type { ResourceOperationFailure } from "../core/resources/resource-transaction";
 import type { ToolkitServices } from "../toolkit-services";
-import { ChatMessageService } from "../ui/chat-message-service";
 
 export type ActorDebugApi = {
   getSelected(): Actor | null;
@@ -39,6 +38,7 @@ export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
 
     async spendPE(amount: number): Promise<void> {
       await runResourceOperation(
+        services,
         "Gasto de PE",
         getSelectedActorOrNotify("Nenhum ator encontrado para gastar PE."),
         (actor) => services.resources.spend(actor, "PE", amount)
@@ -47,6 +47,7 @@ export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
 
     async spendPD(amount: number): Promise<void> {
       await runResourceOperation(
+        services,
         "Gasto de PD",
         getSelectedActorOrNotify("Nenhum ator encontrado para gastar PD."),
         (actor) => services.resources.spend(actor, "PD", amount)
@@ -55,6 +56,7 @@ export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
 
     async damagePV(amount: number): Promise<void> {
       await runResourceOperation(
+        services,
         "Dano em PV",
         getSelectedActorOrNotify("Nenhum ator encontrado para causar dano em PV."),
         (actor) => services.resources.damage(actor, "PV", amount)
@@ -63,6 +65,7 @@ export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
 
     async healPV(amount: number): Promise<void> {
       await runResourceOperation(
+        services,
         "Cura de PV",
         getSelectedActorOrNotify("Nenhum ator encontrado para curar PV."),
         (actor) => services.resources.heal(actor, "PV", amount)
@@ -71,6 +74,7 @@ export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
 
     async damageSAN(amount: number): Promise<void> {
       await runResourceOperation(
+        services,
         "Dano em SAN",
         getSelectedActorOrNotify("Nenhum ator encontrado para causar dano em SAN."),
         (actor) => services.resources.damage(actor, "SAN", amount)
@@ -79,6 +83,7 @@ export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
 
     async recoverSAN(amount: number): Promise<void> {
       await runResourceOperation(
+        services,
         "Recuperação de SAN",
         getSelectedActorOrNotify("Nenhum ator encontrado para recuperar SAN."),
         (actor) => services.resources.recover(actor, "SAN", amount)
@@ -88,6 +93,7 @@ export function createActorDebugApi(services: ToolkitServices): ActorDebugApi {
 }
 
 async function runResourceOperation(
+  services: ToolkitServices,
   label: string,
   actor: Actor | null,
   operation: (actor: Actor) => Promise<ResourceOperationResult>
@@ -104,7 +110,7 @@ async function runResourceOperation(
   const transaction = result.value;
 
   try {
-    await ChatMessageService.createResourceOperationMessage({ transaction });
+    await services.chatMessages.createResourceOperationMessage({ transaction });
   } catch (error) {
     ModuleLogger.error(`${label} realizado, mas falhou ao criar o chat card.`, error);
     ui.notifications?.error("Paranormal Toolkit: recurso alterado, mas falhou ao criar mensagem no chat.");

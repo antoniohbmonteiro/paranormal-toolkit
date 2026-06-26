@@ -2,18 +2,22 @@ import { MODULE_ID } from "../constants";
 import type { ChatCardStep } from "../core/automation/automation-definition";
 import type { WorkflowContext } from "../core/automation/workflow-context";
 import type { ResourceTransaction } from "../core/resources/resource-transaction";
+import type { DebugOutputService } from "../debug/output/debug-output-service";
 
 export type ResourceOperationChatData = {
   transaction: ResourceTransaction;
 };
 
 export class ChatMessageService {
-  static async createResourceOperationMessage(data: ResourceOperationChatData): Promise<void> {
+  constructor(private readonly debugOutput: DebugOutputService) {}
+
+  async createResourceOperationMessage(data: ResourceOperationChatData): Promise<void> {
     const content = this.createResourceOperationContent(data.transaction);
 
-    await ChatMessage.create({
+    await this.debugOutput.chat({
       speaker: ChatMessage.getSpeaker({ actor: data.transaction.actor }),
       content,
+      data: data.transaction,
       flags: {
         [MODULE_ID]: {
           resourceTransaction: serializeResourceTransaction(data.transaction)
@@ -22,12 +26,13 @@ export class ChatMessageService {
     });
   }
 
-  static async createWorkflowSummaryMessage(context: WorkflowContext, step: ChatCardStep): Promise<void> {
+  async createWorkflowSummaryMessage(context: WorkflowContext, step: ChatCardStep): Promise<void> {
     const content = this.createWorkflowSummaryContent(context, step);
 
-    await ChatMessage.create({
+    await this.debugOutput.chat({
       speaker: ChatMessage.getSpeaker({ actor: context.sourceActor }),
       content,
+      data: serializeWorkflowSummary(context),
       flags: {
         [MODULE_ID]: {
           workflowSummary: serializeWorkflowSummary(context)
@@ -36,7 +41,7 @@ export class ChatMessageService {
     });
   }
 
-  private static createResourceOperationContent(transaction: ResourceTransaction): string {
+  private createResourceOperationContent(transaction: ResourceTransaction): string {
     const actorName = escapeHtml(transaction.actorName);
     const resourceLabel = escapeHtml(transaction.resource);
     const title = escapeHtml(getOperationTitle(transaction));
@@ -56,7 +61,7 @@ export class ChatMessageService {
     `;
   }
 
-  private static createWorkflowSummaryContent(context: WorkflowContext, step: ChatCardStep): string {
+  private createWorkflowSummaryContent(context: WorkflowContext, step: ChatCardStep): string {
     const title = escapeHtml(step.title ?? "Automação");
     const message = step.message ? `<p>${escapeHtml(step.message)}</p>` : "";
     const sourceName = escapeHtml(context.sourceToken?.name ?? context.sourceActor.name ?? "Origem sem nome");

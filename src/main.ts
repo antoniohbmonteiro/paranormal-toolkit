@@ -1,6 +1,7 @@
 import { MODULE_ID, MODULE_TITLE } from "./constants";
 import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
+import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
 import { SystemGuard } from "./core/system-guard";
 import { registerChatEnrichmentRenderer } from "./features/chat/chat-enrichment-renderer";
 import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
@@ -9,6 +10,7 @@ import { createToolkitServices, type ToolkitServices } from "./toolkit-services"
 let services: ToolkitServices | null = null;
 
 Hooks.once("init", () => {
+  registerDebugOutputSettings();
   ModuleLogger.info("Inicializando módulo.");
 });
 

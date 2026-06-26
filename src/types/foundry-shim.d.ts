@@ -8,6 +8,7 @@ type ChatMessageCreateData = {
   speaker?: ChatSpeakerData;
   content: string;
   flags?: Record<string, unknown>;
+  whisper?: string[];
 };
 
 type SceneLike = {
@@ -32,6 +33,27 @@ declare const game: {
     character?: Actor | null;
     targets?: Set<TokenLike>;
   } | null;
+  users?: Array<{
+    id?: string;
+    isGM?: boolean;
+    active?: boolean;
+  }>;
+  settings: {
+    register(
+      namespace: string,
+      key: string,
+      data: {
+        name: string;
+        hint?: string;
+        scope: "client" | "world";
+        config: boolean;
+        type: BooleanConstructor;
+        default: boolean;
+      }
+    ): void;
+    get(namespace: string, key: string): unknown;
+    set(namespace: string, key: string, value: unknown): Promise<unknown>;
+  };
 };
 
 declare const canvas:

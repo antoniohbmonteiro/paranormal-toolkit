@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.5.1`.
+Versão experimental atual: `v0.5.2`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -24,7 +24,8 @@ O projeto ainda está em fase inicial, mas já possui:
 - automações básicas de ritual: cura simples e dano simples;
 - roadmap atualizado para um Workflow Engine estilo mini Midi-QOL;
 - direção de presets estilo mini Chris Premades, com aplicação por flags;
-- API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*` e `debug.workflow.*`).
+- settings de debug/output configuráveis no Foundry;
+- API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*`, `debug.workflow.*` e `debug.output.*`).
 
 ## Requisitos
 
@@ -103,6 +104,45 @@ ao usar o item normalmente, o WorkflowEngine executa a automação
 ```
 
 Isso permite automatizar conteúdo que já existe na mesa sem empacotar descrições oficiais ou compêndios protegidos no módulo público.
+
+
+## Debug output
+
+A partir da `v0.5.2`, os cards de debug/teste no chat são controlados por settings do módulo.
+
+Settings disponíveis em **Configure Settings → Module Settings → Paranormal Toolkit**:
+
+```txt
+Ativar debug do Paranormal Toolkit
+Debug no console
+Debug como notificação
+Debug no chat
+```
+
+Defaults:
+
+```txt
+debug desligado
+console ligado
+notificação ligada
+chat desligado
+```
+
+O chat de debug, quando ligado, é enviado como whisper para GMs.
+
+Também é possível controlar pelo console:
+
+```js
+ParanormalToolkit.debug.output.status();
+
+await ParanormalToolkit.debug.output.enable();
+await ParanormalToolkit.debug.output.disable();
+
+await ParanormalToolkit.debug.output.enableChat();
+await ParanormalToolkit.debug.output.disableChat();
+```
+
+Com o debug/chat desligado, helpers de teste continuam alterando recursos e executando automações, mas não criam cards de diagnóstico no chat.
 
 ## Debug de recursos
 
