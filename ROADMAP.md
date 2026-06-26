@@ -165,6 +165,26 @@ Esses eventos serão a base para:
 - customizações de mesa.
 
 
+## v0.6.2 — Workflow Debug Snapshot
+
+Status: fechado.
+
+Objetivo: separar o contexto interno rico do workflow da saída de debug usada no console/chat/API.
+
+Escopo entregue:
+
+- `WorkflowDebugSnapshot`;
+- serializer centralizado para workflow;
+- serializer centralizado para transações de recurso;
+- `ParanormalToolkit.debug.workflow.lastContext()` retornando snapshot enxuto;
+- logs de sucesso de automação usando snapshot em vez de documentos completos;
+- flags de resumo de workflow no chat usando snapshot.
+
+Decisão arquitetural:
+
+- o `WorkflowContext` interno pode carregar documentos reais do Foundry;
+- debug/output público deve expor somente dados serializados e pequenos.
+
 ## v0.6.1 — Typed Workflow Events
 
 Status: fechado.

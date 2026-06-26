@@ -2,6 +2,7 @@ import { MODULE_ID } from "../constants";
 import { ActorResolver } from "../core/actor-resolver";
 import type { AutomationRunFailure } from "../core/automation/automation-runner";
 import { ModuleLogger } from "../core/module-logger";
+import { createWorkflowDebugSnapshot } from "../core/workflow/workflow-debug-snapshot";
 import type { RitualCostResource } from "../core/rituals/ritual-types";
 import {
   getTestRitualCostAutomationDefinition,
@@ -168,7 +169,7 @@ async function runRitualAutomation(services: ToolkitServices, actor: Actor, ritu
     return;
   }
 
-  ModuleLogger.info("Automação de ritual executada com sucesso.", result.value);
+  ModuleLogger.info("Automação de ritual executada com sucesso.", createWorkflowDebugSnapshot(result.value.context));
 }
 
 function handleAutomationFailure(failure: AutomationRunFailure): void {

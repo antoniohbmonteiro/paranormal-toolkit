@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../constants";
 import type { ChatCardStep } from "../core/automation/automation-definition";
 import type { WorkflowContext } from "../core/workflow/workflow-context";
+import { createResourceTransactionDebugSnapshot, createWorkflowDebugSnapshot } from "../core/workflow/workflow-debug-snapshot";
 import type { ResourceTransaction } from "../core/resources/resource-transaction";
 import type { DebugOutputService } from "../debug/output/debug-output-service";
 
@@ -14,13 +15,15 @@ export class ChatMessageService {
   async createResourceOperationMessage(data: ResourceOperationChatData): Promise<void> {
     const content = this.createResourceOperationContent(data.transaction);
 
+    const transactionSummary = createResourceTransactionDebugSnapshot(data.transaction);
+
     await this.debugOutput.chat({
       speaker: ChatMessage.getSpeaker({ actor: data.transaction.actor }),
       content,
-      data: data.transaction,
+      data: transactionSummary,
       flags: {
         [MODULE_ID]: {
-          resourceTransaction: serializeResourceTransaction(data.transaction)
+          resourceTransaction: transactionSummary
         }
       }
     });
@@ -29,13 +32,15 @@ export class ChatMessageService {
   async createWorkflowSummaryMessage(context: WorkflowContext, step: ChatCardStep): Promise<void> {
     const content = this.createWorkflowSummaryContent(context, step);
 
+    const summary = createWorkflowDebugSnapshot(context);
+
     await this.debugOutput.chat({
       speaker: ChatMessage.getSpeaker({ actor: context.sourceActor }),
       content,
-      data: serializeWorkflowSummary(context),
+      data: summary,
       flags: {
         [MODULE_ID]: {
-          workflowSummary: serializeWorkflowSummary(context)
+          workflowSummary: summary
         }
       }
     });
@@ -108,92 +113,6 @@ export class ChatMessageService {
       </section>
     `;
   }
-}
-
-function serializeResourceTransaction(transaction: ResourceTransaction): Record<string, unknown> {
-  return {
-    actorId: transaction.actorId,
-    actorName: transaction.actorName,
-    resource: transaction.resource,
-    operation: transaction.operation,
-    requestedAmount: transaction.requestedAmount,
-    appliedAmount: transaction.appliedAmount,
-    before: transaction.before,
-    after: transaction.after
-  };
-}
-
-function serializeWorkflowSummary(context: WorkflowContext): Record<string, unknown> {
-  return {
-    id: context.id,
-    sourceActorId: context.sourceActor.id ?? null,
-    sourceActorName: context.sourceActor.name ?? "Ator sem nome",
-    sourceToken: context.sourceToken,
-    itemId: context.item.id ?? null,
-    itemName: context.item.name ?? "Item sem nome",
-    targets: context.targets.map((target) => ({
-      tokenId: target.tokenId,
-      actorId: target.actorId,
-      sceneId: target.sceneId,
-      name: target.name
-    })),
-    rollRequests: Object.values(context.rollRequests).map((roll) => ({
-      id: roll.id,
-      formula: roll.formula,
-      intent: roll.intent,
-      damageType: roll.damageType,
-      sourceStepIndex: roll.sourceStepIndex
-    })),
-    rolls: Object.values(context.rolls).map((roll) => ({
-      id: roll.id,
-      formula: roll.formula,
-      intent: roll.intent,
-      damageType: roll.damageType,
-      total: roll.total
-    })),
-    ritualCosts: context.ritualCosts.map((cost) => ({
-      itemId: cost.itemId,
-      itemName: cost.itemName,
-      circle: cost.circle,
-      resource: cost.resource,
-      amount: cost.amount,
-      source: cost.source
-    })),
-    damageInstances: context.damageInstances.map((damage) => ({
-      id: damage.id,
-      source: damage.source,
-      sourceId: damage.sourceId,
-      sourceName: damage.sourceName,
-      targetActorId: damage.targetActorId,
-      targetActorName: damage.targetActorName,
-      rollId: damage.rollId,
-      damageType: damage.damageType,
-      rawAmount: damage.rawAmount,
-      resistance: damage.resistance,
-      vulnerability: damage.vulnerability,
-      reduction: damage.reduction,
-      immune: damage.immune,
-      finalAmount: damage.finalAmount,
-      appliedAmount: damage.appliedAmount,
-      tags: damage.tags
-    })),
-    healingInstances: context.healingInstances.map((healing) => ({
-      id: healing.id,
-      source: healing.source,
-      sourceId: healing.sourceId,
-      sourceName: healing.sourceName,
-      targetActorId: healing.targetActorId,
-      targetActorName: healing.targetActorName,
-      rollId: healing.rollId,
-      rawAmount: healing.rawAmount,
-      finalAmount: healing.finalAmount,
-      appliedAmount: healing.appliedAmount,
-      tags: healing.tags
-    })),
-    resourceTransactions: context.resourceTransactions.map(serializeResourceTransaction),
-    phases: context.phases,
-    lifecycleEvents: context.lifecycleEvents
-  };
 }
 
 function getRollIntentLabel(intent: string): string {

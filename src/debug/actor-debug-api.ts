@@ -1,5 +1,6 @@
 import { ActorResolver } from "../core/actor-resolver";
 import { ModuleLogger } from "../core/module-logger";
+import { createResourceTransactionDebugSnapshot } from "../core/workflow/workflow-debug-snapshot";
 import type { ResourceOperationResult } from "../core/resources/resource-engine";
 import type { ResourceOperationFailure } from "../core/resources/resource-transaction";
 import type { ToolkitServices } from "../toolkit-services";
@@ -116,7 +117,7 @@ async function runResourceOperation(
     ui.notifications?.error("Paranormal Toolkit: recurso alterado, mas falhou ao criar mensagem no chat.");
   }
 
-  ModuleLogger.info(`${label} realizado:`, transaction);
+  ModuleLogger.info(`${label} realizado:`, createResourceTransactionDebugSnapshot(transaction));
 }
 
 function getSelectedActorOrNotify(warningMessage: string): Actor | null {

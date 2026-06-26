@@ -1,6 +1,7 @@
 import type { AutomationDefinition } from "../automation/automation-definition";
 import type { AutomationRunFailure, AutomationRunResult, AutomationRunner } from "../automation/automation-runner";
 import { createWorkflowContext, type WorkflowContext, type WorkflowContextInput } from "./workflow-context";
+import { createWorkflowDebugSnapshot, type WorkflowDebugSnapshot } from "./workflow-debug-snapshot";
 import type { WorkflowHookEmitter } from "./workflow-hook-emitter";
 
 export class WorkflowEngine {
@@ -13,6 +14,10 @@ export class WorkflowEngine {
 
   getLastContext(): WorkflowContext | null {
     return this.lastContext;
+  }
+
+  getLastDebugSnapshot(): WorkflowDebugSnapshot | null {
+    return createWorkflowDebugSnapshot(this.lastContext);
   }
 
   async runAutomation(definition: AutomationDefinition, input: WorkflowContextInput): Promise<AutomationRunResult> {

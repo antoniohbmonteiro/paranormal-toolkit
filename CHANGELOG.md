@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.6.2
+
+### Adicionado
+
+- `WorkflowDebugSnapshot` para inspecionar workflows sem despejar documentos inteiros do Foundry no console.
+- `createWorkflowDebugSnapshot` e `createResourceTransactionDebugSnapshot` como serializers centralizados de diagnóstico.
+- `WorkflowEngine.getLastDebugSnapshot()` para expor uma visão enxuta do último workflow.
+
+### Alterado
+
+- `ParanormalToolkit.debug.workflow.lastContext()` agora retorna um snapshot limpo, com IDs, nomes, fases, rolagens, custos, dano/cura e transações resumidas.
+- Logs de sucesso de automação passaram a usar snapshot enxuto em vez de carregar `Actor`, `Item`, `Token` e `Roll` completos.
+- Flags de resumo de workflow no chat agora reutilizam o serializer centralizado.
+- Logs de operações de recurso agora usam transações resumidas, sem incluir o ator inteiro.
+
+### Decisões
+
+- `WorkflowContext` interno continua rico e com referências reais de Foundry para execução.
+- Saída de debug/API pública deve usar snapshots serializados para evitar payload gigante, referências circulares e confusão entre dado base e dado preparado.
+
 ## 0.6.1
 
 ### Adicionado

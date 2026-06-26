@@ -9,11 +9,12 @@ import {
   setAutomationDefinition
 } from "../features/automation/automation-flag-reader";
 import { getCurrentSourceTokenRef, getCurrentWorkflowTargets } from "../features/automation/workflow-target-resolver";
+import { createWorkflowDebugSnapshot, type WorkflowDebugSnapshot } from "../core/workflow/workflow-debug-snapshot";
 import { WORKFLOW_PHASES, type WorkflowPhase } from "../core/workflow/workflow-phase";
 
 export type WorkflowDebugApi = {
   phases(): readonly WorkflowPhase[];
-  lastContext(): unknown;
+  lastContext(): WorkflowDebugSnapshot | null;
   runFirstAutomation(): Promise<void>;
   runSelectedItemAutomation(): Promise<void>;
   runItemAutomationByUuid(uuid: string): Promise<void>;
@@ -26,8 +27,8 @@ export function createWorkflowDebugApi(services: ToolkitServices): WorkflowDebug
       return WORKFLOW_PHASES;
     },
 
-    lastContext(): unknown {
-      return services.workflow.getLastContext();
+    lastContext(): WorkflowDebugSnapshot | null {
+      return services.workflow.getLastDebugSnapshot();
     },
     async runFirstAutomation(): Promise<void> {
       const actor = getSelectedActorOrNotify("Nenhum ator encontrado para executar automação.");
@@ -116,7 +117,7 @@ async function runItemAutomation(services: ToolkitServices, actor: Actor, item: 
     return;
   }
 
-  ModuleLogger.info("Automação executada com sucesso.", result.value);
+  ModuleLogger.info("Automação executada com sucesso.", createWorkflowDebugSnapshot(result.value.context));
 }
 
 function handleAutomationFailure(failure: AutomationRunFailure): void {

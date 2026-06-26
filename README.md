@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.6.1`.
+Versão experimental atual: `v0.6.2`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -25,6 +25,7 @@ O projeto ainda está em fase inicial, mas já possui:
 - `WorkflowEngine` inicial com ciclo de vida/fases estilo mini Midi-QOL;
 - rolagens tipadas por intenção (`damage`, `healing`, `generic`, etc.);
 - instâncias iniciais de dano/cura no contexto de workflow;
+- snapshots limpos de debug para inspeção do último workflow;
 - hooks públicos por fase de workflow;
 - direção de presets estilo mini Chris Premades, com aplicação por flags;
 - settings de debug/output configuráveis no Foundry;
@@ -175,6 +176,8 @@ Para inspecionar o último workflow executado:
 ```js
 ParanormalToolkit.debug.workflow.lastContext();
 ```
+
+A partir da `v0.6.2`, esse comando retorna um snapshot enxuto. Ele não despeja `Actor`, `Item`, `Token` ou `Roll` completos; mostra apenas IDs, nomes, fases, rolagens resumidas, custos, instâncias de dano/cura e transações de recurso.
 
 Com debug/chat ligado, o chat card de workflow mostra a lista de fases executadas. Isso é diagnóstico de desenvolvimento, não UX final de jogo.
 
