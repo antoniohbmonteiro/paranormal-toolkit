@@ -93,6 +93,7 @@ declare class Item {
   parent: Actor | null;
   getFlag(scope: string, key: string): unknown;
   setFlag(scope: string, key: string, value: unknown): Promise<this>;
+  unsetFlag(scope: string, key: string): Promise<this>;
 }
 
 declare global {

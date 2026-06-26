@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.4.2
+
+### Corrigido
+
+- Corrigida leitura de círculo de ritual quando o sistema armazena `system.circle` como string.
+- `OrdemRitualAdapter` agora aceita `1`, `2`, `3`, `4` numéricos e também `"1"`, `"2"`, `"3"`, `"4"`.
+- Mantida validação estrita para rejeitar valores fora de 1 a 4.
+
+## 0.4.1
+
+### Corrigido
+
+- Corrigido path do círculo de rituais do sistema Ordem.
+- O adapter agora lê primeiro `system.circle`, que é o path atual dos itens do tipo `ritual`.
+- Mantido fallback para `system.ritual.circle` por tolerância a dados antigos/customizados.
+- Mensagem de erro agora mostra todos os paths testados.
+
+## 0.4.0
+
+### Adicionado
+
+- `RitualCostProvider` para cálculo de custo de rituais.
+- `OrdemRitualAdapter` para leitura do círculo do ritual.
+- Custo padrão por círculo: 1, 3, 6 e 10 PE.
+- Override de custo por flag em `flags.paranormal-toolkit.ritual.cost`.
+- Step `spendRitualCost` no `AutomationRunner`.
+- Registro do custo de ritual no `WorkflowContext` e no chat card de workflow.
+- Debug API de rituais:
+  - `ParanormalToolkit.debug.ritual.logFirstRitualCost()`;
+  - `ParanormalToolkit.debug.ritual.setCustomCostOnFirstRitual(amount, resource?)`;
+  - `ParanormalToolkit.debug.ritual.clearCustomCostOnFirstRitual()`;
+  - `ParanormalToolkit.debug.ritual.setTestCostAutomationOnFirstRitual()`.
+
+### Decisões
+
+- Rituais continuam genéricos e configuráveis por flags.
+- Nenhum conteúdo oficial ou ritual específico foi incluído.
+- Cura/dano simples de rituais ficam para a próxima etapa.
+
 ## 0.3.1
 
 ### Corrigido

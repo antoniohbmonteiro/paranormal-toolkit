@@ -1,8 +1,18 @@
 import { failure, type Result, success } from "../result";
+import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
 import type { ActorResource } from "../resources/actor-resource";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
 import type { ResourceOperation } from "../resources/resource-operation";
-import type { AutomationActorSelector, AutomationDefinition, AutomationStep, ChatCardStep, ModifyResourceStep, RollFormulaStep, SpendResourceStep } from "./automation-definition";
+import type {
+  AutomationActorSelector,
+  AutomationDefinition,
+  AutomationStep,
+  ChatCardStep,
+  ModifyResourceStep,
+  RollFormulaStep,
+  SpendResourceStep,
+  SpendRitualCostStep
+} from "./automation-definition";
 import { createWorkflowContext, type WorkflowContext, type WorkflowContextInput } from "./workflow-context";
 import type { WorkflowMessageService } from "./workflow-message-service";
 
@@ -20,6 +30,7 @@ export type AutomationRunFailureReason =
   | "roll-failed"
   | "no-target"
   | "invalid-resource-operation"
+  | "ritual-cost-failed"
   | "resource-operation-failed"
   | "chat-card-failed";
 
@@ -37,6 +48,7 @@ export type AutomationRunResult = Result<AutomationRunSuccess, AutomationRunFail
 export class AutomationRunner {
   constructor(
     private readonly resources: ResourceEngine,
+    private readonly ritualCosts: RitualCostProvider,
     private readonly messages: WorkflowMessageService
   ) {}
 
@@ -66,6 +78,8 @@ export class AutomationRunner {
     switch (step.type) {
       case "spendResource":
         return this.runSpendResourceStep(step, context, stepIndex);
+      case "spendRitualCost":
+        return this.runSpendRitualCostStep(step, context, stepIndex);
       case "rollFormula":
         return this.runRollFormulaStep(step, context, stepIndex);
       case "modifyResource":
@@ -95,6 +109,39 @@ export class AutomationRunner {
     }
 
     const result = await this.resources.spend(context.sourceActor, step.resource, amount.value);
+    return this.handleResourceOperationResult(result, context, stepIndex, step);
+  }
+
+  private async runSpendRitualCostStep(
+    step: SpendRitualCostStep,
+    context: WorkflowContext,
+    stepIndex: number
+  ): Promise<Result<void, AutomationRunFailure>> {
+    const costResult = this.ritualCosts.getCost({
+      actor: context.sourceActor,
+      ritual: context.item
+    });
+
+    if (!costResult.ok) {
+      return failure({
+        reason: "ritual-cost-failed",
+        message: costResult.error.message,
+        stepIndex,
+        step,
+        context,
+        cause: costResult.error
+      });
+    }
+
+    const cost = costResult.value;
+
+    context.ritualCosts.push({
+      ...cost,
+      itemId: context.item.id ?? null,
+      itemName: context.item.name ?? "Ritual sem nome"
+    });
+
+    const result = await this.resources.spend(context.sourceActor, cost.resource, cost.amount);
     return this.handleResourceOperationResult(result, context, stepIndex, step);
   }
 

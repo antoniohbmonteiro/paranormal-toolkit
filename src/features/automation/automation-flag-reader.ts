@@ -8,7 +8,8 @@ import type {
   ChatCardStep,
   ModifyResourceStep,
   RollFormulaStep,
-  SpendResourceStep
+  SpendResourceStep,
+  SpendRitualCostStep
 } from "../../core/automation/automation-definition";
 import { failure, type Result, success } from "../../core/result";
 
@@ -41,6 +42,23 @@ export function readAutomationDefinition(item: Item): AutomationFlagResult {
   }
 
   return success(value);
+}
+
+export function getTestRitualCostAutomationDefinition(): AutomationDefinition {
+  return {
+    version: 1,
+    label: "Gasto de custo de ritual",
+    steps: [
+      {
+        type: "spendRitualCost"
+      },
+      {
+        type: "chatCard",
+        title: "Gasto de custo de ritual",
+        message: "Calcula o custo do ritual pelo círculo e gasta o recurso configurado."
+      }
+    ]
+  };
 }
 
 export function getTestHealingAutomationDefinition(): AutomationDefinition {
@@ -95,6 +113,8 @@ function isAutomationStep(value: unknown): value is AutomationStep {
   switch (candidate.type) {
     case "spendResource":
       return isSpendResourceStep(candidate);
+    case "spendRitualCost":
+      return isSpendRitualCostStep(candidate);
     case "rollFormula":
       return isRollFormulaStep(candidate);
     case "modifyResource":
@@ -115,6 +135,12 @@ function isSpendResourceStep(value: Partial<AutomationStep>): value is SpendReso
     (candidate.resource === "PE" || candidate.resource === "PD") &&
     hasAmountSource(candidate)
   );
+}
+
+function isSpendRitualCostStep(value: Partial<AutomationStep>): value is SpendRitualCostStep {
+  const candidate = value as Partial<SpendRitualCostStep>;
+
+  return candidate.type === "spendRitualCost";
 }
 
 function isRollFormulaStep(value: Partial<AutomationStep>): value is RollFormulaStep {

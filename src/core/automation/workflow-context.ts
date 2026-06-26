@@ -1,3 +1,4 @@
+import type { RitualCost } from "../rituals/ritual-types";
 import type { ResourceTransaction } from "../resources/resource-transaction";
 
 export type WorkflowTokenRef = {
@@ -18,12 +19,18 @@ export type WorkflowRollResult = {
   roll: Roll;
 };
 
+export type WorkflowRitualCostEntry = RitualCost & {
+  itemId: string | null;
+  itemName: string;
+};
+
 export type WorkflowContext = {
   sourceActor: Actor;
   sourceToken: WorkflowTokenRef | null;
   item: Item;
   targets: WorkflowTarget[];
   rolls: Record<string, WorkflowRollResult>;
+  ritualCosts: WorkflowRitualCostEntry[];
   resourceTransactions: ResourceTransaction[];
 };
 
@@ -41,6 +48,7 @@ export function createWorkflowContext(input: WorkflowContextInput): WorkflowCont
     item: input.item,
     targets: input.targets ?? [],
     rolls: {},
+    ritualCosts: [],
     resourceTransactions: []
   };
 }

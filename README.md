@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.3.0`.
+Versão experimental atual: `v0.4.2`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -19,7 +19,9 @@ O projeto ainda está em fase inicial, mas já possui:
 - chat cards de operações de recurso;
 - captura/enriquecimento de targets em chat;
 - `AutomationRunner` inicial por flags de item;
-- API de debug organizada por domínio (`debug.actor.*` e `debug.workflow.*`).
+- custo de rituais por círculo, com override por flag;
+- step `spendRitualCost` para automações de ritual;
+- API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*` e `debug.workflow.*`).
 
 ## Requisitos
 
@@ -77,6 +79,39 @@ await ParanormalToolkit.debug.actor.healPV(3);
 await ParanormalToolkit.debug.actor.damageSAN(2);
 await ParanormalToolkit.debug.actor.recoverSAN(2);
 ```
+
+## Debug de rituais
+
+Com um token de Agente selecionado e pelo menos um item do tipo ritual no ator:
+
+```js
+ParanormalToolkit.debug.ritual.logFirstRitualCost();
+```
+
+A regra padrão de custo por círculo é:
+
+```txt
+1º círculo → 1 PE
+2º círculo → 3 PE
+3º círculo → 6 PE
+4º círculo → 10 PE
+```
+
+Também é possível sobrescrever o custo do primeiro ritual por flag:
+
+```js
+await ParanormalToolkit.debug.ritual.setCustomCostOnFirstRitual(2, "PE");
+await ParanormalToolkit.debug.ritual.clearCustomCostOnFirstRitual();
+```
+
+Para testar o step `spendRitualCost` no workflow:
+
+```js
+await ParanormalToolkit.debug.ritual.setTestCostAutomationOnFirstRitual();
+await ParanormalToolkit.debug.workflow.runFirstAutomation();
+```
+
+Essa automação só calcula o custo do ritual, gasta PE/PD e cria o chat card. Cura/dano simples entram na próxima etapa.
 
 ## Debug de workflow
 

@@ -65,6 +65,10 @@ export class ChatMessageService {
     const rollRows = Object.values(context.rolls).map(
       (roll) => `<li><strong>${escapeHtml(roll.id)}:</strong> ${escapeHtml(roll.formula)} = ${roll.total}</li>`
     );
+    const ritualCostRows = context.ritualCosts.map(
+      (cost) =>
+        `<li><strong>${escapeHtml(cost.itemName)}:</strong> ${cost.circle}º círculo — ${cost.amount} ${escapeHtml(cost.resource)} (${escapeHtml(getRitualCostSourceLabel(cost.source))})</li>`
+    );
     const transactionRows = context.resourceTransactions.map(
       (transaction) =>
         `<li><strong>${escapeHtml(transaction.actorName)}:</strong> ${escapeHtml(getOperationTitle(transaction))} — ${transaction.before.value}/${transaction.before.max} &rarr; ${transaction.after.value}/${transaction.after.max}</li>`
@@ -80,6 +84,7 @@ export class ChatMessageService {
           ${message}
           <p><strong>Origem:</strong> ${sourceName}</p>
           <p><strong>Alvo:</strong> ${targets}</p>
+          ${ritualCostRows.length > 0 ? `<p><strong>Custo de ritual:</strong></p><ul>${ritualCostRows.join("")}</ul>` : ""}
           ${rollRows.length > 0 ? `<p><strong>Rolagens:</strong></p><ul>${rollRows.join("")}</ul>` : ""}
           ${transactionRows.length > 0 ? `<p><strong>Recursos:</strong></p><ul>${transactionRows.join("")}</ul>` : ""}
         </div>
@@ -119,6 +124,14 @@ function serializeWorkflowSummary(context: WorkflowContext): Record<string, unkn
       formula: roll.formula,
       total: roll.total
     })),
+    ritualCosts: context.ritualCosts.map((cost) => ({
+      itemId: cost.itemId,
+      itemName: cost.itemName,
+      circle: cost.circle,
+      resource: cost.resource,
+      amount: cost.amount,
+      source: cost.source
+    })),
     resourceTransactions: context.resourceTransactions.map(serializeResourceTransaction)
   };
 }
@@ -146,6 +159,17 @@ function getAppliedAmountLabel(transaction: ResourceTransaction): string {
       return "Cura aplicada";
     case "recover":
       return "Recuperação aplicada";
+  }
+}
+
+function getRitualCostSourceLabel(source: string): string {
+  switch (source) {
+    case "custom-flag":
+      return "customizado";
+    case "default-by-circle":
+      return "padrão por círculo";
+    default:
+      return source;
   }
 }
 

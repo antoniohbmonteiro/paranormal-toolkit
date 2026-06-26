@@ -174,7 +174,62 @@ item.flags["paranormal-toolkit"].automation = {
 };
 ```
 
-## v0.4 — Weapon Modifications
+## v0.4 — Ritual Cost Foundation
+
+Status: implementado em `0.4.0`.
+
+Objetivo: criar a base de custo de rituais antes de automatizar efeitos reais.
+
+Escopo:
+
+- `RitualCostProvider`;
+- `OrdemRitualAdapter`;
+- leitura do círculo em `system.circle`;
+- custo padrão por círculo: 1, 3, 6 e 10 PE;
+- override por flag em `flags.paranormal-toolkit.ritual.cost`;
+- step `spendRitualCost` no `AutomationRunner`;
+- registro do custo no `WorkflowContext`;
+- chat card mostrando custo calculado e gasto aplicado.
+
+Critérios de aceite:
+
+```js
+ParanormalToolkit.debug.ritual.logFirstRitualCost();
+await ParanormalToolkit.debug.ritual.setCustomCostOnFirstRitual(2, "PE");
+await ParanormalToolkit.debug.ritual.clearCustomCostOnFirstRitual();
+await ParanormalToolkit.debug.ritual.setTestCostAutomationOnFirstRitual();
+await ParanormalToolkit.debug.workflow.runFirstAutomation();
+```
+
+## v0.5 — Basic Ritual Automations
+
+Objetivo: criar presets genéricos de ritual básico sem distribuir conteúdo oficial.
+
+Escopo planejado:
+
+- automação genérica de cura simples;
+- automação genérica de dano simples;
+- ambas usando `spendRitualCost`;
+- fórmulas configuráveis por flag;
+- alvo via targets do Foundry;
+- chat card rico;
+- nenhum ritual oficial pronto.
+
+Exemplos alvo:
+
+```txt
+Ritual de cura simples:
+- gasta custo do ritual
+- rola 1d8
+- cura PV do alvo
+
+Ritual de dano simples:
+- gasta custo do ritual
+- rola 1d8
+- causa dano em PV do alvo
+```
+
+## v0.6 — Weapon Modifications
 
 Objetivo: criar uma base genérica para modificações de armas.
 
@@ -194,22 +249,6 @@ Se o ataque for crítico, cura o atacante com base no dano causado por esse 1d8.
 ```
 
 Observação: essa modificação exige workflow rastreável. Não deve ser implementada apenas concatenando string na fórmula da arma.
-
-## v0.5 — Ritual Workflows
-
-Objetivo: sair do ritual puramente descritivo e criar automações configuráveis.
-
-Escopo planejado:
-
-- custo de ritual via `RitualCostProvider`;
-- custo padrão por círculo: 1, 3, 6 e 10;
-- override por flag;
-- gasto de PE/PD;
-- alvo;
-- rolagem de dano/cura;
-- resistência simples;
-- chat card rico;
-- preparação para Active Effects e Template Regions.
 
 ## v1.0 — Toolkit público estável
 

@@ -22,6 +22,9 @@ export const ORDEM_PATHS = {
   ritual: {
     dt: "system.ritual.DT"
   },
+  ritualItem: {
+    circleCandidates: ["system.circle", "system.ritual.circle"]
+  },
   weapon: {
     category: "system.category",
     attackFormula: "system.formulas.attack",

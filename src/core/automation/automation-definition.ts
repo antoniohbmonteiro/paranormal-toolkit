@@ -33,10 +33,14 @@ export type ModifyResourceStep = AutomationAmountSource & {
   operation: ResourceOperation;
 };
 
+export type SpendRitualCostStep = {
+  type: "spendRitualCost";
+};
+
 export type ChatCardStep = {
   type: "chatCard";
   title?: string;
   message?: string;
 };
 
-export type AutomationStep = SpendResourceStep | RollFormulaStep | ModifyResourceStep | ChatCardStep;
+export type AutomationStep = SpendResourceStep | SpendRitualCostStep | RollFormulaStep | ModifyResourceStep | ChatCardStep;
