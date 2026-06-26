@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.5.2`.
+Versão experimental atual: `v0.6.0`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -22,7 +22,8 @@ O projeto ainda está em fase inicial, mas já possui:
 - custo de rituais por círculo, com override por flag;
 - step `spendRitualCost` para automações de ritual;
 - automações básicas de ritual: cura simples e dano simples;
-- roadmap atualizado para um Workflow Engine estilo mini Midi-QOL;
+- `WorkflowEngine` inicial com ciclo de vida/fases estilo mini Midi-QOL;
+- hooks públicos por fase de workflow;
 - direção de presets estilo mini Chris Premades, com aplicação por flags;
 - settings de debug/output configuráveis no Foundry;
 - API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*`, `debug.workflow.*` e `debug.output.*`).
@@ -68,25 +69,27 @@ Depois, ative o módulo no mundo do Foundry.
 
 ## Direção arquitetural
 
-A partir da `v0.6`, o foco passa a ser construir um **Paranormal Workflow Engine**: uma base pequena, própria e sustentável para ciclo de vida de uso de item/ritual, inspirada na ideia central do Midi-QOL.
+A partir da `v0.6`, o projeto possui um **Paranormal Workflow Engine** inicial: uma base pequena, própria e sustentável para ciclo de vida de uso de item/ritual, inspirada na ideia central do Midi-QOL.
 
 Lifecycle alvo:
 
 ```txt
+created
 beforeItemUse
 resolveTargets
 beforeCost
 spendCost
+afterCost
 beforeRoll
 roll
 afterRoll
-beforeResistance
-resistance
-afterResistance
 beforeApply
 apply
 afterApply
+beforeChat
+chat
 completed
+failed
 ```
 
 A partir disso, o Toolkit deve evoluir para um modelo de presets estilo Chris Premades:
@@ -105,6 +108,53 @@ ao usar o item normalmente, o WorkflowEngine executa a automação
 
 Isso permite automatizar conteúdo que já existe na mesa sem empacotar descrições oficiais ou compêndios protegidos no módulo público.
 
+
+## Workflow lifecycle
+
+A `v0.6.0` introduz o ciclo de vida inicial de workflow. Os helpers de debug de ritual e workflow agora passam pelo `WorkflowEngine` antes de chegar no `AutomationRunner`.
+
+Fases atuais:
+
+```js
+ParanormalToolkit.debug.workflow.phases();
+```
+
+Resultado esperado:
+
+```txt
+created
+beforeItemUse
+resolveTargets
+beforeCost
+spendCost
+afterCost
+beforeRoll
+roll
+afterRoll
+beforeApply
+apply
+afterApply
+beforeChat
+chat
+completed
+failed
+```
+
+Hooks públicos emitidos por fase:
+
+```js
+Hooks.on("paranormal-toolkit.workflow.afterRoll", (event) => {
+  console.log(event.phase, event.context.rolls);
+});
+
+Hooks.on("paranormal-toolkit.workflow.afterApply", (event) => {
+  console.log(event.phase, event.context.resourceTransactions);
+});
+```
+
+Cada evento recebe `{ phase, context, stepIndex?, step?, metadata? }`.
+
+Com debug/chat ligado, o chat card de workflow mostra a lista de fases executadas. Isso é diagnóstico de desenvolvimento, não UX final de jogo.
 
 ## Debug output
 
@@ -230,10 +280,13 @@ await ParanormalToolkit.debug.workflow.runFirstAutomation();
 A automação de teste:
 
 ```txt
-1. gasta 1 PE do ator de origem;
-2. rola 1d8;
-3. cura PV do alvo marcado;
-4. cria chat card de resumo.
+1. cria um WorkflowContext;
+2. emite fases do lifecycle;
+3. gasta 1 PE do ator de origem;
+4. rola 1d8;
+5. cura PV do alvo marcado;
+6. cria chat card de resumo quando debug/chat estiver ligado;
+7. emite completed ou failed.
 ```
 
 Também é possível executar por UUID de item:

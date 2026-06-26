@@ -4,6 +4,8 @@ import { OrdemRitualCostProvider } from "./adapters/ordem/ordem-ritual-cost-prov
 import { OrdemSystemAdapter } from "./adapters/ordem/ordem-system-adapter";
 import { AutomationRunner } from "./core/automation/automation-runner";
 import { ResourceEngine } from "./core/resources/resource-engine";
+import { WorkflowEngine } from "./core/workflow/workflow-engine";
+import { WorkflowHookEmitter } from "./core/workflow/workflow-hook-emitter";
 import { DebugOutputService } from "./debug/output/debug-output-service";
 import { ChatMessageService } from "./ui/chat-message-service";
 
@@ -15,7 +17,9 @@ export type ToolkitServices = {
   resources: ResourceEngine;
   debugOutput: DebugOutputService;
   chatMessages: ChatMessageService;
+  workflowHooks: WorkflowHookEmitter;
   automation: AutomationRunner;
+  workflow: WorkflowEngine;
 };
 
 export function createToolkitServices(): ToolkitServices {
@@ -26,7 +30,9 @@ export function createToolkitServices(): ToolkitServices {
   const ordem = new OrdemSystemAdapter(resourceAdapter);
   const debugOutput = new DebugOutputService();
   const chatMessages = new ChatMessageService(debugOutput);
-  const automation = new AutomationRunner(resources, ritualCosts, chatMessages);
+  const workflowHooks = new WorkflowHookEmitter();
+  const automation = new AutomationRunner(resources, ritualCosts, chatMessages, workflowHooks);
+  const workflow = new WorkflowEngine(automation, workflowHooks);
 
   return {
     ordem,
@@ -36,6 +42,8 @@ export function createToolkitServices(): ToolkitServices {
     resources,
     debugOutput,
     chatMessages,
-    automation
+    workflowHooks,
+    automation,
+    workflow
   };
 }

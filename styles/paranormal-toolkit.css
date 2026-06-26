@@ -47,3 +47,10 @@
 .paranormal-toolkit-chat-enrichment__row {
   margin: 0;
 }
+
+.paranormal-toolkit-workflow-card__phases {
+  opacity: 0.82;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  word-break: break-word;
+}

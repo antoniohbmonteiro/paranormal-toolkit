@@ -156,7 +156,7 @@ async function runRitualAutomation(services: ToolkitServices, actor: Actor, ritu
     return;
   }
 
-  const result = await services.automation.run(definition.value, {
+  const result = await services.workflow.runAutomation(definition.value, {
     sourceActor: actor,
     sourceToken: getCurrentSourceTokenRef(),
     item: ritual,

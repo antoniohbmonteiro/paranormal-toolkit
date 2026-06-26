@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../constants";
 import type { ChatCardStep } from "../core/automation/automation-definition";
-import type { WorkflowContext } from "../core/automation/workflow-context";
+import type { WorkflowContext } from "../core/workflow/workflow-context";
 import type { ResourceTransaction } from "../core/resources/resource-transaction";
 import type { DebugOutputService } from "../debug/output/debug-output-service";
 
@@ -78,6 +78,7 @@ export class ChatMessageService {
       (transaction) =>
         `<li><strong>${escapeHtml(transaction.actorName)}:</strong> ${escapeHtml(getOperationTitle(transaction))} — ${transaction.before.value}/${transaction.before.max} &rarr; ${transaction.after.value}/${transaction.after.max}</li>`
     );
+    const phases = context.phases.map((phase) => escapeHtml(phase)).join(" &rarr; ");
 
     return `
       <section class="${MODULE_ID}-card ${MODULE_ID}-workflow-card">
@@ -92,6 +93,7 @@ export class ChatMessageService {
           ${ritualCostRows.length > 0 ? `<p><strong>Custo de ritual:</strong></p><ul>${ritualCostRows.join("")}</ul>` : ""}
           ${rollRows.length > 0 ? `<p><strong>Rolagens:</strong></p><ul>${rollRows.join("")}</ul>` : ""}
           ${transactionRows.length > 0 ? `<p><strong>Recursos:</strong></p><ul>${transactionRows.join("")}</ul>` : ""}
+          ${phases.length > 0 ? `<p class="${MODULE_ID}-workflow-card__phases"><strong>Fases:</strong> ${phases}</p>` : ""}
         </div>
       </section>
     `;
@@ -113,6 +115,7 @@ function serializeResourceTransaction(transaction: ResourceTransaction): Record<
 
 function serializeWorkflowSummary(context: WorkflowContext): Record<string, unknown> {
   return {
+    id: context.id,
     sourceActorId: context.sourceActor.id ?? null,
     sourceActorName: context.sourceActor.name ?? "Ator sem nome",
     sourceToken: context.sourceToken,
@@ -137,7 +140,9 @@ function serializeWorkflowSummary(context: WorkflowContext): Record<string, unkn
       amount: cost.amount,
       source: cost.source
     })),
-    resourceTransactions: context.resourceTransactions.map(serializeResourceTransaction)
+    resourceTransactions: context.resourceTransactions.map(serializeResourceTransaction),
+    phases: context.phases,
+    lifecycleEvents: context.lifecycleEvents
   };
 }
 

@@ -13,7 +13,9 @@ import type {
   SpendResourceStep,
   SpendRitualCostStep
 } from "./automation-definition";
-import { createWorkflowContext, type WorkflowContext, type WorkflowContextInput } from "./workflow-context";
+import type { WorkflowContext } from "../workflow/workflow-context";
+import type { WorkflowHookEmitter } from "../workflow/workflow-hook-emitter";
+import type { WorkflowPhase } from "../workflow/workflow-phase";
 import type { WorkflowMessageService } from "./workflow-message-service";
 
 export type AutomationRunSuccess = {
@@ -49,11 +51,11 @@ export class AutomationRunner {
   constructor(
     private readonly resources: ResourceEngine,
     private readonly ritualCosts: RitualCostProvider,
-    private readonly messages: WorkflowMessageService
+    private readonly messages: WorkflowMessageService,
+    private readonly lifecycle: WorkflowHookEmitter
   ) {}
 
-  async run(definition: AutomationDefinition, input: WorkflowContextInput): Promise<AutomationRunResult> {
-    const context = createWorkflowContext(input);
+  async run(definition: AutomationDefinition, context: WorkflowContext): Promise<AutomationRunResult> {
 
     if (definition.steps.length === 0) {
       return failure({
@@ -75,6 +77,26 @@ export class AutomationRunner {
   }
 
   private async runStep(step: AutomationStep, context: WorkflowContext, stepIndex: number): Promise<Result<void, AutomationRunFailure>> {
+    const phases = getStepLifecyclePhases(step);
+
+    for (const phase of phases.before) {
+      this.lifecycle.emit(phase, context, { stepIndex, step });
+    }
+
+    const result = await this.executeStep(step, context, stepIndex);
+
+    if (!result.ok) {
+      return result;
+    }
+
+    for (const phase of phases.after) {
+      this.lifecycle.emit(phase, context, { stepIndex, step });
+    }
+
+    return success(undefined);
+  }
+
+  private async executeStep(step: AutomationStep, context: WorkflowContext, stepIndex: number): Promise<Result<void, AutomationRunFailure>> {
     switch (step.type) {
       case "spendResource":
         return this.runSpendResourceStep(step, context, stepIndex);
@@ -379,6 +401,37 @@ export class AutomationRunner {
       reason: "invalid-amount-source",
       message: "Step precisa informar amount ou amountFrom."
     });
+  }
+}
+
+function getStepLifecyclePhases(step: AutomationStep): { before: WorkflowPhase[]; after: WorkflowPhase[] } {
+  switch (step.type) {
+    case "spendResource":
+    case "spendRitualCost":
+      return {
+        before: ["beforeCost", "spendCost"],
+        after: ["afterCost"]
+      };
+    case "rollFormula":
+      return {
+        before: ["beforeRoll", "roll"],
+        after: ["afterRoll"]
+      };
+    case "modifyResource":
+      return {
+        before: ["beforeApply", "apply"],
+        after: ["afterApply"]
+      };
+    case "chatCard":
+      return {
+        before: ["beforeChat", "chat"],
+        after: []
+      };
+    default:
+      return {
+        before: [],
+        after: []
+      };
   }
 }
 

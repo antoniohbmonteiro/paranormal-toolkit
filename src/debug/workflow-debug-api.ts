@@ -9,8 +9,10 @@ import {
   setAutomationDefinition
 } from "../features/automation/automation-flag-reader";
 import { getCurrentSourceTokenRef, getCurrentWorkflowTargets } from "../features/automation/workflow-target-resolver";
+import { WORKFLOW_PHASES, type WorkflowPhase } from "../core/workflow/workflow-phase";
 
 export type WorkflowDebugApi = {
+  phases(): readonly WorkflowPhase[];
   runFirstAutomation(): Promise<void>;
   runSelectedItemAutomation(): Promise<void>;
   runItemAutomationByUuid(uuid: string): Promise<void>;
@@ -19,6 +21,9 @@ export type WorkflowDebugApi = {
 
 export function createWorkflowDebugApi(services: ToolkitServices): WorkflowDebugApi {
   return {
+    phases(): readonly WorkflowPhase[] {
+      return WORKFLOW_PHASES;
+    },
     async runFirstAutomation(): Promise<void> {
       const actor = getSelectedActorOrNotify("Nenhum ator encontrado para executar automação.");
 
@@ -94,7 +99,7 @@ async function runItemAutomation(services: ToolkitServices, actor: Actor, item: 
     return;
   }
 
-  const result = await services.automation.run(definition.value, {
+  const result = await services.workflow.runAutomation(definition.value, {
     sourceActor: actor,
     sourceToken: getCurrentSourceTokenRef(),
     item,

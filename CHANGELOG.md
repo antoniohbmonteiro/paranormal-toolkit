@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.6.0
+
+### Adicionado
+
+- `core/workflow/` como fronteira interna para o mini Midi-QOL do Toolkit.
+- `WorkflowEngine` para orquestrar execução de automações.
+- `WorkflowHookEmitter` para emitir hooks públicos por fase.
+- `WorkflowContext` com `id`, `phases`, `lifecycleEvents`, origem, item, alvos, rolagens, custos de ritual e transações de recurso.
+- Fases iniciais do lifecycle: `created`, `beforeItemUse`, `resolveTargets`, `beforeCost`, `spendCost`, `afterCost`, `beforeRoll`, `roll`, `afterRoll`, `beforeApply`, `apply`, `afterApply`, `beforeChat`, `chat`, `completed` e `failed`.
+- Hook por fase em `paranormal-toolkit.workflow.<phase>`.
+- Hook genérico `paranormal-toolkit.workflow.phase`.
+- API `ParanormalToolkit.debug.workflow.phases()`.
+
+### Alterado
+
+- Helpers de debug de ritual e workflow agora executam pelo `WorkflowEngine`.
+- `AutomationRunner` passou a executar steps dentro das fases do lifecycle.
+- Chat card de debug de workflow agora inclui a sequência de fases executadas quando debug/chat está ligado.
+- API global agora expõe `ParanormalToolkit.workflow`.
+
+### Corrigido
+
+- Removido fallback deprecated `renderChatMessage`; o chat enrichment usa apenas `renderChatMessageHTML`, compatível com Foundry v14-first.
+
+### Fora de escopo
+
+- Interceptar clique normal da ficha.
+- UI Medkit.
+- Registry/Binder de presets.
+- Resistência, templates, Active Effects e automações oficiais.
+
+## 0.5.3
+
+### Corrigido
+
+- Chat enrichment passou a usar apenas `renderChatMessageHTML`.
+- Removido uso do hook deprecated `renderChatMessage`, que gerava warning no Foundry v14 e será removido no v15.
+
 ## 0.5.2
 
 ### Adicionado

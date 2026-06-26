@@ -8,6 +8,7 @@ export type ParanormalToolkitApi = {
   resources: ToolkitServices["resources"];
   ritualCosts: ToolkitServices["ritualCosts"];
   automation: ToolkitServices["automation"];
+  workflow: ToolkitServices["workflow"];
   debug: DebugApi;
 };
 
@@ -18,6 +19,7 @@ export function registerGlobalApi(services: ToolkitServices): ParanormalToolkitA
     resources: services.resources,
     ritualCosts: services.ritualCosts,
     automation: services.automation,
+    workflow: services.workflow,
     debug: createDebugApi(services)
   };
 

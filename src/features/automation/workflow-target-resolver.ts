@@ -1,4 +1,4 @@
-import type { WorkflowTarget, WorkflowTokenRef } from "../../core/automation/workflow-context";
+import type { WorkflowTarget, WorkflowTokenRef } from "../../core/workflow/workflow-context";
 
 export function getCurrentWorkflowTargets(): WorkflowTarget[] {
   const targets = Array.from(game.user?.targets ?? []);

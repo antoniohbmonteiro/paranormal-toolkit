@@ -92,21 +92,23 @@ A inspiração é o ciclo de vida de rolagem de módulos como Midi-QOL: um fluxo
 Paralelo mental com Android: o workflow precisa de fases tipo `onCreate`, `onResolveTargets`, `onRoll`, `onApply`, `onComplete`.
 
 ```ts
-export type WorkflowPass =
+export type WorkflowPhase =
+  | "created"
   | "beforeItemUse"
   | "resolveTargets"
   | "beforeCost"
   | "spendCost"
+  | "afterCost"
   | "beforeRoll"
   | "roll"
   | "afterRoll"
-  | "beforeResistance"
-  | "resistance"
-  | "afterResistance"
   | "beforeApply"
   | "apply"
   | "afterApply"
-  | "completed";
+  | "beforeChat"
+  | "chat"
+  | "completed"
+  | "failed";
 ```
 
 Fluxo alvo:
@@ -146,6 +148,51 @@ Esses eventos serão a base para:
 - integração com Paranormal FX;
 - integrações futuras com Active Effects e Template Regions;
 - customizações de mesa.
+
+## v0.6.0 — Workflow Lifecycle Foundation
+
+Status: fechado.
+
+Objetivo: criar a primeira fundação do mini Midi-QOL do Toolkit, com lifecycle rastreável para uso/rolagem de item.
+
+Escopo entregue:
+
+- `core/workflow/` como nova fronteira interna;
+- `WorkflowEngine` como orquestrador de execução;
+- `WorkflowHookEmitter` para emitir hooks públicos por fase;
+- `WorkflowContext` com `id`, `phases`, `lifecycleEvents`, origem, item, alvos, rolagens, custos e transações;
+- fases iniciais:
+  - `created`;
+  - `beforeItemUse`;
+  - `resolveTargets`;
+  - `beforeCost`;
+  - `spendCost`;
+  - `afterCost`;
+  - `beforeRoll`;
+  - `roll`;
+  - `afterRoll`;
+  - `beforeApply`;
+  - `apply`;
+  - `afterApply`;
+  - `beforeChat`;
+  - `chat`;
+  - `completed`;
+  - `failed`.
+- hooks por fase no formato `paranormal-toolkit.workflow.<phase>`;
+- hook genérico `paranormal-toolkit.workflow.phase`;
+- helpers de debug de ritual/workflow agora rodam por `WorkflowEngine`;
+- chat card de debug mostra fases executadas quando debug/chat está ligado;
+- remoção do fallback deprecated `renderChatMessage`; mantido apenas `renderChatMessageHTML` para Foundry v14-first.
+
+Fora de escopo:
+
+- interceptar clique normal da ficha;
+- UI/Medkit;
+- Preset Registry;
+- resistência;
+- templates/área;
+- Active Effects;
+- split físico em múltiplos módulos.
 
 ## v0.5.2 — Debug Output Settings
 
