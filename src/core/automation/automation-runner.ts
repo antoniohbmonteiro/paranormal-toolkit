@@ -1,8 +1,8 @@
 import { failure, type Result, success } from "../result";
 import { getRollIdFromAmountSource, resolveAutomationAmount } from "./automation-amount-resolver";
 import { createAutomationRollRequest, executeAutomationRollFormula } from "./automation-roll-executor";
+import { executeAutomationResourceOperation } from "./automation-resource-executor";
 import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
-import type { ActorResource } from "../resources/actor-resource";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
 import type { ResourceOperation } from "../resources/resource-operation";
 import type { ResourceTransaction } from "../resources/resource-transaction";
@@ -263,7 +263,7 @@ export class AutomationRunner {
     }
 
     for (const actor of actors) {
-      const result = await this.runResourceOperation(actor, step.resource, step.operation, amount.value);
+      const result = await executeAutomationResourceOperation(this.resources, actor, step.resource, step.operation, amount.value);
       const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
 
       if (!handled.ok) {
@@ -302,7 +302,7 @@ export class AutomationRunner {
     }
 
     for (const actor of actors) {
-      const result = await this.runResourceOperation(actor, step.resource, step.operation, amount.value);
+      const result = await executeAutomationResourceOperation(this.resources, actor, step.resource, step.operation, amount.value);
       const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
 
       if (!handled.ok) {
@@ -331,54 +331,6 @@ export class AutomationRunner {
         cause
       });
     }
-  }
-
-  private async runResourceOperation(
-    actor: Actor,
-    resource: ActorResource,
-    operation: ResourceOperation,
-    amount: number
-  ): Promise<ResourceOperationResult> {
-    switch (operation) {
-      case "spend":
-        if (resource !== "PE" && resource !== "PD") {
-          return this.invalidResourceOperation(actor, resource, operation, amount);
-        }
-        return this.resources.spend(actor, resource, amount);
-      case "damage":
-        if (resource !== "PV" && resource !== "SAN") {
-          return this.invalidResourceOperation(actor, resource, operation, amount);
-        }
-        return this.resources.damage(actor, resource, amount);
-      case "heal":
-        if (resource !== "PV") {
-          return this.invalidResourceOperation(actor, resource, operation, amount);
-        }
-        return this.resources.heal(actor, resource, amount);
-      case "recover":
-        if (resource !== "SAN") {
-          return this.invalidResourceOperation(actor, resource, operation, amount);
-        }
-        return this.resources.recover(actor, resource, amount);
-    }
-  }
-
-  private invalidResourceOperation(
-    actor: Actor,
-    resource: ActorResource,
-    operation: ResourceOperation,
-    amount: number
-  ): ResourceOperationResult {
-    return failure({
-      actor,
-      actorId: actor.id ?? null,
-      actorName: actor.name ?? "Ator sem nome",
-      resource,
-      operation,
-      reason: "invalid-resource-operation",
-      message: `Operação ${operation} não é válida para ${resource}.`,
-      requestedAmount: amount
-    });
   }
 
   private handleResourceOperationResult(
