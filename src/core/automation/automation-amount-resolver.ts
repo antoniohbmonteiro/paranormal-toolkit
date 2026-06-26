@@ -1,4 +1,4 @@
-﻿import { failure, type Result, success } from "../result";
+import { failure, type Result, success } from "../result";
 import type { WorkflowContext } from "../workflow/workflow-context";
 
 export type AutomationAmountInput = {
@@ -36,7 +36,7 @@ export function resolveAutomationAmount(
     if (!rollId) {
       return failure({
         reason: "invalid-amount-source",
-        message: `amountFrom invÃ¡lido: ${step.amountFrom}. Use o formato rollId.total.`
+        message: `amountFrom inválido: ${step.amountFrom}. Use o formato rollId.total.`
       });
     }
 
@@ -45,7 +45,7 @@ export function resolveAutomationAmount(
     if (!roll) {
       return failure({
         reason: "missing-roll-result",
-        message: `Resultado da rolagem nÃ£o encontrado: ${rollId}.`
+        message: `Resultado da rolagem não encontrado: ${rollId}.`
       });
     }
 
@@ -54,7 +54,7 @@ export function resolveAutomationAmount(
     if (!Number.isInteger(amount) || amount <= 0) {
       return failure({
         reason: "invalid-amount-source",
-        message: `Total da rolagem ${rollId} nÃ£o gerou um amount positivo.`
+        message: `Total da rolagem ${rollId} não gerou um amount positivo.`
       });
     }
 

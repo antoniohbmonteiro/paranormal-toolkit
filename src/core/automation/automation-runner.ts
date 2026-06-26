@@ -1,5 +1,6 @@
 import { failure, type Result, success } from "../result";
 import { getRollIdFromAmountSource, resolveAutomationAmount } from "./automation-amount-resolver";
+import { createAutomationRollRequest, executeAutomationRollFormula } from "./automation-roll-executor";
 import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
 import type { ActorResource } from "../resources/actor-resource";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
@@ -130,7 +131,7 @@ export class AutomationRunner {
       default:
         return failure({
           reason: "unsupported-step",
-          message: "Tipo de step não suportado pela versÃ£o atual do AutomationRunner.",
+          message: "Tipo de step não suportado pela versão atual do AutomationRunner.",
           stepIndex,
           step,
           context
@@ -193,7 +194,7 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    const rollRequest = this.createRollRequest(step, stepIndex);
+    const rollRequest = createAutomationRollRequest(step, stepIndex);
     context.rollRequests[rollRequest.id] = rollRequest;
 
     this.lifecycle.emit("beforeRoll", context, { stepIndex, step, rollRequest });
@@ -220,50 +221,13 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    if (!isNonEmptyString(step.id) || !isNonEmptyString(step.formula)) {
-      return failure({
-        reason: "invalid-step",
-        message: "Step rollFormula precisa de id e formula.",
-        stepIndex,
-        step,
-        context
-      });
+    const result = await executeAutomationRollFormula(step, stepIndex, context);
+
+    if (!result.ok) {
+      return failure({ ...result.error, stepIndex, step, context });
     }
 
-    try {
-      const roll = new Roll(step.formula);
-      const evaluatedRoll = await Promise.resolve(roll.evaluate());
-      const total = evaluatedRoll.total;
-
-      if (typeof total !== "number" || !Number.isFinite(total)) {
-        return failure({
-          reason: "roll-failed",
-          message: `A rolagem ${step.id} não retornou um total numÃ©rico válido.`,
-          stepIndex,
-          step,
-          context
-        });
-      }
-
-      const rollRequest = context.rollRequests[step.id] ?? this.createRollRequest(step, stepIndex);
-
-      context.rolls[step.id] = {
-        ...rollRequest,
-        total,
-        roll: evaluatedRoll
-      };
-
-      return success(undefined);
-    } catch (cause) {
-      return failure({
-        reason: "roll-failed",
-        message: `Falha ao rolar fórmula: ${step.formula}.`,
-        stepIndex,
-        step,
-        context,
-        cause
-      });
-    }
+    return success(undefined);
   }
 
   private async runModifyResourceStepWithLifecycle(
@@ -412,7 +376,7 @@ export class AutomationRunner {
       resource,
       operation,
       reason: "invalid-resource-operation",
-      message: `Operação ${operation} não Ã© vÃ¡lida para ${resource}.`,
+      message: `Operação ${operation} não é válida para ${resource}.`,
       requestedAmount: amount
     });
   }
@@ -436,18 +400,6 @@ export class AutomationRunner {
 
     context.resourceTransactions.push(result.value);
     return success(result.value);
-  }
-
-  private createRollRequest(step: RollFormulaStep, stepIndex: number): WorkflowRollRequest {
-    const intent = step.intent ?? inferRollIntent(step.id);
-
-    return {
-      id: step.id,
-      formula: step.formula,
-      intent,
-      damageType: step.damageType,
-      sourceStepIndex: stepIndex
-    };
   }
 
   private emitSpecificRollPhase(
@@ -687,23 +639,10 @@ function getSpecificApplyPhase(timing: "before" | "apply" | "after", operation: 
   return null;
 }
 
-function inferRollIntent(rollId: string): WorkflowRollIntent {
-  const normalized = rollId.toLowerCase();
-
-  if (normalized.includes("damage") || normalized.includes("dano")) return "damage";
-  if (normalized.includes("healing") || normalized.includes("heal") || normalized.includes("cura")) return "healing";
-  if (normalized.includes("attack") || normalized.includes("ataque")) return "attack";
-  if (normalized.includes("resistance") || normalized.includes("resistencia") || normalized.includes("resistência")) return "resistance";
-
-  return "generic";
-}
-
 function createWorkflowChildId(workflowId: string, type: string, stepIndex: number, index: number): string {
   return `${workflowId}.${type}.${stepIndex}.${index}`;
 }
 
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0;
-}
+
 
 

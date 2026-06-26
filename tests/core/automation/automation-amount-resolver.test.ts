@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   getRollIdFromAmountSource,
   resolveAutomationAmount
@@ -21,28 +21,28 @@ function createContextWithRoll(total: number): Pick<WorkflowContext, "rolls"> {
 }
 
 describe("resolveAutomationAmount", () => {
-  it("retorna amount fixo vÃ¡lido", () => {
+  it("retorna amount fixo válido", () => {
     const result = resolveAutomationAmount({ amount: 3 }, createContextWithRoll(10));
 
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value).toBe(3);
   });
 
-  it("falha quando amount Ã© zero", () => {
+  it("falha quando amount é zero", () => {
     const result = resolveAutomationAmount({ amount: 0 }, createContextWithRoll(10));
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.reason).toBe("invalid-amount-source");
   });
 
-  it("falha quando amount Ã© decimal", () => {
+  it("falha quando amount é decimal", () => {
     const result = resolveAutomationAmount({ amount: 1.5 }, createContextWithRoll(10));
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.reason).toBe("invalid-amount-source");
   });
 
-  it("falha quando amount Ã© negativo", () => {
+  it("falha quando amount é negativo", () => {
     const result = resolveAutomationAmount({ amount: -1 }, createContextWithRoll(10));
 
     expect(result.ok).toBe(false);
@@ -63,7 +63,7 @@ describe("resolveAutomationAmount", () => {
     if (result.ok) expect(result.value).toBe(12);
   });
 
-  it("falha quando amountFrom usa formato invÃ¡lido", () => {
+  it("falha quando amountFrom usa formato inválido", () => {
     const result = resolveAutomationAmount({ amountFrom: "healing.value" }, createContextWithRoll(12));
 
     expect(result.ok).toBe(false);
@@ -84,7 +84,7 @@ describe("resolveAutomationAmount", () => {
     if (!result.ok) expect(result.error.reason).toBe("invalid-amount-source");
   });
 
-  it("falha quando nenhum amount Ã© informado", () => {
+  it("falha quando nenhum amount é informado", () => {
     const result = resolveAutomationAmount({}, createContextWithRoll(12));
 
     expect(result.ok).toBe(false);
@@ -93,15 +93,15 @@ describe("resolveAutomationAmount", () => {
 });
 
 describe("getRollIdFromAmountSource", () => {
-  it("extrai rollId de amountFrom vÃ¡lido", () => {
+  it("extrai rollId de amountFrom válido", () => {
     expect(getRollIdFromAmountSource("healing.total")).toBe("healing");
   });
 
-  it("aceita hÃ­fen e underline no rollId", () => {
+  it("aceita hífen e underline no rollId", () => {
     expect(getRollIdFromAmountSource("ritual_healing-1.total")).toBe("ritual_healing-1");
   });
 
-  it("retorna null para formatos invÃ¡lidos", () => {
+  it("retorna null para formatos inválidos", () => {
     expect(getRollIdFromAmountSource("healing.value")).toBeNull();
     expect(getRollIdFromAmountSource(undefined)).toBeNull();
   });
