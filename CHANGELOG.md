@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.7.1
+
+### Corrigido
+
+- `AutomationBinder` agora limpa a flag `flags.paranormal-toolkit.automation` antes de gravar uma nova automação.
+- Reaplicar um preset não preserva mais campos legados/híbridos como `version`, `label` e `steps` no topo da flag.
+- O formato gravado fica restrito a `schemaVersion`, `source` e `definition`, conforme decidido para a linha 0.7.x.
+
+### Teste recomendado
+
+- Reaplicar um preset em um ritual que já tinha flag antiga/híbrida e verificar que a flag final não possui campos top-level `version`, `label` ou `steps`.
+
+## 0.7.0
+
+### Adicionado
+
+- `AutomationPreset` como modelo versionado de automações reutilizáveis.
+- `AutomationRegistry` para registrar, listar e encontrar presets compatíveis com itens.
+- `AutomationBinder` para aplicar presets em itens usando flags do Toolkit.
+- Formato novo de flag de automação com `schemaVersion`, `source` e `definition`.
+- Matchers iniciais por tipo de item, nome normalizado e círculo de ritual.
+- Presets built-in iniciais:
+  - `ritual.costOnly`;
+  - `ritual.simpleHealing`;
+  - `ritual.simpleDamage`;
+  - `generic.simpleHealing`.
+- Matcher inicial `Cicatrização` → `ritual.simpleHealing`.
+- API `ParanormalToolkit.debug.automation.*` para listar, buscar, aplicar e limpar presets.
+
+### Alterado
+
+- Helpers de debug de ritual agora aplicam presets por `AutomationRegistry` + `AutomationBinder`.
+- Helpers de debug de workflow usam o formato novo de flag.
+- `readAutomationDefinition` agora lê somente o formato novo de flag e rejeita automações antigas gravadas diretamente como definição.
+- `runFirstAutomation()` ignora itens com flag antiga inválida ao procurar o primeiro item automatizado.
+- API global expõe `automationRegistry` e `automationBinder` para inspeção/desenvolvimento.
+
+### Decisões
+
+- Não haverá compatibilidade com o formato legado de flag antes da v1.0.
+- Presets em código são a fonte inicial de verdade; compêndios funcionais tipo CPR ficam para uma etapa futura, depois da integração de uso normal do item.
+
 ## 0.6.2
 
 ### Adicionado

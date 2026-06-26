@@ -4,13 +4,14 @@ import type { AutomationRunFailure } from "../core/automation/automation-runner"
 import { ModuleLogger } from "../core/module-logger";
 import { createWorkflowDebugSnapshot } from "../core/workflow/workflow-debug-snapshot";
 import type { RitualCostResource } from "../core/rituals/ritual-types";
+import { readAutomationDefinition } from "../features/automation/automation-flag-reader";
 import {
-  getTestRitualCostAutomationDefinition,
-  getTestRitualDamageAutomationDefinition,
-  getTestRitualHealingAutomationDefinition,
-  readAutomationDefinition,
-  setAutomationDefinition
-} from "../features/automation/automation-flag-reader";
+  createRitualSimpleDamageDefinition,
+  createRitualSimpleHealingDefinition,
+  RITUAL_COST_ONLY_PRESET_ID,
+  RITUAL_SIMPLE_DAMAGE_PRESET_ID,
+  RITUAL_SIMPLE_HEALING_PRESET_ID
+} from "../features/rituals/ritual-automation-presets";
 import { getCurrentSourceTokenRef, getCurrentWorkflowTargets } from "../features/automation/workflow-target-resolver";
 import { getFirstActorRitual } from "../features/rituals/ritual-item-resolver";
 import type { ToolkitServices } from "../toolkit-services";
@@ -94,9 +95,17 @@ export function createRitualDebugApi(services: ToolkitServices): RitualDebugApi 
       const ritual = getFirstRitualOrNotify(actor);
       if (!ritual) return;
 
-      await setAutomationDefinition(ritual, getTestRitualCostAutomationDefinition());
+      const preset = services.automationRegistry.require(RITUAL_COST_ONLY_PRESET_ID);
 
-      ModuleLogger.info(`Automação de custo aplicada ao ritual: ${ritual.name}.`);
+      if (!preset.ok) {
+        ModuleLogger.warn(preset.error.message, preset.error);
+        ui.notifications?.warn(`Paranormal Toolkit: ${preset.error.message}`);
+        return;
+      }
+
+      await services.automationBinder.applyPreset(ritual, preset.value);
+
+      ModuleLogger.info(`Preset de custo aplicado ao ritual: ${ritual.name}.`);
       ui.notifications?.info(`Paranormal Toolkit: automação de custo aplicada em ${ritual.name}.`);
     },
 
@@ -112,9 +121,19 @@ export function createRitualDebugApi(services: ToolkitServices): RitualDebugApi 
         return;
       }
 
-      await setAutomationDefinition(ritual, getTestRitualHealingAutomationDefinition(formula));
+      const preset = services.automationRegistry.require(RITUAL_SIMPLE_HEALING_PRESET_ID);
 
-      ModuleLogger.info(`Automação de cura simples aplicada ao ritual: ${ritual.name}.`, { formula });
+      if (!preset.ok) {
+        ModuleLogger.warn(preset.error.message, preset.error);
+        ui.notifications?.warn(`Paranormal Toolkit: ${preset.error.message}`);
+        return;
+      }
+
+      await services.automationBinder.applyPreset(ritual, preset.value, {
+        definition: createRitualSimpleHealingDefinition(formula)
+      });
+
+      ModuleLogger.info(`Preset de cura simples aplicado ao ritual: ${ritual.name}.`, { formula });
       ui.notifications?.info(`Paranormal Toolkit: ritual de cura simples aplicado em ${ritual.name}.`);
     },
 
@@ -130,9 +149,19 @@ export function createRitualDebugApi(services: ToolkitServices): RitualDebugApi 
         return;
       }
 
-      await setAutomationDefinition(ritual, getTestRitualDamageAutomationDefinition(formula));
+      const preset = services.automationRegistry.require(RITUAL_SIMPLE_DAMAGE_PRESET_ID);
 
-      ModuleLogger.info(`Automação de dano simples aplicada ao ritual: ${ritual.name}.`, { formula });
+      if (!preset.ok) {
+        ModuleLogger.warn(preset.error.message, preset.error);
+        ui.notifications?.warn(`Paranormal Toolkit: ${preset.error.message}`);
+        return;
+      }
+
+      await services.automationBinder.applyPreset(ritual, preset.value, {
+        definition: createRitualSimpleDamageDefinition(formula)
+      });
+
+      ModuleLogger.info(`Preset de dano simples aplicado ao ritual: ${ritual.name}.`, { formula });
       ui.notifications?.info(`Paranormal Toolkit: ritual de dano simples aplicado em ${ritual.name}.`);
     },
 

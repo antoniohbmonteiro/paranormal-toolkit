@@ -1,7 +1,7 @@
-import { MODULE_ID } from "../../constants";
 import type { ActorResource } from "../../core/resources/actor-resource";
 import type { ResourceOperation } from "../../core/resources/resource-operation";
 import type { WorkflowRollIntent } from "../../core/workflow/workflow-roll";
+import type { AutomationFlagValue } from "../../core/automation/automation-binder";
 import type {
   AutomationActorSelector,
   AutomationDefinition,
@@ -13,6 +13,7 @@ import type {
   SpendRitualCostStep
 } from "../../core/automation/automation-definition";
 import { failure, type Result, success } from "../../core/result";
+import { MODULE_ID } from "../../constants";
 
 export type AutomationFlagFailureReason = "missing-automation" | "invalid-automation";
 
@@ -34,138 +35,51 @@ export function readAutomationDefinition(item: Item): AutomationFlagResult {
     });
   }
 
-  if (!isAutomationDefinition(value)) {
+  if (!isAutomationFlagValue(value)) {
     return failure({
       reason: "invalid-automation",
-      message: `Automação do item ${item.name} é inválida ou não é suportada.`,
+      message: `Automação do item ${item.name} usa formato inválido ou antigo. Reaplique um preset do Paranormal Toolkit.`,
       value
     });
   }
 
-  return success(value);
+  return success(value.definition);
 }
 
-export function getTestRitualCostAutomationDefinition(): AutomationDefinition {
-  return {
-    version: 1,
-    label: "Gasto de custo de ritual",
-    steps: [
-      {
-        type: "spendRitualCost"
-      },
-      {
-        type: "chatCard",
-        title: "Gasto de custo de ritual",
-        message: "Calcula o custo do ritual pelo círculo e gasta o recurso configurado."
-      }
-    ]
-  };
+export function hasValidAutomationFlag(item: Item): boolean {
+  return isAutomationFlagValue(item.getFlag(MODULE_ID, "automation"));
 }
 
-export function getTestRitualHealingAutomationDefinition(formula = "1d8"): AutomationDefinition {
-  return {
-    version: 1,
-    label: "Ritual de cura simples",
-    steps: [
-      {
-        type: "spendRitualCost"
-      },
-      {
-        type: "rollFormula",
-        id: "healing",
-        formula,
-        intent: "healing"
-      },
-      {
-        type: "modifyResource",
-        actor: "target",
-        resource: "PV",
-        operation: "heal",
-        amountFrom: "healing.total"
-      },
-      {
-        type: "chatCard",
-        title: "Ritual de cura simples",
-        message: "Gasta o custo do ritual, rola a fórmula de cura e recupera PV do alvo."
-      }
-    ]
-  };
+export function isAutomationFlagValue(value: unknown): value is AutomationFlagValue {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<AutomationFlagValue>;
+
+  return candidate.schemaVersion === 1 && isAutomationFlagSource(candidate.source) && isAutomationDefinition(candidate.definition);
 }
 
-export function getTestRitualDamageAutomationDefinition(formula = "1d8"): AutomationDefinition {
-  return {
-    version: 1,
-    label: "Ritual de dano simples",
-    steps: [
-      {
-        type: "spendRitualCost"
-      },
-      {
-        type: "rollFormula",
-        id: "damage",
-        formula,
-        intent: "damage",
-        damageType: "generic"
-      },
-      {
-        type: "modifyResource",
-        actor: "target",
-        resource: "PV",
-        operation: "damage",
-        amountFrom: "damage.total"
-      },
-      {
-        type: "chatCard",
-        title: "Ritual de dano simples",
-        message: "Gasta o custo do ritual, rola a fórmula de dano e causa dano em PV do alvo."
-      }
-    ]
-  };
-}
-
-export function getTestHealingAutomationDefinition(): AutomationDefinition {
-  return {
-    version: 1,
-    label: "Cura simples de teste",
-    steps: [
-      {
-        type: "spendResource",
-        actor: "self",
-        resource: "PE",
-        amount: 1
-      },
-      {
-        type: "rollFormula",
-        id: "healing",
-        formula: "1d8",
-        intent: "healing"
-      },
-      {
-        type: "modifyResource",
-        actor: "target",
-        resource: "PV",
-        operation: "heal",
-        amountFrom: "healing.total"
-      },
-      {
-        type: "chatCard",
-        title: "Cura simples de teste",
-        message: "Gasta 1 PE, rola 1d8 e cura PV do alvo."
-      }
-    ]
-  };
-}
-
-export async function setAutomationDefinition(item: Item, definition: AutomationDefinition): Promise<void> {
-  await item.setFlag(MODULE_ID, "automation", definition);
-}
-
-function isAutomationDefinition(value: unknown): value is AutomationDefinition {
+export function isAutomationDefinition(value: unknown): value is AutomationDefinition {
   if (!value || typeof value !== "object") return false;
 
   const candidate = value as Partial<AutomationDefinition>;
 
   return candidate.version === 1 && isNonEmptyString(candidate.label) && Array.isArray(candidate.steps) && candidate.steps.every(isAutomationStep);
+}
+
+function isAutomationFlagSource(value: unknown): value is AutomationFlagValue["source"] {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<AutomationFlagValue["source"]>;
+
+  if (candidate.type === "preset") {
+    return isNonEmptyString(candidate.presetId) && isNonEmptyString(candidate.presetVersion) && isNonEmptyString(candidate.appliedAt);
+  }
+
+  if (candidate.type === "manual") {
+    return isNonEmptyString(candidate.label) && isNonEmptyString(candidate.appliedAt);
+  }
+
+  return false;
 }
 
 function isAutomationStep(value: unknown): value is AutomationStep {

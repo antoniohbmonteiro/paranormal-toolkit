@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../../constants";
+import { hasValidAutomationFlag } from "./automation-flag-reader";
 
 export function getActorItems(actor: Actor): Item[] {
   const maybeItems = actor.items;
@@ -27,11 +27,7 @@ export function getFirstActorItem(actor: Actor): Item | null {
 }
 
 export function getFirstActorItemWithAutomation(actor: Actor): Item | null {
-  return getActorItems(actor).find(hasToolkitAutomationFlag) ?? null;
-}
-
-function hasToolkitAutomationFlag(item: Item): boolean {
-  return item.getFlag(MODULE_ID, "automation") !== undefined;
+  return getActorItems(actor).find(hasValidAutomationFlag) ?? null;
 }
 
 function isIterable(value: unknown): value is Iterable<unknown> {

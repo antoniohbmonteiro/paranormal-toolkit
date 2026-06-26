@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.6.2`.
+Versão experimental atual: `v0.7.1`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -27,6 +27,8 @@ O projeto ainda está em fase inicial, mas já possui:
 - instâncias iniciais de dano/cura no contexto de workflow;
 - snapshots limpos de debug para inspeção do último workflow;
 - hooks públicos por fase de workflow;
+- `AutomationRegistry` e `AutomationBinder` para presets versionados;
+- presets built-in iniciais de ritual e debug;
 - direção de presets estilo mini Chris Premades, com aplicação por flags;
 - settings de debug/output configuráveis no Foundry;
 - API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*`, `debug.workflow.*` e `debug.output.*`).
@@ -118,6 +120,53 @@ ao usar o item normalmente, o WorkflowEngine executa a automação
 
 Isso permite automatizar conteúdo que já existe na mesa sem empacotar descrições oficiais ou compêndios protegidos no módulo público.
 
+
+
+## Automation Registry e Preset Binder
+
+A partir da `v0.7.0`, automações novas são aplicadas por preset registrado, usando somente o formato novo de flag. A `v0.7.1` garante que reaplicar um preset limpe totalmente qualquer formato híbrido/legado antes de gravar a flag nova. O core não executa mais uma definição antiga gravada diretamente em `flags.paranormal-toolkit.automation.steps`.
+
+Formato conceitual da flag:
+
+```ts
+flags["paranormal-toolkit"].automation = {
+  schemaVersion: 1,
+  source: {
+    type: "preset",
+    presetId: "ritual.simpleHealing",
+    presetVersion: "1.0.0",
+    appliedAt: "...",
+    appliedBy: "..."
+  },
+  definition: {
+    version: 1,
+    label: "Ritual de cura simples",
+    steps: []
+  }
+};
+```
+
+Presets built-in iniciais:
+
+```txt
+ritual.costOnly
+ritual.simpleHealing
+ritual.simpleDamage
+generic.simpleHealing
+```
+
+Debug/API:
+
+```js
+ParanormalToolkit.debug.automation.listPresets();
+ParanormalToolkit.debug.automation.findPresetsForFirstRitual();
+
+await ParanormalToolkit.debug.automation.applyPresetToFirstRitual("ritual.simpleHealing");
+await ParanormalToolkit.debug.automation.applyBestPresetToFirstRitual();
+await ParanormalToolkit.debug.automation.clearAutomationFromFirstRitual();
+```
+
+`Cicatrização` já é reconhecida por matcher de nome normalizado e aponta para `ritual.simpleHealing`. Isso é o começo do modelo mini Chris Premades: nome pode ajudar a aplicar um preset, mas a execução real usa a flag gravada no item.
 
 ## Workflow lifecycle
 

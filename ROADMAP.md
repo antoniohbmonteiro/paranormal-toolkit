@@ -165,6 +165,37 @@ Esses eventos serão a base para:
 - customizações de mesa.
 
 
+
+## v0.7.0 — Automation Registry + Preset Binder
+
+Status: fechado.
+
+Objetivo: iniciar a camada mini Chris Premades do Toolkit, com presets versionados e aplicáveis em itens por flag nova.
+
+Escopo entregue:
+
+- `AutomationPreset`;
+- `AutomationRegistry`;
+- `AutomationBinder`;
+- matchers por tipo de item, nome normalizado e círculo de ritual;
+- formato novo de flag com `schemaVersion`, `source` e `definition`;
+- presets built-in iniciais de ritual;
+- matcher `Cicatrização` → `ritual.simpleHealing`;
+- API `ParanormalToolkit.debug.automation.*`;
+- helpers antigos de debug passando pela registry/binder por baixo.
+
+Decisão arquitetural:
+
+- não carregar compatibilidade com flag antiga antes da v1.0;
+- o compêndio funcional tipo CPR será construído depois sobre essa base, não como fonte inicial da regra.
+
+Fora de escopo:
+
+- UI Medkit;
+- compêndios funcionais;
+- interceptar clique normal do item;
+- user preset sources.
+
 ## v0.6.2 — Workflow Debug Snapshot
 
 Status: fechado.

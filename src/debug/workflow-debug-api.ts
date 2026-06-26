@@ -3,11 +3,8 @@ import type { AutomationRunFailure } from "../core/automation/automation-runner"
 import { ModuleLogger } from "../core/module-logger";
 import type { ToolkitServices } from "../toolkit-services";
 import { getFirstActorItem, getFirstActorItemWithAutomation } from "../features/automation/actor-item-resolver";
-import {
-  getTestHealingAutomationDefinition,
-  readAutomationDefinition,
-  setAutomationDefinition
-} from "../features/automation/automation-flag-reader";
+import { readAutomationDefinition } from "../features/automation/automation-flag-reader";
+import { GENERIC_SIMPLE_HEALING_PRESET_ID } from "../features/rituals/ritual-automation-presets";
 import { getCurrentSourceTokenRef, getCurrentWorkflowTargets } from "../features/automation/workflow-target-resolver";
 import { createWorkflowDebugSnapshot, type WorkflowDebugSnapshot } from "../core/workflow/workflow-debug-snapshot";
 import { WORKFLOW_PHASES, type WorkflowPhase } from "../core/workflow/workflow-phase";
@@ -85,8 +82,16 @@ export function createWorkflowDebugApi(services: ToolkitServices): WorkflowDebug
       }
 
       try {
-        await setAutomationDefinition(item, getTestHealingAutomationDefinition());
-        ModuleLogger.info(`Automação de teste aplicada ao item: ${item.name}.`);
+        const preset = services.automationRegistry.require(GENERIC_SIMPLE_HEALING_PRESET_ID);
+
+        if (!preset.ok) {
+          ModuleLogger.warn(preset.error.message, preset.error);
+          ui.notifications?.warn(`Paranormal Toolkit: ${preset.error.message}`);
+          return;
+        }
+
+        await services.automationBinder.applyPreset(item, preset.value);
+        ModuleLogger.info(`Preset de teste aplicado ao item: ${item.name}.`);
         ui.notifications?.info(`Paranormal Toolkit: automação de teste aplicada em ${item.name}.`);
       } catch (cause) {
         ModuleLogger.error("Falha ao configurar automação de teste no item.", cause);
