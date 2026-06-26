@@ -1,4 +1,5 @@
 import { failure, type Result, success } from "../result";
+import { getRollIdFromAmountSource, resolveAutomationAmount } from "./automation-amount-resolver";
 import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
 import type { ActorResource } from "../resources/actor-resource";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
@@ -129,7 +130,7 @@ export class AutomationRunner {
       default:
         return failure({
           reason: "unsupported-step",
-          message: "Tipo de step não suportado pela versão atual do AutomationRunner.",
+          message: "Tipo de step não suportado pela versÃ£o atual do AutomationRunner.",
           stepIndex,
           step,
           context
@@ -142,7 +143,7 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    const amount = this.resolveAmount(step, context);
+    const amount = resolveAutomationAmount(step, context);
 
     if (!amount.ok) {
       return failure({ ...amount.error, stepIndex, step, context });
@@ -237,7 +238,7 @@ export class AutomationRunner {
       if (typeof total !== "number" || !Number.isFinite(total)) {
         return failure({
           reason: "roll-failed",
-          message: `A rolagem ${step.id} não retornou um total numérico válido.`,
+          message: `A rolagem ${step.id} não retornou um total numÃ©rico válido.`,
           stepIndex,
           step,
           context
@@ -270,7 +271,7 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    const amount = this.resolveAmount(step, context);
+    const amount = resolveAutomationAmount(step, context);
 
     if (!amount.ok) {
       return failure({ ...amount.error, stepIndex, step, context });
@@ -318,7 +319,7 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    const amount = this.resolveAmount(step, context);
+    const amount = resolveAutomationAmount(step, context);
 
     if (!amount.ok) {
       return failure({ ...amount.error, stepIndex, step, context });
@@ -411,7 +412,7 @@ export class AutomationRunner {
       resource,
       operation,
       reason: "invalid-resource-operation",
-      message: `Operação ${operation} não é válida para ${resource}.`,
+      message: `Operação ${operation} não Ã© vÃ¡lida para ${resource}.`,
       requestedAmount: amount
     });
   }
@@ -631,57 +632,6 @@ export class AutomationRunner {
     }
   }
 
-  private resolveAmount(
-    step: { amount?: number; amountFrom?: string },
-    context: WorkflowContext
-  ): Result<number, Omit<AutomationRunFailure, "stepIndex" | "step" | "context">> {
-    if (typeof step.amount === "number") {
-      if (!Number.isInteger(step.amount) || step.amount <= 0) {
-        return failure({
-          reason: "invalid-amount-source",
-          message: "Amount precisa ser um inteiro positivo."
-        });
-      }
-
-      return success(step.amount);
-    }
-
-    if (typeof step.amountFrom === "string") {
-      const rollId = getRollIdFromAmountSource(step.amountFrom);
-
-      if (!rollId) {
-        return failure({
-          reason: "invalid-amount-source",
-          message: `amountFrom inválido: ${step.amountFrom}. Use o formato rollId.total.`
-        });
-      }
-
-      const roll = context.rolls[rollId];
-
-      if (!roll) {
-        return failure({
-          reason: "missing-roll-result",
-          message: `Resultado da rolagem não encontrado: ${rollId}.`
-        });
-      }
-
-      const amount = Math.trunc(roll.total);
-
-      if (!Number.isInteger(amount) || amount <= 0) {
-        return failure({
-          reason: "invalid-amount-source",
-          message: `Total da rolagem ${rollId} não gerou um amount positivo.`
-        });
-      }
-
-      return success(amount);
-    }
-
-    return failure({
-      reason: "invalid-amount-source",
-      message: "Step precisa informar amount ou amountFrom."
-    });
-  }
 }
 
 function getGenericStepLifecyclePhases(step: AutomationStep): { before: WorkflowPhase[]; after: WorkflowPhase[] } {
@@ -748,13 +698,6 @@ function inferRollIntent(rollId: string): WorkflowRollIntent {
   return "generic";
 }
 
-function getRollIdFromAmountSource(amountFrom: string | undefined): string | null {
-  if (!amountFrom) return null;
-
-  const match = /^(?<rollId>[A-Za-z0-9_-]+)\.total$/.exec(amountFrom);
-  return match?.groups?.rollId ?? null;
-}
-
 function createWorkflowChildId(workflowId: string, type: string, stepIndex: number, index: number): string {
   return `${workflowId}.${type}.${stepIndex}.${index}`;
 }
@@ -762,3 +705,5 @@ function createWorkflowChildId(workflowId: string, type: string, stepIndex: numb
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
+
+
