@@ -1,39 +1,34 @@
 # Paranormal Toolkit
 
-Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v14+.
+Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundry VTT v14+.
 
 > Projeto não-oficial e independente. Este módulo é pensado para ser compatível com o sistema não-oficial de Ordem Paranormal para Foundry VTT, cujo `game.system.id` esperado é `ordemparanormal`.
 
 ## Status
 
-Versão experimental atual: `v0.8.0`.
+Versão experimental atual: `v0.8.1`.
 
-O projeto ainda está em fase inicial, mas já possui:
+O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, mas a UX final de mesa ainda está em construção.
 
-- manifesto `module.json` para Foundry v14+;
-- build ES Module em `dist/main.js`;
-- fontes TypeScript em `src/`;
-- detecção do sistema `ordemparanormal`;
-- adapters para isolar paths do sistema;
-- `ResourceEngine` para PV, SAN, PE e PD;
-- chat cards de operações de recurso;
-- captura/enriquecimento de targets em chat;
-- `AutomationRunner` inicial por flags de item;
-- custo de rituais por círculo, com override por flag;
-- step `spendRitualCost` para automações de ritual;
-- automações básicas de ritual: cura simples e dano simples;
-- `WorkflowEngine` inicial com ciclo de vida/fases estilo mini Midi-QOL;
-- rolagens tipadas por intenção (`damage`, `healing`, `generic`, etc.);
-- instâncias iniciais de dano/cura no contexto de workflow;
-- snapshots limpos de debug para inspeção do último workflow;
-- hooks públicos por fase de workflow;
-- `AutomationRegistry` e `AutomationBinder` para presets versionados;
-- presets built-in iniciais de ritual e debug;
-- direção de presets estilo mini Chris Premades, com aplicação por flags;
-- integração experimental com uso normal de item pela ficha;
-- fallback isolado em `OrdemItem.roll()`, preparado para trocar por hook oficial `ordemparanormal.itemUsed`;
-- settings de debug/output configuráveis no Foundry;
-- API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*`, `debug.workflow.*`, `debug.itemUseIntegration.*` e `debug.output.*`).
+Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem compatibilidade retroativa.
+
+## Principais recursos
+
+| Recurso | O que faz | Status |
+|---|---|---|
+| Custo de rituais | Calcula o custo pelo círculo e gasta PE quando a automação é usada. | Implementado |
+| Cura e dano automáticos | Rola a fórmula configurada e aplica cura ou dano no alvo selecionado. | Implementado |
+| Controle de recursos | Gasta, cura, recupera ou reduz PV, SAN, PE e PD respeitando limites da ficha. | Implementado |
+| Automações por item | Permite aplicar automações em rituais, habilidades ou itens usando flags próprias do módulo. | Implementado |
+| Uso pela ficha | Executa automações experimentais ao usar o item normalmente pela ficha do sistema. | Experimental |
+| Modos de automação | Permitirá ao mestre escolher entre manual, botões, confirmação ou execução automática. | Planejado |
+| Botões no chat | Permitirá rolar, gastar recurso e aplicar efeitos direto pelo card do chat. | Planejado |
+| Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
+| Condições e efeitos | Aplicará condições e Active Effects quando rituais, habilidades ou regras pedirem. | Planejado |
+| Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
+| Integração com animações | Preparará eventos para efeitos visuais, sons e animações em um módulo companion. | Planejado |
+
+O Paranormal Toolkit é pensado para ser configurável por mesa: o mestre pode deixar tudo manual, usar apenas botões assistidos ou ativar automações mais completas conforme o estilo do grupo.
 
 ## Requisitos
 
@@ -73,60 +68,27 @@ mklink /D "C:\Users\SEU_USUARIO\AppData\Local\FoundryVTT\Data\modules\paranormal
 
 Depois, ative o módulo no mundo do Foundry.
 
+## Como funciona
 
-## Direção arquitetural
+O Toolkit usa automações aplicadas em itens por flags próprias do módulo.
 
-A partir da `v0.6`, o projeto possui um **Paranormal Workflow Engine** inicial: uma base pequena, própria e sustentável para ciclo de vida de uso de item/ritual, inspirada na ideia central do Midi-QOL.
-
-Lifecycle alvo:
-
-```txt
-created
-beforeItemUse
-resolveTargets
-beforeCost
-spendCost
-afterCost
-beforeRoll
-beforeDamageRoll / beforeHealingRoll
-roll
-damageRoll / healingRoll
-afterDamageRoll / afterHealingRoll
-afterRoll
-beforeDamageResolution / damageResolution / afterDamageResolution
-beforeApply
-beforeApplyDamage / beforeApplyHealing
-apply
-applyDamage / applyHealing
-afterApplyDamage / afterApplyHealing
-afterApply
-beforeChat
-chat
-completed
-failed
-```
-
-A partir disso, o Toolkit deve evoluir para um modelo de presets estilo Chris Premades:
+Fluxo conceitual:
 
 ```txt
-item existente na mesa/sistema
+item usado
 ↓
-Toolkit encontra preset compatível
+resolver origem e alvos
 ↓
-mestre aplica preset
+gastar custo/recurso
 ↓
-item recebe flags do Toolkit
+rolar fórmula
 ↓
-ao usar o item normalmente, o WorkflowEngine executa a automação
+aplicar cura/dano/efeito
+↓
+gerar resumo
 ```
 
-Isso permite automatizar conteúdo que já existe na mesa sem empacotar descrições oficiais ou compêndios protegidos no módulo público.
-
-
-
-## Automation Registry e Preset Binder
-
-A partir da `v0.7.0`, automações novas são aplicadas por preset registrado, usando somente o formato novo de flag. A `v0.7.1` garante que reaplicar um preset limpe totalmente qualquer formato híbrido/legado antes de gravar a flag nova. O core não executa mais uma definição antiga gravada diretamente em `flags.paranormal-toolkit.automation.steps`.
+A descrição do item não é fonte de verdade para automação. Rolagens inline como `[[2d8+2]]` pertencem ao texto/renderização do Foundry, enquanto a automação real fica em dado estruturado salvo na flag do item.
 
 Formato conceitual da flag:
 
@@ -148,7 +110,9 @@ flags["paranormal-toolkit"].automation = {
 };
 ```
 
-Presets built-in iniciais:
+## Presets iniciais
+
+Presets built-in atuais:
 
 ```txt
 ritual.costOnly
@@ -157,36 +121,15 @@ ritual.simpleDamage
 generic.simpleHealing
 ```
 
-Debug/API:
+`Cicatrização` já é reconhecida por nome normalizado e aponta para um preset inicial de cura. Isso é apenas o começo do modelo: nome pode ajudar a encontrar uma automação compatível, mas a execução real usa a flag gravada no item.
 
-```js
-ParanormalToolkit.debug.automation.listPresets();
-ParanormalToolkit.debug.automation.findPresetsForFirstRitual();
+## Uso pela ficha
 
-await ParanormalToolkit.debug.automation.applyPresetToFirstRitual("ritual.simpleHealing");
-await ParanormalToolkit.debug.automation.applyBestPresetToFirstRitual();
-await ParanormalToolkit.debug.automation.clearAutomationFromFirstRitual();
-```
+A partir da linha `0.8.x`, o Toolkit consegue executar automações quando um item automatizado é usado normalmente pela ficha do sistema.
 
-`Cicatrização` já é reconhecida por matcher de nome normalizado e aponta para `ritual.simpleHealing`. Isso é o começo do modelo mini Chris Premades: nome pode ajudar a aplicar um preset, mas a execução real usa a flag gravada no item.
+A execução automática fica desligada por padrão por ser experimental.
 
-## Item Use Integration
-
-A partir da `v0.8.0`, o Toolkit consegue executar automações aplicadas ao item quando ele é usado normalmente pela ficha.
-
-A arquitetura é **fallback-first, hook-ready**:
-
-```txt
-hoje:
-OrdemItem.roll() wrapper isolado
-
-futuro ideal:
-ordemparanormal.itemUsed hook oficial
-```
-
-O fallback é registrado no adapter do sistema Ordem e chama o `roll()` original antes de executar qualquer automação do Toolkit. Assim, o card normal do sistema continua aparecendo mesmo se a automação falhar.
-
-A execução automática fica desligada por padrão. Para testar:
+Para testar:
 
 ```js
 await ParanormalToolkit.debug.automation.applyBestPresetToFirstRitual();
@@ -195,7 +138,7 @@ await ParanormalToolkit.debug.itemUseIntegration.enable();
 ParanormalToolkit.debug.itemUseIntegration.status();
 ```
 
-Depois use o item/ritual pela ficha. Se o item tiver `flags.paranormal-toolkit.automation.definition`, o `WorkflowEngine` será executado usando o ator do item como origem e os targets atuais do usuário como alvos.
+Depois use o item/ritual pela ficha. Se o item tiver `flags.paranormal-toolkit.automation.definition`, o workflow será executado usando o ator do item como origem e os targets atuais do usuário como alvos.
 
 Para desativar:
 
@@ -203,57 +146,24 @@ Para desativar:
 await ParanormalToolkit.debug.itemUseIntegration.disable();
 ```
 
-## Workflow lifecycle
+## API de debug
 
-A `v0.6.0` introduz o ciclo de vida inicial de workflow. Os helpers de debug de ritual e workflow agora passam pelo `WorkflowEngine` antes de chegar no `AutomationRunner`.
-
-Fases atuais:
+A API global de debug fica disponível em:
 
 ```js
-ParanormalToolkit.debug.workflow.phases();
+ParanormalToolkit
 ```
 
-Resultado esperado:
+Principais grupos atuais:
 
 ```txt
-created
-beforeItemUse
-resolveTargets
-beforeCost
-spendCost
-afterCost
-beforeRoll
-beforeDamageRoll / beforeHealingRoll
-roll
-damageRoll / healingRoll
-afterDamageRoll / afterHealingRoll
-afterRoll
-beforeDamageResolution / damageResolution / afterDamageResolution
-beforeApply
-beforeApplyDamage / beforeApplyHealing
-apply
-applyDamage / applyHealing
-afterApplyDamage / afterApplyHealing
-afterApply
-beforeChat
-chat
-completed
-failed
+debug.actor.*
+debug.ritual.*
+debug.workflow.*
+debug.automation.*
+debug.itemUseIntegration.*
+debug.output.*
 ```
-
-Hooks públicos emitidos por fase:
-
-```js
-Hooks.on("paranormal-toolkit.workflow.afterRoll", (event) => {
-  console.log(event.phase, event.context.rolls);
-});
-
-Hooks.on("paranormal-toolkit.workflow.afterApply", (event) => {
-  console.log(event.phase, event.context.resourceTransactions);
-});
-```
-
-Cada evento recebe `{ phase, context, stepIndex?, step?, rollRequest?, rollResult?, damage?, healing?, resourceTransaction?, metadata? }`.
 
 Para inspecionar o último workflow executado:
 
@@ -261,158 +171,52 @@ Para inspecionar o último workflow executado:
 ParanormalToolkit.debug.workflow.lastContext();
 ```
 
-A partir da `v0.6.2`, esse comando retorna um snapshot enxuto. Ele não despeja `Actor`, `Item`, `Token` ou `Roll` completos; mostra apenas IDs, nomes, fases, rolagens resumidas, custos, instâncias de dano/cura e transações de recurso.
+Esse comando retorna um snapshot enxuto, sem despejar `Actor`, `Item`, `Token` ou `Roll` completos no console.
 
-Com debug/chat ligado, o chat card de workflow mostra a lista de fases executadas. Isso é diagnóstico de desenvolvimento, não UX final de jogo.
+## Roadmap resumido
 
-## Debug output
+Antes da `1.0.0`, o foco é estabilizar a base:
 
-A partir da `v0.5.2`, os cards de debug/teste no chat são controlados por settings do módulo.
+- adicionar testes unitários para core;
+- separar melhor core puro de APIs globais do Foundry;
+- reduzir responsabilidades do `AutomationRunner`;
+- trocar `autoRun` boolean por modos de automação;
+- usar `ordemparanormal.itemUsed` como integração principal quando disponível;
+- manter wrapper de item como fallback temporário;
+- adicionar botões no chat para automação assistida;
+- criar bloqueio visual de rolagens inline duplicadas;
+- criar presets específicos por ritual;
+- iniciar automações de armas, melhorias e categoria;
+- preparar integração com condições, Active Effects V2 e Template Regions.
 
-Settings disponíveis em **Configure Settings → Module Settings → Paranormal Toolkit**:
+A versão `1.0.0` deve representar uma API interna mais estável, flags documentadas, UX utilizável em mesa real, testes mínimos para core e documentação técnica separada.
 
-```txt
-Ativar debug do Paranormal Toolkit
-Debug no console
-Debug como notificação
-Debug no chat
-```
+## Práticas de Git e releases
 
-Defaults:
+Antes da `1.0.0`, o projeto usa um fluxo simples de desenvolvimento para permitir iteração rápida.
 
-```txt
-debug desligado
-console ligado
-notificação ligada
-chat desligado
-```
+Após a `1.0.0`, a intenção é adotar práticas mais formais de manutenção, como:
 
-O chat de debug, quando ligado, é enviado como whisper para GMs.
-
-Também é possível controlar pelo console:
-
-```js
-ParanormalToolkit.debug.output.status();
-
-await ParanormalToolkit.debug.output.enable();
-await ParanormalToolkit.debug.output.disable();
-
-await ParanormalToolkit.debug.output.enableChat();
-await ParanormalToolkit.debug.output.disableChat();
-```
-
-Com o debug/chat desligado, helpers de teste continuam alterando recursos e executando automações, mas não criam cards de diagnóstico no chat.
-
-## Debug de recursos
-
-Com um token de Agente selecionado na cena, abra o console do Foundry e rode:
-
-```js
-ParanormalToolkit.debug.actor.logResources();
-```
-
-Operações disponíveis:
-
-```js
-await ParanormalToolkit.debug.actor.spendPE(1);
-await ParanormalToolkit.debug.actor.spendPD(1);
-await ParanormalToolkit.debug.actor.damagePV(3);
-await ParanormalToolkit.debug.actor.healPV(3);
-await ParanormalToolkit.debug.actor.damageSAN(2);
-await ParanormalToolkit.debug.actor.recoverSAN(2);
-```
-
-## Debug de rituais
-
-Com um token de Agente selecionado e pelo menos um item do tipo ritual no ator:
-
-```js
-ParanormalToolkit.debug.ritual.logFirstRitualCost();
-```
-
-A regra padrão de custo por círculo é:
-
-```txt
-1º círculo → 1 PE
-2º círculo → 3 PE
-3º círculo → 6 PE
-4º círculo → 10 PE
-```
-
-Também é possível sobrescrever o custo do primeiro ritual por flag:
-
-```js
-await ParanormalToolkit.debug.ritual.setCustomCostOnFirstRitual(2, "PE");
-await ParanormalToolkit.debug.ritual.clearCustomCostOnFirstRitual();
-```
-
-Para testar o step `spendRitualCost` no workflow:
-
-```js
-await ParanormalToolkit.debug.ritual.setTestCostAutomationOnFirstRitual();
-await ParanormalToolkit.debug.ritual.runFirstRitualAutomation();
-```
-
-Para testar rituais básicos com alvo marcado:
-
-```js
-await ParanormalToolkit.debug.ritual.setTestHealingAutomationOnFirstRitual();
-await ParanormalToolkit.debug.ritual.runFirstRitualAutomation();
-
-await ParanormalToolkit.debug.ritual.setTestDamageAutomationOnFirstRitual();
-await ParanormalToolkit.debug.ritual.runFirstRitualAutomation();
-```
-
-A fórmula padrão do preset de cura de `Cicatrização` é `2d8+2`. As fórmulas também podem ser sobrescritas no helper de debug:
-
-```js
-await ParanormalToolkit.debug.ritual.setTestHealingAutomationOnFirstRitual("2d8");
-await ParanormalToolkit.debug.ritual.setTestDamageAutomationOnFirstRitual("2d6");
-```
-
-Essas automações são genéricas de teste. Elas não distribuem conteúdo oficial.
-
-## Debug de workflow
-
-Para testar a primeira automação genérica:
-
-```js
-await ParanormalToolkit.debug.workflow.setTestHealingAutomationOnFirstItem();
-```
-
-Depois selecione o conjurador, marque um alvo e rode:
-
-```js
-await ParanormalToolkit.debug.workflow.runFirstAutomation();
-```
-
-A automação de teste:
-
-```txt
-1. cria um WorkflowContext;
-2. emite fases do lifecycle;
-3. gasta 1 PE do ator de origem;
-4. rola 2d8+2;
-5. cura PV do alvo marcado;
-6. cria chat card de resumo quando debug/chat estiver ligado;
-7. emite completed ou failed.
-```
-
-Também é possível executar por UUID de item:
-
-```js
-await ParanormalToolkit.debug.workflow.runItemAutomationByUuid("Actor.x.Item.y");
-```
+- Pull Requests para mudanças relevantes;
+- branch principal protegida;
+- Git Flow ou fluxo equivalente com branch estável de release;
+- versionamento semântico;
+- tags por release;
+- changelog por versão;
+- CI com typecheck, build e testes;
+- política de compatibilidade para flags e presets.
 
 ## Princípios
 
 - O Toolkit é companion opcional, não substituto do sistema base.
 - Automação é opt-in por flags.
-- Nome de item pode ser usado como matcher inicial de preset, mas a execução deve depender de flags aplicadas ao item.
-- O Toolkit público não deve redistribuir textos oficiais, descrições oficiais, artes ou compêndios protegidos.
+- A descrição do item não é fonte de verdade para automação.
+- Nome de item pode sugerir preset, mas execução depende da flag aplicada.
 - Core não deve conhecer paths internos do sistema.
 - Paths ficam em adapters.
-- Não distribuir conteúdo oficial, textos, artes, compêndios ou assets protegidos.
+- UI, debug e regra de negócio devem ficar separados.
+- Integrações visuais devem ficar no Paranormal FX, não no Toolkit.
+- O módulo público não deve redistribuir textos oficiais, artes, compêndios protegidos ou assets de terceiros sem licença.
 
 ## Licença
 
