@@ -1,5 +1,9 @@
 export const ORDEM_PATHS = {
   resources: {
+    PV: "system.PV",
+    SAN: "system.SAN",
+    PE: "system.PE",
+    PD: "system.PD",
     pv: "system.PV",
     san: "system.SAN",
     pe: "system.PE",

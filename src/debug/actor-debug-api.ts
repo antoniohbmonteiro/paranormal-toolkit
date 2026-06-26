@@ -1,12 +1,19 @@
-import { OrdemAdapter, ResourceSpendFailure } from "../adapters/ordem/ordem-adapter";
+import { OrdemAdapter } from "../adapters/ordem/ordem-adapter";
 import { ActorResolver } from "../core/actor-resolver";
 import { ChatMessageService } from "../core/chat-message-service";
 import { ModuleLogger } from "../core/module-logger";
+import type { ResourceOperationResult } from "../core/resources/resource-engine";
+import type { ResourceOperationFailure } from "../core/resources/resource-transaction";
 
 export type ActorDebugApi = {
   getSelected(): Actor | null;
   logResources(): void;
   spendPE(amount: number): Promise<void>;
+  spendPD(amount: number): Promise<void>;
+  damagePV(amount: number): Promise<void>;
+  healPV(amount: number): Promise<void>;
+  damageSAN(amount: number): Promise<void>;
+  recoverSAN(amount: number): Promise<void>;
 };
 
 export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
@@ -27,35 +34,79 @@ export function createActorDebugApi(adapter: OrdemAdapter): ActorDebugApi {
     },
 
     async spendPE(amount: number): Promise<void> {
-      const actor = getSelectedActorOrNotify("Nenhum ator encontrado para gastar PE.");
+      await runResourceOperation(
+        "Gasto de PE",
+        getSelectedActorOrNotify("Nenhum ator encontrado para gastar PE."),
+        (actor) => adapter.spendPE(actor, amount)
+      );
+    },
 
-      if (!actor) return;
+    async spendPD(amount: number): Promise<void> {
+      await runResourceOperation(
+        "Gasto de PD",
+        getSelectedActorOrNotify("Nenhum ator encontrado para gastar PD."),
+        (actor) => adapter.spendPD(actor, amount)
+      );
+    },
 
-      const result = await adapter.spendPE(actor, amount);
+    async damagePV(amount: number): Promise<void> {
+      await runResourceOperation(
+        "Dano em PV",
+        getSelectedActorOrNotify("Nenhum ator encontrado para causar dano em PV."),
+        (actor) => adapter.damagePV(actor, amount)
+      );
+    },
 
-      if (!result.ok) {
-        handleSpendPEFailure(result.error);
-        return;
-      }
+    async healPV(amount: number): Promise<void> {
+      await runResourceOperation(
+        "Cura de PV",
+        getSelectedActorOrNotify("Nenhum ator encontrado para curar PV."),
+        (actor) => adapter.healPV(actor, amount)
+      );
+    },
 
-      const spend = result.value;
+    async damageSAN(amount: number): Promise<void> {
+      await runResourceOperation(
+        "Dano em SAN",
+        getSelectedActorOrNotify("Nenhum ator encontrado para causar dano em SAN."),
+        (actor) => adapter.damageSAN(actor, amount)
+      );
+    },
 
-      try {
-        await ChatMessageService.createResourceSpendMessage({
-          actor,
-          resourceLabel: spend.resource,
-          amount: spend.amount,
-          before: spend.before,
-          after: spend.after
-        });
-      } catch (error) {
-        ModuleLogger.error("PE foi gasto, mas falhou ao criar o chat card.", error);
-        ui.notifications?.error("Paranormal Toolkit: PE gasto, mas falhou ao criar mensagem no chat.");
-      }
-
-      ModuleLogger.info(`PE gasto: ${amount}. Recursos atualizados:`, spend.snapshot);
+    async recoverSAN(amount: number): Promise<void> {
+      await runResourceOperation(
+        "Recuperação de SAN",
+        getSelectedActorOrNotify("Nenhum ator encontrado para recuperar SAN."),
+        (actor) => adapter.recoverSAN(actor, amount)
+      );
     }
   };
+}
+
+async function runResourceOperation(
+  label: string,
+  actor: Actor | null,
+  operation: (actor: Actor) => Promise<ResourceOperationResult>
+): Promise<void> {
+  if (!actor) return;
+
+  const result = await operation(actor);
+
+  if (!result.ok) {
+    handleResourceFailure(result.error);
+    return;
+  }
+
+  const transaction = result.value;
+
+  try {
+    await ChatMessageService.createResourceOperationMessage({ transaction });
+  } catch (error) {
+    ModuleLogger.error(`${label} realizado, mas falhou ao criar o chat card.`, error);
+    ui.notifications?.error("Paranormal Toolkit: recurso alterado, mas falhou ao criar mensagem no chat.");
+  }
+
+  ModuleLogger.info(`${label} realizado:`, transaction);
 }
 
 function getSelectedActorOrNotify(warningMessage: string): Actor | null {
@@ -70,13 +121,13 @@ function getSelectedActorOrNotify(warningMessage: string): Actor | null {
   return actor;
 }
 
-function handleSpendPEFailure(failure: ResourceSpendFailure): void {
+function handleResourceFailure(failure: ResourceOperationFailure): void {
   if (failure.reason === "update-failed") {
     ModuleLogger.error(failure.message, failure.cause ?? failure);
     ui.notifications?.error(`Paranormal Toolkit: ${failure.message}`);
     return;
   }
 
-  ModuleLogger.warn(`Gasto de PE não realizado: ${failure.message}`, failure);
+  ModuleLogger.warn(`Operação de recurso não realizada: ${failure.message}`, failure);
   ui.notifications?.warn(`Paranormal Toolkit: ${failure.message}`);
 }

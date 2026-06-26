@@ -3,6 +3,8 @@ import { OrdemAdapter } from "./adapters/ordem/ordem-adapter";
 import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
 import { SystemGuard } from "./core/system-guard";
+import { registerChatEnrichmentRenderer } from "./features/chat/chat-enrichment-renderer";
+import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
 
 let ordemAdapter: OrdemAdapter | null = null;
 
@@ -20,6 +22,8 @@ Hooks.once("ready", () => {
 
   ordemAdapter = new OrdemAdapter();
   registerGlobalApi(ordemAdapter);
+  registerChatTargetCapture();
+  registerChatEnrichmentRenderer();
 
   ModuleLogger.info("Inicializado para o sistema Ordem Paranormal.");
   ModuleLogger.info(`API de debug disponível em globalThis["${MODULE_ID}"] e globalThis.ParanormalToolkit.`);

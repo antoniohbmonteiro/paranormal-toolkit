@@ -1,10 +1,7 @@
-import { failure, Result, success } from "../../core/result";
+import { ResourceEngine, type ResourceOperationResult } from "../../core/resources/resource-engine";
+import type { ActorResource, ResourceAdapter, ResourceSnapshot } from "../../core/resources/actor-resource";
 import { ORDEM_PATHS } from "./ordem-paths";
-
-export type ResourceSnapshot = {
-  value: number;
-  max: number;
-};
+import { OrdemResourceAdapter } from "./ordem-resource-adapter";
 
 export type ActorResourcesSnapshot = {
   pv: ResourceSnapshot;
@@ -21,34 +18,10 @@ export type OrdemActorSnapshot = {
   ritualDT: number;
 };
 
-export type ResourceSpendSuccess = {
-  actor: Actor;
-  resource: "PE";
-  amount: number;
-  before: number;
-  after: number;
-  snapshot: OrdemActorSnapshot;
-};
+export class OrdemAdapter implements ResourceAdapter {
+  private readonly resourceAdapter = new OrdemResourceAdapter();
+  private readonly resourceEngine = new ResourceEngine(this.resourceAdapter);
 
-export type ResourceSpendFailureReason =
-  | "invalid-amount"
-  | "insufficient-resource"
-  | "update-failed";
-
-export type ResourceSpendFailure = {
-  actor: Actor;
-  resource: "PE";
-  reason: ResourceSpendFailureReason;
-  message: string;
-  amount: number;
-  current?: number;
-  required?: number;
-  cause?: unknown;
-};
-
-export type ResourceSpendResult = Result<ResourceSpendSuccess, ResourceSpendFailure>;
-
-export class OrdemAdapter {
   getActorSnapshot(actor: Actor): OrdemActorSnapshot {
     return {
       id: actor.id ?? null,
@@ -61,74 +34,47 @@ export class OrdemAdapter {
 
   getResources(actor: Actor): ActorResourcesSnapshot {
     return {
-      pv: this.getResource(actor, ORDEM_PATHS.resources.pv),
-      san: this.getResource(actor, ORDEM_PATHS.resources.san),
-      pe: this.getResource(actor, ORDEM_PATHS.resources.pe),
-      pd: this.getResource(actor, ORDEM_PATHS.resources.pd)
+      pv: this.getResource(actor, "PV"),
+      san: this.getResource(actor, "SAN"),
+      pe: this.getResource(actor, "PE"),
+      pd: this.getResource(actor, "PD")
     };
+  }
+
+  getResource(actor: Actor, resource: ActorResource): ResourceSnapshot {
+    return this.resourceAdapter.getResource(actor, resource);
+  }
+
+  async updateResourceValue(actor: Actor, resource: ActorResource, value: number): Promise<void> {
+    await this.resourceAdapter.updateResourceValue(actor, resource, value);
   }
 
   getRitualDT(actor: Actor): number {
     return this.getNumber(actor, ORDEM_PATHS.ritual.dt, 0);
   }
 
-  async spendPE(actor: Actor, amount: number): Promise<ResourceSpendResult> {
-    if (!Number.isInteger(amount) || amount <= 0) {
-      return failure({
-        actor,
-        resource: "PE",
-        reason: "invalid-amount",
-        message: "A quantidade de PE deve ser um inteiro positivo.",
-        amount
-      });
-    }
-
-    const before = this.getNumber(actor, `${ORDEM_PATHS.resources.pe}.value`, 0);
-
-    if (before < amount) {
-      return failure({
-        actor,
-        resource: "PE",
-        reason: "insufficient-resource",
-        message: `PE insuficiente. Atual: ${before}; custo: ${amount}.`,
-        amount,
-        current: before,
-        required: amount
-      });
-    }
-
-    const after = before - amount;
-
-    try {
-      await actor.update({ [`${ORDEM_PATHS.resources.pe}.value`]: after });
-    } catch (cause) {
-      return failure({
-        actor,
-        resource: "PE",
-        reason: "update-failed",
-        message: "Falha ao atualizar PE no ator.",
-        amount,
-        current: before,
-        required: amount,
-        cause
-      });
-    }
-
-    return success({
-      actor,
-      resource: "PE",
-      amount,
-      before,
-      after,
-      snapshot: this.getActorSnapshot(actor)
-    });
+  async spendPE(actor: Actor, amount: number): Promise<ResourceOperationResult> {
+    return this.resourceEngine.spend(actor, "PE", amount);
   }
 
-  private getResource(actor: Actor, path: string): ResourceSnapshot {
-    return {
-      value: this.getNumber(actor, `${path}.value`, 0),
-      max: this.getNumber(actor, `${path}.max`, 0)
-    };
+  async spendPD(actor: Actor, amount: number): Promise<ResourceOperationResult> {
+    return this.resourceEngine.spend(actor, "PD", amount);
+  }
+
+  async damagePV(actor: Actor, amount: number): Promise<ResourceOperationResult> {
+    return this.resourceEngine.damage(actor, "PV", amount);
+  }
+
+  async healPV(actor: Actor, amount: number): Promise<ResourceOperationResult> {
+    return this.resourceEngine.heal(actor, "PV", amount);
+  }
+
+  async damageSAN(actor: Actor, amount: number): Promise<ResourceOperationResult> {
+    return this.resourceEngine.damage(actor, "SAN", amount);
+  }
+
+  async recoverSAN(actor: Actor, amount: number): Promise<ResourceOperationResult> {
+    return this.resourceEngine.recover(actor, "SAN", amount);
   }
 
   private getNumber(document: unknown, path: string, fallback: number): number {

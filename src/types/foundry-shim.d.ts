@@ -7,6 +7,18 @@ type ChatSpeakerData = unknown;
 type ChatMessageCreateData = {
   speaker?: ChatSpeakerData;
   content: string;
+  flags?: Record<string, unknown>;
+};
+
+type SceneLike = {
+  id?: string | null;
+};
+
+type TokenLike = {
+  id?: string | null;
+  name?: string;
+  actor?: Actor | null;
+  scene?: SceneLike | null;
 };
 
 declare const game: {
@@ -14,7 +26,9 @@ declare const game: {
     id: string;
   };
   user?: {
+    id?: string;
     character?: Actor | null;
+    targets?: Set<TokenLike>;
   } | null;
 };
 
