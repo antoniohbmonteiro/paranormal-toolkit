@@ -109,7 +109,7 @@ export function createRitualDebugApi(services: ToolkitServices): RitualDebugApi 
       ui.notifications?.info(`Paranormal Toolkit: automação de custo aplicada em ${ritual.name}.`);
     },
 
-    async setTestHealingAutomationOnFirstRitual(formula = "1d8"): Promise<void> {
+    async setTestHealingAutomationOnFirstRitual(formula = "2d8+2"): Promise<void> {
       const actor = getSelectedActorOrNotify("Nenhum ator encontrado para configurar ritual de cura simples.");
       if (!actor) return;
 

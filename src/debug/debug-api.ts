@@ -3,6 +3,7 @@ import { createAutomationDebugApi, type AutomationDebugApi } from "./automation-
 import { ActorDebugApi, createActorDebugApi } from "./actor-debug-api";
 import { createDebugOutputApi, type DebugOutputApi } from "./output/debug-output-api";
 import { createRitualDebugApi, type RitualDebugApi } from "./ritual-debug-api";
+import { createItemUseIntegrationDebugApi, type ItemUseIntegrationDebugApi } from "../features/item-use/item-use-debug-api";
 import { createWorkflowDebugApi, type WorkflowDebugApi } from "./workflow-debug-api";
 
 export type DebugApi = {
@@ -11,6 +12,7 @@ export type DebugApi = {
   ritual: RitualDebugApi;
   workflow: WorkflowDebugApi;
   output: DebugOutputApi;
+  itemUseIntegration: ItemUseIntegrationDebugApi;
 
   /** @deprecated Use ParanormalToolkit.debug.actor.getSelected() */
   getSelectedActor(): Actor | null;
@@ -28,6 +30,7 @@ export function createDebugApi(services: ToolkitServices): DebugApi {
   const ritual = createRitualDebugApi(services);
   const workflow = createWorkflowDebugApi(services);
   const output = createDebugOutputApi();
+  const itemUseIntegration = createItemUseIntegrationDebugApi(services);
 
   return {
     actor,
@@ -35,6 +38,7 @@ export function createDebugApi(services: ToolkitServices): DebugApi {
     ritual,
     workflow,
     output,
+    itemUseIntegration,
 
     getSelectedActor(): Actor | null {
       return actor.getSelected();

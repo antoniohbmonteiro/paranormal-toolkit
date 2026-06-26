@@ -11,6 +11,7 @@ export type ParanormalToolkitApi = {
   automationRegistry: ToolkitServices["automationRegistry"];
   automationBinder: ToolkitServices["automationBinder"];
   workflow: ToolkitServices["workflow"];
+  itemUseIntegration: ToolkitServices["itemUseIntegration"];
   debug: DebugApi;
 };
 
@@ -24,6 +25,7 @@ export function registerGlobalApi(services: ToolkitServices): ParanormalToolkitA
     automationRegistry: services.automationRegistry,
     automationBinder: services.automationBinder,
     workflow: services.workflow,
+    itemUseIntegration: services.itemUseIntegration,
     debug: createDebugApi(services)
   };
 

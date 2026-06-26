@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.7.1`.
+Versão experimental atual: `v0.8.0`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -30,8 +30,10 @@ O projeto ainda está em fase inicial, mas já possui:
 - `AutomationRegistry` e `AutomationBinder` para presets versionados;
 - presets built-in iniciais de ritual e debug;
 - direção de presets estilo mini Chris Premades, com aplicação por flags;
+- integração experimental com uso normal de item pela ficha;
+- fallback isolado em `OrdemItem.roll()`, preparado para trocar por hook oficial `ordemparanormal.itemUsed`;
 - settings de debug/output configuráveis no Foundry;
-- API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*`, `debug.workflow.*` e `debug.output.*`).
+- API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*`, `debug.workflow.*`, `debug.itemUseIntegration.*` e `debug.output.*`).
 
 ## Requisitos
 
@@ -167,6 +169,39 @@ await ParanormalToolkit.debug.automation.clearAutomationFromFirstRitual();
 ```
 
 `Cicatrização` já é reconhecida por matcher de nome normalizado e aponta para `ritual.simpleHealing`. Isso é o começo do modelo mini Chris Premades: nome pode ajudar a aplicar um preset, mas a execução real usa a flag gravada no item.
+
+## Item Use Integration
+
+A partir da `v0.8.0`, o Toolkit consegue executar automações aplicadas ao item quando ele é usado normalmente pela ficha.
+
+A arquitetura é **fallback-first, hook-ready**:
+
+```txt
+hoje:
+OrdemItem.roll() wrapper isolado
+
+futuro ideal:
+ordemparanormal.itemUsed hook oficial
+```
+
+O fallback é registrado no adapter do sistema Ordem e chama o `roll()` original antes de executar qualquer automação do Toolkit. Assim, o card normal do sistema continua aparecendo mesmo se a automação falhar.
+
+A execução automática fica desligada por padrão. Para testar:
+
+```js
+await ParanormalToolkit.debug.automation.applyBestPresetToFirstRitual();
+await ParanormalToolkit.debug.itemUseIntegration.enable();
+
+ParanormalToolkit.debug.itemUseIntegration.status();
+```
+
+Depois use o item/ritual pela ficha. Se o item tiver `flags.paranormal-toolkit.automation.definition`, o `WorkflowEngine` será executado usando o ator do item como origem e os targets atuais do usuário como alvos.
+
+Para desativar:
+
+```js
+await ParanormalToolkit.debug.itemUseIntegration.disable();
+```
 
 ## Workflow lifecycle
 
@@ -328,7 +363,7 @@ await ParanormalToolkit.debug.ritual.setTestDamageAutomationOnFirstRitual();
 await ParanormalToolkit.debug.ritual.runFirstRitualAutomation();
 ```
 
-As fórmulas padrão são `1d8`, mas podem ser sobrescritas no helper de debug:
+A fórmula padrão do preset de cura de `Cicatrização` é `2d8+2`. As fórmulas também podem ser sobrescritas no helper de debug:
 
 ```js
 await ParanormalToolkit.debug.ritual.setTestHealingAutomationOnFirstRitual("2d8");
@@ -357,7 +392,7 @@ A automação de teste:
 1. cria um WorkflowContext;
 2. emite fases do lifecycle;
 3. gasta 1 PE do ator de origem;
-4. rola 1d8;
+4. rola 2d8+2;
 5. cura PV do alvo marcado;
 6. cria chat card de resumo quando debug/chat estiver ligado;
 7. emite completed ou failed.

@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.8.1
+
+### Alterado
+
+- Fórmula padrão do preset de cura de `Cicatrização`/`ritual.simpleHealing` alterada de `1d8` para `2d8+2`.
+- Helper `debug.ritual.setTestHealingAutomationOnFirstRitual()` também passa a usar `2d8+2` como padrão.
+
+### Observação
+
+- Itens que já tinham o preset aplicado precisam receber o preset novamente para a nova fórmula ser gravada na flag `automation.definition`.
+
+## 0.8.0
+
+### Adicionado
+
+- `ItemUseIntegration` para executar workflows quando um item automatizado é usado pela ficha.
+- Setting `Executar automações ao usar item`, desligado por padrão por ser experimental.
+- Strategy futura para hook oficial `ordemparanormal.itemUsed`.
+- Fallback temporário e isolado em `OrdemItem.roll()` para não travar o desenvolvimento enquanto o hook oficial não existe no sistema.
+- Resolver de contexto de uso de item para origem, item, token e targets atuais do usuário.
+- API `ParanormalToolkit.debug.itemUseIntegration.*` para ligar/desligar auto-run e inspecionar status.
+- Guarda de janela curta contra execução duplicada entre hook/fallback ou clique duplo.
+
+### Decisões
+
+- A arquitetura é hook-ready: quando o sistema expuser `ordemparanormal.itemUsed`, o Toolkit pode priorizar o hook oficial e remover/desativar o fallback.
+- O fallback por wrapper fica restrito ao adapter do sistema Ordem; o core do workflow não conhece monkey patch.
+- A automação ao usar item fica opt-in na linha 0.8.x para evitar gasto automático inesperado em mesa real.
+
+### Teste recomendado
+
+- Aplicar preset em `Cicatrização`, ativar `debug.itemUseIntegration.enable()`, marcar alvo e usar o ritual pela ficha. O card normal do sistema deve aparecer e o Toolkit deve executar o workflow automaticamente.
+
 ## 0.7.1
 
 ### Corrigido

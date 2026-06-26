@@ -17,6 +17,7 @@ type SceneLike = {
 
 type TokenLike = {
   id?: string | null;
+  uuid?: string | null;
   name?: string;
   actor?: Actor | null;
   scene?: SceneLike | null;
@@ -78,6 +79,14 @@ declare const Hooks: {
   callAll(hook: string, ...args: unknown[]): void;
 };
 
+declare const CONFIG: {
+  Item?: {
+    documentClass?: {
+      prototype?: unknown;
+    };
+  };
+};
+
 declare const ChatMessage: {
   create(data: ChatMessageCreateData): Promise<unknown>;
   getSpeaker(options: { actor?: Actor | null }): ChatSpeakerData;
@@ -104,6 +113,8 @@ declare class Actor {
   type: string;
   system: Record<string, unknown>;
   items: ItemCollectionLike;
+  token?: TokenLike | null;
+  getActiveTokens?(): TokenLike[];
   update(data: Record<string, unknown>): Promise<this>;
 }
 
@@ -113,6 +124,7 @@ declare class Item {
   type: string;
   uuid: string;
   parent: Actor | null;
+  actor?: Actor | null;
   getFlag(scope: string, key: string): unknown;
   setFlag(scope: string, key: string, value: unknown): Promise<this>;
   unsetFlag(scope: string, key: string): Promise<this>;

@@ -166,6 +166,37 @@ Esses eventos serão a base para:
 
 
 
+## v0.8.0 — Item Use Integration
+
+Status: fechado.
+
+Objetivo: permitir que itens com automação aplicada executem o `WorkflowEngine` ao serem usados normalmente pela ficha.
+
+Escopo entregue:
+
+- `ItemUseIntegration`;
+- setting de auto-run desligado por padrão;
+- API `ParanormalToolkit.debug.itemUseIntegration.*`;
+- strategy futura para hook oficial `ordemparanormal.itemUsed`;
+- fallback temporário por wrapper em `OrdemItem.roll()`;
+- resolver de contexto de uso de item para ator, item, token e targets;
+- guarda contra execução duplicada em janela curta;
+- logs/snapshots indicando a origem `ordem-item-roll-wrapper` ou `ordem-item-used-hook`.
+
+Decisão arquitetural:
+
+- a integração é fallback-first para não travar o desenvolvimento;
+- o desenho continua hook-ready para migrar para hook oficial assim que o sistema expuser um evento estável;
+- o fallback fica isolado em adapter do sistema Ordem e não entra no core do workflow.
+
+Fora de escopo:
+
+- substituir ou ocultar card normal do sistema;
+- parsear HTML como fonte principal;
+- automação completa de armas/ataque/dano;
+- PR no sistema Ordem;
+- UI Medkit.
+
 ## v0.7.0 — Automation Registry + Preset Binder
 
 Status: fechado.

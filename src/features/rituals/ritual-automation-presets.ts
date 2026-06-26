@@ -46,7 +46,7 @@ export function createRitualSimpleHealingPreset(): AutomationPreset {
     id: RITUAL_SIMPLE_HEALING_PRESET_ID,
     version: "1.0.0",
     label: "Ritual de cura simples",
-    description: "Gasta o custo do ritual, rola cura e recupera PV do alvo.",
+    description: "Gasta o custo do ritual, rola 2d8+2 de cura e recupera PV do alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [
@@ -114,7 +114,7 @@ export function createGenericSimpleHealingPreset(): AutomationPreset {
   };
 }
 
-export function createRitualSimpleHealingDefinition(formula = "1d8"): AutomationDefinition {
+export function createRitualSimpleHealingDefinition(formula = "2d8+2"): AutomationDefinition {
   return replaceRollFormula(
     {
       version: 1,
