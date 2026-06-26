@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.1
+
+### Alterado
+
+- Roadmap atualizado para priorizar um `WorkflowEngine` estilo mini Midi-QOL para Ordem.
+- Roadmap reorganizado para colocar `AutomationRegistry`, `PresetBinder` e integração com uso normal de item antes de modificações de armas.
+- README atualizado com a direção de presets estilo mini Chris Premades.
+- Princípio de automação por nome refinado: nome pode ser matcher inicial, mas a execução real deve depender de flags aplicadas ao item.
+
+### Decisões
+
+- O Toolkit pode suportar automação de conteúdo existente na mesa/sistema, inclusive por nomes conhecidos, sem redistribuir descrições oficiais ou compêndios protegidos no módulo público.
+- O próximo foco técnico passa a ser o ciclo de vida de workflow: origem, alvo, custo, rolagem, resistência, aplicação e eventos.
+
 ## 0.5.0
 
 ### Adicionado

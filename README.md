@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v1
 
 ## Status
 
-Versão experimental atual: `v0.5.0`.
+Versão experimental atual: `v0.5.1`.
 
 O projeto ainda está em fase inicial, mas já possui:
 
@@ -22,6 +22,8 @@ O projeto ainda está em fase inicial, mas já possui:
 - custo de rituais por círculo, com override por flag;
 - step `spendRitualCost` para automações de ritual;
 - automações básicas de ritual: cura simples e dano simples;
+- roadmap atualizado para um Workflow Engine estilo mini Midi-QOL;
+- direção de presets estilo mini Chris Premades, com aplicação por flags;
 - API de debug organizada por domínio (`debug.actor.*`, `debug.ritual.*` e `debug.workflow.*`).
 
 ## Requisitos
@@ -61,6 +63,46 @@ mklink /D "C:\Users\SEU_USUARIO\AppData\Local\FoundryVTT\Data\modules\paranormal
 ```
 
 Depois, ative o módulo no mundo do Foundry.
+
+
+## Direção arquitetural
+
+A partir da `v0.6`, o foco passa a ser construir um **Paranormal Workflow Engine**: uma base pequena, própria e sustentável para ciclo de vida de uso de item/ritual, inspirada na ideia central do Midi-QOL.
+
+Lifecycle alvo:
+
+```txt
+beforeItemUse
+resolveTargets
+beforeCost
+spendCost
+beforeRoll
+roll
+afterRoll
+beforeResistance
+resistance
+afterResistance
+beforeApply
+apply
+afterApply
+completed
+```
+
+A partir disso, o Toolkit deve evoluir para um modelo de presets estilo Chris Premades:
+
+```txt
+item existente na mesa/sistema
+↓
+Toolkit encontra preset compatível
+↓
+mestre aplica preset
+↓
+item recebe flags do Toolkit
+↓
+ao usar o item normalmente, o WorkflowEngine executa a automação
+```
+
+Isso permite automatizar conteúdo que já existe na mesa sem empacotar descrições oficiais ou compêndios protegidos no módulo público.
 
 ## Debug de recursos
 
@@ -164,7 +206,8 @@ await ParanormalToolkit.debug.workflow.runItemAutomationByUuid("Actor.x.Item.y")
 
 - O Toolkit é companion opcional, não substituto do sistema base.
 - Automação é opt-in por flags.
-- Não automatizar por nome de item.
+- Nome de item pode ser usado como matcher inicial de preset, mas a execução deve depender de flags aplicadas ao item.
+- O Toolkit público não deve redistribuir textos oficiais, descrições oficiais, artes ou compêndios protegidos.
 - Core não deve conhecer paths internos do sistema.
 - Paths ficam em adapters.
 - Não distribuir conteúdo oficial, textos, artes, compêndios ou assets protegidos.
