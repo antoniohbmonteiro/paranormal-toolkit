@@ -5,10 +5,13 @@ import { executeAutomationResourceOperation } from "./automation-resource-execut
 import { recordAutomationApplication } from "./automation-application-recorder";
 import {
   createAutomationApplyMetadata,
-  emitAutomationApplyCompletedLifecycle,
-  emitAutomationApplyStartLifecycle
+  emitAutomationApplyAfterLifecycle,
+  emitAutomationApplyBeforeLifecycle,
+  emitAutomationApplyLifecycle
 } from "./automation-apply-lifecycle";
-import { executeAutomationChatCard } from "./automation-chat-executor";
+import { executeAutomationChatStep } from "./automation-chat-executor";
+import { executeAutomationCostStep } from "./automation-cost-executor";
+import { runAutomationStepWithGenericLifecycle } from "./automation-step-lifecycle-runner";
 import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
 import type { ResourceTransaction } from "../resources/resource-transaction";
@@ -92,40 +95,21 @@ export class AutomationRunner {
       case "modifyResource":
         return this.runModifyResourceStepWithLifecycle(step, context, stepIndex);
       default:
-        return this.runGenericStepWithLifecycle(step, context, stepIndex);
+        return runAutomationStepWithGenericLifecycle({
+          step,
+          context,
+          stepIndex,
+          lifecycle: this.lifecycle,
+          execute: () => this.executeStep(step, context, stepIndex)
+        });
     }
-  }
-
-  private async runGenericStepWithLifecycle(
-    step: AutomationStep,
-    context: WorkflowContext,
-    stepIndex: number
-  ): Promise<Result<void, AutomationRunFailure>> {
-    const phases = getGenericStepLifecyclePhases(step);
-
-    for (const phase of phases.before) {
-      this.lifecycle.emit(phase, context, { stepIndex, step });
-    }
-
-    const result = await this.executeStep(step, context, stepIndex);
-
-    if (!result.ok) {
-      return result;
-    }
-
-    for (const phase of phases.after) {
-      this.lifecycle.emit(phase, context, { stepIndex, step });
-    }
-
-    return success(undefined);
   }
 
   private async executeStep(step: AutomationStep, context: WorkflowContext, stepIndex: number): Promise<Result<void, AutomationRunFailure>> {
     switch (step.type) {
       case "spendResource":
-        return this.runSpendResourceStep(step, context, stepIndex);
       case "spendRitualCost":
-        return this.runSpendRitualCostStep(step, context, stepIndex);
+        return this.runCostStep(step, context, stepIndex);
       case "rollFormula":
         return this.runRollFormulaStep(step, context, stepIndex);
       case "modifyResource":
@@ -143,54 +127,23 @@ export class AutomationRunner {
     }
   }
 
-  private async runSpendResourceStep(
-    step: SpendResourceStep,
+  private async runCostStep(
+    step: SpendResourceStep | SpendRitualCostStep,
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    const amount = resolveAutomationAmount(step, context);
-
-    if (!amount.ok) {
-      return failure({ ...amount.error, stepIndex, step, context });
-    }
-
-    const result = await this.resources.spend(context.sourceActor, step.resource, amount.value);
-    const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
-    return handled.ok ? success(undefined) : handled;
-  }
-
-  private async runSpendRitualCostStep(
-    step: SpendRitualCostStep,
-    context: WorkflowContext,
-    stepIndex: number
-  ): Promise<Result<void, AutomationRunFailure>> {
-    const costResult = this.ritualCosts.getCost({
-      actor: context.sourceActor,
-      ritual: context.item
+    const result = await executeAutomationCostStep({
+      step,
+      context,
+      resources: this.resources,
+      ritualCosts: this.ritualCosts
     });
 
-    if (!costResult.ok) {
-      return failure({
-        reason: "ritual-cost-failed",
-        message: costResult.error.message,
-        stepIndex,
-        step,
-        context,
-        cause: costResult.error
-      });
+    if (!result.ok) {
+      return failure({ ...result.error, stepIndex, step, context });
     }
 
-    const cost = costResult.value;
-
-    context.ritualCosts.push({
-      ...cost,
-      itemId: context.item.id ?? null,
-      itemName: context.item.name ?? "Ritual sem nome"
-    });
-
-    const result = await this.resources.spend(context.sourceActor, cost.resource, cost.amount);
-    const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
-    return handled.ok ? success(undefined) : handled;
+    return success(undefined);
   }
 
   private async runRollFormulaStepWithLifecycle(
@@ -247,12 +200,20 @@ export class AutomationRunner {
 
     const metadata = createAutomationApplyMetadata(step, context, amount.value);
 
-    emitAutomationApplyStartLifecycle({
-      lifecycle: this.lifecycle,
-      context,
+    emitAutomationApplyBeforeLifecycle({
       step,
+      context,
       stepIndex,
-      metadata
+      metadata,
+      lifecycle: this.lifecycle
+    });
+
+    emitAutomationApplyLifecycle({
+      step,
+      context,
+      stepIndex,
+      metadata,
+      lifecycle: this.lifecycle
     });
 
     const actors = this.resolveActors(step.actor, context);
@@ -284,12 +245,12 @@ export class AutomationRunner {
       });
     }
 
-    emitAutomationApplyCompletedLifecycle({
-      lifecycle: this.lifecycle,
-      context,
+    emitAutomationApplyAfterLifecycle({
       step,
+      context,
       stepIndex,
-      metadata
+      metadata,
+      lifecycle: this.lifecycle
     });
 
     return success(undefined);
@@ -335,7 +296,7 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    const result = await executeAutomationChatCard(this.messages, context, step);
+    const result = await executeAutomationChatStep(this.messages, step, context);
 
     if (!result.ok) {
       return failure({ ...result.error, stepIndex, step, context });
@@ -392,27 +353,6 @@ export class AutomationRunner {
       case "target":
         return context.targets.flatMap((target) => (target.actor ? [target.actor] : []));
     }
-  }
-}
-
-function getGenericStepLifecyclePhases(step: AutomationStep): { before: WorkflowPhase[]; after: WorkflowPhase[] } {
-  switch (step.type) {
-    case "spendResource":
-    case "spendRitualCost":
-      return {
-        before: ["beforeCost", "spendCost"],
-        after: ["afterCost"]
-      };
-    case "chatCard":
-      return {
-        before: ["beforeChat", "chat"],
-        after: []
-      };
-    default:
-      return {
-        before: [],
-        after: []
-      };
   }
 }
 

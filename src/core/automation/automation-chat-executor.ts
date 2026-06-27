@@ -11,10 +11,10 @@ export type AutomationChatFailure = {
 
 export type AutomationChatResult = Result<void, AutomationChatFailure>;
 
-export async function executeAutomationChatCard(
+export async function executeAutomationChatStep(
   messages: WorkflowMessageService,
-  context: WorkflowContext,
-  step: ChatCardStep
+  step: ChatCardStep,
+  context: WorkflowContext
 ): Promise<AutomationChatResult> {
   try {
     await messages.createWorkflowSummaryMessage(context, step);

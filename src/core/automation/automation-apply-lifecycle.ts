@@ -3,22 +3,21 @@ import type { ModifyResourceStep } from "./automation-definition";
 import type { WorkflowContext } from "../workflow/workflow-context";
 import type { WorkflowHookEmitter } from "../workflow/workflow-hook-emitter";
 import type { WorkflowPhase } from "../workflow/workflow-phase";
-
-export type AutomationApplyMetadata = Record<string, unknown>;
+import type { ResourceOperation } from "../resources/resource-operation";
 
 export type AutomationApplyLifecycleInput = {
-  lifecycle: WorkflowHookEmitter;
-  context: WorkflowContext;
   step: ModifyResourceStep;
+  context: WorkflowContext;
   stepIndex: number;
-  metadata: AutomationApplyMetadata;
+  metadata: Record<string, unknown>;
+  lifecycle: WorkflowHookEmitter;
 };
 
 export function createAutomationApplyMetadata(
   step: ModifyResourceStep,
   context: WorkflowContext,
   amount: number
-): AutomationApplyMetadata {
+): Record<string, unknown> {
   const rollId = getRollIdFromAmountSource(step.amountFrom);
   const roll = rollId ? context.rolls[rollId] : undefined;
 
@@ -34,19 +33,24 @@ export function createAutomationApplyMetadata(
   };
 }
 
-export function emitAutomationApplyStartLifecycle(input: AutomationApplyLifecycleInput): void {
-  const { lifecycle, context, step, stepIndex, metadata } = input;
+export function emitAutomationApplyBeforeLifecycle(input: AutomationApplyLifecycleInput): void {
+  const { step, context, stepIndex, metadata, lifecycle } = input;
 
   lifecycle.emit("beforeApply", context, { stepIndex, step, metadata });
   emitSpecificApplyPhase("before", input);
   emitDamageResolutionPhase("before", input);
   emitDamageResolutionPhase("resolve", input);
+}
+
+export function emitAutomationApplyLifecycle(input: AutomationApplyLifecycleInput): void {
+  const { step, context, stepIndex, metadata, lifecycle } = input;
+
   lifecycle.emit("apply", context, { stepIndex, step, metadata });
   emitSpecificApplyPhase("apply", input);
 }
 
-export function emitAutomationApplyCompletedLifecycle(input: AutomationApplyLifecycleInput): void {
-  const { lifecycle, context, step, stepIndex, metadata } = input;
+export function emitAutomationApplyAfterLifecycle(input: AutomationApplyLifecycleInput): void {
+  const { step, context, stepIndex, metadata, lifecycle } = input;
 
   lifecycle.emit("afterApply", context, { stepIndex, step, metadata });
 }
@@ -55,31 +59,34 @@ function emitSpecificApplyPhase(
   timing: "before" | "apply" | "after",
   input: AutomationApplyLifecycleInput
 ): void {
-  const phase = getSpecificApplyPhase(timing, input.step.operation);
+  const { step, context, stepIndex, metadata, lifecycle } = input;
+  const phase = getSpecificApplyPhase(timing, step.operation);
 
   if (!phase) return;
 
-  input.lifecycle.emit(phase, input.context, {
-    stepIndex: input.stepIndex,
-    step: input.step,
-    metadata: input.metadata
+  lifecycle.emit(phase, context, {
+    stepIndex,
+    step,
+    metadata
   });
 }
 
-function emitDamageResolutionPhase(timing: "before" | "resolve", input: AutomationApplyLifecycleInput): void {
-  if (input.step.operation !== "damage") return;
+function emitDamageResolutionPhase(
+  timing: "before" | "resolve",
+  input: AutomationApplyLifecycleInput
+): void {
+  const { step, context, stepIndex, metadata, lifecycle } = input;
 
-  input.lifecycle.emit(timing === "before" ? "beforeDamageResolution" : "damageResolution", input.context, {
-    stepIndex: input.stepIndex,
-    step: input.step,
-    metadata: input.metadata
+  if (step.operation !== "damage") return;
+
+  lifecycle.emit(timing === "before" ? "beforeDamageResolution" : "damageResolution", context, {
+    stepIndex,
+    step,
+    metadata
   });
 }
 
-function getSpecificApplyPhase(
-  timing: "before" | "apply" | "after",
-  operation: ModifyResourceStep["operation"]
-): WorkflowPhase | null {
+function getSpecificApplyPhase(timing: "before" | "apply" | "after", operation: ResourceOperation): WorkflowPhase | null {
   if (operation === "damage") {
     if (timing === "before") return "beforeApplyDamage";
     if (timing === "apply") return "applyDamage";
