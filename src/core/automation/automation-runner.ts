@@ -2,13 +2,12 @@ import { failure, type Result, success } from "../result";
 import { getRollIdFromAmountSource, resolveAutomationAmount } from "./automation-amount-resolver";
 import { createAutomationRollRequest, executeAutomationRollFormula } from "./automation-roll-executor";
 import { executeAutomationResourceOperation } from "./automation-resource-executor";
+import { recordAutomationApplication } from "./automation-application-recorder";
 import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
 import type { ResourceOperation } from "../resources/resource-operation";
 import type { ResourceTransaction } from "../resources/resource-transaction";
 import type { WorkflowContext } from "../workflow/workflow-context";
-import type { WorkflowDamageInstance } from "../workflow/workflow-damage";
-import type { WorkflowHealingInstance } from "../workflow/workflow-healing";
 import type { WorkflowHookEmitter } from "../workflow/workflow-hook-emitter";
 import type { WorkflowPhase } from "../workflow/workflow-phase";
 import type { WorkflowRollIntent, WorkflowRollRequest, WorkflowRollResult } from "../workflow/workflow-roll";
@@ -270,7 +269,13 @@ export class AutomationRunner {
         return handled;
       }
 
-      this.recordTypedApplication(step, context, handled.value, stepIndex);
+      recordAutomationApplication({
+        step,
+        context,
+        transaction: handled.value,
+        stepIndex,
+        lifecycle: this.lifecycle
+      });
     }
 
     this.lifecycle.emit("afterApply", context, { stepIndex, step, metadata });
@@ -424,109 +429,6 @@ export class AutomationRunner {
     });
   }
 
-  private recordTypedApplication(
-    step: ModifyResourceStep,
-    context: WorkflowContext,
-    transaction: ResourceTransaction,
-    stepIndex: number
-  ): void {
-    if (step.operation === "damage") {
-      const damage = this.createDamageInstance(step, context, transaction, stepIndex);
-      context.damageInstances.push(damage);
-
-      this.lifecycle.emit("afterDamageResolution", context, {
-        stepIndex,
-        step,
-        damage,
-        resourceTransaction: transaction,
-        metadata: {
-          rawAmount: damage.rawAmount,
-          finalAmount: damage.finalAmount,
-          appliedAmount: damage.appliedAmount,
-          damageType: damage.damageType
-        }
-      });
-      this.lifecycle.emit("afterApplyDamage", context, {
-        stepIndex,
-        step,
-        damage,
-        resourceTransaction: transaction,
-        metadata: {
-          rawAmount: damage.rawAmount,
-          finalAmount: damage.finalAmount,
-          appliedAmount: damage.appliedAmount,
-          damageType: damage.damageType
-        }
-      });
-      return;
-    }
-
-    if (step.operation === "heal") {
-      const healing = this.createHealingInstance(step, context, transaction, stepIndex);
-      context.healingInstances.push(healing);
-
-      this.lifecycle.emit("afterApplyHealing", context, {
-        stepIndex,
-        step,
-        healing,
-        resourceTransaction: transaction,
-        metadata: {
-          rawAmount: healing.rawAmount,
-          finalAmount: healing.finalAmount,
-          appliedAmount: healing.appliedAmount
-        }
-      });
-    }
-  }
-
-  private createDamageInstance(
-    step: ModifyResourceStep,
-    context: WorkflowContext,
-    transaction: ResourceTransaction,
-    stepIndex: number
-  ): WorkflowDamageInstance {
-    const rollId = getRollIdFromAmountSource(step.amountFrom);
-    const roll = rollId ? context.rolls[rollId] : undefined;
-
-    return {
-      id: createWorkflowChildId(context.id, "damage", stepIndex, context.damageInstances.length),
-      source: context.item.type === "ritual" ? "ritual" : "automation",
-      sourceId: context.item.id ?? null,
-      sourceName: context.item.name ?? "Item sem nome",
-      targetActorId: transaction.actorId,
-      targetActorName: transaction.actorName,
-      rollId: rollId ?? undefined,
-      damageType: roll?.damageType,
-      rawAmount: transaction.requestedAmount,
-      finalAmount: transaction.requestedAmount,
-      appliedAmount: transaction.appliedAmount,
-      tags: ["workflow", "resource", step.resource]
-    };
-  }
-
-  private createHealingInstance(
-    step: ModifyResourceStep,
-    context: WorkflowContext,
-    transaction: ResourceTransaction,
-    stepIndex: number
-  ): WorkflowHealingInstance {
-    const rollId = getRollIdFromAmountSource(step.amountFrom);
-
-    return {
-      id: createWorkflowChildId(context.id, "healing", stepIndex, context.healingInstances.length),
-      source: context.item.type === "ritual" ? "ritual" : "automation",
-      sourceId: context.item.id ?? null,
-      sourceName: context.item.name ?? "Item sem nome",
-      targetActorId: transaction.actorId,
-      targetActorName: transaction.actorName,
-      rollId: rollId ?? undefined,
-      rawAmount: transaction.requestedAmount,
-      finalAmount: transaction.requestedAmount,
-      appliedAmount: transaction.appliedAmount,
-      tags: ["workflow", "resource", step.resource]
-    };
-  }
-
   private resolveActors(selector: AutomationActorSelector, context: WorkflowContext): Actor[] {
     switch (selector) {
       case "self":
@@ -535,7 +437,6 @@ export class AutomationRunner {
         return context.targets.flatMap((target) => (target.actor ? [target.actor] : []));
     }
   }
-
 }
 
 function getGenericStepLifecyclePhases(step: AutomationStep): { before: WorkflowPhase[]; after: WorkflowPhase[] } {
@@ -590,11 +491,3 @@ function getSpecificApplyPhase(timing: "before" | "apply" | "after", operation: 
 
   return null;
 }
-
-function createWorkflowChildId(workflowId: string, type: string, stepIndex: number, index: number): string {
-  return `${workflowId}.${type}.${stepIndex}.${index}`;
-}
-
-
-
-
