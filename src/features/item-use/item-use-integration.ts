@@ -5,7 +5,11 @@ import { createWorkflowDebugSnapshot } from "../../core/workflow/workflow-debug-
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { DebugOutputService } from "../../debug/output/debug-output-service";
 import { readAutomationDefinition } from "../automation/automation-flag-reader";
-import { createItemUseAutomationPromptMessage, registerItemUseAutomationPromptRenderer } from "./item-use-automation-prompt";
+import {
+  registerItemUseAutomationPromptRenderer,
+  registerPendingItemUseAutomationPrompt,
+  unregisterPendingItemUseAutomationPrompt
+} from "./item-use-automation-prompt";
 import { confirmItemUseAutomationExecution } from "./item-use-confirmation";
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import { getItemUseSettings, type ItemUseSettingsSnapshot } from "./item-use-settings";
@@ -130,6 +134,7 @@ export class ItemUseIntegration {
     }
 
     this.pendingExecutions.delete(pendingId);
+    unregisterPendingItemUseAutomationPrompt(pendingId);
     await this.executeAutomation(pending.context, pending.definition, pending.mode);
 
     return true;
@@ -153,20 +158,13 @@ export class ItemUseIntegration {
       createdAt: Date.now()
     });
 
-    try {
-      await createItemUseAutomationPromptMessage({
-        pendingId,
-        context,
-        mode: "buttons"
-      });
+    registerPendingItemUseAutomationPrompt({
+      pendingId,
+      context,
+      mode: "buttons"
+    });
 
-      this.setAttempt(context, "pending", "execution-mode-buttons", pendingId);
-    } catch (cause) {
-      this.pendingExecutions.delete(pendingId);
-      this.setAttempt(context, "failed", "prompt-message-failed", pendingId);
-      ModuleLogger.error("Falha ao criar prompt de automação no chat.", cause);
-      ui.notifications?.error("Paranormal Toolkit: falha ao criar prompt de automação no chat.");
-    }
+    this.setAttempt(context, "pending", "execution-mode-buttons", pendingId);
   }
 
   private async handleConfirmedExecution(context: ItemUseContext, definition: AutomationDefinition): Promise<void> {
