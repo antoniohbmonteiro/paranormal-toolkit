@@ -6,9 +6,9 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.9.1`.
+Versão experimental atual: `v0.10.0`.
 
-O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração inicial com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal.
+O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
 Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem compatibilidade retroativa.
 
@@ -21,8 +21,9 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Controle de recursos | Gasta, cura, recupera ou reduz PV, SAN, PE e PD respeitando limites da ficha. | Implementado |
 | Automações por item | Permite aplicar automações em rituais, habilidades ou itens usando flags próprias do módulo. | Implementado |
 | Uso pela ficha | Escuta o hook `ordemparanormal.itemUsed` do sistema e reage ao uso normal de itens automatizados. | Implementado inicial |
-| Modo perguntar no chat | Ao usar um item automatizado, cria uma ação assistida no card de chat em vez de aplicar imediatamente. | Implementado inicial |
+| Modo perguntar no chat | Ao usar um item automatizado, cria ações assistidas no card de chat em vez de aplicar imediatamente. | Implementado inicial |
 | Modo automático | Executa a automação diretamente ao usar o item. | Experimental |
+| Conjuração assistida de rituais | Abre popup para forma do ritual, gasto opcional de PE/PD, rola dados pelo Toolkit e cria ações reais de cura/dano no chat. | MVP implementado |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
 | Condições e efeitos | Aplicará condições e Active Effects quando rituais, habilidades ou regras pedirem. | Planejado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
@@ -81,13 +82,15 @@ resolver origem e alvos
 ↓
 modo disabled, ask ou automatic
 ↓
-gastar custo/recurso quando a automação realmente executar
+para rituais em ask: abrir popup de conjuração
 ↓
-rolar fórmula
+gastar custo/recurso quando marcado
 ↓
-aplicar cura/dano/efeito
+rolar fórmula pelo Toolkit
 ↓
-gerar resumo
+preparar ações de cura/dano no chat
+↓
+aplicar cura/dano/efeito quando a ação for clicada
 ```
 
 A descrição do item não é fonte de verdade para automação. Rolagens inline como `[[2d8+2]]` pertencem ao texto/renderização do Foundry, enquanto a automação real fica em dado estruturado salvo na flag do item.
@@ -135,6 +138,38 @@ Aplicar condição
 ```
 
 Os modos antigos `buttons` e `confirm` são tratados como compatibilidade e convertidos para `ask`.
+
+
+## Conjuração assistida de rituais
+
+A partir da `0.10.0`, rituais automatizados em modo `ask` usam um fluxo assistido inicial.
+
+Fluxo atual:
+
+```txt
+usar ritual pela ficha
+↓
+popup de conjuração
+↓
+escolher forma: Padrão, Discente ou Verdadeiro
+↓
+marcar ou desmarcar gasto automático de PE/PD
+↓
+Toolkit rola a fórmula configurada
+↓
+card de chat recebe resumo e ações reais
+```
+
+Exemplo de ação no chat:
+
+```txt
+Curar Amendoin em 11 PV
+Aplicar 12 de dano em Existido
+```
+
+A forma do ritual ainda é registrada no workflow, mas o MVP não altera fórmula/custo por forma automaticamente. Essa evolução virá quando os presets de ritual tiverem dados estruturados para cada forma.
+
+O checkbox de gasto de PE/PD existe porque mesa real é bagunçada no melhor sentido: o mestre pode desligar custo, o jogador pode já ter gastado manualmente ou alguém pode estar corrigindo um clique errado.
 
 ## Presets iniciais
 
@@ -220,8 +255,8 @@ Antes da `1.0.0`, o foco é estabilizar a base:
 - adicionar testes unitários para core;
 - separar melhor core puro de APIs globais do Foundry;
 - reduzir responsabilidades do `AutomationRunner`;
-- evoluir o modo `ask` para ações específicas no chat, como curar, aplicar dano e aplicar condição;
-- criar diálogo de conjuração de ritual com forma base/discente/verdadeira, gasto opcional de PE/PD e snapshot de alvos;
+- evoluir o modo `ask` para mais ações específicas no chat, como aplicar condição e resistência;
+- evoluir diálogo de conjuração de ritual para alterar fórmula/custo por forma base/discente/verdadeira;
 - criar bloqueio visual de rolagens inline duplicadas;
 - criar presets específicos por ritual;
 - iniciar automações de armas, melhorias e categoria;

@@ -1,10 +1,14 @@
 import type { AutomationDefinition } from "../../core/automation/automation-definition";
 import type { AutomationRunFailure } from "../../core/automation/automation-runner";
 import { ModuleLogger } from "../../core/module-logger";
+import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
+import type { ResourceEngine, ResourceOperationResult } from "../../core/resources/resource-engine";
 import { createWorkflowDebugSnapshot } from "../../core/workflow/workflow-debug-snapshot";
+import type { WorkflowContext } from "../../core/workflow/workflow-context";
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { DebugOutputService } from "../../debug/output/debug-output-service";
 import { readAutomationDefinition } from "../automation/automation-flag-reader";
+import { type AssistedResourceAction, RitualAssistedWorkflow } from "../rituals/ritual-assisted-workflow";
 import {
   registerItemUseAutomationPromptRenderer,
   registerPendingItemUseAutomationPrompt,
@@ -28,7 +32,8 @@ export type ItemUseIntegrationStatus = {
   pendingPromptCount: number;
 };
 
-type PendingAutomationExecution = {
+type PendingWorkflowExecution = {
+  kind: "workflow";
   id: string;
   definition: AutomationDefinition;
   context: ItemUseContext;
@@ -36,17 +41,33 @@ type PendingAutomationExecution = {
   createdAt: number;
 };
 
+type PendingResourceActionExecution = {
+  kind: "resource-action";
+  id: string;
+  action: AssistedResourceAction;
+  context: ItemUseContext;
+  workflowContext: WorkflowContext;
+  createdAt: number;
+};
+
+type PendingAutomationExecution = PendingWorkflowExecution | PendingResourceActionExecution;
+
 export class ItemUseIntegration {
   private readonly strategies: ItemUseSourceStrategy[] = [];
   private readonly recentExecutionKeys = new Map<string, number>();
   private readonly pendingExecutions = new Map<string, PendingAutomationExecution>();
+  private readonly ritualAssistant: RitualAssistedWorkflow;
   private lastAttempt: ItemUseIntegrationAttempt | null = null;
   private promptRendererRegistered = false;
 
   constructor(
     private readonly workflow: WorkflowEngine,
+    resources: ResourceEngine,
+    ritualCosts: RitualCostProvider,
     private readonly debugOutput: DebugOutputService
-  ) {}
+  ) {
+    this.ritualAssistant = new RitualAssistedWorkflow(workflow, resources, ritualCosts);
+  }
 
   addStrategy(strategy: ItemUseSourceStrategy): void {
     this.strategies.push(strategy);
@@ -113,7 +134,7 @@ export class ItemUseIntegration {
 
     switch (settings.executionMode) {
       case "ask":
-        await this.createPendingPrompt(context, definition.value);
+        await this.handleAskMode(context, definition.value);
         return;
       case "automatic":
         await this.executeAutomation(context, definition.value, "automatic");
@@ -129,9 +150,24 @@ export class ItemUseIntegration {
       return false;
     }
 
+    if (pending.kind === "workflow") {
+      this.pendingExecutions.delete(pendingId);
+      unregisterPendingItemUseAutomationPrompt(pendingId);
+      await this.executeAutomation(pending.context, pending.definition, pending.mode);
+      return true;
+    }
+
+    const result = await this.ritualAssistant.applyAction(pending.action);
+
+    if (!result.ok) {
+      this.handleResourceActionFailure(result);
+      return false;
+    }
+
+    pending.workflowContext.resourceTransactions.push(result.value);
     this.pendingExecutions.delete(pendingId);
     unregisterPendingItemUseAutomationPrompt(pendingId);
-    await this.executeAutomation(pending.context, pending.definition, pending.mode);
+    this.setAttempt(pending.context, "completed");
 
     return true;
   }
@@ -143,10 +179,84 @@ export class ItemUseIntegration {
     this.promptRendererRegistered = true;
   }
 
-  private async createPendingPrompt(context: ItemUseContext, definition: AutomationDefinition): Promise<void> {
+  private async handleAskMode(context: ItemUseContext, definition: AutomationDefinition): Promise<void> {
+    if (this.ritualAssistant.canHandle(context, definition)) {
+      await this.handleAssistedRitual(context, definition);
+      return;
+    }
+
+    await this.createPendingWorkflowPrompt(context, definition);
+  }
+
+  private async handleAssistedRitual(context: ItemUseContext, definition: AutomationDefinition): Promise<void> {
+    this.setAttempt(context, "running", "ritual-assisted-cast");
+
+    const result = await this.ritualAssistant.run(context, definition);
+
+    switch (result.status) {
+      case "cancelled":
+        this.setAttempt(context, "skipped", "ritual-cast-cancelled");
+        return;
+      case "failed":
+        this.setAttempt(context, "failed", result.reason);
+        this.debugOutput.warn({
+          title: "Conjuração assistida falhou",
+          message: result.message,
+          data: result.cause ?? result
+        });
+        ui.notifications?.warn(`Paranormal Toolkit: ${result.message}`);
+        return;
+      case "completed-without-actions":
+        this.setAttempt(context, "completed", "ritual-assisted-no-actions");
+        ModuleLogger.info("Ritual assistido concluído sem ações pendentes.", createWorkflowDebugSnapshot(result.workflowContext));
+        return;
+      case "ready":
+        this.registerAssistedResourceActions(context, result.workflowContext, result.actions, result.summaryLines);
+        return;
+    }
+  }
+
+  private registerAssistedResourceActions(
+    context: ItemUseContext,
+    workflowContext: WorkflowContext,
+    actions: AssistedResourceAction[],
+    summaryLines: string[]
+  ): void {
+    let firstPendingId: string | undefined;
+
+    for (const action of actions) {
+      const pendingId = createPendingExecutionId();
+      firstPendingId ??= pendingId;
+
+      this.pendingExecutions.set(pendingId, {
+        kind: "resource-action",
+        id: pendingId,
+        action,
+        context,
+        workflowContext,
+        createdAt: Date.now()
+      });
+
+      registerPendingItemUseAutomationPrompt({
+        pendingId,
+        context,
+        mode: "ask",
+        title: "Paranormal Toolkit · Ritual",
+        buttonLabel: action.label,
+        executedLabel: action.executedLabel,
+        summaryLines
+      });
+    }
+
+    this.setAttempt(context, "pending", "ritual-assisted-actions", firstPendingId);
+    ModuleLogger.info("Ritual assistido preparado com ações pendentes.", createWorkflowDebugSnapshot(workflowContext));
+  }
+
+  private async createPendingWorkflowPrompt(context: ItemUseContext, definition: AutomationDefinition): Promise<void> {
     const pendingId = createPendingExecutionId();
 
     this.pendingExecutions.set(pendingId, {
+      kind: "workflow",
       id: pendingId,
       definition,
       context,
@@ -157,7 +267,9 @@ export class ItemUseIntegration {
     registerPendingItemUseAutomationPrompt({
       pendingId,
       context,
-      mode: "ask"
+      mode: "ask",
+      buttonLabel: "Aplicar automação",
+      executedLabel: "✓ Automação aplicada"
     });
 
     this.setAttempt(context, "pending", "execution-mode-ask", pendingId);
@@ -210,6 +322,11 @@ export class ItemUseIntegration {
 
     ModuleLogger.warn(message, failure);
     ui.notifications?.warn(`Paranormal Toolkit: ${failure.message}`);
+  }
+
+  private handleResourceActionFailure(result: Extract<ResourceOperationResult, { ok: false }>): void {
+    ModuleLogger.warn(`Ação assistida falhou: ${result.error.message}`, result.error);
+    ui.notifications?.warn(`Paranormal Toolkit: ${result.error.message}`);
   }
 
   private isDuplicate(context: ItemUseContext): boolean {

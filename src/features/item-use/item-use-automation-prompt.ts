@@ -3,10 +3,13 @@ import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import type { ItemUseContext } from "./item-use-context";
 
 const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
+const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
+const DETAIL_KEY_ATTRIBUTE = "data-paranormal-toolkit-detail-key";
 const BUTTON_SELECTOR = `[${PENDING_ID_ATTRIBUTE}]`;
 const ENRICHMENT_CLASS = `${MODULE_ID}-chat-enrichment`;
 const PROMPT_CLASS = `${MODULE_ID}-item-use-prompt`;
 const PROMPT_ACTIONS_CLASS = `${PROMPT_CLASS}__actions`;
+const PROMPT_DETAILS_CLASS = `${PROMPT_CLASS}__details`;
 const PROMPT_SUMMARY_CLASS = `${PROMPT_CLASS}__summary`;
 const PROMPT_TITLE_CLASS = `${PROMPT_CLASS}__title`;
 const PROMPT_EXECUTED_BUTTON_CLASS = `${PROMPT_CLASS}__button--executed`;
@@ -15,6 +18,10 @@ export type ItemUseAutomationPromptInput = {
   pendingId: string;
   context: ItemUseContext;
   mode: Extract<AutomationExecutionMode, "ask">;
+  title?: string;
+  buttonLabel?: string;
+  executedLabel?: string;
+  summaryLines?: string[];
 };
 
 export type ItemUseAutomationPromptHandler = (pendingId: string) => Promise<boolean>;
@@ -114,12 +121,14 @@ function bindPromptButtonsIfPossible(root: HTMLElement): void {
 function appendPromptToRoot(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): void {
   if (root.querySelector(`[${PENDING_ID_ATTRIBUTE}="${escapeCssAttributeValue(prompt.pendingId)}"]`)) return;
 
-  const section = getOrCreateToolkitSection(root, prompt.context);
+  const section = getOrCreateToolkitSection(root, prompt);
+  appendSummaryLines(section, prompt.summaryLines ?? []);
+
   const actions = getOrCreateActionsContainer(section);
-  actions.append(createPromptButton(prompt.pendingId));
+  actions.append(createPromptButton(prompt));
 }
 
-function getOrCreateToolkitSection(root: HTMLElement, context: ItemUseContext): HTMLElement {
+function getOrCreateToolkitSection(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): HTMLElement {
   const existing = root.querySelector<HTMLElement>(`.${ENRICHMENT_CLASS}`);
 
   if (existing) {
@@ -134,11 +143,11 @@ function getOrCreateToolkitSection(root: HTMLElement, context: ItemUseContext): 
 
   const title = document.createElement("strong");
   title.classList.add(PROMPT_TITLE_CLASS);
-  title.textContent = "Paranormal Toolkit";
+  title.textContent = prompt.title ?? "Paranormal Toolkit";
 
   const summary = document.createElement("span");
   summary.classList.add(PROMPT_SUMMARY_CLASS);
-  summary.textContent = createPromptSummary(context);
+  summary.textContent = createPromptSummary(prompt.context);
 
   header.append(title, summary);
   section.append(header);
@@ -163,12 +172,44 @@ function getOrCreateActionsContainer(section: HTMLElement): HTMLElement {
   return actions;
 }
 
-function createPromptButton(pendingId: string): HTMLButtonElement {
+function appendSummaryLines(section: HTMLElement, summaryLines: string[]): void {
+  if (summaryLines.length === 0) return;
+
+  const details = getOrCreateDetailsContainer(section);
+
+  for (const line of summaryLines) {
+    const key = createDetailKey(line);
+
+    if (details.querySelector(`[${DETAIL_KEY_ATTRIBUTE}="${escapeCssAttributeValue(key)}"]`)) continue;
+
+    const item = document.createElement("li");
+    item.textContent = line;
+    item.setAttribute(DETAIL_KEY_ATTRIBUTE, key);
+    details.append(item);
+  }
+}
+
+function getOrCreateDetailsContainer(section: HTMLElement): HTMLUListElement {
+  const existing = section.querySelector<HTMLUListElement>(`.${PROMPT_DETAILS_CLASS}`);
+
+  if (existing) {
+    return existing;
+  }
+
+  const details = document.createElement("ul");
+  details.classList.add(PROMPT_DETAILS_CLASS);
+  section.append(details);
+
+  return details;
+}
+
+function createPromptButton(prompt: PendingItemUseAutomationPrompt): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.classList.add(`${PROMPT_CLASS}__button`);
-  button.textContent = "Aplicar automação";
-  button.setAttribute(PENDING_ID_ATTRIBUTE, pendingId);
+  button.textContent = prompt.buttonLabel ?? "Aplicar automação";
+  button.setAttribute(PENDING_ID_ATTRIBUTE, prompt.pendingId);
+  button.setAttribute(EXECUTED_LABEL_ATTRIBUTE, prompt.executedLabel ?? "✓ Automação aplicada");
   return button;
 }
 
@@ -216,9 +257,10 @@ async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAuto
   const executed = await handler(pendingId);
 
   if (executed) {
-    button.textContent = "✓ Automação aplicada";
+    button.textContent = button.getAttribute(EXECUTED_LABEL_ATTRIBUTE) ?? "✓ Automação aplicada";
     button.classList.add(PROMPT_EXECUTED_BUTTON_CLASS);
     button.removeAttribute(PENDING_ID_ATTRIBUTE);
+    button.removeAttribute(EXECUTED_LABEL_ATTRIBUTE);
     return;
   }
 
@@ -320,6 +362,10 @@ function getDocumentId(value: unknown): string | null {
   }
 
   return null;
+}
+
+function createDetailKey(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 function toKebabCase(value: string): string {
