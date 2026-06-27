@@ -35,6 +35,11 @@ export function createRitualCostOnlyPreset(): AutomationPreset {
     automation: {
       version: 1,
       label: "Gasto de custo de ritual",
+      ritualForms: {
+        base: {
+          label: "Padrão"
+        }
+      },
       steps: [
         {
           type: "spendRitualCost"
@@ -74,7 +79,7 @@ export function createRitualElectrocutionPreset(): AutomationPreset {
     version: "1.0.0",
     label: "Eletrocussão",
     description:
-      "Preset inicial de dano de energia. Gasta o custo do ritual, rola 1d8 e prepara ação assistida para aplicar dano em PV do alvo.",
+      "Preset inicial de dano de energia. Gasta o custo do ritual, rola dano conforme a forma escolhida e prepara ação assistida para aplicar dano em PV do alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [
@@ -148,6 +153,14 @@ export function createRitualSimpleHealingDefinition(formula = "2d8+2"): Automati
     {
       version: 1,
       label: "Cicatrização",
+      ritualForms: {
+        base: {
+          label: "Padrão",
+          rollFormulaOverrides: {
+            healing: formula
+          }
+        }
+      },
       steps: [
         {
           type: "spendRitualCost"
@@ -177,14 +190,39 @@ export function createRitualSimpleHealingDefinition(formula = "2d8+2"): Automati
   );
 }
 
-export function createRitualElectrocutionDefinition(formula = "1d8"): AutomationDefinition {
-  return createRitualSimpleDamageDefinition(formula, {
-    label: "Eletrocussão",
-    title: "Eletrocussão",
-    damageType: "energia",
-    message:
-      "Gasta o custo do ritual, rola dano de energia e prepara aplicação de dano em PV do alvo. Resistência deve ser resolvida manualmente por enquanto."
-  });
+export function createRitualElectrocutionDefinition(): AutomationDefinition {
+  return {
+    ...createRitualSimpleDamageDefinition("1d8", {
+      label: "Eletrocussão",
+      title: "Eletrocussão",
+      damageType: "energia",
+      message:
+        "Gasta o custo do ritual, rola dano de energia e prepara aplicação de dano em PV do alvo. Resistência deve ser resolvida manualmente por enquanto."
+    }),
+    ritualForms: {
+      base: {
+        label: "Padrão",
+        rollFormulaOverrides: {
+          damage: "1d8"
+        }
+      },
+      discente: {
+        label: "Discente",
+        extraCost: 2,
+        rollFormulaOverrides: {
+          damage: "3d8"
+        }
+      },
+      verdadeiro: {
+        label: "Verdadeiro",
+        extraCost: 5,
+        rollFormulaOverrides: {
+          damage: "6d8"
+        },
+        notes: ["Se o alvo falhar na Fortitude, aplique Atordoado por 1 rodada manualmente."]
+      }
+    }
+  };
 }
 
 export function createRitualSimpleDamageDefinition(
@@ -205,6 +243,14 @@ export function createRitualSimpleDamageDefinition(
     {
       version: 1,
       label,
+      ritualForms: {
+        base: {
+          label: "Padrão",
+          rollFormulaOverrides: {
+            damage: formula
+          }
+        }
+      },
       steps: [
         {
           type: "spendRitualCost"
@@ -249,7 +295,9 @@ function createCicatrizationItemPatch(): AutomationPresetItemPatch {
       targetQuantity: "1",
       duration: "instantaneous",
       resistanceSkill: "",
-      resistance: ""
+      resistance: "",
+      studentForm: false,
+      trueForm: false
     }
   };
 }
@@ -268,7 +316,9 @@ function createElectrocutionItemPatch(): AutomationPresetItemPatch {
       targetQuantity: "1",
       duration: "instantaneous",
       resistanceSkill: "resilience",
-      resistance: "reducesByHalf"
+      resistance: "reducesByHalf",
+      studentForm: true,
+      trueForm: true
     }
   };
 }

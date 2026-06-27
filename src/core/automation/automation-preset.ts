@@ -39,6 +39,8 @@ export type AutomationPresetRitualItemPatch = {
   duration?: string;
   resistanceSkill?: string;
   resistance?: string;
+  studentForm?: boolean;
+  trueForm?: boolean;
 };
 
 export type AutomationPreset = {

@@ -1,9 +1,12 @@
 import type {
   AutomationActorSelector,
   AutomationDefinition,
+  AutomationRitualFormDefinition,
+  AutomationRitualFormId,
   AutomationStep,
   ChatCardStep,
   ModifyResourceStep,
+  RollFormulaStep,
   SpendResourceStep,
   SpendRitualCostStep
 } from "../../core/automation/automation-definition";
@@ -17,7 +20,13 @@ import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { WorkflowRollResult } from "../../core/workflow/workflow-roll";
 import type { ItemUseContext } from "../item-use/item-use-context";
 import { requestRitualCastOptions } from "./ritual-cast-dialog";
-import { getRitualCastVariantLabel, type RitualCastOptions } from "./ritual-cast-options";
+import {
+  getRitualCastVariantLabel,
+  RITUAL_CAST_VARIANTS,
+  type RitualCastOptions,
+  type RitualCastVariant,
+  type RitualCastVariantOption
+} from "./ritual-cast-options";
 
 export type AssistedResourceAction = {
   kind: "resource-operation";
@@ -58,6 +67,10 @@ type RitualPreparationDefinition = AutomationDefinition & {
   steps: RitualPreparationStep[];
 };
 
+const BASE_RITUAL_FORM: AutomationRitualFormDefinition = {
+  label: "Padrão"
+};
+
 export class RitualAssistedWorkflow {
   constructor(
     private readonly workflow: WorkflowEngine,
@@ -79,19 +92,22 @@ export class RitualAssistedWorkflow {
     }
 
     const cost = this.resolveCostPreview(context);
+    const variantOptions = createRitualCastVariantOptions(definition, cost);
     const options = await requestRitualCastOptions({
       actor: context.actor,
       ritual: context.item,
       targetNames: context.targets.map((target) => target.name),
       cost,
-      defaultSpendResource: hasRitualOrExplicitCost(definition)
+      defaultSpendResource: hasRitualOrExplicitCost(definition),
+      variantOptions
     });
 
     if (!options) {
       return { status: "cancelled" };
     }
 
-    const preparationDefinition = createPreparationDefinition(definition, options);
+    const form = resolveRitualForm(definition, options.variant);
+    const preparationDefinition = createPreparationDefinition(definition, options, form, cost);
 
     if (preparationDefinition.steps.length === 0) {
       return {
@@ -129,7 +145,7 @@ export class RitualAssistedWorkflow {
 
     const workflowContext = runResult.value.context;
     const actionResult = createAssistedResourceActions(definition, context, workflowContext);
-    const summaryLines = createRitualSummaryLines(options, cost, workflowContext);
+    const summaryLines = createRitualSummaryLines(options, form, cost, workflowContext);
 
     if (!actionResult.ok) {
       return {
@@ -171,14 +187,28 @@ export class RitualAssistedWorkflow {
   }
 }
 
-function createPreparationDefinition(definition: AutomationDefinition, options: RitualCastOptions): RitualPreparationDefinition {
+function createPreparationDefinition(
+  definition: AutomationDefinition,
+  options: RitualCastOptions,
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null
+): RitualPreparationDefinition {
   const steps: RitualPreparationStep[] = [];
 
   for (const step of definition.steps) {
     if (step.type === "modifyResource" || step.type === "chatCard") continue;
     if (isCostStep(step) && !options.spendResource) continue;
 
-    steps.push(step);
+    steps.push(applyFormOverridesToStep(step, form));
+  }
+
+  if (options.spendResource && cost && isPositiveNumber(form.extraCost)) {
+    steps.push({
+      type: "spendResource",
+      actor: "self",
+      resource: cost.resource,
+      amount: form.extraCost
+    });
   }
 
   return {
@@ -186,6 +216,18 @@ function createPreparationDefinition(definition: AutomationDefinition, options: 
     label: `${definition.label} · Conjuração assistida`,
     steps
   };
+}
+
+function applyFormOverridesToStep(step: RitualPreparationStep, form: AutomationRitualFormDefinition): RitualPreparationStep {
+  if (step.type !== "rollFormula") return step;
+
+  const formula = form.rollFormulaOverrides?.[step.id];
+  if (!formula) return step;
+
+  return {
+    ...step,
+    formula
+  } satisfies RollFormulaStep;
 }
 
 function createAssistedResourceActions(
@@ -290,25 +332,45 @@ function resolveActors(selector: AutomationActorSelector, context: ItemUseContex
   }
 }
 
-function createRitualSummaryLines(options: RitualCastOptions, cost: RitualCost | null, context: WorkflowContext): string[] {
+function createRitualSummaryLines(
+  options: RitualCastOptions,
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null,
+  context: WorkflowContext
+): string[] {
   return [
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
-    createCostSummaryLine(options, cost),
-    ...Object.values(context.rolls).map(createRollSummaryLine)
+    createCostSummaryLine(options, form, cost),
+    ...Object.values(context.rolls).map(createRollSummaryLine),
+    ...createFormNoteLines(form)
   ];
 }
 
-function createCostSummaryLine(options: RitualCastOptions, cost: RitualCost | null): string {
+function createCostSummaryLine(options: RitualCastOptions, form: AutomationRitualFormDefinition, cost: RitualCost | null): string {
+  const extraCost = form.extraCost ?? 0;
+
   if (!cost) {
-    return options.spendResource ? "Custo: não resolvido" : "Custo: não gasto";
+    if (!options.spendResource) return "Custo: não gasto";
+    return extraCost > 0 ? `Custo: não resolvido (+${extraCost} extra)` : "Custo: não resolvido";
   }
 
-  const suffix = options.spendResource ? "gasto" : "não gasto";
-  return `Custo: ${cost.amount} ${cost.resource} ${suffix}`;
+  if (!options.spendResource) {
+    return extraCost > 0 ? `Custo: ${cost.amount} ${cost.resource} + ${extraCost} extra não gasto` : `Custo: ${cost.amount} ${cost.resource} não gasto`;
+  }
+
+  if (extraCost > 0) {
+    return `Custo: ${cost.amount + extraCost} ${cost.resource} gasto (${cost.amount} base + ${extraCost} extra)`;
+  }
+
+  return `Custo: ${cost.amount} ${cost.resource} gasto`;
 }
 
 function createRollSummaryLine(roll: WorkflowRollResult): string {
   return `${getRollLabel(roll)}: ${roll.formula} = ${Math.trunc(roll.total)}`;
+}
+
+function createFormNoteLines(form: AutomationRitualFormDefinition): string[] {
+  return (form.notes ?? []).map((note) => `Observação: ${note}`);
 }
 
 function getRollLabel(roll: WorkflowRollResult): string {
@@ -330,10 +392,55 @@ function getRollLabel(roll: WorkflowRollResult): string {
   }
 }
 
+function createRitualCastVariantOptions(definition: AutomationDefinition, cost: RitualCost | null): RitualCastVariantOption[] {
+  return RITUAL_CAST_VARIANTS.map((variant) => {
+    const form = resolveOptionalRitualForm(definition, variant);
+    const enabled = variant === "base" || form !== null;
+    const effectiveForm = form ?? (variant === "base" ? BASE_RITUAL_FORM : null);
+
+    return {
+      variant,
+      label: effectiveForm?.label ?? getRitualCastVariantLabel(variant),
+      enabled,
+      details: effectiveForm ? createVariantDetails(effectiveForm, cost) : [],
+      unavailableReason: enabled ? undefined : "não disponível neste ritual"
+    };
+  });
+}
+
+function createVariantDetails(form: AutomationRitualFormDefinition, cost: RitualCost | null): string[] {
+  const details: string[] = [];
+  const formulas = Object.values(form.rollFormulaOverrides ?? {});
+
+  if (formulas.length > 0) {
+    details.push(formulas.join(", "));
+  }
+
+  if (isPositiveNumber(form.extraCost)) {
+    details.push(cost ? `+${form.extraCost} ${cost.resource}` : `+${form.extraCost} PE/PD`);
+  } else {
+    details.push("custo base");
+  }
+
+  return details;
+}
+
+function resolveRitualForm(definition: AutomationDefinition, variant: RitualCastVariant): AutomationRitualFormDefinition {
+  return resolveOptionalRitualForm(definition, variant) ?? BASE_RITUAL_FORM;
+}
+
+function resolveOptionalRitualForm(definition: AutomationDefinition, variant: AutomationRitualFormId): AutomationRitualFormDefinition | null {
+  return definition.ritualForms?.[variant] ?? null;
+}
+
 function hasRitualOrExplicitCost(definition: AutomationDefinition): boolean {
   return definition.steps.some(isCostStep);
 }
 
 function isCostStep(step: AutomationStep): step is SpendResourceStep | SpendRitualCostStep {
   return step.type === "spendResource" || step.type === "spendRitualCost";
+}
+
+function isPositiveNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
 }

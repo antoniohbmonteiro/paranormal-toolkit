@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.10.4`.
+Versão experimental atual: `v0.11.0`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -24,6 +24,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Modo perguntar no chat | Ao usar um item automatizado, cria ações assistidas no card de chat em vez de aplicar imediatamente. | Implementado inicial |
 | Modo automático | Executa a automação diretamente ao usar o item. | Experimental |
 | Conjuração assistida de rituais | Abre popup para forma do ritual, gasto opcional de PE/PD, rola dados pelo Toolkit e cria ações reais de cura/dano no chat. | MVP implementado |
+| Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
 | Condições e efeitos | Aplicará condições e Active Effects quando rituais, habilidades ou regras pedirem. | Planejado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
@@ -169,9 +170,32 @@ Curar Amendoin em 11 PV
 Aplicar 12 de dano em Existido
 ```
 
-A forma do ritual ainda é registrada no workflow, mas o MVP não altera fórmula/custo por forma automaticamente. Essa evolução virá quando os presets de ritual tiverem dados estruturados para cada forma.
+A forma do ritual agora é lida do dado estruturado salvo pela automação. O popup habilita apenas as formas declaradas pelo preset aplicado; os checkboxes da ficha são apenas reflexo visual do patch de item.
 
 O checkbox de gasto de PE/PD existe porque mesa real é bagunçada no melhor sentido: o mestre pode desligar custo, o jogador pode já ter gastado manualmente ou alguém pode estar corrigindo um clique errado.
+
+
+## Formas estruturadas de rituais
+
+A partir da `0.11.0`, a fonte de verdade para Padrão, Discente e Verdadeiro é a automação aplicada pelo preset, não os checkboxes da ficha.
+
+```txt
+preset/flag controla comportamento
+patch visual atualiza system.studentForm/system.trueForm
+popup lê as formas estruturadas da automação
+```
+
+Isso evita que uma edição manual na ficha quebre o workflow. Rodar `applyBestPresetToAllRituals()` novamente normaliza a automação e os dados visíveis do item.
+
+Para Eletrocussão, o MVP atual usa:
+
+```txt
+Padrão      -> 1d8
+Discente    -> +2 PE, 3d8
+Verdadeiro  -> +5 PE, 6d8
+```
+
+O Verdadeiro também imprime no chat uma observação para aplicar Atordoado manualmente caso o alvo falhe na Fortitude.
 
 ## Presets iniciais
 
@@ -185,7 +209,7 @@ ritual.simpleDamage
 generic.simpleHealing
 ```
 
-`Cicatrização` já é reconhecida por nome normalizado e aponta para um preset inicial de cura. `Eletrocussão` também é reconhecida por nome normalizado e aponta para um preset inicial de dano de energia: custo do ritual, rolagem `1d8` e ação assistida para aplicar dano em PV. A resistência de Fortitude para reduzir dano à metade ainda deve ser resolvida manualmente até o Toolkit ter workflow de resistência.
+`Cicatrização` já é reconhecida por nome normalizado e aponta para um preset inicial de cura. Ela só possui forma Padrão no Toolkit. `Eletrocussão` também é reconhecida por nome normalizado e aponta para um preset inicial de dano de energia com formas estruturadas: Padrão `1d8`, Discente `3d8` com `+2 PE` e Verdadeiro `6d8` com `+5 PE`. A resistência de Fortitude para reduzir dano à metade, e a condição Atordoado do Verdadeiro, ainda devem ser resolvidas manualmente até o Toolkit ter workflow de resistência/condições.
 
 Isso é apenas o começo do modelo: nome pode ajudar a encontrar uma automação compatível, mas a execução real usa a flag gravada no item.
 

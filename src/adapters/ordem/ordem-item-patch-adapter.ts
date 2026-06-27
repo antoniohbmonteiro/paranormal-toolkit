@@ -51,6 +51,8 @@ function createRitualUpdateData(patch: AutomationPresetItemPatch): Record<string
   setIfDefined(updateData, "system.duration", ritual.duration);
   setIfDefined(updateData, "system.skillResis", ritual.resistanceSkill);
   setIfDefined(updateData, "system.resistance", ritual.resistance);
+  setIfDefined(updateData, "system.studentForm", ritual.studentForm);
+  setIfDefined(updateData, "system.trueForm", ritual.trueForm);
 
   return updateData;
 }

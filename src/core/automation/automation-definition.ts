@@ -6,6 +6,16 @@ export type AutomationDefinition = {
   version: 1;
   label: string;
   steps: AutomationStep[];
+  ritualForms?: Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>>;
+};
+
+export type AutomationRitualFormId = "base" | "discente" | "verdadeiro";
+
+export type AutomationRitualFormDefinition = {
+  label?: string;
+  extraCost?: number;
+  rollFormulaOverrides?: Record<string, string>;
+  notes?: string[];
 };
 
 export type AutomationActorSelector = "self" | "target";

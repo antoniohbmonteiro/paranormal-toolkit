@@ -1,6 +1,16 @@
-export const RITUAL_CAST_VARIANTS = ["base", "discente", "verdadeiro"] as const;
+import type { AutomationRitualFormId } from "../../core/automation/automation-definition";
+
+export const RITUAL_CAST_VARIANTS = ["base", "discente", "verdadeiro"] as const satisfies readonly AutomationRitualFormId[];
 
 export type RitualCastVariant = (typeof RITUAL_CAST_VARIANTS)[number];
+
+export type RitualCastVariantOption = {
+  variant: RitualCastVariant;
+  label: string;
+  enabled: boolean;
+  details: string[];
+  unavailableReason?: string;
+};
 
 export type RitualCastOptions = {
   variant: RitualCastVariant;

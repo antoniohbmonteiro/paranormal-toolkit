@@ -1,5 +1,10 @@
 import type { RitualCost } from "../../core/rituals/ritual-types";
-import { isRitualCastVariant, type RitualCastOptions, type RitualCastVariant } from "./ritual-cast-options";
+import {
+  isRitualCastVariant,
+  type RitualCastOptions,
+  type RitualCastVariant,
+  type RitualCastVariantOption
+} from "./ritual-cast-options";
 
 type RitualCastDialogInput = {
   actor: Actor;
@@ -7,6 +12,7 @@ type RitualCastDialogInput = {
   targetNames: string[];
   cost: RitualCost | null;
   defaultSpendResource: boolean;
+  variantOptions: RitualCastVariantOption[];
 };
 
 type DialogHtmlLike = HTMLElement | { 0?: unknown };
@@ -85,9 +91,7 @@ function createDialogContent(input: RitualCastDialogInput): string {
 
       <fieldset class="paranormal-toolkit-ritual-cast-dialog__fieldset">
         <legend>Forma</legend>
-        <label><input type="radio" name="variant" value="base" checked> Padrão</label>
-        <label><input type="radio" name="variant" value="discente"> Discente</label>
-        <label><input type="radio" name="variant" value="verdadeiro"> Verdadeiro</label>
+        ${input.variantOptions.map(createVariantOptionMarkup).join("")}
       </fieldset>
 
       <label class="paranormal-toolkit-ritual-cast-dialog__checkbox">
@@ -96,11 +100,29 @@ function createDialogContent(input: RitualCastDialogInput): string {
       </label>
 
       <dl class="paranormal-toolkit-ritual-cast-dialog__summary">
-        <div><dt>Custo previsto</dt><dd>${escapeHtml(costText)}</dd></div>
+        <div><dt>Custo base previsto</dt><dd>${escapeHtml(costText)}</dd></div>
         <div><dt>Conjurador</dt><dd>${escapeHtml(input.actor.name ?? "Ator sem nome")}</dd></div>
         <div><dt>Alvos</dt><dd>${escapeHtml(targetText)}</dd></div>
       </dl>
     </form>
+  `;
+}
+
+function createVariantOptionMarkup(option: RitualCastVariantOption): string {
+  const checked = option.variant === "base" ? "checked" : "";
+  const disabled = option.enabled ? "" : "disabled";
+  const unavailable = option.enabled ? "" : option.unavailableReason ?? "não disponível neste ritual";
+  const details = [...option.details, unavailable].filter((detail) => detail.length > 0).join(" · ");
+  const disabledClass = option.enabled ? "" : " paranormal-toolkit-ritual-cast-dialog__variant--disabled";
+
+  return `
+    <label class="paranormal-toolkit-ritual-cast-dialog__variant${disabledClass}">
+      <span class="paranormal-toolkit-ritual-cast-dialog__variant-main">
+        <input type="radio" name="variant" value="${escapeHtml(option.variant)}" ${checked} ${disabled}>
+        <strong>${escapeHtml(option.label)}</strong>
+      </span>
+      <span class="paranormal-toolkit-ritual-cast-dialog__variant-details">${escapeHtml(details)}</span>
+    </label>
   `;
 }
 
