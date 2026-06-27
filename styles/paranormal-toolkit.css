@@ -33,15 +33,48 @@
 }
 
 .paranormal-toolkit-chat-enrichment {
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 1px solid rgba(0, 0, 0, 0.18);
   margin-top: 8px;
   padding-top: 8px;
   font-size: 0.9rem;
 }
 
-.paranormal-toolkit-chat-enrichment strong {
-  display: block;
-  margin-bottom: 4px;
+.paranormal-toolkit-item-use-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.paranormal-toolkit-item-use-prompt__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paranormal-toolkit-item-use-prompt__title {
+  font-size: 0.92rem;
+  line-height: 1.1;
+}
+
+.paranormal-toolkit-item-use-prompt__summary {
+  font-size: 0.82rem;
+  opacity: 0.82;
+}
+
+.paranormal-toolkit-item-use-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.paranormal-toolkit-item-use-prompt__button {
+  margin: 0;
+  width: auto;
+}
+
+.paranormal-toolkit-item-use-prompt__button--executed {
+  cursor: default;
+  opacity: 0.82;
 }
 
 .paranormal-toolkit-chat-enrichment__row {

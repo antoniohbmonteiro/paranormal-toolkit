@@ -1,3 +1,4 @@
+import { ORDEM_HOOKS } from "../ordem-hooks";
 import { ModuleLogger } from "../../../core/module-logger";
 import type { ItemUseContext, ItemUseSourceStrategy, ItemUseSourceStrategyStatus } from "../../../features/item-use/item-use-context";
 import { createContextFromItemUsedHook, type OrdemItemUsedHookPayload } from "./ordem-item-use-context-resolver";
@@ -12,12 +13,12 @@ export class OrdemItemUsedHookStrategy implements ItemUseSourceStrategy {
   register(): void {
     if (this.registered) return;
 
-    Hooks.on("ordemparanormal.itemUsed", (payload: unknown) => {
+    Hooks.on(ORDEM_HOOKS.ITEM_USED, (payload: unknown) => {
       void this.handleHook(payload);
     });
 
     this.registered = true;
-    ModuleLogger.info("Strategy de hook ordemparanormal.itemUsed registrada.");
+    ModuleLogger.info(`${ORDEM_HOOKS.ITEM_USED} registrado como fonte de uso de item.`);
   }
 
   status(): ItemUseSourceStrategyStatus {
@@ -31,7 +32,7 @@ export class OrdemItemUsedHookStrategy implements ItemUseSourceStrategy {
     const context = createContextFromItemUsedHook(asHookPayload(payload));
 
     if (!context) {
-      ModuleLogger.warn("Hook ordemparanormal.itemUsed disparou sem payload de item válido.", payload);
+      ModuleLogger.warn(`${ORDEM_HOOKS.ITEM_USED} disparou sem payload de item válido.`, payload);
       return;
     }
 

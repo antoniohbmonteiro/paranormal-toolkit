@@ -16,6 +16,7 @@ export type OrdemItemUsedHookPayload = {
   actor?: unknown;
   token?: unknown;
   message?: unknown;
+  chatMessageData?: unknown;
 };
 
 export function createContextFromRolledItem(item: Item, originalResult: unknown): ItemUseContext | null {
@@ -42,7 +43,8 @@ export function createContextFromItemUsedHook(payload: OrdemItemUsedHookPayload)
     item: payload.item,
     token: resolvePayloadToken(payload.token) ?? resolveSourceToken(actor),
     targets: getCurrentWorkflowTargets(),
-    message: payload.message
+    message: payload.message,
+    chatMessageData: payload.chatMessageData
   };
 }
 

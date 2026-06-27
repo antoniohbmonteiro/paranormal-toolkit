@@ -6,6 +6,10 @@ const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
 const BUTTON_SELECTOR = `[${PENDING_ID_ATTRIBUTE}]`;
 const ENRICHMENT_CLASS = `${MODULE_ID}-chat-enrichment`;
 const PROMPT_CLASS = `${MODULE_ID}-item-use-prompt`;
+const PROMPT_ACTIONS_CLASS = `${PROMPT_CLASS}__actions`;
+const PROMPT_SUMMARY_CLASS = `${PROMPT_CLASS}__summary`;
+const PROMPT_TITLE_CLASS = `${PROMPT_CLASS}__title`;
+const PROMPT_EXECUTED_BUTTON_CLASS = `${PROMPT_CLASS}__button--executed`;
 
 export type ItemUseAutomationPromptInput = {
   pendingId: string;
@@ -17,6 +21,9 @@ export type ItemUseAutomationPromptHandler = (pendingId: string) => Promise<bool
 
 type PendingItemUseAutomationPrompt = ItemUseAutomationPromptInput & {
   createdAt: number;
+  messageId: string | null;
+  itemId: string | null;
+  actorId: string | null;
 };
 
 let promptRendererRegistered = false;
@@ -37,16 +44,24 @@ export function registerItemUseAutomationPromptRenderer(handler: ItemUseAutomati
 }
 
 export function registerPendingItemUseAutomationPrompt(input: ItemUseAutomationPromptInput): void {
-  pendingPrompts.set(input.pendingId, {
-    ...input,
-    createdAt: Date.now()
-  });
+  const prompt = createPendingPrompt(input);
+  pendingPrompts.set(input.pendingId, prompt);
 
   renderPromptIntoExistingChatLog(input.pendingId);
 }
 
 export function unregisterPendingItemUseAutomationPrompt(pendingId: string): void {
   pendingPrompts.delete(pendingId);
+}
+
+function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUseAutomationPrompt {
+  return {
+    ...input,
+    createdAt: Date.now(),
+    messageId: getDocumentId(input.context.message),
+    itemId: input.context.item.id ?? null,
+    actorId: input.context.actor?.id ?? null
+  };
 }
 
 function renderPendingPromptIntoChatMessage(
@@ -73,8 +88,7 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
   const prompt = pendingPrompts.get(pendingId);
   if (!prompt) return;
 
-  const messageId = getDocumentId(prompt.context.message);
-  const messageElement = messageId ? findRenderedChatMessageById(messageId) : null;
+  const messageElement = prompt.messageId ? findRenderedChatMessageById(prompt.messageId) : null;
 
   if (messageElement) {
     appendPromptToRoot(messageElement, prompt);
@@ -82,7 +96,9 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
     return;
   }
 
-  const matchedElement = findRenderedChatMessageByItem(prompt.context);
+  if (prompt.messageId) return;
+
+  const matchedElement = findRenderedChatMessageByItem(prompt);
 
   if (matchedElement) {
     appendPromptToRoot(matchedElement, prompt);
@@ -96,10 +112,11 @@ function bindPromptButtonsIfPossible(root: HTMLElement): void {
 }
 
 function appendPromptToRoot(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): void {
-  if (root.querySelector(`[${PENDING_ID_ATTRIBUTE}="${escapeAttribute(prompt.pendingId)}"]`)) return;
+  if (root.querySelector(`[${PENDING_ID_ATTRIBUTE}="${escapeCssAttributeValue(prompt.pendingId)}"]`)) return;
 
   const section = getOrCreateToolkitSection(root, prompt.context);
-  section.append(createPromptButton(prompt.pendingId));
+  const actions = getOrCreateActionsContainer(section);
+  actions.append(createPromptButton(prompt.pendingId));
 }
 
 function getOrCreateToolkitSection(root: HTMLElement, context: ItemUseContext): HTMLElement {
@@ -112,45 +129,63 @@ function getOrCreateToolkitSection(root: HTMLElement, context: ItemUseContext): 
   const section = document.createElement("section");
   section.classList.add(ENRICHMENT_CLASS, PROMPT_CLASS);
 
+  const header = document.createElement("header");
+  header.classList.add(`${PROMPT_CLASS}__header`);
+
   const title = document.createElement("strong");
+  title.classList.add(PROMPT_TITLE_CLASS);
   title.textContent = "Paranormal Toolkit";
-  section.append(title);
 
-  section.append(createRow("Origem", context.actor?.name ?? "Origem não resolvida"));
-  section.append(createRow("Alvo", createTargetText(context)));
+  const summary = document.createElement("span");
+  summary.classList.add(PROMPT_SUMMARY_CLASS);
+  summary.textContent = createPromptSummary(context);
 
-  const messageContent = root.querySelector(".message-content") ?? root;
-  messageContent.append(section);
+  header.append(title, summary);
+  section.append(header);
+
+  const host = findPromptHost(root);
+  host.append(section);
 
   return section;
+}
+
+function getOrCreateActionsContainer(section: HTMLElement): HTMLElement {
+  const existing = section.querySelector<HTMLElement>(`.${PROMPT_ACTIONS_CLASS}`);
+
+  if (existing) {
+    return existing;
+  }
+
+  const actions = document.createElement("div");
+  actions.classList.add(PROMPT_ACTIONS_CLASS);
+  section.append(actions);
+
+  return actions;
 }
 
 function createPromptButton(pendingId: string): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
+  button.classList.add(`${PROMPT_CLASS}__button`);
   button.textContent = "Executar automação";
   button.setAttribute(PENDING_ID_ATTRIBUTE, pendingId);
   return button;
 }
 
-function createRow(labelText: string, valueText: string): HTMLElement {
-  const row = document.createElement("p");
-  row.classList.add(`${MODULE_ID}-chat-enrichment__row`);
-
-  const label = document.createElement("span");
-  label.textContent = `${labelText}: `;
-
-  const value = document.createElement("span");
-  value.textContent = valueText;
-
-  row.append(label, value);
-  return row;
+function createPromptSummary(context: ItemUseContext): string {
+  const source = context.actor?.name ?? context.token?.name ?? "Origem não resolvida";
+  const targets = createTargetText(context);
+  return `${source} → ${targets}`;
 }
 
 function createTargetText(context: ItemUseContext): string {
   return context.targets.length > 0
     ? context.targets.map((target) => target.name).join(", ")
-    : "Nenhum alvo selecionado";
+    : "nenhum alvo";
+}
+
+function findPromptHost(root: HTMLElement): HTMLElement {
+  return root.querySelector<HTMLElement>(".message-content") ?? root;
 }
 
 function bindPromptButtons(html: unknown, handler: ItemUseAutomationPromptHandler): void {
@@ -181,7 +216,9 @@ async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAuto
   const executed = await handler(pendingId);
 
   if (executed) {
-    button.textContent = "Executado";
+    button.textContent = "✓ Automação executada";
+    button.classList.add(PROMPT_EXECUTED_BUTTON_CLASS);
+    button.removeAttribute(PENDING_ID_ATTRIBUTE);
     return;
   }
 
@@ -200,21 +237,17 @@ function findPromptForMessage(message: unknown, root: HTMLElement): PendingItemU
 }
 
 function doesPromptMatchMessage(prompt: PendingItemUseAutomationPrompt, message: unknown, root: HTMLElement): boolean {
-  const promptMessageId = getDocumentId(prompt.context.message);
   const currentMessageId = getDocumentId(message) ?? root.dataset.messageId ?? null;
 
-  if (promptMessageId && currentMessageId) {
-    return promptMessageId === currentMessageId;
+  if (prompt.messageId) {
+    return prompt.messageId === currentMessageId;
   }
 
-  const itemId = prompt.context.item.id;
-  const actorId = prompt.context.actor?.id ?? null;
-
-  if (!itemId || !hasDataAttribute(root, "itemId", itemId)) {
+  if (!prompt.itemId || !hasDataAttribute(root, "itemId", prompt.itemId)) {
     return false;
   }
 
-  return !actorId || hasDataAttribute(root, "actorId", actorId);
+  return !prompt.actorId || hasDataAttribute(root, "actorId", prompt.actorId);
 }
 
 function hasDataAttribute(root: HTMLElement, key: string, expectedValue: string): boolean {
@@ -234,16 +267,15 @@ function hasDataAttribute(root: HTMLElement, key: string, expectedValue: string)
 }
 
 function findRenderedChatMessageById(messageId: string): HTMLElement | null {
-  return document.querySelector<HTMLElement>(`.chat-message[data-message-id="${escapeAttribute(messageId)}"], [data-message-id="${escapeAttribute(messageId)}"]`);
+  const escapedMessageId = escapeCssAttributeValue(messageId);
+  return document.querySelector<HTMLElement>(
+    `.chat-message[data-message-id="${escapedMessageId}"], [data-message-id="${escapedMessageId}"]`
+  );
 }
 
-function findRenderedChatMessageByItem(context: ItemUseContext): HTMLElement | null {
-  const itemId = context.item.id;
-
-  if (!itemId) return null;
-
+function findRenderedChatMessageByItem(prompt: PendingItemUseAutomationPrompt): HTMLElement | null {
   for (const message of document.querySelectorAll<HTMLElement>(".chat-message, [data-message-id]")) {
-    if (doesPromptMatchMessage({ pendingId: "probe", context, mode: "buttons", createdAt: Date.now() }, null, message)) {
+    if (doesPromptMatchMessage(prompt, null, message)) {
       return message;
     }
   }
@@ -281,14 +313,10 @@ function resolveRootElement(html: unknown): HTMLElement | null {
 function getDocumentId(value: unknown): string | null {
   if (!value || typeof value !== "object") return null;
 
-  const documentLike = value as { id?: unknown; uuid?: unknown };
+  const documentLike = value as { id?: unknown };
 
   if (typeof documentLike.id === "string" && documentLike.id.length > 0) {
     return documentLike.id;
-  }
-
-  if (typeof documentLike.uuid === "string" && documentLike.uuid.length > 0) {
-    return documentLike.uuid;
   }
 
   return null;
@@ -298,8 +326,6 @@ function toKebabCase(value: string): string {
   return value.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 }
 
-function escapeAttribute(value: string): string {
-  const element = document.createElement("span");
-  element.textContent = value;
-  return element.innerHTML.replaceAll('"', "&quot;");
+function escapeCssAttributeValue(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }

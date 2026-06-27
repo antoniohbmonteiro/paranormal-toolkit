@@ -1,7 +1,6 @@
 import { OrdemResourceAdapter } from "./adapters/ordem/ordem-resource-adapter";
 import { OrdemRitualAdapter } from "./adapters/ordem/ordem-ritual-adapter";
 import { OrdemRitualCostProvider } from "./adapters/ordem/ordem-ritual-cost-provider";
-import { OrdemItemRollWrapperStrategy } from "./adapters/ordem/item-use/ordem-item-roll-wrapper-strategy";
 import { OrdemItemUsedHookStrategy } from "./adapters/ordem/item-use/ordem-item-used-hook-strategy";
 import { OrdemSystemAdapter } from "./adapters/ordem/ordem-system-adapter";
 import { AutomationBinder } from "./core/automation/automation-binder";
@@ -53,7 +52,6 @@ export function createToolkitServices(): ToolkitServices {
   const itemUseIntegration = new ItemUseIntegration(workflow, debugOutput);
 
   itemUseIntegration.addStrategy(new OrdemItemUsedHookStrategy((context) => itemUseIntegration.handleItemUsed(context)));
-  itemUseIntegration.addStrategy(new OrdemItemRollWrapperStrategy((context) => itemUseIntegration.handleItemUsed(context)));
 
   return {
     ordem,

@@ -9,6 +9,7 @@ export type ItemUseContext = {
   token: WorkflowTokenRef | null;
   targets: WorkflowTarget[];
   message?: unknown;
+  chatMessageData?: unknown;
   originalResult?: unknown;
 };
 
