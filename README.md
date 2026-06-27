@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.10.0`.
+Versão experimental atual: `v0.10.4`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -144,6 +144,8 @@ Os modos antigos `buttons` e `confirm` são tratados como compatibilidade e conv
 
 A partir da `0.10.0`, rituais automatizados em modo `ask` usam um fluxo assistido inicial.
 
+> Aviso temporário: até o sistema Ordem expor uma etapa pré-`ChatMessage.create`, o Toolkit ainda não consegue impedir completamente rolagens inline da descrição nem evitar que o card original seja criado antes da confirmação do popup. O resultado oficial automatizado é o bloco do Paranormal Toolkit.
+
 Fluxo atual:
 
 ```txt
@@ -178,24 +180,29 @@ Presets built-in atuais:
 ```txt
 ritual.costOnly
 ritual.simpleHealing
+ritual.eletrocucao
 ritual.simpleDamage
 generic.simpleHealing
 ```
 
-`Cicatrização` já é reconhecida por nome normalizado e aponta para um preset inicial de cura. Isso é apenas o começo do modelo: nome pode ajudar a encontrar uma automação compatível, mas a execução real usa a flag gravada no item.
+`Cicatrização` já é reconhecida por nome normalizado e aponta para um preset inicial de cura. `Eletrocussão` também é reconhecida por nome normalizado e aponta para um preset inicial de dano de energia: custo do ritual, rolagem `1d8` e ação assistida para aplicar dano em PV. A resistência de Fortitude para reduzir dano à metade ainda deve ser resolvida manualmente até o Toolkit ter workflow de resistência.
+
+Isso é apenas o começo do modelo: nome pode ajudar a encontrar uma automação compatível, mas a execução real usa a flag gravada no item.
 
 ## Uso pela ficha
 
 A partir da linha `0.9.x`, o Toolkit usa `ordemparanormal.itemUsed` como fonte principal de uso de item no sistema não-oficial de Ordem Paranormal.
 
-Para testar o modo assistido:
+Para testar o modo assistido com todos os rituais conhecidos do ator selecionado:
 
 ```js
-await ParanormalToolkit.debug.automation.applyBestPresetToFirstRitual();
+await ParanormalToolkit.debug.automation.applyBestPresetToAllRituals();
 await ParanormalToolkit.debug.itemUseIntegration.ask();
 
 ParanormalToolkit.debug.itemUseIntegration.status();
 ```
+
+O comando antigo `applyBestPresetToFirstRitual()` continua disponível para testes pontuais, mas o fluxo recomendado agora é aplicar presets em todos os rituais do ator selecionado.
 
 Depois use o item/ritual pela ficha. Se o item tiver `flags.paranormal-toolkit.automation.definition`, o Toolkit criará uma ação assistida no card de chat do item.
 
@@ -230,15 +237,20 @@ debug.itemUseIntegration.*
 debug.output.*
 ```
 
-Comandos úteis para uso de item:
+Comandos úteis para automações e uso de item:
 
 ```js
+await ParanormalToolkit.debug.automation.applyBestPresetToAllRituals();
+await ParanormalToolkit.debug.automation.applyBestPresetToFirstRitual();
+
 await ParanormalToolkit.debug.itemUseIntegration.disable();
 await ParanormalToolkit.debug.itemUseIntegration.ask();
 await ParanormalToolkit.debug.itemUseIntegration.automatic();
 
 ParanormalToolkit.itemUseIntegration.status();
 ```
+
+`applyBestPresetToAllRituals()` retorna um resumo com rituais atualizados e rituais ignorados por falta de preset compatível. Isso facilita testar Cicatrização e Eletrocussão no mesmo ator sem reaplicar preset manualmente.
 
 Para inspecionar o último workflow executado:
 
@@ -247,6 +259,44 @@ ParanormalToolkit.debug.workflow.lastContext();
 ```
 
 Esse comando retorna um snapshot enxuto, sem despejar `Actor`, `Item`, `Token` ou `Roll` completos no console.
+
+
+## Presets de ritual e dados visíveis do item
+
+A partir da `0.10.4`, presets específicos de ritual podem aplicar duas coisas juntas:
+
+- a automação do Toolkit, com custo, rolagem, cura/dano e botão assistido no chat;
+- um patch visual/dados do item, com nome, círculo, elemento, execução, alcance, alvo, duração, resistência e descrição técnica do Toolkit.
+
+Por enquanto isso é intencionalmente acoplado ao ato de aplicar preset. Rodar o comando abaixo normaliza o item novamente:
+
+```js
+await ParanormalToolkit.debug.automation.applyBestPresetToAllRituals();
+```
+
+Presets atuais com patch de item:
+
+```txt
+Cicatrização
+- Círculo: 1
+- Elemento: Morte
+- Execução: Padrão
+- Alcance: Toque
+- Alvo: 1 ser
+- Duração: Instantânea
+- Resistência: nenhuma
+
+Eletrocussão
+- Círculo: 1
+- Elemento: Energia
+- Execução: Padrão
+- Alcance: Médio
+- Alvo: 1 ser
+- Duração: Instantânea
+- Resistência: Fortitude reduz à metade
+```
+
+A descrição original é substituída por um aviso curto do Paranormal Toolkit. Isso evita redistribuir texto protegido e deixa claro que a automação é controlada pela flag do módulo, não pela descrição do item. Se o jogador ou mestre editar a descrição depois, a automação continua funcionando.
 
 ## Roadmap resumido
 

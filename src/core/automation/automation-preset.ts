@@ -22,6 +22,25 @@ export type AutomationPresetRitualCircleMatcher = {
   circles: Array<1 | 2 | 3 | 4>;
 };
 
+export type AutomationPresetItemPatch = {
+  kind: "ritual";
+  name?: string;
+  descriptionHtml?: string;
+  ritual?: AutomationPresetRitualItemPatch;
+};
+
+export type AutomationPresetRitualItemPatch = {
+  circle?: 1 | 2 | 3 | 4;
+  element?: string;
+  target?: string;
+  targetQuantity?: string;
+  execution?: string;
+  range?: string;
+  duration?: string;
+  resistanceSkill?: string;
+  resistance?: string;
+};
+
 export type AutomationPreset = {
   id: string;
   version: string;
@@ -31,6 +50,7 @@ export type AutomationPreset = {
   itemTypes: string[];
   matchers: AutomationPresetMatcher[];
   automation: AutomationDefinition;
+  itemPatch?: AutomationPresetItemPatch;
 };
 
 export type AutomationPresetSummary = {
@@ -41,6 +61,7 @@ export type AutomationPresetSummary = {
   category: AutomationPresetCategory;
   itemTypes: string[];
   matchers: AutomationPresetMatcher[];
+  hasItemPatch: boolean;
 };
 
 export function createAutomationPresetSummary(preset: AutomationPreset): AutomationPresetSummary {
@@ -51,6 +72,7 @@ export function createAutomationPresetSummary(preset: AutomationPreset): Automat
     description: preset.description,
     category: preset.category,
     itemTypes: [...preset.itemTypes],
-    matchers: preset.matchers.map((matcher) => ({ ...matcher }))
+    matchers: preset.matchers.map((matcher) => ({ ...matcher })),
+    hasItemPatch: preset.itemPatch !== undefined
   };
 }

@@ -1,15 +1,23 @@
 import type { AutomationDefinition, AutomationStep } from "../../core/automation/automation-definition";
-import type { AutomationPreset } from "../../core/automation/automation-preset";
+import type { AutomationPreset, AutomationPresetItemPatch } from "../../core/automation/automation-preset";
 
 export const RITUAL_COST_ONLY_PRESET_ID = "ritual.costOnly";
 export const RITUAL_SIMPLE_HEALING_PRESET_ID = "ritual.simpleHealing";
+export const RITUAL_ELECTROCUTION_PRESET_ID = "ritual.eletrocussao";
 export const RITUAL_SIMPLE_DAMAGE_PRESET_ID = "ritual.simpleDamage";
 export const GENERIC_SIMPLE_HEALING_PRESET_ID = "generic.simpleHealing";
+
+const AUTOMATED_RITUAL_DESCRIPTION = `
+<p><strong>Paranormal Toolkit</strong></p>
+<p>A descrição original foi substituída ao aplicar este preset de automação.</p>
+<p>Você pode editar este campo livremente; a automação continua sendo controlada pelo módulo.</p>
+`;
 
 export function createBuiltInAutomationPresets(): AutomationPreset[] {
   return [
     createRitualCostOnlyPreset(),
     createRitualSimpleHealingPreset(),
+    createRitualElectrocutionPreset(),
     createRitualSimpleDamagePreset(),
     createGenericSimpleHealingPreset()
   ];
@@ -45,7 +53,7 @@ export function createRitualSimpleHealingPreset(): AutomationPreset {
   return {
     id: RITUAL_SIMPLE_HEALING_PRESET_ID,
     version: "1.0.0",
-    label: "Ritual de cura simples",
+    label: "Cicatrização",
     description: "Gasta o custo do ritual, rola 2d8+2 de cura e recupera PV do alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
@@ -55,7 +63,28 @@ export function createRitualSimpleHealingPreset(): AutomationPreset {
         names: ["cicatrizacao"]
       }
     ],
-    automation: createRitualSimpleHealingDefinition()
+    automation: createRitualSimpleHealingDefinition(),
+    itemPatch: createCicatrizationItemPatch()
+  };
+}
+
+export function createRitualElectrocutionPreset(): AutomationPreset {
+  return {
+    id: RITUAL_ELECTROCUTION_PRESET_ID,
+    version: "1.0.0",
+    label: "Eletrocussão",
+    description:
+      "Preset inicial de dano de energia. Gasta o custo do ritual, rola 1d8 e prepara ação assistida para aplicar dano em PV do alvo.",
+    category: "ritual",
+    itemTypes: ["ritual"],
+    matchers: [
+      {
+        type: "normalizedName",
+        names: ["eletrocussao", "eletrocucao"]
+      }
+    ],
+    automation: createRitualElectrocutionDefinition(),
+    itemPatch: createElectrocutionItemPatch()
   };
 }
 
@@ -118,7 +147,7 @@ export function createRitualSimpleHealingDefinition(formula = "2d8+2"): Automati
   return replaceRollFormula(
     {
       version: 1,
-      label: "Ritual de cura simples",
+      label: "Cicatrização",
       steps: [
         {
           type: "spendRitualCost"
@@ -138,7 +167,7 @@ export function createRitualSimpleHealingDefinition(formula = "2d8+2"): Automati
         },
         {
           type: "chatCard",
-          title: "Ritual de cura simples",
+          title: "Cicatrização",
           message: "Gasta o custo do ritual, rola a fórmula de cura e recupera PV do alvo."
         }
       ]
@@ -148,11 +177,34 @@ export function createRitualSimpleHealingDefinition(formula = "2d8+2"): Automati
   );
 }
 
-export function createRitualSimpleDamageDefinition(formula = "1d8"): AutomationDefinition {
+export function createRitualElectrocutionDefinition(formula = "1d8"): AutomationDefinition {
+  return createRitualSimpleDamageDefinition(formula, {
+    label: "Eletrocussão",
+    title: "Eletrocussão",
+    damageType: "energia",
+    message:
+      "Gasta o custo do ritual, rola dano de energia e prepara aplicação de dano em PV do alvo. Resistência deve ser resolvida manualmente por enquanto."
+  });
+}
+
+export function createRitualSimpleDamageDefinition(
+  formula = "1d8",
+  options: {
+    label?: string;
+    title?: string;
+    damageType?: string;
+    message?: string;
+  } = {}
+): AutomationDefinition {
+  const label = options.label ?? "Ritual de dano simples";
+  const title = options.title ?? "Ritual de dano simples";
+  const damageType = options.damageType ?? "generic";
+  const message = options.message ?? "Gasta o custo do ritual, rola a fórmula de dano e causa dano em PV do alvo.";
+
   return replaceRollFormula(
     {
       version: 1,
-      label: "Ritual de dano simples",
+      label,
       steps: [
         {
           type: "spendRitualCost"
@@ -162,7 +214,7 @@ export function createRitualSimpleDamageDefinition(formula = "1d8"): AutomationD
           id: "damage",
           formula: "1d8",
           intent: "damage",
-          damageType: "generic"
+          damageType
         },
         {
           type: "modifyResource",
@@ -173,14 +225,52 @@ export function createRitualSimpleDamageDefinition(formula = "1d8"): AutomationD
         },
         {
           type: "chatCard",
-          title: "Ritual de dano simples",
-          message: "Gasta o custo do ritual, rola a fórmula de dano e causa dano em PV do alvo."
+          title,
+          message
         }
       ]
     },
     "damage",
     formula
   );
+}
+
+function createCicatrizationItemPatch(): AutomationPresetItemPatch {
+  return {
+    kind: "ritual",
+    name: "Cicatrização",
+    descriptionHtml: AUTOMATED_RITUAL_DESCRIPTION,
+    ritual: {
+      circle: 1,
+      element: "death",
+      execution: "default",
+      range: "touch",
+      target: "creatures",
+      targetQuantity: "1",
+      duration: "instantaneous",
+      resistanceSkill: "",
+      resistance: ""
+    }
+  };
+}
+
+function createElectrocutionItemPatch(): AutomationPresetItemPatch {
+  return {
+    kind: "ritual",
+    name: "Eletrocussão",
+    descriptionHtml: AUTOMATED_RITUAL_DESCRIPTION,
+    ritual: {
+      circle: 1,
+      element: "energy",
+      execution: "default",
+      range: "medium",
+      target: "creatures",
+      targetQuantity: "1",
+      duration: "instantaneous",
+      resistanceSkill: "resilience",
+      resistance: "reducesByHalf"
+    }
+  };
 }
 
 function replaceRollFormula(definition: AutomationDefinition, rollId: string, formula: string): AutomationDefinition {

@@ -2,6 +2,7 @@ import { OrdemResourceAdapter } from "./adapters/ordem/ordem-resource-adapter";
 import { OrdemRitualAdapter } from "./adapters/ordem/ordem-ritual-adapter";
 import { OrdemRitualCostProvider } from "./adapters/ordem/ordem-ritual-cost-provider";
 import { OrdemItemUsedHookStrategy } from "./adapters/ordem/item-use/ordem-item-used-hook-strategy";
+import { OrdemItemPatchAdapter } from "./adapters/ordem/ordem-item-patch-adapter";
 import { OrdemSystemAdapter } from "./adapters/ordem/ordem-system-adapter";
 import { AutomationBinder } from "./core/automation/automation-binder";
 import { AutomationRegistry } from "./core/automation/automation-registry";
@@ -22,6 +23,7 @@ export type ToolkitServices = {
   resources: ResourceEngine;
   automationRegistry: AutomationRegistry;
   automationBinder: AutomationBinder;
+  itemPatches: OrdemItemPatchAdapter;
   debugOutput: DebugOutputService;
   chatMessages: ChatMessageService;
   workflowHooks: WorkflowHookEmitter;
@@ -44,6 +46,7 @@ export function createToolkitServices(): ToolkitServices {
   }
 
   const automationBinder = new AutomationBinder();
+  const itemPatches = new OrdemItemPatchAdapter();
   const debugOutput = new DebugOutputService();
   const chatMessages = new ChatMessageService(debugOutput);
   const workflowHooks = new WorkflowHookEmitter();
@@ -61,6 +64,7 @@ export function createToolkitServices(): ToolkitServices {
     resources,
     automationRegistry,
     automationBinder,
+    itemPatches,
     debugOutput,
     chatMessages,
     workflowHooks,
