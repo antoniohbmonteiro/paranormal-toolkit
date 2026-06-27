@@ -1,10 +1,5 @@
 import type { ToolkitServices } from "../../toolkit-services";
-import {
-  getItemUseSettings,
-  setItemUseAutoRunEnabled,
-  setItemUseExecutionMode,
-  type AutomationExecutionMode
-} from "./item-use-settings";
+import { getItemUseSettings, setItemUseExecutionMode, type AutomationExecutionMode } from "./item-use-settings";
 import type { ItemUseIntegrationStatus } from "./item-use-integration";
 
 export type ItemUseIntegrationDebugApi = {
@@ -12,8 +7,14 @@ export type ItemUseIntegrationDebugApi = {
   enable(): Promise<void>;
   disable(): Promise<void>;
   setMode(mode: AutomationExecutionMode): Promise<void>;
+  ask(): Promise<void>;
+
+  /** @deprecated Use ask() */
   buttons(): Promise<void>;
+
+  /** @deprecated Use ask() */
   confirm(): Promise<void>;
+
   automatic(): Promise<void>;
 };
 
@@ -24,12 +25,12 @@ export function createItemUseIntegrationDebugApi(services: ToolkitServices): Ite
     },
 
     async enable(): Promise<void> {
-      await setItemUseAutoRunEnabled(true);
-      ui.notifications?.info("Paranormal Toolkit: automação ao usar item em modo automático.");
+      await setItemUseExecutionMode("ask");
+      ui.notifications?.info("Paranormal Toolkit: automações ao usar item em modo perguntar no chat.");
     },
 
     async disable(): Promise<void> {
-      await setItemUseAutoRunEnabled(false);
+      await setItemUseExecutionMode("disabled");
       ui.notifications?.info("Paranormal Toolkit: automação ao usar item desativada.");
     },
 
@@ -38,14 +39,19 @@ export function createItemUseIntegrationDebugApi(services: ToolkitServices): Ite
       ui.notifications?.info(`Paranormal Toolkit: modo de automação ao usar item alterado para ${mode}.`);
     },
 
+    async ask(): Promise<void> {
+      await setItemUseExecutionMode("ask");
+      ui.notifications?.info("Paranormal Toolkit: automações ao usar item em modo perguntar no chat.");
+    },
+
     async buttons(): Promise<void> {
-      await setItemUseExecutionMode("buttons");
-      ui.notifications?.info("Paranormal Toolkit: automações ao usar item em modo botões no chat.");
+      await setItemUseExecutionMode("ask");
+      ui.notifications?.info("Paranormal Toolkit: modo buttons foi substituído por ask/perguntar no chat.");
     },
 
     async confirm(): Promise<void> {
-      await setItemUseExecutionMode("confirm");
-      ui.notifications?.info("Paranormal Toolkit: automações ao usar item em modo confirmação.");
+      await setItemUseExecutionMode("ask");
+      ui.notifications?.info("Paranormal Toolkit: modo confirm foi substituído por ask/perguntar no chat.");
     },
 
     async automatic(): Promise<void> {
@@ -55,6 +61,7 @@ export function createItemUseIntegrationDebugApi(services: ToolkitServices): Ite
   };
 }
 
+/** @deprecated Use getItemUseSettings().executionMode === "automatic". */
 export function isItemUseAutoRunEnabled(): boolean {
-  return getItemUseSettings().autoRun;
+  return getItemUseSettings().executionMode === "automatic";
 }

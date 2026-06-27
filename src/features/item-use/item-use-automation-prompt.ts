@@ -14,7 +14,7 @@ const PROMPT_EXECUTED_BUTTON_CLASS = `${PROMPT_CLASS}__button--executed`;
 export type ItemUseAutomationPromptInput = {
   pendingId: string;
   context: ItemUseContext;
-  mode: Extract<AutomationExecutionMode, "buttons">;
+  mode: Extract<AutomationExecutionMode, "ask">;
 };
 
 export type ItemUseAutomationPromptHandler = (pendingId: string) => Promise<boolean>;
@@ -167,7 +167,7 @@ function createPromptButton(pendingId: string): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.classList.add(`${PROMPT_CLASS}__button`);
-  button.textContent = "Executar automação";
+  button.textContent = "Aplicar automação";
   button.setAttribute(PENDING_ID_ATTRIBUTE, pendingId);
   return button;
 }
@@ -211,12 +211,12 @@ async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAuto
 
   button.disabled = true;
   const originalText = button.textContent;
-  button.textContent = "Executando...";
+  button.textContent = "Aplicando...";
 
   const executed = await handler(pendingId);
 
   if (executed) {
-    button.textContent = "✓ Automação executada";
+    button.textContent = "✓ Automação aplicada";
     button.classList.add(PROMPT_EXECUTED_BUTTON_CLASS);
     button.removeAttribute(PENDING_ID_ATTRIBUTE);
     return;

@@ -6,9 +6,9 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.8.1`.
+Versão experimental atual: `v0.9.1`.
 
-O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, mas a UX final de mesa ainda está em construção.
+O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração inicial com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal.
 
 Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem compatibilidade retroativa.
 
@@ -20,15 +20,15 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Cura e dano automáticos | Rola a fórmula configurada e aplica cura ou dano no alvo selecionado. | Implementado |
 | Controle de recursos | Gasta, cura, recupera ou reduz PV, SAN, PE e PD respeitando limites da ficha. | Implementado |
 | Automações por item | Permite aplicar automações em rituais, habilidades ou itens usando flags próprias do módulo. | Implementado |
-| Uso pela ficha | Executa automações experimentais ao usar o item normalmente pela ficha do sistema. | Experimental |
-| Modos de automação | Permitirá ao mestre escolher entre manual, botões, confirmação ou execução automática. | Planejado |
-| Botões no chat | Permitirá rolar, gastar recurso e aplicar efeitos direto pelo card do chat. | Planejado |
+| Uso pela ficha | Escuta o hook `ordemparanormal.itemUsed` do sistema e reage ao uso normal de itens automatizados. | Implementado inicial |
+| Modo perguntar no chat | Ao usar um item automatizado, cria uma ação assistida no card de chat em vez de aplicar imediatamente. | Implementado inicial |
+| Modo automático | Executa a automação diretamente ao usar o item. | Experimental |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
 | Condições e efeitos | Aplicará condições e Active Effects quando rituais, habilidades ou regras pedirem. | Planejado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
 | Integração com animações | Preparará eventos para efeitos visuais, sons e animações em um módulo companion. | Planejado |
 
-O Paranormal Toolkit é pensado para ser configurável por mesa: o mestre pode deixar tudo manual, usar apenas botões assistidos ou ativar automações mais completas conforme o estilo do grupo.
+O Paranormal Toolkit é pensado para ser configurável por mesa: o mestre pode deixar tudo desligado, usar modo assistido no chat ou ativar automações mais diretas conforme o estilo do grupo.
 
 ## Requisitos
 
@@ -79,7 +79,9 @@ item usado
 ↓
 resolver origem e alvos
 ↓
-gastar custo/recurso
+modo disabled, ask ou automatic
+↓
+gastar custo/recurso quando a automação realmente executar
 ↓
 rolar fórmula
 ↓
@@ -110,6 +112,30 @@ flags["paranormal-toolkit"].automation = {
 };
 ```
 
+## Modos de automação ao usar item
+
+A partir da `0.9.1`, a configuração principal é `executionMode`.
+
+```txt
+disabled  -> não faz nada quando um item é usado
+ask       -> mostra ação assistida no chat
+automatic -> executa a automação diretamente
+```
+
+`ask` é o modo recomendado durante o desenvolvimento e para mesas reais. Ele representa uma decisão de produto: o Toolkit pode preparar o workflow, mas a aplicação de cura, dano ou efeito deve acontecer por uma ação clara no chat.
+
+O botão atual ainda é um fallback genérico de automação. A evolução planejada é trocar esse fallback por ações específicas de jogo, por exemplo:
+
+```txt
+Curar Amendoin
+Aplicar dano em Existido
+Gastar PE
+Testar resistência
+Aplicar condição
+```
+
+Os modos antigos `buttons` e `confirm` são tratados como compatibilidade e convertidos para `ask`.
+
 ## Presets iniciais
 
 Presets built-in atuais:
@@ -125,25 +151,29 @@ generic.simpleHealing
 
 ## Uso pela ficha
 
-A partir da linha `0.8.x`, o Toolkit consegue executar automações quando um item automatizado é usado normalmente pela ficha do sistema.
+A partir da linha `0.9.x`, o Toolkit usa `ordemparanormal.itemUsed` como fonte principal de uso de item no sistema não-oficial de Ordem Paranormal.
 
-A execução automática fica desligada por padrão por ser experimental.
-
-Para testar:
+Para testar o modo assistido:
 
 ```js
 await ParanormalToolkit.debug.automation.applyBestPresetToFirstRitual();
-await ParanormalToolkit.debug.itemUseIntegration.enable();
+await ParanormalToolkit.debug.itemUseIntegration.ask();
 
 ParanormalToolkit.debug.itemUseIntegration.status();
 ```
 
-Depois use o item/ritual pela ficha. Se o item tiver `flags.paranormal-toolkit.automation.definition`, o workflow será executado usando o ator do item como origem e os targets atuais do usuário como alvos.
+Depois use o item/ritual pela ficha. Se o item tiver `flags.paranormal-toolkit.automation.definition`, o Toolkit criará uma ação assistida no card de chat do item.
 
 Para desativar:
 
 ```js
 await ParanormalToolkit.debug.itemUseIntegration.disable();
+```
+
+Para executar diretamente, uso recomendado apenas para teste controlado:
+
+```js
+await ParanormalToolkit.debug.itemUseIntegration.automatic();
 ```
 
 ## API de debug
@@ -165,6 +195,16 @@ debug.itemUseIntegration.*
 debug.output.*
 ```
 
+Comandos úteis para uso de item:
+
+```js
+await ParanormalToolkit.debug.itemUseIntegration.disable();
+await ParanormalToolkit.debug.itemUseIntegration.ask();
+await ParanormalToolkit.debug.itemUseIntegration.automatic();
+
+ParanormalToolkit.itemUseIntegration.status();
+```
+
 Para inspecionar o último workflow executado:
 
 ```js
@@ -180,10 +220,8 @@ Antes da `1.0.0`, o foco é estabilizar a base:
 - adicionar testes unitários para core;
 - separar melhor core puro de APIs globais do Foundry;
 - reduzir responsabilidades do `AutomationRunner`;
-- trocar `autoRun` boolean por modos de automação;
-- usar `ordemparanormal.itemUsed` como integração principal quando disponível;
-- manter wrapper de item como fallback temporário;
-- adicionar botões no chat para automação assistida;
+- evoluir o modo `ask` para ações específicas no chat, como curar, aplicar dano e aplicar condição;
+- criar diálogo de conjuração de ritual com forma base/discente/verdadeira, gasto opcional de PE/PD e snapshot de alvos;
 - criar bloqueio visual de rolagens inline duplicadas;
 - criar presets específicos por ritual;
 - iniciar automações de armas, melhorias e categoria;

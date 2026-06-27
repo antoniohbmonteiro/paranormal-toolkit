@@ -10,7 +10,6 @@ import {
   registerPendingItemUseAutomationPrompt,
   unregisterPendingItemUseAutomationPrompt
 } from "./item-use-automation-prompt";
-import { confirmItemUseAutomationExecution } from "./item-use-confirmation";
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import { getItemUseSettings, type ItemUseSettingsSnapshot } from "./item-use-settings";
 import type {
@@ -33,7 +32,7 @@ type PendingAutomationExecution = {
   id: string;
   definition: AutomationDefinition;
   context: ItemUseContext;
-  mode: Extract<AutomationExecutionMode, "buttons">;
+  mode: Extract<AutomationExecutionMode, "ask">;
   createdAt: number;
 };
 
@@ -113,11 +112,8 @@ export class ItemUseIntegration {
     this.markExecution(context);
 
     switch (settings.executionMode) {
-      case "buttons":
+      case "ask":
         await this.createPendingPrompt(context, definition.value);
-        return;
-      case "confirm":
-        await this.handleConfirmedExecution(context, definition.value);
         return;
       case "automatic":
         await this.executeAutomation(context, definition.value, "automatic");
@@ -154,28 +150,17 @@ export class ItemUseIntegration {
       id: pendingId,
       definition,
       context,
-      mode: "buttons",
+      mode: "ask",
       createdAt: Date.now()
     });
 
     registerPendingItemUseAutomationPrompt({
       pendingId,
       context,
-      mode: "buttons"
+      mode: "ask"
     });
 
-    this.setAttempt(context, "pending", "execution-mode-buttons", pendingId);
-  }
-
-  private async handleConfirmedExecution(context: ItemUseContext, definition: AutomationDefinition): Promise<void> {
-    const confirmed = await confirmItemUseAutomationExecution(context);
-
-    if (!confirmed) {
-      this.setAttempt(context, "skipped", "confirmation-cancelled");
-      return;
-    }
-
-    await this.executeAutomation(context, definition, "confirm");
+    this.setAttempt(context, "pending", "execution-mode-ask", pendingId);
   }
 
   private async executeAutomation(
