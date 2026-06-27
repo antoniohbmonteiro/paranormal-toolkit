@@ -1,11 +1,16 @@
 import { failure, type Result, success } from "../result";
-import { getRollIdFromAmountSource, resolveAutomationAmount } from "./automation-amount-resolver";
+import { resolveAutomationAmount } from "./automation-amount-resolver";
 import { createAutomationRollRequest, executeAutomationRollFormula } from "./automation-roll-executor";
 import { executeAutomationResourceOperation } from "./automation-resource-executor";
 import { recordAutomationApplication } from "./automation-application-recorder";
+import {
+  createAutomationApplyMetadata,
+  emitAutomationApplyCompletedLifecycle,
+  emitAutomationApplyStartLifecycle
+} from "./automation-apply-lifecycle";
+import { executeAutomationChatCard } from "./automation-chat-executor";
 import type { RitualCostProvider } from "../rituals/ritual-cost-provider";
 import type { ResourceEngine, ResourceOperationResult } from "../resources/resource-engine";
-import type { ResourceOperation } from "../resources/resource-operation";
 import type { ResourceTransaction } from "../resources/resource-transaction";
 import type { WorkflowContext } from "../workflow/workflow-context";
 import type { WorkflowHookEmitter } from "../workflow/workflow-hook-emitter";
@@ -240,14 +245,15 @@ export class AutomationRunner {
       return failure({ ...amount.error, stepIndex, step, context });
     }
 
-    const metadata = this.createApplyMetadata(step, context, amount.value);
+    const metadata = createAutomationApplyMetadata(step, context, amount.value);
 
-    this.lifecycle.emit("beforeApply", context, { stepIndex, step, metadata });
-    this.emitSpecificApplyPhase("before", step, context, stepIndex, metadata);
-    this.emitDamageResolutionPhase("before", step, context, stepIndex, metadata);
-    this.emitDamageResolutionPhase("resolve", step, context, stepIndex, metadata);
-    this.lifecycle.emit("apply", context, { stepIndex, step, metadata });
-    this.emitSpecificApplyPhase("apply", step, context, stepIndex, metadata);
+    emitAutomationApplyStartLifecycle({
+      lifecycle: this.lifecycle,
+      context,
+      step,
+      stepIndex,
+      metadata
+    });
 
     const actors = this.resolveActors(step.actor, context);
 
@@ -278,7 +284,13 @@ export class AutomationRunner {
       });
     }
 
-    this.lifecycle.emit("afterApply", context, { stepIndex, step, metadata });
+    emitAutomationApplyCompletedLifecycle({
+      lifecycle: this.lifecycle,
+      context,
+      step,
+      stepIndex,
+      metadata
+    });
 
     return success(undefined);
   }
@@ -323,19 +335,13 @@ export class AutomationRunner {
     context: WorkflowContext,
     stepIndex: number
   ): Promise<Result<void, AutomationRunFailure>> {
-    try {
-      await this.messages.createWorkflowSummaryMessage(context, step);
-      return success(undefined);
-    } catch (cause) {
-      return failure({
-        reason: "chat-card-failed",
-        message: "Workflow executado, mas falhou ao criar chat card de resumo.",
-        stepIndex,
-        step,
-        context,
-        cause
-      });
+    const result = await executeAutomationChatCard(this.messages, context, step);
+
+    if (!result.ok) {
+      return failure({ ...result.error, stepIndex, step, context });
     }
+
+    return success(undefined);
   }
 
   private handleResourceOperationResult(
@@ -376,56 +382,6 @@ export class AutomationRunner {
       step,
       rollRequest,
       rollResult
-    });
-  }
-
-  private createApplyMetadata(step: ModifyResourceStep, context: WorkflowContext, amount: number): Record<string, unknown> {
-    const rollId = getRollIdFromAmountSource(step.amountFrom);
-    const roll = rollId ? context.rolls[rollId] : undefined;
-
-    return {
-      actorSelector: step.actor,
-      resource: step.resource,
-      operation: step.operation,
-      amount,
-      amountFrom: step.amountFrom,
-      rollId,
-      rollIntent: roll?.intent,
-      damageType: roll?.damageType
-    };
-  }
-
-  private emitSpecificApplyPhase(
-    timing: "before" | "apply" | "after",
-    step: ModifyResourceStep,
-    context: WorkflowContext,
-    stepIndex: number,
-    metadata: Record<string, unknown>
-  ): void {
-    const phase = getSpecificApplyPhase(timing, step.operation);
-
-    if (!phase) return;
-
-    this.lifecycle.emit(phase, context, {
-      stepIndex,
-      step,
-      metadata
-    });
-  }
-
-  private emitDamageResolutionPhase(
-    timing: "before" | "resolve",
-    step: ModifyResourceStep,
-    context: WorkflowContext,
-    stepIndex: number,
-    metadata: Record<string, unknown>
-  ): void {
-    if (step.operation !== "damage") return;
-
-    this.lifecycle.emit(timing === "before" ? "beforeDamageResolution" : "damageResolution", context, {
-      stepIndex,
-      step,
-      metadata
     });
   }
 
@@ -471,22 +427,6 @@ function getSpecificRollPhase(timing: "before" | "roll" | "after", intent: Workf
     if (timing === "before") return "beforeHealingRoll";
     if (timing === "roll") return "healingRoll";
     return "afterHealingRoll";
-  }
-
-  return null;
-}
-
-function getSpecificApplyPhase(timing: "before" | "apply" | "after", operation: ResourceOperation): WorkflowPhase | null {
-  if (operation === "damage") {
-    if (timing === "before") return "beforeApplyDamage";
-    if (timing === "apply") return "applyDamage";
-    return "afterApplyDamage";
-  }
-
-  if (operation === "heal") {
-    if (timing === "before") return "beforeApplyHealing";
-    if (timing === "apply") return "applyHealing";
-    return "afterApplyHealing";
   }
 
   return null;
