@@ -2,6 +2,8 @@ import { MODULE_ID } from "../../constants";
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import type { ItemUseContext } from "./item-use-context";
 
+const PROMPT_FLAG_KEY = "itemUsePrompts";
+const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
 const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
 const DETAIL_KEY_ATTRIBUTE = "data-paranormal-toolkit-detail-key";
@@ -26,11 +28,31 @@ export type ItemUseAutomationPromptInput = {
 
 export type ItemUseAutomationPromptHandler = (pendingId: string) => Promise<boolean>;
 
-type PendingItemUseAutomationPrompt = ItemUseAutomationPromptInput & {
+type RenderableItemUseAutomationPrompt = {
+  pendingId: string;
+  mode: Extract<AutomationExecutionMode, "ask">;
+  title?: string;
+  buttonLabel?: string;
+  executedLabel?: string;
+  summaryLines?: string[];
   createdAt: number;
   messageId: string | null;
   itemId: string | null;
   actorId: string | null;
+  summary: string;
+  executed: boolean;
+};
+
+type PendingItemUseAutomationPrompt = ItemUseAutomationPromptInput & RenderableItemUseAutomationPrompt;
+
+type PersistedItemUseAutomationPrompt = RenderableItemUseAutomationPrompt & {
+  schemaVersion: 1;
+};
+
+type ChatMessageFlagDocument = {
+  id?: unknown;
+  getFlag?: (scope: string, key: string) => unknown;
+  setFlag?: (scope: string, key: string, value: unknown) => Promise<unknown> | unknown;
 };
 
 let promptRendererRegistered = false;
@@ -44,34 +66,44 @@ export function registerItemUseAutomationPromptRenderer(handler: ItemUseAutomati
   if (promptRendererRegistered) return;
 
   Hooks.on("renderChatMessageHTML", (message: unknown, html: unknown) => {
-    renderPendingPromptIntoChatMessage(message, html, handler);
+    renderPendingPromptsIntoChatMessage(message, html, handler);
   });
 
   promptRendererRegistered = true;
 }
 
-export function registerPendingItemUseAutomationPrompt(input: ItemUseAutomationPromptInput): void {
+export async function registerPendingItemUseAutomationPrompt(input: ItemUseAutomationPromptInput): Promise<void> {
   const prompt = createPendingPrompt(input);
   pendingPrompts.set(input.pendingId, prompt);
 
+  await persistPromptInChatMessage(prompt);
   renderPromptIntoExistingChatLog(input.pendingId);
 }
 
-export function unregisterPendingItemUseAutomationPrompt(pendingId: string): void {
+export async function unregisterPendingItemUseAutomationPrompt(pendingId: string): Promise<void> {
+  const prompt = pendingPrompts.get(pendingId);
   pendingPrompts.delete(pendingId);
+
+  if (!prompt) return;
+
+  await markPersistedPromptAsExecuted(prompt);
 }
 
 function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUseAutomationPrompt {
+  const messageId = getDocumentId(input.context.message);
+
   return {
     ...input,
     createdAt: Date.now(),
-    messageId: getDocumentId(input.context.message),
+    messageId,
     itemId: input.context.item.id ?? null,
-    actorId: input.context.actor?.id ?? null
+    actorId: input.context.actor?.id ?? null,
+    summary: createPromptSummary(input.context),
+    executed: false
   };
 }
 
-function renderPendingPromptIntoChatMessage(
+function renderPendingPromptsIntoChatMessage(
   message: unknown,
   html: unknown,
   handler: ItemUseAutomationPromptHandler
@@ -81,13 +113,12 @@ function renderPendingPromptIntoChatMessage(
   const root = resolveRootElement(html);
   if (!root) return;
 
-  const prompt = findPromptForMessage(message, root);
-  if (!prompt) {
-    bindPromptButtons(root, handler);
-    return;
+  const prompts = findPromptsForMessage(message, root);
+
+  for (const prompt of prompts) {
+    appendPromptToRoot(root, prompt);
   }
 
-  appendPromptToRoot(root, prompt);
   bindPromptButtons(root, handler);
 }
 
@@ -118,8 +149,8 @@ function bindPromptButtonsIfPossible(root: HTMLElement): void {
   bindPromptButtons(root, promptHandler);
 }
 
-function appendPromptToRoot(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): void {
-  if (root.querySelector(`[${PENDING_ID_ATTRIBUTE}="${escapeCssAttributeValue(prompt.pendingId)}"]`)) return;
+function appendPromptToRoot(root: HTMLElement, prompt: RenderableItemUseAutomationPrompt): void {
+  if (root.querySelector(`[${PROMPT_ID_ATTRIBUTE}="${escapeCssAttributeValue(prompt.pendingId)}"]`)) return;
 
   const section = getOrCreateToolkitSection(root, prompt);
   appendSummaryLines(section, prompt.summaryLines ?? []);
@@ -128,7 +159,7 @@ function appendPromptToRoot(root: HTMLElement, prompt: PendingItemUseAutomationP
   actions.append(createPromptButton(prompt));
 }
 
-function getOrCreateToolkitSection(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): HTMLElement {
+function getOrCreateToolkitSection(root: HTMLElement, prompt: RenderableItemUseAutomationPrompt): HTMLElement {
   const existing = root.querySelector<HTMLElement>(`.${ENRICHMENT_CLASS}`);
 
   if (existing) {
@@ -147,7 +178,7 @@ function getOrCreateToolkitSection(root: HTMLElement, prompt: PendingItemUseAuto
 
   const summary = document.createElement("span");
   summary.classList.add(PROMPT_SUMMARY_CLASS);
-  summary.textContent = createPromptSummary(prompt.context);
+  summary.textContent = prompt.summary;
 
   header.append(title, summary);
   section.append(header);
@@ -203,10 +234,19 @@ function getOrCreateDetailsContainer(section: HTMLElement): HTMLUListElement {
   return details;
 }
 
-function createPromptButton(prompt: PendingItemUseAutomationPrompt): HTMLButtonElement {
+function createPromptButton(prompt: RenderableItemUseAutomationPrompt): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.classList.add(`${PROMPT_CLASS}__button`);
+  button.setAttribute(PROMPT_ID_ATTRIBUTE, prompt.pendingId);
+
+  if (prompt.executed) {
+    button.disabled = true;
+    button.textContent = prompt.executedLabel ?? "✓ Automação aplicada";
+    button.classList.add(PROMPT_EXECUTED_BUTTON_CLASS);
+    return button;
+  }
+
   button.textContent = prompt.buttonLabel ?? "Aplicar automação";
   button.setAttribute(PENDING_ID_ATTRIBUTE, prompt.pendingId);
   button.setAttribute(EXECUTED_LABEL_ATTRIBUTE, prompt.executedLabel ?? "✓ Automação aplicada");
@@ -220,9 +260,7 @@ function createPromptSummary(context: ItemUseContext): string {
 }
 
 function createTargetText(context: ItemUseContext): string {
-  return context.targets.length > 0
-    ? context.targets.map((target) => target.name).join(", ")
-    : "nenhum alvo";
+  return context.targets.length > 0 ? context.targets.map((target) => target.name).join(", ") : "nenhum alvo";
 }
 
 function findPromptHost(root: HTMLElement): HTMLElement {
@@ -268,17 +306,25 @@ async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAuto
   button.textContent = originalText;
 }
 
-function findPromptForMessage(message: unknown, root: HTMLElement): PendingItemUseAutomationPrompt | null {
+function findPromptsForMessage(message: unknown, root: HTMLElement): RenderableItemUseAutomationPrompt[] {
+  const prompts = new Map<string, RenderableItemUseAutomationPrompt>();
+
   for (const prompt of pendingPrompts.values()) {
     if (doesPromptMatchMessage(prompt, message, root)) {
-      return prompt;
+      prompts.set(prompt.pendingId, prompt);
     }
   }
 
-  return null;
+  for (const prompt of readPersistedPromptsFromMessage(message)) {
+    if (doesPromptMatchMessage(prompt, message, root) && !prompts.has(prompt.pendingId)) {
+      prompts.set(prompt.pendingId, prompt);
+    }
+  }
+
+  return Array.from(prompts.values()).sort((left, right) => left.createdAt - right.createdAt);
 }
 
-function doesPromptMatchMessage(prompt: PendingItemUseAutomationPrompt, message: unknown, root: HTMLElement): boolean {
+function doesPromptMatchMessage(prompt: RenderableItemUseAutomationPrompt, message: unknown, root: HTMLElement): boolean {
   const currentMessageId = getDocumentId(message) ?? root.dataset.messageId ?? null;
 
   if (prompt.messageId) {
@@ -315,7 +361,7 @@ function findRenderedChatMessageById(messageId: string): HTMLElement | null {
   );
 }
 
-function findRenderedChatMessageByItem(prompt: PendingItemUseAutomationPrompt): HTMLElement | null {
+function findRenderedChatMessageByItem(prompt: RenderableItemUseAutomationPrompt): HTMLElement | null {
   for (const message of document.querySelectorAll<HTMLElement>(".chat-message, [data-message-id]")) {
     if (doesPromptMatchMessage(prompt, null, message)) {
       return message;
@@ -334,6 +380,144 @@ function pruneExpiredPrompts(): void {
       pendingPrompts.delete(pendingId);
     }
   }
+}
+
+async function persistPromptInChatMessage(prompt: PendingItemUseAutomationPrompt): Promise<void> {
+  const message = resolveChatMessageDocument(prompt.context.message);
+  if (!message) return;
+
+  try {
+    const prompts = readPersistedPromptMap(message);
+    prompts[prompt.pendingId] = toPersistedPrompt(prompt);
+
+    await writePersistedPromptMap(message, prompts);
+  } catch (cause) {
+    console.warn("Paranormal Toolkit: não foi possível persistir ação assistida no chat.", cause);
+  }
+}
+
+async function markPersistedPromptAsExecuted(prompt: PendingItemUseAutomationPrompt): Promise<void> {
+  const message = resolveChatMessageDocument(prompt.context.message);
+  if (!message) return;
+
+  try {
+    const prompts = readPersistedPromptMap(message);
+    const persisted = prompts[prompt.pendingId] ?? toPersistedPrompt(prompt);
+
+    prompts[prompt.pendingId] = {
+      ...persisted,
+      executed: true
+    };
+
+    await writePersistedPromptMap(message, prompts);
+  } catch (cause) {
+    console.warn("Paranormal Toolkit: não foi possível marcar ação assistida como executada no chat.", cause);
+  }
+}
+
+function readPersistedPromptsFromMessage(message: unknown): PersistedItemUseAutomationPrompt[] {
+  return Object.values(readPersistedPromptMap(asChatMessageFlagDocument(message))).filter(isPersistedPrompt);
+}
+
+function readPersistedPromptMap(message: ChatMessageFlagDocument | null): Record<string, PersistedItemUseAutomationPrompt> {
+  if (!message) return {};
+
+  const value = message.getFlag?.(MODULE_ID, PROMPT_FLAG_KEY);
+
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  const prompts: Record<string, PersistedItemUseAutomationPrompt> = {};
+
+  for (const [key, prompt] of Object.entries(value)) {
+    if (isPersistedPrompt(prompt)) {
+      prompts[key] = prompt;
+    }
+  }
+
+  return prompts;
+}
+
+async function writePersistedPromptMap(
+  message: ChatMessageFlagDocument,
+  prompts: Record<string, PersistedItemUseAutomationPrompt>
+): Promise<void> {
+  if (typeof message.setFlag !== "function") return;
+
+  await Promise.resolve(message.setFlag(MODULE_ID, PROMPT_FLAG_KEY, prompts));
+}
+
+function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt): PersistedItemUseAutomationPrompt {
+  return {
+    schemaVersion: 1,
+    pendingId: prompt.pendingId,
+    mode: prompt.mode,
+    title: prompt.title,
+    buttonLabel: prompt.buttonLabel,
+    executedLabel: prompt.executedLabel,
+    summaryLines: prompt.summaryLines ? [...prompt.summaryLines] : undefined,
+    createdAt: prompt.createdAt,
+    messageId: prompt.messageId,
+    itemId: prompt.itemId,
+    actorId: prompt.actorId,
+    summary: prompt.summary,
+    executed: prompt.executed
+  };
+}
+
+function resolveChatMessageDocument(value: unknown): ChatMessageFlagDocument | null {
+  const direct = asChatMessageFlagDocument(value);
+
+  if (direct?.setFlag) {
+    return direct;
+  }
+
+  const id = getDocumentId(value);
+  if (!id) return null;
+
+  const messages = game.messages as { get?: (messageId: string) => unknown } | undefined;
+  return asChatMessageFlagDocument(messages?.get?.(id));
+}
+
+function asChatMessageFlagDocument(value: unknown): ChatMessageFlagDocument | null {
+  return value && typeof value === "object" ? (value as ChatMessageFlagDocument) : null;
+}
+
+function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationPrompt {
+  if (!isRecord(value)) return false;
+
+  return (
+    value.schemaVersion === 1 &&
+    typeof value.pendingId === "string" &&
+    value.mode === "ask" &&
+    typeof value.createdAt === "number" &&
+    typeof value.summary === "string" &&
+    typeof value.executed === "boolean" &&
+    isNullableString(value.messageId) &&
+    isNullableString(value.itemId) &&
+    isNullableString(value.actorId) &&
+    isOptionalString(value.title) &&
+    isOptionalString(value.buttonLabel) &&
+    isOptionalString(value.executedLabel) &&
+    isOptionalStringArray(value.summaryLines)
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === "string";
+}
+
+function isOptionalStringArray(value: unknown): value is string[] | undefined {
+  return value === undefined || (Array.isArray(value) && value.every((entry) => typeof entry === "string"));
 }
 
 function resolveRootElement(html: unknown): HTMLElement | null {

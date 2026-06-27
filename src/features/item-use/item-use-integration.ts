@@ -155,7 +155,7 @@ export class ItemUseIntegration {
 
     if (pending.kind === "workflow") {
       this.pendingExecutions.delete(pendingId);
-      unregisterPendingItemUseAutomationPrompt(pendingId);
+      await unregisterPendingItemUseAutomationPrompt(pendingId);
       await this.executeAutomation(pending.context, pending.definition, pending.mode);
       return true;
     }
@@ -169,7 +169,7 @@ export class ItemUseIntegration {
 
     pending.workflowContext.resourceTransactions.push(result.value);
     this.pendingExecutions.delete(pendingId);
-    unregisterPendingItemUseAutomationPrompt(pendingId);
+    await unregisterPendingItemUseAutomationPrompt(pendingId);
     this.setAttempt(pending.context, "completed");
 
     return true;
@@ -214,17 +214,17 @@ export class ItemUseIntegration {
         ModuleLogger.info("Ritual assistido concluído sem ações pendentes.", createWorkflowDebugSnapshot(result.workflowContext));
         return;
       case "ready":
-        this.registerAssistedResourceActions(context, result.workflowContext, result.actions, result.summaryLines);
+        await this.registerAssistedResourceActions(context, result.workflowContext, result.actions, result.summaryLines);
         return;
     }
   }
 
-  private registerAssistedResourceActions(
+  private async registerAssistedResourceActions(
     context: ItemUseContext,
     workflowContext: WorkflowContext,
     actions: AssistedResourceAction[],
     summaryLines: string[]
-  ): void {
+  ): Promise<void> {
     let firstPendingId: string | undefined;
 
     for (const action of actions) {
@@ -240,7 +240,7 @@ export class ItemUseIntegration {
         createdAt: Date.now()
       });
 
-      registerPendingItemUseAutomationPrompt({
+      await registerPendingItemUseAutomationPrompt({
         pendingId,
         context,
         mode: "ask",
@@ -267,7 +267,7 @@ export class ItemUseIntegration {
       createdAt: Date.now()
     });
 
-    registerPendingItemUseAutomationPrompt({
+    await registerPendingItemUseAutomationPrompt({
       pendingId,
       context,
       mode: "ask",
