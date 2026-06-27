@@ -12,12 +12,13 @@ export type ItemUseContext = {
   originalResult?: unknown;
 };
 
-export type ItemUseIntegrationAttemptStatus = "ignored" | "skipped" | "running" | "completed" | "failed";
+export type ItemUseIntegrationAttemptStatus = "ignored" | "skipped" | "pending" | "running" | "completed" | "failed";
 
 export type ItemUseIntegrationAttempt = {
   source: ItemUseSource;
   status: ItemUseIntegrationAttemptStatus;
   reason?: string;
+  pendingId?: string;
   itemId: string | null;
   itemName: string;
   itemType: string;

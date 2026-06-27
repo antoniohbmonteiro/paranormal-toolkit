@@ -25,6 +25,26 @@ type TokenLike = {
 
 type ItemCollectionLike = Iterable<Item> | { contents?: unknown } | Item[];
 
+type GameSettingBaseRegistrationData = {
+  name: string;
+  hint?: string;
+  scope: "client" | "world";
+  config: boolean;
+};
+
+type BooleanGameSettingRegistrationData = GameSettingBaseRegistrationData & {
+  type: BooleanConstructor;
+  default: boolean;
+};
+
+type StringGameSettingRegistrationData = GameSettingBaseRegistrationData & {
+  type: StringConstructor;
+  default: string;
+  choices?: Record<string, string>;
+};
+
+type GameSettingRegistrationData = BooleanGameSettingRegistrationData | StringGameSettingRegistrationData;
+
 declare const game: {
   system: {
     id: string;
@@ -40,18 +60,7 @@ declare const game: {
     active?: boolean;
   }>;
   settings: {
-    register(
-      namespace: string,
-      key: string,
-      data: {
-        name: string;
-        hint?: string;
-        scope: "client" | "world";
-        config: boolean;
-        type: BooleanConstructor;
-        default: boolean;
-      }
-    ): void;
+    register(namespace: string, key: string, data: GameSettingRegistrationData): void;
     get(namespace: string, key: string): unknown;
     set(namespace: string, key: string, value: unknown): Promise<unknown>;
   };
