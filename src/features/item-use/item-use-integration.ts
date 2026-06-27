@@ -8,6 +8,7 @@ import type { WorkflowContext } from "../../core/workflow/workflow-context";
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { DebugOutputService } from "../../debug/output/debug-output-service";
 import { readAutomationDefinition } from "../automation/automation-flag-reader";
+import { neutralizeAutomatedItemInlineRolls } from "../chat/inline-roll-sanitizer";
 import { type AssistedResourceAction, RitualAssistedWorkflow } from "../rituals/ritual-assisted-workflow";
 import {
   registerItemUseAutomationPromptRenderer,
@@ -114,6 +115,8 @@ export class ItemUseIntegration {
 
       return;
     }
+
+    await neutralizeAutomatedItemInlineRolls(context);
 
     if (!context.actor) {
       this.setAttempt(context, "failed", "missing-actor");

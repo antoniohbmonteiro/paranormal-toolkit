@@ -99,6 +99,25 @@
   opacity: 0.85;
 }
 
+.paranormal-toolkit-ritual-cast-dialog__warning {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid rgba(160, 120, 0, 0.35);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(160, 120, 0, 0.08);
+  font-size: 0.86rem;
+}
+
+.paranormal-toolkit-ritual-cast-dialog__warning strong {
+  line-height: 1.1;
+}
+
+.paranormal-toolkit-ritual-cast-dialog__warning span {
+  opacity: 0.9;
+}
+
 .paranormal-toolkit-ritual-cast-dialog__fieldset {
   display: flex;
   flex-direction: column;

@@ -76,6 +76,13 @@ function createDialogContent(input: RitualCastDialogInput): string {
         Configure a conjuração antes do Toolkit gastar recurso, rolar dados ou preparar ações no chat.
       </p>
 
+      <aside class="paranormal-toolkit-ritual-cast-dialog__warning" role="note">
+        <strong>Aviso temporário</strong>
+        <span>
+          O Toolkit ainda não consegue impedir completamente as rolagens inline da descrição nem bloquear o card original antes desta confirmação. Use o resultado oficial exibido pelo Paranormal Toolkit.
+        </span>
+      </aside>
+
       <fieldset class="paranormal-toolkit-ritual-cast-dialog__fieldset">
         <legend>Forma</legend>
         <label><input type="radio" name="variant" value="base" checked> Padrão</label>
