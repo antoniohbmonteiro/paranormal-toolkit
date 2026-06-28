@@ -409,11 +409,23 @@
 }
 
 /* Ritual preset manager -------------------------------------------------- */
+.paranormal-toolkit-ritual-preset-manager {
+  color: #241b18;
+  background: #ded6c4 !important;
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content {
+  background: linear-gradient(180deg, #e9e2d2 0%, #d9cfbb 100%) !important;
+  color: #241b18 !important;
+  backdrop-filter: none !important;
+}
+
 .paranormal-toolkit-preset-manager {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: 0.8rem;
+  padding: 0.85rem;
+  color: #241b18;
 }
 
 .paranormal-toolkit-preset-manager__header {
@@ -427,7 +439,7 @@
 
 .paranormal-toolkit-preset-manager__eyebrow {
   margin: 0 0 0.15rem;
-  color: #7c2f32;
+  color: #8f2f35;
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.09em;
@@ -445,17 +457,19 @@
 
 .paranormal-toolkit-preset-manager__summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
-  min-width: 13rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  min-width: 17rem;
 }
 
 .paranormal-toolkit-preset-manager__summary span {
-  border: 1px solid rgba(70, 43, 39, 0.18);
-  border-radius: 6px;
-  padding: 0.35rem 0.45rem;
-  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(70, 43, 39, 0.22);
+  border-radius: 7px;
+  padding: 0.4rem 0.5rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: rgba(36, 27, 24, 0.88);
   font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .paranormal-toolkit-preset-manager__summary strong {
@@ -469,10 +483,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  border: 1px solid rgba(43, 109, 75, 0.3);
+  border: 1px solid rgba(43, 109, 75, 0.36);
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
-  background: rgba(43, 109, 75, 0.08);
+  background: rgba(233, 247, 239, 0.9);
+  color: #1d3f2e;
 }
 
 .paranormal-toolkit-preset-manager__sections {
@@ -482,9 +497,10 @@
 }
 
 .paranormal-toolkit-preset-manager__section {
-  border: 1px solid rgba(70, 43, 39, 0.18);
+  border: 1px solid rgba(70, 43, 39, 0.22);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 1px 2px rgba(36, 27, 24, 0.08);
   overflow: hidden;
 }
 
@@ -494,7 +510,8 @@
   gap: 0.4rem;
   margin: 0;
   padding: 0.5rem 0.65rem;
-  background: rgba(70, 43, 39, 0.08);
+  background: rgba(126, 87, 73, 0.12);
+  color: #2c211e;
   font-size: 0.9rem;
 }
 
@@ -502,7 +519,8 @@
   margin-left: auto;
   border-radius: 999px;
   padding: 0.05rem 0.45rem;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.86);
+  color: rgba(36, 27, 24, 0.74);
   font-size: 0.72rem;
 }
 
@@ -563,10 +581,11 @@
 }
 
 .paranormal-toolkit-preset-manager__entry em {
-  border: 1px solid rgba(70, 43, 39, 0.16);
+  border: 1px solid rgba(70, 43, 39, 0.2);
   border-radius: 999px;
   padding: 0.18rem 0.45rem;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(238, 232, 220, 0.95);
+  color: rgba(36, 27, 24, 0.82);
   white-space: nowrap;
 }
 
@@ -574,7 +593,7 @@
   margin: 0;
   border-top: 1px solid rgba(70, 43, 39, 0.12);
   padding: 0.55rem 0.65rem;
-  color: rgba(47, 36, 34, 0.68);
+  color: rgba(47, 36, 34, 0.82);
   font-size: 0.8rem;
 }
 
@@ -588,4 +607,95 @@
 
 .paranormal-toolkit-preset-manager__footer button[data-action="apply"] {
   font-weight: 700;
+}
+
+
+.paranormal-toolkit-ritual-preset-manager .window-content button {
+  color: #241b18;
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"] {
+  border-color: rgba(89, 36, 42, 0.45);
+  background: rgba(89, 36, 42, 0.12);
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):hover {
+  background: rgba(89, 36, 42, 0.18);
+}
+
+/* 0.12.3 — Ajustes de legibilidade e estados do gerenciador de presets */
+.paranormal-toolkit-ritual-preset-manager,
+.paranormal-toolkit-ritual-preset-manager .window-content,
+.paranormal-toolkit-preset-manager {
+  color: #241b18 !important;
+}
+
+.paranormal-toolkit-preset-manager__header h2,
+.paranormal-toolkit-preset-manager__header p,
+.paranormal-toolkit-preset-manager__header strong {
+  color: #241b18 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.paranormal-toolkit-preset-manager__header h2 {
+  max-width: 14rem;
+  line-height: 1.1;
+}
+
+.paranormal-toolkit-preset-manager__footer button {
+  min-height: 2rem;
+  border: 1px solid rgba(70, 43, 39, 0.42) !important;
+  border-radius: 5px;
+  padding: 0.35rem 0.65rem;
+  background: rgba(255, 255, 255, 0.64) !important;
+  color: #241b18 !important;
+  font-weight: 700;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.paranormal-toolkit-preset-manager__footer button[data-action="cancel"] {
+  background: rgba(255, 255, 255, 0.54) !important;
+}
+
+.paranormal-toolkit-preset-manager__footer button[data-action="cancel"]:hover,
+.paranormal-toolkit-preset-manager__footer button[data-action="cancel"]:focus {
+  background: rgba(255, 255, 255, 0.78) !important;
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"] {
+  border-color: rgba(89, 36, 42, 0.48) !important;
+  background: rgba(89, 36, 42, 0.16) !important;
+  color: #241b18 !important;
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):hover,
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):focus {
+  background: rgba(89, 36, 42, 0.24) !important;
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content button:disabled,
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:disabled {
+  border-color: rgba(70, 43, 39, 0.18) !important;
+  background: rgba(70, 43, 39, 0.08) !important;
+  color: rgba(36, 27, 24, 0.48) !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+  filter: grayscale(0.25);
+}
+
+
+/* 0.12.4 — Botão Aplicar com destaque positivo */
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled) {
+  border-color: rgba(43, 109, 75, 0.58) !important;
+  background: rgba(43, 109, 75, 0.16) !important;
+  color: #1d3f2e !important;
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):hover,
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):focus {
+  border-color: rgba(43, 109, 75, 0.72) !important;
+  background: rgba(43, 109, 75, 0.24) !important;
+  color: #183827 !important;
 }

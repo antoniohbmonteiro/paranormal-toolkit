@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.12.0`.
+Versão experimental atual: `v0.12.4`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -39,9 +39,9 @@ O Paranormal Toolkit é pensado para ser configurável por mesa: o mestre pode d
 - Sistema alvo: `ordemparanormal`
 
 
-### 0.12.0 — Gerenciador de presets de rituais
+### 0.12.4 — Gerenciador de presets de rituais
 
-A versão `0.12.0` adiciona uma ação de GM no menu de três pontinhos da ficha de agente para gerenciar presets de rituais sem usar o console.
+A versão `0.12.4` mantém a ação de GM no menu de três pontinhos da ficha de agente, melhora contraste do popup, deixa o botão Aplicar desabilitado quando não há presets pendentes e troca o destaque do botão Aplicar para verde.
 
 Fluxo esperado:
 
@@ -54,15 +54,16 @@ Gerenciar presets de rituais
 ↓
 Ver diagnóstico dos rituais
 ↓
-Aplicar presets pendentes
+Aplicar
 ```
 
-O popup separa os rituais em:
+O popup foca apenas nos rituais que interessam ao fluxo do Toolkit:
 
 - prontos para aplicar;
 - desatualizados;
-- automatizados;
-- sem preset conhecido.
+- automatizados.
+
+Rituais sem preset conhecido são ignorados no painel para evitar uma lista gigante em mesas reais.
 
 Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de agente com rituais.
 
@@ -429,3 +430,17 @@ Após a `1.0.0`, a intenção é adotar práticas mais formais de manutenção, 
 Código sob licença MIT.
 
 Este projeto não é oficial e não possui afiliação com os detentores da marca Ordem Paranormal.
+
+
+## 0.12.1
+
+Correção do clique na ação de presets de rituais no menu da ficha.
+
+
+## 0.12.4
+
+Polimento visual do gerenciador de presets de rituais:
+
+- fundo do popup mais opaco para melhorar legibilidade;
+- cards internos com contraste maior;
+- lista de rituais sem preset ocultada do painel para manter o foco no fluxo do Toolkit.

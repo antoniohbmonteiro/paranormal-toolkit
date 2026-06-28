@@ -5,7 +5,13 @@ import { getActorRituals } from "../../features/rituals/ritual-item-resolver";
 import type { ToolkitServices } from "../../toolkit-services";
 
 const ACTION_ID = `${MODULE_ID}.manageRitualPresets`;
-const PATCH_FLAG = `__${MODULE_ID}_ritualPresetHeaderControlPatched`;
+const REGISTERED_FLAG = `__${MODULE_ID}_ritualPresetHeaderControlRegistered`;
+
+const HEADER_CONTROL_HOOKS = [
+  "getHeaderControlsOrdemActorSheet",
+  "getHeaderControlsActorSheetV2",
+  "getHeaderControlsDocumentSheetV2"
+] as const;
 
 type HeaderControlEntry = {
   action: string;
@@ -13,64 +19,68 @@ type HeaderControlEntry = {
   label: string;
   visible?: boolean | (() => boolean);
   ownership?: string | number;
+  onClick?: (event: Event) => void;
 };
 
-type PatchableActorSheetPrototype = {
-  [PATCH_FLAG]?: true;
-  _getHeaderControls?: (this: ActorSheetLike) => HeaderControlEntry[];
-  _onClickAction?: (this: ActorSheetLike, event: PointerEvent, target: HTMLElement) => void;
-};
+type ApplicationActionHandler = (event: PointerEvent, target: HTMLElement) => void;
+
+type SheetActions = Record<string, ApplicationActionHandler>;
 
 type ActorSheetLike = {
   actor?: Actor;
   document?: unknown;
+  options?: {
+    actions?: SheetActions;
+  };
 };
 
 export function registerActorSheetRitualPresetAction(services: ToolkitServices): void {
-  const actorSheetClass = foundry.applications.sheets.ActorSheetV2 as { prototype?: PatchableActorSheetPrototype } | undefined;
-  const prototype = actorSheetClass?.prototype;
+  const globalObject = globalThis as typeof globalThis & Record<string, unknown>;
 
-  if (!prototype || prototype[PATCH_FLAG]) return;
+  if (globalObject[REGISTERED_FLAG]) return;
 
-  const originalGetHeaderControls = prototype._getHeaderControls;
-  const originalOnClickAction = prototype._onClickAction;
-
-  if (typeof originalGetHeaderControls !== "function") {
-    ModuleLogger.warn("Não foi possível registrar ação de presets: ActorSheetV2 não expõe _getHeaderControls.");
-    return;
+  for (const hookName of HEADER_CONTROL_HOOKS) {
+    Hooks.on(hookName, (sheet: ActorSheetLike, controls: HeaderControlEntry[]) => {
+      addPresetManagerControl(sheet, controls, services);
+    });
   }
 
-  prototype._getHeaderControls = function patchedGetHeaderControls(this: ActorSheetLike): HeaderControlEntry[] {
-    const controls = originalGetHeaderControls.call(this);
-
-    if (!controls.some((control) => control.action === ACTION_ID)) {
-      controls.push(createHeaderControl(this));
-    }
-
-    return controls;
-  };
-
-  prototype._onClickAction = function patchedOnClickAction(this: ActorSheetLike, event: PointerEvent, target: HTMLElement): void {
-    if (target.dataset.action === ACTION_ID) {
-      event.preventDefault();
-      event.stopPropagation();
-      openPresetManager(this, services);
-      return;
-    }
-
-    originalOnClickAction?.call(this, event, target);
-  };
-
-  prototype[PATCH_FLAG] = true;
+  globalObject[REGISTERED_FLAG] = true;
   ModuleLogger.info("Ação de presets de rituais registrada no menu da ficha de ator.");
 }
 
-function createHeaderControl(sheet: ActorSheetLike): HeaderControlEntry {
-  return {
+function addPresetManagerControl(sheet: ActorSheetLike, controls: HeaderControlEntry[], services: ToolkitServices): void {
+  if (!Array.isArray(controls)) return;
+  if (!canShowPresetAction(sheet)) return;
+
+  installActionHandler(sheet, services);
+
+  if (controls.some((control) => control.action === ACTION_ID)) return;
+
+  controls.push({
     action: ACTION_ID,
     icon: "fa-solid fa-wand-magic-sparkles",
     label: "Gerenciar presets de rituais",
-    visible: () => canShowPresetAction(sheet)
+    visible: true,
+    onClick: (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openPresetManager(sheet, services);
+    }
+  });
+}
+
+function installActionHandler(sheet: ActorSheetLike, services: ToolkitServices): void {
+  if (!sheet.options) return;
+
+  sheet.options.actions ??= {};
+
+  if (sheet.options.actions[ACTION_ID]) return;
+
+  sheet.options.actions[ACTION_ID] = (event: PointerEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openPresetManager(sheet, services);
   };
 }
 
@@ -96,7 +106,7 @@ function openPresetManager(sheet: ActorSheetLike, services: ToolkitServices): vo
     return;
   }
 
-  new RitualPresetManagerApplication(actor, services).render({ force: true });
+  void new RitualPresetManagerApplication(actor, services).render({ force: true });
 }
 
 function getSheetActor(sheet: ActorSheetLike): Actor | null {

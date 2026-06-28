@@ -69,13 +69,12 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
         ${renderSection("Prontos para aplicar", "available", diagnostic.available, "fa-solid fa-plus")}
         ${renderSection("Desatualizados", "outdated", diagnostic.outdated, "fa-solid fa-rotate")}
         ${renderSection("Automatizados", "upToDate", diagnostic.upToDate, "fa-solid fa-check")}
-        ${renderSection("Sem preset conhecido", "unsupported", diagnostic.unsupported, "fa-regular fa-circle-question")}
       </div>
 
       <footer class="paranormal-toolkit-preset-manager__footer">
         <button type="button" data-action="cancel">Cancelar</button>
         <button type="button" data-action="apply" ${diagnostic.canApply && !this.isApplying ? "" : "disabled"}>
-          ${this.isApplying ? "Aplicando..." : "Aplicar presets pendentes"}
+          ${this.isApplying ? "Aplicando..." : "Aplicar"}
         </button>
       </footer>
     `;
@@ -86,8 +85,7 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
       <div class="paranormal-toolkit-preset-manager__summary" aria-label="Resumo dos presets">
         <span><strong>${diagnostic.available.length}</strong> prontos</span>
         <span><strong>${diagnostic.outdated.length}</strong> desatualizados</span>
-        <span><strong>${diagnostic.upToDate.length}</strong> ativos</span>
-        <span><strong>${diagnostic.unsupported.length}</strong> sem preset</span>
+        <span><strong>${diagnostic.upToDate.length}</strong> automatizados</span>
       </div>
     `;
   }
@@ -112,6 +110,11 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
 
     if (!game.user?.isGM) {
       ui.notifications?.warn("Paranormal Toolkit: apenas o mestre pode aplicar presets de rituais.");
+      return;
+    }
+
+    const diagnostic = this.services.ritualPresetDiagnostic.analyzeActor(this.actor);
+    if (!diagnostic.canApply || this.isApplying) {
       return;
     }
 
@@ -181,7 +184,7 @@ function renderEmptyState(status: RitualPresetDiagnosticEntry["status"]): string
     available: "Nenhum ritual pendente com preset conhecido.",
     outdated: "Nenhum ritual desatualizado encontrado.",
     upToDate: "Nenhum ritual automatizado ainda.",
-    unsupported: "Nenhum ritual sem preset conhecido. Milagre paranormal."
+    unsupported: "Nenhum ritual sem preset conhecido."
   };
 
   return `<p class="paranormal-toolkit-preset-manager__empty">${escapeHtml(messageByStatus[status])}</p>`;

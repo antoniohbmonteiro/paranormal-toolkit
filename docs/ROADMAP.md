@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.12.0`.
+Versão base do roadmap: `v0.12.4`.
 
 O Toolkit já tem:
 
@@ -271,7 +271,8 @@ Prioridade atual: depois de Toolkit e FX.
 | Versão alvo | Prioridade | Entrega |
 |---|---|---|
 | `0.12.0` | Concluído | Ação de GM na ficha para diagnosticar e aplicar presets em rituais conhecidos. |
-| `0.12.1` | P1 | Resistência assistida com opções de dano normal, metade e multiplicadores futuros. |
+| `0.12.4` | Concluído | Polimento de legibilidade do gerenciador de presets, foco em rituais aplicáveis/automatizados e botão Aplicar com destaque verde. |
+| `0.12.x` | P1 | Resistência assistida com opções de dano normal, metade e multiplicadores futuros. |
 | `0.12.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
 | `0.13.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
