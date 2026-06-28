@@ -665,14 +665,22 @@
 }
 
 .paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"] {
-  border-color: rgba(89, 36, 42, 0.48) !important;
-  background: rgba(89, 36, 42, 0.16) !important;
-  color: #241b18 !important;
+  border-color: rgba(43, 109, 75, 0.42) !important;
+  background: rgba(43, 109, 75, 0.08) !important;
+  color: #245238 !important;
+}
+
+.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled) {
+  border-color: rgba(43, 109, 75, 0.5) !important;
+  background: #eef7f0 !important;
+  color: #245238 !important;
 }
 
 .paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):hover,
 .paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):focus {
-  background: rgba(89, 36, 42, 0.24) !important;
+  border-color: rgba(43, 109, 75, 0.62) !important;
+  background: #e2f1e6 !important;
+  color: #1d442e !important;
 }
 
 .paranormal-toolkit-ritual-preset-manager .window-content button:disabled,
@@ -683,19 +691,4 @@
   cursor: not-allowed !important;
   opacity: 1 !important;
   filter: grayscale(0.25);
-}
-
-
-/* 0.12.4 — Botão Aplicar com destaque positivo */
-.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled) {
-  border-color: rgba(43, 109, 75, 0.58) !important;
-  background: rgba(43, 109, 75, 0.16) !important;
-  color: #1d3f2e !important;
-}
-
-.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):hover,
-.paranormal-toolkit-ritual-preset-manager .window-content button[data-action="apply"]:not(:disabled):focus {
-  border-color: rgba(43, 109, 75, 0.72) !important;
-  background: rgba(43, 109, 75, 0.24) !important;
-  color: #183827 !important;
 }
