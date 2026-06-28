@@ -42,6 +42,9 @@ export type ItemUseAutomationPromptInput = {
   actionSectionId?: string | null;
   actionSectionTitle?: string | null;
   summaryLines?: string[];
+  resistanceTargetActor?: Actor | null;
+  resistanceTargetActorId?: string | null;
+  resistanceTargetName?: string | null;
 };
 
 export type ItemUseAutomationPromptHandler = (pendingId: string) => Promise<boolean>;
@@ -148,7 +151,15 @@ export async function unregisterPendingItemUseAutomationPrompt(pendingId: string
 
 function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUseAutomationPrompt {
   const messageId = getDocumentId(input.context.message);
-  const resistanceTarget = input.context.targets.find((target) => target.actor);
+  const contextTarget = input.context.targets.find((target) => resolveTargetActor(target));
+  const contextTargetActor = contextTarget ? resolveTargetActor(contextTarget) : null;
+  const resistanceTargetActor = input.resistanceTargetActor ?? contextTargetActor;
+  const resistanceTargetName =
+    input.resistanceTargetName ??
+    contextTarget?.name ??
+    resistanceTargetActor?.name ??
+    input.context.targets[0]?.name ??
+    null;
 
   return {
     ...input,
@@ -157,8 +168,8 @@ function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUs
     itemId: input.context.item.id ?? null,
     actorId: input.context.actor?.id ?? null,
     itemName: input.context.item.name ?? null,
-    resistanceTargetActorId: resistanceTarget?.actor?.id ?? null,
-    resistanceTargetName: resistanceTarget?.name ?? resistanceTarget?.actor?.name ?? null,
+    resistanceTargetActorId: input.resistanceTargetActorId ?? resistanceTargetActor?.id ?? null,
+    resistanceTargetName,
     resistanceRollResult: null,
     choiceGroupId: input.choiceGroupId ?? null,
     skippedLabel: input.skippedLabel ?? null,
@@ -741,8 +752,11 @@ function resolveRenderablePromptForButton(root: HTMLElement, promptId: string): 
 }
 
 function resolveResistanceTargetActor(prompt: RenderableItemUseAutomationPrompt | null, button: HTMLButtonElement): Actor | null {
+  const directPromptActor = (prompt as { resistanceTargetActor?: unknown } | null)?.resistanceTargetActor;
+  if (isActorLike(directPromptActor)) return directPromptActor;
+
   const liveContext = (prompt as { context?: ItemUseContext } | null)?.context;
-  const liveTarget = liveContext?.targets.find((target) => target.actor)?.actor;
+  const liveTarget = liveContext?.targets.map(resolveTargetActor).find(isActorLike) ?? null;
 
   if (liveTarget) return liveTarget;
 
@@ -751,12 +765,86 @@ function resolveResistanceTargetActor(prompt: RenderableItemUseAutomationPrompt 
     prompt?.resistanceTargetActorId ??
     null;
 
-  if (!actorId) return null;
+  const actorById = actorId ? resolveActorById(actorId) : null;
+  if (actorById) return actorById;
 
+  return resolveActorByName(prompt?.resistanceTargetName ?? null);
+}
+
+function resolveTargetActor(target: ItemUseContext["targets"][number]): Actor | null {
+  const directActor = (target as { actor?: unknown }).actor;
+  if (isActorLike(directActor)) return directActor;
+
+  const token = (target as { token?: unknown }).token;
+  const tokenActor = resolveTokenActor(token);
+  if (tokenActor) return tokenActor;
+
+  const tokenDocument = (target as { document?: unknown }).document;
+  return resolveTokenActor(tokenDocument);
+}
+
+function resolveTokenActor(value: unknown): Actor | null {
+  if (!value || typeof value !== "object") return null;
+
+  const actor = (value as { actor?: unknown }).actor;
+  if (isActorLike(actor)) return actor;
+
+  const documentActor = (value as { document?: { actor?: unknown } }).document?.actor;
+  return isActorLike(documentActor) ? documentActor : null;
+}
+
+function resolveActorById(actorId: string): Actor | null {
   const actors = game.actors as { get?: (id: string) => unknown } | undefined;
   const actor = actors?.get?.(actorId);
 
+  if (isActorLike(actor)) return actor;
+
+  const tokens = getCanvasTokens();
+  const tokenActor = tokens
+    .map((token) => resolveTokenActor(token))
+    .find((candidate) => candidate?.id === actorId) ?? null;
+
+  return tokenActor;
+}
+
+function resolveActorByName(targetName: string | null): Actor | null {
+  const normalizedTargetName = normalizeLookupName(targetName);
+  if (!normalizedTargetName) return null;
+
+  const tokenActor = getCanvasTokens()
+    .filter((token) => normalizeLookupName(getTokenName(token)) === normalizedTargetName)
+    .map((token) => resolveTokenActor(token))
+    .find(isActorLike) ?? null;
+
+  if (tokenActor) return tokenActor;
+
+  const actors = game.actors as { find?: (predicate: (actor: unknown) => boolean) => unknown } | undefined;
+  const actor = actors?.find?.((candidate) => isActorLike(candidate) && normalizeLookupName(candidate.name) === normalizedTargetName);
+
   return isActorLike(actor) ? actor : null;
+}
+
+function getCanvasTokens(): unknown[] {
+  const placeables = (canvas as { tokens?: { placeables?: unknown[] } } | undefined)?.tokens?.placeables;
+  return Array.isArray(placeables) ? placeables : [];
+}
+
+function getTokenName(token: unknown): string | null {
+  if (!token || typeof token !== "object") return null;
+
+  const directName = (token as { name?: unknown }).name;
+  if (typeof directName === "string") return directName;
+
+  const documentName = (token as { document?: { name?: unknown } }).document?.name;
+  if (typeof documentName === "string") return documentName;
+
+  const actor = resolveTokenActor(token);
+  return actor?.name ?? null;
+}
+
+function normalizeLookupName(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toLocaleLowerCase();
+  return normalized && normalized.length > 0 ? normalized : null;
 }
 
 function isActorLike(value: unknown): value is Actor {

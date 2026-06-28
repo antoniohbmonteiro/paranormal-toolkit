@@ -272,7 +272,10 @@ export class ItemUseIntegration {
         skippedLabel: action.choiceGroupResolvedLabel ?? null,
         actionSectionId: action.actionSectionId,
         actionSectionTitle: action.actionSectionTitle,
-        summaryLines
+        summaryLines,
+        resistanceTargetActor: action.actor,
+        resistanceTargetActorId: action.actor.id ?? null,
+        resistanceTargetName: action.actorName
       });
     }
 

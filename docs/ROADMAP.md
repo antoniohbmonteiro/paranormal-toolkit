@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.13.4`.
+Versão base do roadmap: `v0.13.5`.
 
 O Toolkit já tem:
 
@@ -275,7 +275,7 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.12.4` | Concluído | Polimento de legibilidade do gerenciador de presets, foco em rituais aplicáveis/automatizados e botão Aplicar com destaque verde. |
 | `0.13.0` | Concluído | Resistência assistida inicial com opções de dano normal/metade para Eletrocussão. |
 | `0.13.4` | Concluído | Polish de layout do card de resistência assistida em cards estreitos. |
-| `0.13.4` | P1 | Botão para o mestre rolar a resistência do alvo pelo adapter do sistema. |
+| `0.13.5` | Concluído | Botão d20 para rolagem simples de resistência do alvo, ainda sem comparação automática de DT. |
 | `0.13.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
 | `0.14.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
@@ -304,6 +304,14 @@ A versão `1.0.0` deve ter:
 - UX sem dependência de console para operações comuns;
 - documentação técnica separada para adapters, presets e condições.
 
+
+
+## 0.13.5 — ajuste do botão d20 de resistência
+
+- Alinha o botão d20 à direita do bloco de resistência.
+- Usa o ator da ação assistida como alvo preferencial da rolagem.
+- Mantém fallback por ator/token no canvas quando necessário.
+- Ainda não compara automaticamente com DT.
 
 ## 0.13.4 — Chat Action Sections
 

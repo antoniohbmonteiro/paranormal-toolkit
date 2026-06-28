@@ -922,3 +922,13 @@
   font-weight: 700;
   line-height: 1.28;
 }
+
+
+/* 0.13.5 — alinha o botão d20 à direita do bloco de resistência */
+.paranormal-toolkit-item-use-prompt__resistance {
+  align-items: stretch;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-header {
+  width: 100%;
+}
