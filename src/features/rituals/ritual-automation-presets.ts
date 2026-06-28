@@ -76,7 +76,7 @@ export function createRitualSimpleHealingPreset(): AutomationPreset {
 export function createRitualElectrocutionPreset(): AutomationPreset {
   return {
     id: RITUAL_ELECTROCUTION_PRESET_ID,
-    version: "1.0.0",
+    version: "1.1.0",
     label: "Eletrocussão",
     description:
       "Preset inicial de dano de energia. Gasta o custo do ritual, rola dano conforme a forma escolhida e prepara ação assistida para aplicar dano em PV do alvo.",
@@ -199,6 +199,26 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
       message:
         "Gasta o custo do ritual, rola dano de energia e prepara aplicação de dano em PV do alvo. Resistência deve ser resolvida manualmente por enquanto."
     }),
+    resistance: {
+      skill: "resilience",
+      label: "Fortitude",
+      effect: "reducesByHalf",
+      summary: "Fortitude reduz dano à metade.",
+      damageApplications: [
+        {
+          id: "normal",
+          label: "Dano normal",
+          multiplier: 1
+        },
+        {
+          id: "half",
+          label: "Metade",
+          multiplier: 0.5,
+          rounding: "floor",
+          summary: "Use se o alvo resistiu."
+        }
+      ]
+    },
     ritualForms: {
       base: {
         label: "Padrão",

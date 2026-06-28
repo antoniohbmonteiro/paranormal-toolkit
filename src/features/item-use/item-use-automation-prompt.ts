@@ -6,6 +6,8 @@ const PROMPT_FLAG_KEY = "itemUsePrompts";
 const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
 const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
+const CHOICE_GROUP_ATTRIBUTE = "data-paranormal-toolkit-choice-group";
+const SKIPPED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-skipped-label";
 const DETAIL_KEY_ATTRIBUTE = "data-paranormal-toolkit-detail-key";
 const ROLL_CARD_ATTRIBUTE = "data-paranormal-toolkit-roll-card";
 const ROLL_DETAIL_TOGGLE_ATTRIBUTE = "data-paranormal-toolkit-roll-detail-toggle";
@@ -28,6 +30,8 @@ export type ItemUseAutomationPromptInput = {
   title?: string;
   buttonLabel?: string;
   executedLabel?: string;
+  choiceGroupId?: string | null;
+  skippedLabel?: string | null;
   summaryLines?: string[];
 };
 
@@ -39,6 +43,8 @@ type RenderableItemUseAutomationPrompt = {
   title?: string;
   buttonLabel?: string;
   executedLabel?: string;
+  choiceGroupId?: string | null;
+  skippedLabel?: string | null;
   summaryLines?: string[];
   createdAt: number;
   messageId: string | null;
@@ -74,6 +80,7 @@ type ParsedRollCard = ParsedRollLine & {
   cost: string | null;
   diceBreakdown: string | null;
   damageType: string | null;
+  resistance: string | null;
   notes: string[];
   details: string[];
 };
@@ -103,13 +110,13 @@ export async function registerPendingItemUseAutomationPrompt(input: ItemUseAutom
   renderPromptIntoExistingChatLog(input.pendingId);
 }
 
-export async function unregisterPendingItemUseAutomationPrompt(pendingId: string): Promise<void> {
+export async function unregisterPendingItemUseAutomationPrompt(pendingId: string, executedLabelOverride?: string): Promise<void> {
   const prompt = pendingPrompts.get(pendingId);
   pendingPrompts.delete(pendingId);
 
   if (!prompt) return;
 
-  await markPersistedPromptAsExecuted(prompt);
+  await markPersistedPromptAsExecuted(prompt, executedLabelOverride);
 }
 
 function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUseAutomationPrompt {
@@ -122,6 +129,8 @@ function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUs
     itemId: input.context.item.id ?? null,
     actorId: input.context.actor?.id ?? null,
     itemName: input.context.item.name ?? null,
+    choiceGroupId: input.choiceGroupId ?? null,
+    skippedLabel: input.skippedLabel ?? null,
     summary: createPromptSummary(input.context),
     executed: false
   };
@@ -268,6 +277,7 @@ function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, promptId
   summary.append(chip, total, formula);
   article.append(summary);
   appendRollMeta(article, rollCard);
+  appendResistanceHint(article, rollCard);
   appendRollDetails(article, rollCard, promptId);
 
   section.append(article);
@@ -293,6 +303,22 @@ function appendRollMeta(article: HTMLElement, rollCard: ParsedRollCard): void {
   }
 
   article.append(meta);
+}
+
+function appendResistanceHint(article: HTMLElement, rollCard: ParsedRollCard): void {
+  if (!rollCard.resistance) return;
+
+  const resistance = document.createElement("div");
+  resistance.classList.add(`${PROMPT_CLASS}__resistance`);
+
+  const label = document.createElement("strong");
+  label.textContent = "Resistência";
+
+  const text = document.createElement("span");
+  text.textContent = rollCard.resistance;
+
+  resistance.append(label, text);
+  article.append(resistance);
 }
 
 function appendRollDetails(article: HTMLElement, rollCard: ParsedRollCard, promptId: string): void {
@@ -333,6 +359,7 @@ function createRollDetailRows(rollCard: ParsedRollCard): { label: string; value:
 
   if (rollCard.diceBreakdown) rows.push({ label: "Dados", value: rollCard.diceBreakdown });
   if (rollCard.damageType) rows.push({ label: "Tipo", value: rollCard.damageType });
+  if (rollCard.resistance) rows.push({ label: "Resistência", value: rollCard.resistance });
   if (rollCard.form) rows.push({ label: "Forma", value: rollCard.form });
   if (rollCard.cost) rows.push({ label: "Custo", value: rollCard.cost });
 
@@ -408,6 +435,12 @@ function createPromptButton(prompt: RenderableItemUseAutomationPrompt): HTMLButt
   button.textContent = prompt.buttonLabel ?? "Aplicar automação";
   button.setAttribute(PENDING_ID_ATTRIBUTE, prompt.pendingId);
   button.setAttribute(EXECUTED_LABEL_ATTRIBUTE, prompt.executedLabel ?? "✓ Automação aplicada");
+
+  if (prompt.choiceGroupId) {
+    button.setAttribute(CHOICE_GROUP_ATTRIBUTE, prompt.choiceGroupId);
+    button.setAttribute(SKIPPED_LABEL_ATTRIBUTE, prompt.skippedLabel ?? "✓ Outra opção escolhida");
+  }
+
   return button;
 }
 
@@ -482,15 +515,38 @@ async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAuto
   const executed = await handler(pendingId);
 
   if (executed) {
-    button.textContent = button.getAttribute(EXECUTED_LABEL_ATTRIBUTE) ?? "✓ Automação aplicada";
-    button.classList.add(PROMPT_EXECUTED_BUTTON_CLASS);
-    button.removeAttribute(PENDING_ID_ATTRIBUTE);
-    button.removeAttribute(EXECUTED_LABEL_ATTRIBUTE);
+    markButtonAsResolved(button, button.getAttribute(EXECUTED_LABEL_ATTRIBUTE) ?? "✓ Automação aplicada");
+    markChoiceGroupButtonsAsResolved(button);
     return;
   }
 
   button.disabled = false;
   button.textContent = originalText;
+}
+
+function markButtonAsResolved(button: HTMLButtonElement, label: string): void {
+  button.disabled = true;
+  button.textContent = label;
+  button.classList.add(PROMPT_EXECUTED_BUTTON_CLASS);
+  button.removeAttribute(PENDING_ID_ATTRIBUTE);
+  button.removeAttribute(EXECUTED_LABEL_ATTRIBUTE);
+}
+
+function markChoiceGroupButtonsAsResolved(selectedButton: HTMLButtonElement): void {
+  const choiceGroupId = selectedButton.getAttribute(CHOICE_GROUP_ATTRIBUTE);
+  if (!choiceGroupId) return;
+
+  const root = selectedButton.closest<HTMLElement>(`.${PROMPT_CLASS}`) ?? selectedButton.parentElement;
+  if (!root) return;
+
+  const selector = `[${CHOICE_GROUP_ATTRIBUTE}="${escapeCssAttributeValue(choiceGroupId)}"]`;
+
+  for (const button of root.querySelectorAll<HTMLButtonElement>(selector)) {
+    if (button === selectedButton) continue;
+
+    const skippedLabel = button.getAttribute(SKIPPED_LABEL_ATTRIBUTE) ?? "✓ Outra opção escolhida";
+    markButtonAsResolved(button, skippedLabel);
+  }
 }
 
 function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomationPrompt): ParsedRollCard | null {
@@ -501,6 +557,7 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
   const cost = findSummaryValue(summaryLines, "Custo");
   const diceBreakdown = findSummaryValue(summaryLines, "Dados") ?? findSummaryValue(summaryLines, `Dados (${rollLine.label})`);
   const damageType = findSummaryValue(summaryLines, "Tipo");
+  const resistance = findSummaryValue(summaryLines, "Resistência");
   const notes = findSummaryValues(summaryLines, "Observação");
   const details = summaryLines.filter((line) => isExtraDetailLine(line, rollLine));
 
@@ -511,6 +568,7 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
     cost,
     diceBreakdown,
     damageType,
+    resistance,
     notes,
     details
   };
@@ -560,6 +618,7 @@ function isExtraDetailLine(line: string, rollLine: ParsedRollLine): boolean {
   if (line.startsWith("Dados:")) return false;
   if (line.startsWith(`Dados (${rollLine.label}):`)) return false;
   if (line.startsWith("Tipo:")) return false;
+  if (line.startsWith("Resistência:")) return false;
   if (line.startsWith("Observação:")) return false;
   if (parseRollLine(line)) return false;
   return line.trim().length > 0;
@@ -655,7 +714,7 @@ async function persistPromptInChatMessage(prompt: PendingItemUseAutomationPrompt
   }
 }
 
-async function markPersistedPromptAsExecuted(prompt: PendingItemUseAutomationPrompt): Promise<void> {
+async function markPersistedPromptAsExecuted(prompt: PendingItemUseAutomationPrompt, executedLabelOverride?: string): Promise<void> {
   const message = resolveChatMessageDocument(prompt.context.message);
   if (!message) return;
 
@@ -665,6 +724,7 @@ async function markPersistedPromptAsExecuted(prompt: PendingItemUseAutomationPro
 
     prompts[prompt.pendingId] = {
       ...persisted,
+      executedLabel: executedLabelOverride ?? persisted.executedLabel,
       executed: true
     };
 
@@ -721,6 +781,8 @@ function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt): PersistedIte
     itemId: prompt.itemId,
     actorId: prompt.actorId,
     itemName: prompt.itemName,
+    choiceGroupId: prompt.choiceGroupId ?? null,
+    skippedLabel: prompt.skippedLabel ?? null,
     summary: prompt.summary,
     executed: prompt.executed
   };
@@ -761,6 +823,8 @@ function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationP
     isOptionalString(value.title) &&
     isOptionalString(value.buttonLabel) &&
     isOptionalString(value.executedLabel) &&
+    isOptionalNullableString(value.choiceGroupId) &&
+    isOptionalNullableString(value.skippedLabel) &&
     isOptionalStringArray(value.summaryLines)
   );
 }
@@ -779,6 +843,10 @@ function isNullableString(value: unknown): value is string | null {
 
 function isOptionalString(value: unknown): value is string | undefined {
   return value === undefined || typeof value === "string";
+}
+
+function isOptionalNullableString(value: unknown): value is string | null | undefined {
+  return value === undefined || value === null || typeof value === "string";
 }
 
 function isOptionalStringArray(value: unknown): value is string[] | undefined {

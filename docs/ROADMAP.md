@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.12.4`.
+Versão base do roadmap: `v0.13.0`.
 
 O Toolkit já tem:
 
@@ -34,7 +34,7 @@ O Toolkit já tem:
 
 Objetivo: tirar o fluxo normal do console.
 
-Entrega desejada:
+Entrega feita:
 
 - adicionar ação de GM na ficha do ator, idealmente no menu de ações/três pontinhos quando houver ponto de extensão limpo;
 - aplicar o melhor preset conhecido em todos os rituais do ator;
@@ -52,15 +52,16 @@ Risco arquitetural:
 
 - se o sistema não expuser uma ação limpa na sheet, injetar botão por DOM pode ficar acoplado. Nesse caso, preferir uma integração pequena e bem isolada em `ui/` ou `adapters/ordem/`, com seletores mínimos e testes manuais claros.
 
-### P1 — Resistência assistida e modificadores de dano
+### Concluído em 0.13.0 — Resistência assistida inicial
 
 Objetivo: o Toolkit sugere as opções, mas o mestre decide o que aplicar.
 
-Entrega desejada:
+Entrega feita:
 
 - presets podem declarar opções de resistência ou modificação de dano;
 - o card mostra dano normal e variações relevantes;
-- para Eletrocussão, mostrar pelo menos:
+- uma ação escolhida desabilita a alternativa irmã para evitar dano duplicado;
+- para Eletrocussão, mostra:
   - aplicar dano normal;
   - aplicar metade;
 - futuramente suportar dobro, redução fixa, imunidade, vulnerabilidade ou outro multiplicador.
@@ -272,9 +273,10 @@ Prioridade atual: depois de Toolkit e FX.
 |---|---|---|
 | `0.12.0` | Concluído | Ação de GM na ficha para diagnosticar e aplicar presets em rituais conhecidos. |
 | `0.12.4` | Concluído | Polimento de legibilidade do gerenciador de presets, foco em rituais aplicáveis/automatizados e botão Aplicar com destaque verde. |
-| `0.12.x` | P1 | Resistência assistida com opções de dano normal, metade e multiplicadores futuros. |
-| `0.12.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
-| `0.13.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
+| `0.13.0` | Concluído | Resistência assistida inicial com opções de dano normal/metade para Eletrocussão. |
+| `0.13.1` | P1 | Botão para o mestre rolar a resistência do alvo pelo adapter do sistema. |
+| `0.13.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
+| `0.14.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
 | `0.14.0` | P2 | Permissões/visibilidade de ações no chat. |
 | `0.15.x` | P2 | UI de inspeção/configuração de automação do item. |

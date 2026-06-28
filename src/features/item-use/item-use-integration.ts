@@ -170,6 +170,7 @@ export class ItemUseIntegration {
     pending.workflowContext.resourceTransactions.push(result.value);
     this.pendingExecutions.delete(pendingId);
     await unregisterPendingItemUseAutomationPrompt(pendingId);
+    await this.resolveAlternativeResourceActions(pending);
     this.setAttempt(pending.context, "completed");
 
     return true;
@@ -219,6 +220,26 @@ export class ItemUseIntegration {
     }
   }
 
+  private async resolveAlternativeResourceActions(selected: PendingResourceActionExecution): Promise<void> {
+    const choiceGroupId = selected.action.choiceGroupId;
+
+    if (!choiceGroupId) return;
+
+    const alternativeEntries = Array.from(this.pendingExecutions.entries()).filter(([, pending]) => {
+      return pending.kind === "resource-action" && pending.action.choiceGroupId === choiceGroupId;
+    });
+
+    for (const [alternativeId, alternative] of alternativeEntries) {
+      if (alternative.kind !== "resource-action") continue;
+
+      this.pendingExecutions.delete(alternativeId);
+      await unregisterPendingItemUseAutomationPrompt(
+        alternativeId,
+        alternative.action.choiceGroupResolvedLabel ?? "✓ Outra opção escolhida"
+      );
+    }
+  }
+
   private async registerAssistedResourceActions(
     context: ItemUseContext,
     workflowContext: WorkflowContext,
@@ -247,6 +268,8 @@ export class ItemUseIntegration {
         title: "Paranormal Toolkit · Ritual",
         buttonLabel: action.label,
         executedLabel: action.executedLabel,
+        choiceGroupId: action.choiceGroupId ?? null,
+        skippedLabel: action.choiceGroupResolvedLabel ?? null,
         summaryLines
       });
     }

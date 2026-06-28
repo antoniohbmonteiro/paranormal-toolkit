@@ -1,6 +1,8 @@
 import type {
   AutomationActorSelector,
+  AutomationDamageApplicationOption,
   AutomationDefinition,
+  AutomationResistanceDefinition,
   AutomationRitualFormDefinition,
   AutomationRitualFormId,
   AutomationStep,
@@ -37,6 +39,8 @@ export type AssistedResourceAction = {
   amount: number;
   label: string;
   executedLabel: string;
+  choiceGroupId?: string;
+  choiceGroupResolvedLabel?: string;
 };
 
 export type RitualAssistedRunResult =
@@ -145,7 +149,7 @@ export class RitualAssistedWorkflow {
 
     const workflowContext = runResult.value.context;
     const actionResult = createAssistedResourceActions(definition, context, workflowContext);
-    const summaryLines = createRitualSummaryLines(options, form, cost, workflowContext);
+    const summaryLines = createRitualSummaryLines(definition, options, form, cost, workflowContext);
 
     if (!actionResult.ok) {
       return {
@@ -261,14 +265,40 @@ function createAssistedResourceActions(
     }
 
     for (const actor of actors) {
-      actions.push(createAssistedResourceAction(step, actor, amount.value));
+      actions.push(...createAssistedResourceActionsForActor(definition, step, actor, amount.value));
     }
   }
 
   return { ok: true, actions };
 }
 
-function createAssistedResourceAction(step: ModifyResourceStep, actor: Actor, amount: number): AssistedResourceAction {
+function createAssistedResourceActionsForActor(
+  definition: AutomationDefinition,
+  step: ModifyResourceStep,
+  actor: Actor,
+  baseAmount: number
+): AssistedResourceAction[] {
+  if (!shouldCreateDamageApplicationChoices(definition, step)) {
+    return [createAssistedResourceAction(step, actor, baseAmount)];
+  }
+
+  const choiceGroupId = createChoiceGroupId();
+
+  return getDamageApplicationOptions(definition).map((option) => {
+    const amount = calculateDamageApplicationAmount(baseAmount, option);
+    return createAssistedResourceAction(step, actor, amount, {
+      option,
+      choiceGroupId
+    });
+  });
+}
+
+function createAssistedResourceAction(
+  step: ModifyResourceStep,
+  actor: Actor,
+  amount: number,
+  damageChoice?: { option: AutomationDamageApplicationOption; choiceGroupId: string }
+): AssistedResourceAction {
   const actorName = actor.name ?? "Ator sem nome";
 
   return {
@@ -278,18 +308,26 @@ function createAssistedResourceAction(step: ModifyResourceStep, actor: Actor, am
     resource: step.resource,
     operation: step.operation,
     amount,
-    label: createActionLabel(step, actorName, amount),
-    executedLabel: createExecutedLabel(step, actorName)
+    label: createActionLabel(step, actorName, amount, damageChoice?.option),
+    executedLabel: createExecutedLabel(step, actorName, damageChoice?.option),
+    choiceGroupId: damageChoice?.choiceGroupId,
+    choiceGroupResolvedLabel: damageChoice ? "✓ Outra opção escolhida" : undefined
   };
 }
 
-function createActionLabel(step: ModifyResourceStep, actorName: string, amount: number): string {
+function createActionLabel(
+  step: ModifyResourceStep,
+  actorName: string,
+  amount: number,
+  damageOption?: AutomationDamageApplicationOption
+): string {
   if (step.operation === "heal" && step.resource === "PV") {
     return `Curar ${actorName} em ${amount} PV`;
   }
 
   if (step.operation === "damage") {
-    return `Aplicar ${amount} de dano em ${actorName}`;
+    const suffix = damageOption && damageOption.id !== "normal" ? ` (${damageOption.label.toLowerCase()})` : "";
+    return `Aplicar ${amount} de dano em ${actorName}${suffix}`;
   }
 
   if (step.operation === "recover") {
@@ -303,13 +341,14 @@ function createActionLabel(step: ModifyResourceStep, actorName: string, amount: 
   return `Aplicar ${amount} ${step.resource} em ${actorName}`;
 }
 
-function createExecutedLabel(step: ModifyResourceStep, actorName: string): string {
+function createExecutedLabel(step: ModifyResourceStep, actorName: string, damageOption?: AutomationDamageApplicationOption): string {
   if (step.operation === "heal" && step.resource === "PV") {
     return `✓ ${actorName} curado`;
   }
 
   if (step.operation === "damage") {
-    return `✓ Dano aplicado em ${actorName}`;
+    const suffix = damageOption && damageOption.id !== "normal" ? ` (${damageOption.label.toLowerCase()})` : "";
+    return `✓ Dano aplicado em ${actorName}${suffix}`;
   }
 
   if (step.operation === "recover") {
@@ -323,6 +362,54 @@ function createExecutedLabel(step: ModifyResourceStep, actorName: string): strin
   return "✓ Ação aplicada";
 }
 
+function shouldCreateDamageApplicationChoices(definition: AutomationDefinition, step: ModifyResourceStep): boolean {
+  return step.operation === "damage" && step.resource === "PV" && getDamageApplicationOptions(definition).length > 1;
+}
+
+function getDamageApplicationOptions(definition: AutomationDefinition): AutomationDamageApplicationOption[] {
+  const configured = definition.resistance?.damageApplications;
+
+  if (configured && configured.length > 0) {
+    return configured;
+  }
+
+  if (definition.resistance?.effect === "reducesByHalf") {
+    return [
+      { id: "normal", label: "Dano normal", multiplier: 1 },
+      { id: "half", label: "Metade", multiplier: 0.5, rounding: "floor" }
+    ];
+  }
+
+  return [{ id: "normal", label: "Dano normal", multiplier: 1 }];
+}
+
+function calculateDamageApplicationAmount(baseAmount: number, option: AutomationDamageApplicationOption): number {
+  const rawAmount = baseAmount * option.multiplier;
+  const roundedAmount = roundDamageApplicationAmount(rawAmount, option.rounding ?? "floor");
+  return Math.max(0, roundedAmount);
+}
+
+function roundDamageApplicationAmount(amount: number, rounding: NonNullable<AutomationDamageApplicationOption["rounding"]>): number {
+  switch (rounding) {
+    case "ceil":
+      return Math.ceil(amount);
+    case "round":
+      return Math.round(amount);
+    case "floor":
+      return Math.floor(amount);
+  }
+}
+
+function createChoiceGroupId(): string {
+  const cryptoObject = globalThis.crypto as { randomUUID?: () => string } | undefined;
+
+  if (cryptoObject?.randomUUID) {
+    return cryptoObject.randomUUID();
+  }
+
+  return `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function resolveActors(selector: AutomationActorSelector, context: ItemUseContext): Actor[] {
   switch (selector) {
     case "self":
@@ -333,6 +420,7 @@ function resolveActors(selector: AutomationActorSelector, context: ItemUseContex
 }
 
 function createRitualSummaryLines(
+  definition: AutomationDefinition,
   options: RitualCastOptions,
   form: AutomationRitualFormDefinition,
   cost: RitualCost | null,
@@ -342,6 +430,7 @@ function createRitualSummaryLines(
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
     createCostSummaryLine(options, form, cost),
     ...Object.values(context.rolls).flatMap(createRollSummaryLines),
+    ...createResistanceSummaryLines(definition.resistance),
     ...createFormNoteLines(form)
   ];
 }
@@ -379,6 +468,12 @@ function createRollSummaryLines(roll: WorkflowRollResult): string[] {
   }
 
   return lines;
+}
+
+function createResistanceSummaryLines(resistance: AutomationResistanceDefinition | undefined): string[] {
+  if (!resistance) return [];
+
+  return [`Resistência: ${resistance.summary}`];
 }
 
 type RollBreakdownTerm = {

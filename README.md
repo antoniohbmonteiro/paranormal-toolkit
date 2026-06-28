@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.12.4`.
+Versão experimental atual: `v0.13.0`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -66,6 +66,21 @@ O popup foca apenas nos rituais que interessam ao fluxo do Toolkit:
 Rituais sem preset conhecido são ignorados no painel para evitar uma lista gigante em mesas reais.
 
 Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de agente com rituais.
+
+### 0.13.0 — Resistência assistida
+
+A versão `0.13.0` adiciona o primeiro fluxo de resistência assistida para rituais de dano. O Toolkit ainda não rola a resistência do alvo automaticamente; ele prepara opções de aplicação para o mestre escolher.
+
+Para Eletrocussão, o card do Toolkit passa a exibir:
+
+```txt
+Resistência: Fortitude reduz dano à metade
+
+[Aplicar dano normal]
+[Aplicar metade]
+```
+
+As duas ações são tratadas como alternativas do mesmo grupo: quando uma é escolhida, a outra é marcada como indisponível para evitar dano duplicado.
 
 ## Desenvolvimento
 
@@ -267,7 +282,7 @@ ritual.simpleDamage
 generic.simpleHealing
 ```
 
-`Cicatrização` já é reconhecida por nome normalizado e aponta para um preset inicial de cura. Ela só possui forma Padrão no Toolkit. `Eletrocussão` também é reconhecida por nome normalizado e aponta para um preset inicial de dano de energia com formas estruturadas: Padrão `1d8`, Discente `3d8` com `+2 PE` e Verdadeiro `6d8` com `+5 PE`. A resistência de Fortitude para reduzir dano à metade, e a condição Atordoado do Verdadeiro, ainda devem ser resolvidas manualmente até o Toolkit ter workflow de resistência/condições.
+`Cicatrização` já é reconhecida por nome normalizado e aponta para um preset inicial de cura. Ela só possui forma Padrão no Toolkit. `Eletrocussão` também é reconhecida por nome normalizado e aponta para um preset inicial de dano de energia com formas estruturadas: Padrão `1d8`, Discente `3d8` com `+2 PE` e Verdadeiro `6d8` com `+5 PE`. A resistência de Fortitude agora gera opções assistidas de dano normal/metade para o mestre escolher; a condição Atordoado do Verdadeiro ainda deve ser resolvida manualmente até o Toolkit ter Condition Engine.
 
 Isso é apenas o começo do modelo: nome pode ajudar a encontrar uma automação compatível, mas a execução real usa a flag gravada no item.
 
@@ -388,8 +403,8 @@ Prioridades atuais antes da `1.0.0`:
 
 | Prioridade | Frente | Objetivo |
 |---|---|---|
-| P1 | Presets na ficha | Adicionar uma ação de GM na ficha do ator para aplicar presets do Toolkit em todos os rituais conhecidos, sem depender do console. |
-| P1 | Resistência assistida | Quando um ritual sugerir redução, aumento ou outro modificador de dano, mostrar opções para o mestre aplicar dano normal, metade, dobro ou outra variação configurada. |
+| P1 | Presets na ficha | Implementado: ação de GM na ficha do ator para aplicar presets do Toolkit em todos os rituais conhecidos, sem depender do console. |
+| P1 | Resistência assistida | Implementado inicial: rituais podem mostrar opções para o mestre aplicar dano normal/metade; dobro e outras variações ficam para evolução futura. |
 | P2 | Condições informativas | Criar Condition Engine inicial com Active Effects gerenciados pelo Toolkit, flags próprias, duração e progressão simples, como Abalado evoluindo para Apavorado. |
 | P2 | Permissões e visibilidade | Controlar quem vê detalhes e quem pode executar ações de chat, como aplicar dano, cura, resistência ou condição. Esta frente está em hold até o fluxo de ações estabilizar. |
 | P2 | Hook pré-chat no sistema | Evoluir a integração com o sistema Ordem para uma etapa pré-`ChatMessage.create`, permitindo cancelar ou preparar o uso de item antes do card original. |
@@ -444,3 +459,13 @@ Polimento visual do gerenciador de presets de rituais:
 - fundo do popup mais opaco para melhorar legibilidade;
 - cards internos com contraste maior;
 - lista de rituais sem preset ocultada do painel para manter o foco no fluxo do Toolkit.
+
+
+## 0.13.0
+
+Resistência assistida inicial:
+
+- Eletrocussão declara Fortitude reduz dano à metade;
+- card de ritual mostra bloco simples de resistência;
+- ações alternativas de dano normal/metade são criadas no chat;
+- escolher uma ação desabilita a alternativa irmã para evitar aplicação duplicada.
