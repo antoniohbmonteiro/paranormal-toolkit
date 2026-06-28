@@ -1,11 +1,12 @@
 import { MODULE_ID, MODULE_TITLE } from "./constants";
 import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
-import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
-import { registerItemUseSettings } from "./features/item-use/item-use-settings";
 import { SystemGuard } from "./core/system-guard";
+import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
 import { registerChatEnrichmentRenderer } from "./features/chat/chat-enrichment-renderer";
 import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
+import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
+import { registerItemUseSettings } from "./features/item-use/item-use-settings";
 import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
 
 let services: ToolkitServices | null = null;
@@ -13,6 +14,7 @@ let services: ToolkitServices | null = null;
 Hooks.once("init", () => {
   registerDebugOutputSettings();
   registerItemUseSettings();
+  registerDiceAnimationSettings();
   ModuleLogger.info("Inicializando módulo.");
 });
 

@@ -1,3 +1,4 @@
+import { animateRollWithDiceSoNice } from "../../features/dice/dice-animation-service";
 import { failure, type Result, success } from "../result";
 import type { WorkflowContext } from "../workflow/workflow-context";
 import type { WorkflowRollIntent, WorkflowRollRequest, WorkflowRollResult } from "../workflow/workflow-roll";
@@ -36,6 +37,8 @@ export async function executeAutomationRollFormula(
         message: `A rolagem ${step.id} não retornou um total numérico válido.`
       });
     }
+
+    await animateRollWithDiceSoNice(evaluatedRoll);
 
     const rollRequest = context.rollRequests[step.id] ?? createAutomationRollRequest(step, stepIndex);
     const rollResult: WorkflowRollResult = {

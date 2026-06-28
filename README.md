@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.11.0`.
+Versão experimental atual: `v0.11.1`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -25,6 +25,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Modo automático | Executa a automação diretamente ao usar o item. | Experimental |
 | Conjuração assistida de rituais | Abre popup para forma do ritual, gasto opcional de PE/PD, rola dados pelo Toolkit e cria ações reais de cura/dano no chat. | MVP implementado |
 | Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
+| Dice So Nice | Quando o módulo Dice So Nice está ativo, as rolagens do Toolkit são animadas em 3D sem criar mensagem extra no chat. | Implementado inicial |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
 | Condições e efeitos | Aplicará condições e Active Effects quando rituais, habilidades ou regras pedirem. | Planejado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
@@ -196,6 +197,30 @@ Verdadeiro  -> +5 PE, 6d8
 ```
 
 O Verdadeiro também imprime no chat uma observação para aplicar Atordoado manualmente caso o alvo falhe na Fortitude.
+
+## Animação de dados com Dice So Nice
+
+A partir da `0.11.1`, as rolagens feitas pelo workflow do Toolkit podem acionar o Dice So Nice quando ele estiver instalado e ativo.
+
+O Toolkit chama a API 3D diretamente e **não cria uma mensagem extra no chat** para essas rolagens. O resultado continua sendo mostrado no bloco do Paranormal Toolkit dentro do card original do item.
+
+```txt
+Roll.evaluate() do Toolkit
+↓
+se Dice So Nice estiver ativo e a setting permitir
+↓
+game.dice3d.showForRoll(...)
+↓
+sem ChatMessage extra
+```
+
+A setting fica em:
+
+```txt
+Paranormal Toolkit → Animar rolagens com Dice So Nice
+```
+
+Sem Dice So Nice, o workflow continua funcionando normalmente e apenas ignora a animação.
 
 ## Presets iniciais
 
