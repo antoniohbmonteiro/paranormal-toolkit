@@ -8,6 +8,7 @@ import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
 import { registerItemUseSettings } from "./features/item-use/item-use-settings";
 import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
+import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/actor-sheet-ritual-preset-action";
 
 let services: ToolkitServices | null = null;
 
@@ -31,6 +32,7 @@ Hooks.once("ready", () => {
   registerGlobalApi(services);
   registerChatTargetCapture();
   registerChatEnrichmentRenderer();
+  registerActorSheetRitualPresetAction(services);
 
   ModuleLogger.info("Inicializado para o sistema Ordem Paranormal.");
   ModuleLogger.info(`API de debug disponível em globalThis["${MODULE_ID}"] e globalThis.ParanormalToolkit.`);

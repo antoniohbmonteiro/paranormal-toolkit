@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.11.6`.
+Versão experimental atual: `v0.12.0`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -37,6 +37,34 @@ O Paranormal Toolkit é pensado para ser configurável por mesa: o mestre pode d
 
 - Foundry VTT v14+
 - Sistema alvo: `ordemparanormal`
+
+
+### 0.12.0 — Gerenciador de presets de rituais
+
+A versão `0.12.0` adiciona uma ação de GM no menu de três pontinhos da ficha de agente para gerenciar presets de rituais sem usar o console.
+
+Fluxo esperado:
+
+```txt
+Ficha do agente
+↓
+⋮
+↓
+Gerenciar presets de rituais
+↓
+Ver diagnóstico dos rituais
+↓
+Aplicar presets pendentes
+```
+
+O popup separa os rituais em:
+
+- prontos para aplicar;
+- desatualizados;
+- automatizados;
+- sem preset conhecido.
+
+Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de agente com rituais.
 
 ## Desenvolvimento
 

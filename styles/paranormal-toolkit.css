@@ -407,3 +407,185 @@
   border-color: rgba(39, 112, 72, 0.42);
   background: rgba(39, 112, 72, 0.12);
 }
+
+/* Ritual preset manager -------------------------------------------------- */
+.paranormal-toolkit-preset-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.paranormal-toolkit-preset-manager__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(70, 43, 39, 0.25);
+  padding-bottom: 0.75rem;
+}
+
+.paranormal-toolkit-preset-manager__eyebrow {
+  margin: 0 0 0.15rem;
+  color: #7c2f32;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-preset-manager__header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.paranormal-toolkit-preset-manager__header p {
+  margin: 0.2rem 0 0;
+}
+
+.paranormal-toolkit-preset-manager__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  min-width: 13rem;
+}
+
+.paranormal-toolkit-preset-manager__summary span {
+  border: 1px solid rgba(70, 43, 39, 0.18);
+  border-radius: 6px;
+  padding: 0.35rem 0.45rem;
+  background: rgba(255, 255, 255, 0.35);
+  font-size: 0.78rem;
+}
+
+.paranormal-toolkit-preset-manager__summary strong {
+  display: inline-block;
+  min-width: 1.2rem;
+  color: #7c2f32;
+  font-size: 0.95rem;
+}
+
+.paranormal-toolkit-preset-manager__result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border: 1px solid rgba(43, 109, 75, 0.3);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  background: rgba(43, 109, 75, 0.08);
+}
+
+.paranormal-toolkit-preset-manager__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.paranormal-toolkit-preset-manager__section {
+  border: 1px solid rgba(70, 43, 39, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.paranormal-toolkit-preset-manager__section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  background: rgba(70, 43, 39, 0.08);
+  font-size: 0.9rem;
+}
+
+.paranormal-toolkit-preset-manager__section h3 small {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  background: rgba(255, 255, 255, 0.45);
+  font-size: 0.72rem;
+}
+
+.paranormal-toolkit-preset-manager__section--available h3 i,
+.paranormal-toolkit-preset-manager__section--upToDate h3 i {
+  color: #2b6d4b;
+}
+
+.paranormal-toolkit-preset-manager__section--outdated h3 i {
+  color: #9a651f;
+}
+
+.paranormal-toolkit-preset-manager__section--unsupported h3 i {
+  color: #666;
+}
+
+.paranormal-toolkit-preset-manager__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paranormal-toolkit-preset-manager__entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+  border-top: 1px solid rgba(70, 43, 39, 0.12);
+  padding: 0.55rem 0.65rem;
+}
+
+.paranormal-toolkit-preset-manager__entry:first-child {
+  border-top: 0;
+}
+
+.paranormal-toolkit-preset-manager__entry div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.paranormal-toolkit-preset-manager__entry strong {
+  color: #2f2422;
+  font-size: 0.88rem;
+}
+
+.paranormal-toolkit-preset-manager__entry span,
+.paranormal-toolkit-preset-manager__entry em,
+.paranormal-toolkit-preset-manager__applied {
+  color: rgba(47, 36, 34, 0.78);
+  font-size: 0.76rem;
+  font-style: normal;
+  line-height: 1.25;
+}
+
+.paranormal-toolkit-preset-manager__entry em {
+  border: 1px solid rgba(70, 43, 39, 0.16);
+  border-radius: 999px;
+  padding: 0.18rem 0.45rem;
+  background: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-preset-manager__empty {
+  margin: 0;
+  border-top: 1px solid rgba(70, 43, 39, 0.12);
+  padding: 0.55rem 0.65rem;
+  color: rgba(47, 36, 34, 0.68);
+  font-size: 0.8rem;
+}
+
+.paranormal-toolkit-preset-manager__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(70, 43, 39, 0.18);
+  padding-top: 0.75rem;
+}
+
+.paranormal-toolkit-preset-manager__footer button[data-action="apply"] {
+  font-weight: 700;
+}

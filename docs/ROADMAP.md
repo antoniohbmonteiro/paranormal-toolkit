@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.11.6`.
+Versão base do roadmap: `v0.12.0`.
 
 O Toolkit já tem:
 
@@ -25,11 +25,12 @@ O Toolkit já tem:
 - presets iniciais para Cicatrização e Eletrocussão;
 - custo de PE/PD por ritual;
 - rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
-- card de resultado no chat com detalhes expansíveis da rolagem.
+- card de resultado no chat com detalhes expansíveis da rolagem;
+- ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais.
 
 ## Roadmap por prioridade
 
-### P1 — Ação de GM para aplicar presets pela ficha
+### Concluído em 0.12.0 — Ação de GM para aplicar presets pela ficha
 
 Objetivo: tirar o fluxo normal do console.
 
@@ -269,8 +270,8 @@ Prioridade atual: depois de Toolkit e FX.
 
 | Versão alvo | Prioridade | Entrega |
 |---|---|---|
-| `0.11.7` | P1 | Ação de GM na ficha para aplicar presets em todos os rituais conhecidos. |
-| `0.12.0` | P1 | Resistência assistida com opções de dano normal, metade e multiplicadores futuros. |
+| `0.12.0` | Concluído | Ação de GM na ficha para diagnosticar e aplicar presets em rituais conhecidos. |
+| `0.12.1` | P1 | Resistência assistida com opções de dano normal, metade e multiplicadores futuros. |
 | `0.12.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
 | `0.13.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |

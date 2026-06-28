@@ -13,6 +13,8 @@ import { WorkflowHookEmitter } from "./core/workflow/workflow-hook-emitter";
 import { DebugOutputService } from "./debug/output/debug-output-service";
 import { ItemUseIntegration } from "./features/item-use/item-use-integration";
 import { createBuiltInAutomationPresets } from "./features/rituals/ritual-automation-presets";
+import { RitualPresetApplicationService } from "./features/rituals/presets/ritual-preset-application-service";
+import { RitualPresetDiagnosticService } from "./features/rituals/presets/ritual-preset-diagnostic";
 import { ChatMessageService } from "./ui/chat-message-service";
 
 export type ToolkitServices = {
@@ -30,6 +32,8 @@ export type ToolkitServices = {
   automation: AutomationRunner;
   workflow: WorkflowEngine;
   itemUseIntegration: ItemUseIntegration;
+  ritualPresetDiagnostic: RitualPresetDiagnosticService;
+  ritualPresetApplications: RitualPresetApplicationService;
 };
 
 export function createToolkitServices(): ToolkitServices {
@@ -47,6 +51,8 @@ export function createToolkitServices(): ToolkitServices {
 
   const automationBinder = new AutomationBinder();
   const itemPatches = new OrdemItemPatchAdapter();
+  const ritualPresetDiagnostic = new RitualPresetDiagnosticService(automationRegistry);
+  const ritualPresetApplications = new RitualPresetApplicationService(ritualPresetDiagnostic, automationBinder, itemPatches);
   const debugOutput = new DebugOutputService();
   const chatMessages = new ChatMessageService(debugOutput);
   const workflowHooks = new WorkflowHookEmitter();
@@ -70,6 +76,8 @@ export function createToolkitServices(): ToolkitServices {
     workflowHooks,
     automation,
     workflow,
-    itemUseIntegration
+    itemUseIntegration,
+    ritualPresetDiagnostic,
+    ritualPresetApplications
   };
 }
