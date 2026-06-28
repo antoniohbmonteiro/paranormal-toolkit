@@ -759,3 +759,78 @@
   opacity: 1 !important;
   filter: grayscale(0.25);
 }
+
+/* 0.13.1 — Mais respiro para resistência assistida em cards estreitos */
+.paranormal-toolkit-item-use-prompt__roll-card {
+  gap: 8px;
+  padding: 8px 9px;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.35rem;
+  padding: 0.44rem 0.5rem;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance strong {
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance span {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.paranormal-toolkit-item-use-prompt__actions {
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.paranormal-toolkit-item-use-prompt__button {
+  min-height: 32px;
+  padding: 6px 8px;
+  line-height: 1.22;
+}
+
+
+/* 0.13.2 — Bloco de resistência e seção de ações mais legíveis */
+.paranormal-toolkit-item-use-prompt__resistance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  padding: 0.48rem 0.56rem;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance strong {
+  white-space: normal;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance span {
+  line-height: 1.32;
+}
+
+.paranormal-toolkit-item-use-prompt__actions {
+  border: 1px solid rgba(89, 36, 42, 0.14);
+  border-radius: 7px;
+  padding: 0.42rem;
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.paranormal-toolkit-item-use-prompt__actions-title {
+  display: block;
+  margin: 0 0 0.36rem;
+  color: rgba(36, 27, 24, 0.9);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.paranormal-toolkit-item-use-prompt__button {
+  min-height: 30px;
+  padding: 5px 8px;
+  text-align: center;
+}

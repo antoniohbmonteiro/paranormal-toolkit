@@ -326,8 +326,12 @@ function createActionLabel(
   }
 
   if (step.operation === "damage") {
-    const suffix = damageOption && damageOption.id !== "normal" ? ` (${damageOption.label.toLowerCase()})` : "";
-    return `Aplicar ${amount} de dano em ${actorName}${suffix}`;
+    if (damageOption) {
+      const prefix = damageOption.id === "normal" ? "Normal" : damageOption.label;
+      return `${prefix}: ${amount} PV`;
+    }
+
+    return `Aplicar ${amount} de dano em ${actorName}`;
   }
 
   if (step.operation === "recover") {
@@ -347,8 +351,12 @@ function createExecutedLabel(step: ModifyResourceStep, actorName: string, damage
   }
 
   if (step.operation === "damage") {
-    const suffix = damageOption && damageOption.id !== "normal" ? ` (${damageOption.label.toLowerCase()})` : "";
-    return `✓ Dano aplicado em ${actorName}${suffix}`;
+    if (damageOption) {
+      const prefix = damageOption.id === "normal" ? "dano normal" : damageOption.label.toLowerCase();
+      return `✓ ${prefix} aplicado`;
+    }
+
+    return `✓ Dano aplicado em ${actorName}`;
   }
 
   if (step.operation === "recover") {

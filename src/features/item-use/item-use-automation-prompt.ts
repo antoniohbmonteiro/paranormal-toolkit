@@ -191,7 +191,7 @@ function appendPromptToRoot(root: HTMLElement, prompt: RenderableItemUseAutomati
   const section = getOrCreateToolkitSection(root, prompt);
   appendPromptContent(section, prompt);
 
-  const actions = getOrCreateActionsContainer(section);
+  const actions = getOrCreateActionsContainer(section, createActionSectionTitle(prompt));
   actions.append(createPromptButton(prompt));
 }
 
@@ -311,13 +311,13 @@ function appendResistanceHint(article: HTMLElement, rollCard: ParsedRollCard): v
   const resistance = document.createElement("div");
   resistance.classList.add(`${PROMPT_CLASS}__resistance`);
 
-  const label = document.createElement("strong");
-  label.textContent = "Resistência";
+  const title = document.createElement("strong");
+  title.textContent = "Resistência";
 
-  const text = document.createElement("span");
-  text.textContent = rollCard.resistance;
+  const description = document.createElement("span");
+  description.textContent = rollCard.resistance;
 
-  resistance.append(label, text);
+  resistance.append(title, description);
   article.append(resistance);
 }
 
@@ -374,7 +374,7 @@ function createRollDetailRows(rollCard: ParsedRollCard): { label: string; value:
   return rows;
 }
 
-function getOrCreateActionsContainer(section: HTMLElement): HTMLElement {
+function getOrCreateActionsContainer(section: HTMLElement, titleText: string): HTMLElement {
   const existing = section.querySelector<HTMLElement>(`.${PROMPT_ACTIONS_CLASS}`);
 
   if (existing) {
@@ -383,9 +383,24 @@ function getOrCreateActionsContainer(section: HTMLElement): HTMLElement {
 
   const actions = document.createElement("div");
   actions.classList.add(PROMPT_ACTIONS_CLASS);
+
+  const title = document.createElement("strong");
+  title.classList.add(`${PROMPT_CLASS}__actions-title`);
+  title.textContent = titleText;
+  actions.append(title);
+
   section.append(actions);
 
   return actions;
+}
+
+function createActionSectionTitle(prompt: RenderableItemUseAutomationPrompt): string {
+  const rollCard = createRollCard(prompt.summaryLines ?? [], prompt);
+
+  if (rollCard?.intent === "damage") return "Aplicar danos";
+  if (rollCard?.intent === "healing") return "Aplicar cura";
+
+  return "Ações";
 }
 
 function appendSummaryLines(section: HTMLElement, summaryLines: string[]): void {

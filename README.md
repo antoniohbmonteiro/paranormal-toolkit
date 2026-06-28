@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.0`.
+Versão experimental atual: `v0.13.2`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -66,6 +66,11 @@ O popup foca apenas nos rituais que interessam ao fluxo do Toolkit:
 Rituais sem preset conhecido são ignorados no painel para evitar uma lista gigante em mesas reais.
 
 Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de agente com rituais.
+
+
+### 0.13.2 — Polish do card de resistência
+
+A versão `0.13.2` ajusta o layout do card de resistência assistida para cards estreitos do chat: o bloco de resistência ganhou mais respiro, o rótulo ficou compacto e os botões de dano normal/metade usam textos mais curtos.
 
 ### 0.13.0 — Resistência assistida
 
