@@ -834,3 +834,17 @@
   padding: 5px 8px;
   text-align: center;
 }
+
+
+/* 0.13.3 — seções de ações independentes no card */
+.paranormal-toolkit-item-use-prompt__actions + .paranormal-toolkit-item-use-prompt__actions {
+  margin-top: 0.42rem;
+}
+
+.paranormal-toolkit-item-use-prompt__actions[data-paranormal-toolkit-action-section="apply-healing"] {
+  border-color: rgba(43, 109, 75, 0.16);
+}
+
+.paranormal-toolkit-item-use-prompt__actions[data-paranormal-toolkit-action-section="apply-resources"] {
+  border-color: rgba(79, 72, 125, 0.16);
+}

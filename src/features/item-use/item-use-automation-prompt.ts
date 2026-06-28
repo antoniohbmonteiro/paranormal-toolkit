@@ -8,6 +8,7 @@ const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
 const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
 const CHOICE_GROUP_ATTRIBUTE = "data-paranormal-toolkit-choice-group";
 const SKIPPED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-skipped-label";
+const ACTION_SECTION_ATTRIBUTE = "data-paranormal-toolkit-action-section";
 const DETAIL_KEY_ATTRIBUTE = "data-paranormal-toolkit-detail-key";
 const ROLL_CARD_ATTRIBUTE = "data-paranormal-toolkit-roll-card";
 const ROLL_DETAIL_TOGGLE_ATTRIBUTE = "data-paranormal-toolkit-roll-detail-toggle";
@@ -32,6 +33,8 @@ export type ItemUseAutomationPromptInput = {
   executedLabel?: string;
   choiceGroupId?: string | null;
   skippedLabel?: string | null;
+  actionSectionId?: string | null;
+  actionSectionTitle?: string | null;
   summaryLines?: string[];
 };
 
@@ -45,6 +48,8 @@ type RenderableItemUseAutomationPrompt = {
   executedLabel?: string;
   choiceGroupId?: string | null;
   skippedLabel?: string | null;
+  actionSectionId?: string | null;
+  actionSectionTitle?: string | null;
   summaryLines?: string[];
   createdAt: number;
   messageId: string | null;
@@ -131,6 +136,8 @@ function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUs
     itemName: input.context.item.name ?? null,
     choiceGroupId: input.choiceGroupId ?? null,
     skippedLabel: input.skippedLabel ?? null,
+    actionSectionId: input.actionSectionId ?? null,
+    actionSectionTitle: input.actionSectionTitle ?? null,
     summary: createPromptSummary(input.context),
     executed: false
   };
@@ -191,7 +198,7 @@ function appendPromptToRoot(root: HTMLElement, prompt: RenderableItemUseAutomati
   const section = getOrCreateToolkitSection(root, prompt);
   appendPromptContent(section, prompt);
 
-  const actions = getOrCreateActionsContainer(section, createActionSectionTitle(prompt));
+  const actions = getOrCreateActionsContainer(section, createActionSection(prompt));
   actions.append(createPromptButton(prompt));
 }
 
@@ -374,8 +381,14 @@ function createRollDetailRows(rollCard: ParsedRollCard): { label: string; value:
   return rows;
 }
 
-function getOrCreateActionsContainer(section: HTMLElement, titleText: string): HTMLElement {
-  const existing = section.querySelector<HTMLElement>(`.${PROMPT_ACTIONS_CLASS}`);
+type PromptActionSection = {
+  id: string;
+  title: string;
+};
+
+function getOrCreateActionsContainer(section: HTMLElement, actionSection: PromptActionSection): HTMLElement {
+  const selector = `[${ACTION_SECTION_ATTRIBUTE}="${escapeCssAttributeValue(actionSection.id)}"]`;
+  const existing = section.querySelector<HTMLElement>(selector);
 
   if (existing) {
     return existing;
@@ -383,10 +396,11 @@ function getOrCreateActionsContainer(section: HTMLElement, titleText: string): H
 
   const actions = document.createElement("div");
   actions.classList.add(PROMPT_ACTIONS_CLASS);
+  actions.setAttribute(ACTION_SECTION_ATTRIBUTE, actionSection.id);
 
   const title = document.createElement("strong");
   title.classList.add(`${PROMPT_CLASS}__actions-title`);
-  title.textContent = titleText;
+  title.textContent = actionSection.title;
   actions.append(title);
 
   section.append(actions);
@@ -394,13 +408,25 @@ function getOrCreateActionsContainer(section: HTMLElement, titleText: string): H
   return actions;
 }
 
-function createActionSectionTitle(prompt: RenderableItemUseAutomationPrompt): string {
+function createActionSection(prompt: RenderableItemUseAutomationPrompt): PromptActionSection {
+  const explicitId = prompt.actionSectionId?.trim();
+  const explicitTitle = prompt.actionSectionTitle?.trim();
+
+  if (explicitId && explicitTitle) {
+    return { id: explicitId, title: explicitTitle };
+  }
+
   const rollCard = createRollCard(prompt.summaryLines ?? [], prompt);
 
-  if (rollCard?.intent === "damage") return "Aplicar danos";
-  if (rollCard?.intent === "healing") return "Aplicar cura";
+  if (rollCard?.intent === "damage") {
+    return { id: "apply-damage", title: "Aplicar danos" };
+  }
 
-  return "Ações";
+  if (rollCard?.intent === "healing") {
+    return { id: "apply-healing", title: "Aplicar cura" };
+  }
+
+  return { id: "actions", title: "Ações" };
 }
 
 function appendSummaryLines(section: HTMLElement, summaryLines: string[]): void {
@@ -798,6 +824,8 @@ function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt): PersistedIte
     itemName: prompt.itemName,
     choiceGroupId: prompt.choiceGroupId ?? null,
     skippedLabel: prompt.skippedLabel ?? null,
+    actionSectionId: prompt.actionSectionId ?? null,
+    actionSectionTitle: prompt.actionSectionTitle ?? null,
     summary: prompt.summary,
     executed: prompt.executed
   };
@@ -840,6 +868,8 @@ function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationP
     isOptionalString(value.executedLabel) &&
     isOptionalNullableString(value.choiceGroupId) &&
     isOptionalNullableString(value.skippedLabel) &&
+    isOptionalNullableString(value.actionSectionId) &&
+    isOptionalNullableString(value.actionSectionTitle) &&
     isOptionalStringArray(value.summaryLines)
   );
 }

@@ -270,6 +270,8 @@ export class ItemUseIntegration {
         executedLabel: action.executedLabel,
         choiceGroupId: action.choiceGroupId ?? null,
         skippedLabel: action.choiceGroupResolvedLabel ?? null,
+        actionSectionId: action.actionSectionId,
+        actionSectionTitle: action.actionSectionTitle,
         summaryLines
       });
     }

@@ -41,6 +41,13 @@ export type AssistedResourceAction = {
   executedLabel: string;
   choiceGroupId?: string;
   choiceGroupResolvedLabel?: string;
+  actionSectionId: string;
+  actionSectionTitle: string;
+};
+
+type AssistedResourceActionSection = {
+  id: string;
+  title: string;
 };
 
 export type RitualAssistedRunResult =
@@ -300,6 +307,7 @@ function createAssistedResourceAction(
   damageChoice?: { option: AutomationDamageApplicationOption; choiceGroupId: string }
 ): AssistedResourceAction {
   const actorName = actor.name ?? "Ator sem nome";
+  const actionSection = createActionSection(step);
 
   return {
     kind: "resource-operation",
@@ -311,7 +319,9 @@ function createAssistedResourceAction(
     label: createActionLabel(step, actorName, amount, damageChoice?.option),
     executedLabel: createExecutedLabel(step, actorName, damageChoice?.option),
     choiceGroupId: damageChoice?.choiceGroupId,
-    choiceGroupResolvedLabel: damageChoice ? "✓ Outra opção escolhida" : undefined
+    choiceGroupResolvedLabel: damageChoice ? "✓ Outra opção escolhida" : undefined,
+    actionSectionId: actionSection.id,
+    actionSectionTitle: actionSection.title
   };
 }
 
@@ -321,8 +331,10 @@ function createActionLabel(
   amount: number,
   damageOption?: AutomationDamageApplicationOption
 ): string {
+  void actorName;
+
   if (step.operation === "heal" && step.resource === "PV") {
-    return `Curar ${actorName} em ${amount} PV`;
+    return `Curar ${amount} PV`;
   }
 
   if (step.operation === "damage") {
@@ -331,18 +343,18 @@ function createActionLabel(
       return `${prefix}: ${amount} PV`;
     }
 
-    return `Aplicar ${amount} de dano em ${actorName}`;
+    return `Dano: ${amount} PV`;
   }
 
   if (step.operation === "recover") {
-    return `Recuperar ${amount} ${step.resource} de ${actorName}`;
+    return `Recuperar ${amount} ${step.resource}`;
   }
 
   if (step.operation === "spend") {
-    return `Gastar ${amount} ${step.resource} de ${actorName}`;
+    return `Gastar ${amount} ${step.resource}`;
   }
 
-  return `Aplicar ${amount} ${step.resource} em ${actorName}`;
+  return `Aplicar ${amount} ${step.resource}`;
 }
 
 function createExecutedLabel(step: ModifyResourceStep, actorName: string, damageOption?: AutomationDamageApplicationOption): string {
@@ -368,6 +380,22 @@ function createExecutedLabel(step: ModifyResourceStep, actorName: string, damage
   }
 
   return "✓ Ação aplicada";
+}
+
+function createActionSection(step: ModifyResourceStep): AssistedResourceActionSection {
+  if (step.operation === "damage" && step.resource === "PV") {
+    return { id: "apply-damage", title: "Aplicar danos" };
+  }
+
+  if (step.operation === "heal" && step.resource === "PV") {
+    return { id: "apply-healing", title: "Aplicar cura" };
+  }
+
+  if (step.operation === "recover" || step.operation === "spend") {
+    return { id: "apply-resources", title: "Aplicar recursos" };
+  }
+
+  return { id: "actions", title: "Ações" };
 }
 
 function shouldCreateDamageApplicationChoices(definition: AutomationDefinition, step: ModifyResourceStep): boolean {

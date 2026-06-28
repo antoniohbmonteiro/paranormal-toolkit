@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.13.2`.
+Versão base do roadmap: `v0.13.3`.
 
 O Toolkit já tem:
 
@@ -274,8 +274,8 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.12.0` | Concluído | Ação de GM na ficha para diagnosticar e aplicar presets em rituais conhecidos. |
 | `0.12.4` | Concluído | Polimento de legibilidade do gerenciador de presets, foco em rituais aplicáveis/automatizados e botão Aplicar com destaque verde. |
 | `0.13.0` | Concluído | Resistência assistida inicial com opções de dano normal/metade para Eletrocussão. |
-| `0.13.2` | Concluído | Polish de layout do card de resistência assistida em cards estreitos. |
-| `0.13.2` | P1 | Botão para o mestre rolar a resistência do alvo pelo adapter do sistema. |
+| `0.13.3` | Concluído | Polish de layout do card de resistência assistida em cards estreitos. |
+| `0.13.3` | P1 | Botão para o mestre rolar a resistência do alvo pelo adapter do sistema. |
 | `0.13.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
 | `0.14.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
@@ -303,3 +303,10 @@ A versão `1.0.0` deve ter:
 - workflows de ritual e recursos confiáveis em mesa real;
 - UX sem dependência de console para operações comuns;
 - documentação técnica separada para adapters, presets e condições.
+
+
+## 0.13.3 — Chat Action Sections
+
+- Padronizar ações assistidas do chat por seções.
+- Usar a mesma estrutura para dano, cura e recursos.
+- Preparar a base para futuras seções: rolagem de resistência e aplicação de condições.

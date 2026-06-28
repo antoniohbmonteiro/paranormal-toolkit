@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.2`.
+Versão experimental atual: `v0.13.3`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -68,9 +68,9 @@ Rituais sem preset conhecido são ignorados no painel para evitar uma lista giga
 Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de agente com rituais.
 
 
-### 0.13.2 — Polish do card de resistência
+### 0.13.3 — Polish do card de resistência
 
-A versão `0.13.2` ajusta o layout do card de resistência assistida para cards estreitos do chat: o bloco de resistência ganhou mais respiro, o rótulo ficou compacto e os botões de dano normal/metade usam textos mais curtos.
+A versão `0.13.3` ajusta o layout do card de resistência assistida para cards estreitos do chat: o bloco de resistência ganhou mais respiro, o rótulo ficou compacto e os botões de dano normal/metade usam textos mais curtos.
 
 ### 0.13.0 — Resistência assistida
 
@@ -474,3 +474,11 @@ Resistência assistida inicial:
 - card de ritual mostra bloco simples de resistência;
 - ações alternativas de dano normal/metade são criadas no chat;
 - escolher uma ação desabilita a alternativa irmã para evitar aplicação duplicada.
+
+
+### 0.13.3 — seções de ações no card
+
+- As ações assistidas do chat agora carregam metadados de seção.
+- O renderer cria seções independentes, como **Aplicar danos**, **Aplicar cura** e **Aplicar recursos**.
+- Os textos dos botões ficaram mais curtos e dependem do cabeçalho do card para indicar origem e alvo.
+- Essa base prepara o card para ações futuras, como rolar resistência e aplicar condições, sem empilhar `if` visual no fluxo de ritual.
