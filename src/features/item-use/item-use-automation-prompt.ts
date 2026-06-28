@@ -17,6 +17,7 @@ const RESISTANCE_ROLL_BUTTON_ATTRIBUTE = "data-paranormal-toolkit-resistance-rol
 const RESISTANCE_SKILL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill";
 const RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill-label";
 const RESISTANCE_TARGET_ACTOR_ID_ATTRIBUTE = "data-paranormal-toolkit-resistance-target-actor-id";
+const RESISTANCE_TARGET_NAME_ATTRIBUTE = "data-paranormal-toolkit-resistance-target-name";
 const RESISTANCE_ROLL_RESULT_ATTRIBUTE = "data-paranormal-toolkit-resistance-roll-result";
 const BUTTON_SELECTOR = `[${PENDING_ID_ATTRIBUTE}]`;
 const ROLL_DETAIL_TOGGLE_SELECTOR = `[${ROLL_DETAIL_TOGGLE_ATTRIBUTE}]`;
@@ -400,6 +401,10 @@ function createResistanceRollButton(
     button.setAttribute(RESISTANCE_TARGET_ACTOR_ID_ATTRIBUTE, prompt.resistanceTargetActorId);
   }
 
+  if (prompt.resistanceTargetName) {
+    button.setAttribute(RESISTANCE_TARGET_NAME_ATTRIBUTE, prompt.resistanceTargetName);
+  }
+
   if (rollCard.resistanceRollResult) {
     button.classList.add(`${PROMPT_CLASS}__resistance-roll-button--rolled`);
     button.setAttribute(RESISTANCE_ROLL_RESULT_ATTRIBUTE, String(rollCard.resistanceRollResult.total));
@@ -768,7 +773,25 @@ function resolveResistanceTargetActor(prompt: RenderableItemUseAutomationPrompt 
   const actorById = actorId ? resolveActorById(actorId) : null;
   if (actorById) return actorById;
 
-  return resolveActorByName(prompt?.resistanceTargetName ?? null);
+  return resolveActorByName(
+    button.getAttribute(RESISTANCE_TARGET_NAME_ATTRIBUTE) ??
+      prompt?.resistanceTargetName ??
+      resolveTargetNameFromRenderedPrompt(button)
+  );
+}
+
+function resolveTargetNameFromRenderedPrompt(button: HTMLButtonElement): string | null {
+  const promptSection = button.closest<HTMLElement>(`.${PROMPT_CLASS}`);
+  const summary = promptSection?.querySelector<HTMLElement>(`.${PROMPT_SUMMARY_CLASS}`)?.textContent ?? null;
+
+  if (!summary) return null;
+
+  const separator = "→";
+  if (!summary.includes(separator)) return null;
+
+  const parts = summary.split(separator);
+  const targetName = parts[parts.length - 1]?.trim();
+  return targetName && targetName.length > 0 ? targetName : null;
 }
 
 function resolveTargetActor(target: ItemUseContext["targets"][number]): Actor | null {

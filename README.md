@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.5`.
+Versão experimental atual: `v0.13.6`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -69,9 +69,9 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
-### 0.13.5 — Ajustes do botão de resistência
+### 0.13.6 — Ajustes do botão de resistência
 
-A versão `0.13.5` ajusta o botão d20 do bloco de resistência: ele fica alinhado à direita do card e usa o ator da ação assistida como alvo preferencial da rolagem, evitando falha quando o nome do alvo aparece no card mas o contexto original do hook não trazia o ator diretamente.
+A versão `0.13.6` ajusta o botão d20 do bloco de resistência: ele fica alinhado à direita do card e usa o ator da ação assistida como alvo preferencial da rolagem, evitando falha quando o nome do alvo aparece no card mas o contexto original do hook não trazia o ator diretamente.
 
 ### 0.13.4 — Polish do card de resistência
 
