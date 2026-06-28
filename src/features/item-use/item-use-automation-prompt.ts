@@ -7,7 +7,11 @@ const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
 const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
 const DETAIL_KEY_ATTRIBUTE = "data-paranormal-toolkit-detail-key";
+const ROLL_CARD_ATTRIBUTE = "data-paranormal-toolkit-roll-card";
+const ROLL_DETAIL_TOGGLE_ATTRIBUTE = "data-paranormal-toolkit-roll-detail-toggle";
+const ROLL_DETAIL_ID_ATTRIBUTE = "data-paranormal-toolkit-roll-detail-id";
 const BUTTON_SELECTOR = `[${PENDING_ID_ATTRIBUTE}]`;
+const ROLL_DETAIL_TOGGLE_SELECTOR = `[${ROLL_DETAIL_TOGGLE_ATTRIBUTE}]`;
 const ENRICHMENT_CLASS = `${MODULE_ID}-chat-enrichment`;
 const PROMPT_CLASS = `${MODULE_ID}-item-use-prompt`;
 const PROMPT_ACTIONS_CLASS = `${PROMPT_CLASS}__actions`;
@@ -15,6 +19,7 @@ const PROMPT_DETAILS_CLASS = `${PROMPT_CLASS}__details`;
 const PROMPT_SUMMARY_CLASS = `${PROMPT_CLASS}__summary`;
 const PROMPT_TITLE_CLASS = `${PROMPT_CLASS}__title`;
 const PROMPT_EXECUTED_BUTTON_CLASS = `${PROMPT_CLASS}__button--executed`;
+const PROMPT_ROLL_CARD_CLASS = `${PROMPT_CLASS}__roll-card`;
 
 export type ItemUseAutomationPromptInput = {
   pendingId: string;
@@ -39,6 +44,7 @@ type RenderableItemUseAutomationPrompt = {
   messageId: string | null;
   itemId: string | null;
   actorId: string | null;
+  itemName: string | null;
   summary: string;
   executed: boolean;
 };
@@ -53,6 +59,23 @@ type ChatMessageFlagDocument = {
   id?: unknown;
   getFlag?: (scope: string, key: string) => unknown;
   setFlag?: (scope: string, key: string, value: unknown) => Promise<unknown> | unknown;
+};
+
+type ParsedRollLine = {
+  label: string;
+  formula: string;
+  total: number;
+  intent: "healing" | "damage" | "generic";
+};
+
+type ParsedRollCard = ParsedRollLine & {
+  itemName: string;
+  form: string | null;
+  cost: string | null;
+  diceBreakdown: string | null;
+  damageType: string | null;
+  notes: string[];
+  details: string[];
 };
 
 let promptRendererRegistered = false;
@@ -98,6 +121,7 @@ function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUs
     messageId,
     itemId: input.context.item.id ?? null,
     actorId: input.context.actor?.id ?? null,
+    itemName: input.context.item.name ?? null,
     summary: createPromptSummary(input.context),
     executed: false
   };
@@ -120,6 +144,7 @@ function renderPendingPromptsIntoChatMessage(
   }
 
   bindPromptButtons(root, handler);
+  bindRollDetailToggles(root);
 }
 
 function renderPromptIntoExistingChatLog(pendingId: string): void {
@@ -131,6 +156,7 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
   if (messageElement) {
     appendPromptToRoot(messageElement, prompt);
     bindPromptButtonsIfPossible(messageElement);
+    bindRollDetailToggles(messageElement);
     return;
   }
 
@@ -141,6 +167,7 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
   if (matchedElement) {
     appendPromptToRoot(matchedElement, prompt);
     bindPromptButtonsIfPossible(matchedElement);
+    bindRollDetailToggles(matchedElement);
   }
 }
 
@@ -153,7 +180,7 @@ function appendPromptToRoot(root: HTMLElement, prompt: RenderableItemUseAutomati
   if (root.querySelector(`[${PROMPT_ID_ATTRIBUTE}="${escapeCssAttributeValue(prompt.pendingId)}"]`)) return;
 
   const section = getOrCreateToolkitSection(root, prompt);
-  appendSummaryLines(section, prompt.summaryLines ?? []);
+  appendPromptContent(section, prompt);
 
   const actions = getOrCreateActionsContainer(section);
   actions.append(createPromptButton(prompt));
@@ -172,21 +199,152 @@ function getOrCreateToolkitSection(root: HTMLElement, prompt: RenderableItemUseA
   const header = document.createElement("header");
   header.classList.add(`${PROMPT_CLASS}__header`);
 
+  const kicker = document.createElement("span");
+  kicker.classList.add(`${PROMPT_CLASS}__kicker`);
+  kicker.textContent = "Paranormal Toolkit";
+
   const title = document.createElement("strong");
   title.classList.add(PROMPT_TITLE_CLASS);
-  title.textContent = prompt.title ?? "Paranormal Toolkit";
+  title.textContent = createHeaderTitle(prompt);
 
   const summary = document.createElement("span");
   summary.classList.add(PROMPT_SUMMARY_CLASS);
   summary.textContent = prompt.summary;
 
-  header.append(title, summary);
+  header.append(kicker, title, summary);
   section.append(header);
 
   const host = findPromptHost(root);
   host.append(section);
 
   return section;
+}
+
+function createHeaderTitle(prompt: RenderableItemUseAutomationPrompt): string {
+  const form = findSummaryValue(prompt.summaryLines ?? [], "Forma");
+  const itemName = prompt.itemName ?? prompt.title ?? "Automação assistida";
+
+  if (form) {
+    return `${itemName} • ${form}`;
+  }
+
+  return itemName;
+}
+
+function appendPromptContent(section: HTMLElement, prompt: RenderableItemUseAutomationPrompt): void {
+  const summaryLines = prompt.summaryLines ?? [];
+  const rollCard = createRollCard(summaryLines, prompt);
+
+  if (rollCard) {
+    appendRollCard(section, rollCard, prompt.pendingId);
+    return;
+  }
+
+  appendSummaryLines(section, summaryLines);
+}
+
+function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, promptId: string): void {
+  if (section.querySelector(`[${ROLL_CARD_ATTRIBUTE}="true"]`)) return;
+
+  const article = document.createElement("article");
+  article.classList.add(PROMPT_ROLL_CARD_CLASS, `${PROMPT_ROLL_CARD_CLASS}--${rollCard.intent}`);
+  article.setAttribute(ROLL_CARD_ATTRIBUTE, "true");
+
+  const summary = document.createElement("div");
+  summary.classList.add(`${PROMPT_CLASS}__roll-summary`);
+
+  const chip = document.createElement("span");
+  chip.classList.add(`${PROMPT_CLASS}__roll-chip`, `${PROMPT_CLASS}__roll-chip--${rollCard.intent}`);
+  chip.textContent = rollCard.label.toUpperCase();
+
+  const total = document.createElement("strong");
+  total.classList.add(`${PROMPT_CLASS}__roll-total`);
+  total.textContent = String(rollCard.total);
+
+  const formula = document.createElement("span");
+  formula.classList.add(`${PROMPT_CLASS}__roll-formula`);
+  formula.textContent = rollCard.formula;
+
+  summary.append(chip, total, formula);
+  article.append(summary);
+  appendRollMeta(article, rollCard);
+  appendRollDetails(article, rollCard, promptId);
+
+  section.append(article);
+}
+
+function appendRollMeta(article: HTMLElement, rollCard: ParsedRollCard): void {
+  const metaItems = [
+    rollCard.form ? `Forma: ${rollCard.form}` : null,
+    rollCard.cost,
+    rollCard.damageType ? `Tipo: ${rollCard.damageType}` : null
+  ].filter(isNonEmptyString);
+
+  if (metaItems.length === 0) return;
+
+  const meta = document.createElement("div");
+  meta.classList.add(`${PROMPT_CLASS}__roll-meta`);
+
+  for (const item of metaItems) {
+    const pill = document.createElement("span");
+    pill.classList.add(`${PROMPT_CLASS}__roll-meta-pill`);
+    pill.textContent = item;
+    meta.append(pill);
+  }
+
+  article.append(meta);
+}
+
+function appendRollDetails(article: HTMLElement, rollCard: ParsedRollCard, promptId: string): void {
+  const detailRows = createRollDetailRows(rollCard);
+  if (detailRows.length === 0) return;
+
+  const detailId = `${promptId}-roll-details`;
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.classList.add(`${PROMPT_CLASS}__roll-detail-toggle`);
+  toggle.setAttribute(ROLL_DETAIL_TOGGLE_ATTRIBUTE, detailId);
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.textContent = "▸ Ver detalhes";
+
+  const details = document.createElement("dl");
+  details.classList.add(`${PROMPT_CLASS}__roll-detail-list`);
+  details.setAttribute(ROLL_DETAIL_ID_ATTRIBUTE, detailId);
+  details.hidden = true;
+
+  for (const row of detailRows) {
+    const term = document.createElement("dt");
+    term.textContent = row.label;
+
+    const description = document.createElement("dd");
+    description.textContent = row.value;
+
+    details.append(term, description);
+  }
+
+  article.append(toggle, details);
+}
+
+function createRollDetailRows(rollCard: ParsedRollCard): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [
+    { label: "Fórmula", value: rollCard.formula }
+  ];
+
+  if (rollCard.diceBreakdown) rows.push({ label: "Dados", value: rollCard.diceBreakdown });
+  if (rollCard.damageType) rows.push({ label: "Tipo", value: rollCard.damageType });
+  if (rollCard.form) rows.push({ label: "Forma", value: rollCard.form });
+  if (rollCard.cost) rows.push({ label: "Custo", value: rollCard.cost });
+
+  for (const note of rollCard.notes) {
+    rows.push({ label: "Observação", value: note });
+  }
+
+  for (const detail of rollCard.details) {
+    rows.push({ label: "Detalhe", value: detail });
+  }
+
+  return rows;
 }
 
 function getOrCreateActionsContainer(section: HTMLElement): HTMLElement {
@@ -283,6 +441,35 @@ function bindPromptButtons(html: unknown, handler: ItemUseAutomationPromptHandle
   }
 }
 
+function bindRollDetailToggles(html: unknown): void {
+  const root = resolveRootElement(html);
+  if (!root) return;
+
+  const toggles = root.querySelectorAll<HTMLButtonElement>(ROLL_DETAIL_TOGGLE_SELECTOR);
+
+  for (const toggle of toggles) {
+    if (toggle.dataset.paranormalToolkitRollDetailsBound === "true") continue;
+
+    toggle.dataset.paranormalToolkitRollDetailsBound = "true";
+    toggle.addEventListener("click", () => {
+      toggleRollDetails(root, toggle);
+    });
+  }
+}
+
+function toggleRollDetails(root: HTMLElement, toggle: HTMLButtonElement): void {
+  const detailId = toggle.getAttribute(ROLL_DETAIL_TOGGLE_ATTRIBUTE);
+  if (!detailId) return;
+
+  const details = root.querySelector<HTMLElement>(`[${ROLL_DETAIL_ID_ATTRIBUTE}="${escapeCssAttributeValue(detailId)}"]`);
+  if (!details) return;
+
+  const willOpen = details.hidden;
+  details.hidden = !willOpen;
+  toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  toggle.textContent = willOpen ? "▾ Ocultar detalhes" : "▸ Ver detalhes";
+}
+
 async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAutomationPromptHandler): Promise<void> {
   const pendingId = button.getAttribute(PENDING_ID_ATTRIBUTE);
 
@@ -304,6 +491,78 @@ async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAuto
 
   button.disabled = false;
   button.textContent = originalText;
+}
+
+function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomationPrompt): ParsedRollCard | null {
+  const rollLine = summaryLines.map(parseRollLine).find(isParsedRollLine);
+  if (!rollLine) return null;
+
+  const form = findSummaryValue(summaryLines, "Forma");
+  const cost = findSummaryValue(summaryLines, "Custo");
+  const diceBreakdown = findSummaryValue(summaryLines, "Dados") ?? findSummaryValue(summaryLines, `Dados (${rollLine.label})`);
+  const damageType = findSummaryValue(summaryLines, "Tipo");
+  const notes = findSummaryValues(summaryLines, "Observação");
+  const details = summaryLines.filter((line) => isExtraDetailLine(line, rollLine));
+
+  return {
+    ...rollLine,
+    itemName: prompt.itemName ?? prompt.title ?? "Automação assistida",
+    form,
+    cost,
+    diceBreakdown,
+    damageType,
+    notes,
+    details
+  };
+}
+
+function parseRollLine(line: string): ParsedRollLine | null {
+  const match = /^(Cura|Dano|Ataque|Resistência|Ritual|Perícia|Rolagem):\s*(.+?)\s*=\s*(-?\d+)/u.exec(line.trim());
+  if (!match) return null;
+
+  const [, label, formula, totalText] = match;
+  const total = Number(totalText);
+
+  if (!Number.isFinite(total)) return null;
+
+  return {
+    label,
+    formula,
+    total,
+    intent: getRollIntent(label)
+  };
+}
+
+function getRollIntent(label: string): ParsedRollLine["intent"] {
+  if (label === "Cura") return "healing";
+  if (label === "Dano") return "damage";
+  return "generic";
+}
+
+function findSummaryValue(summaryLines: string[], key: string): string | null {
+  return findSummaryValues(summaryLines, key)[0] ?? null;
+}
+
+function findSummaryValues(summaryLines: string[], key: string): string[] {
+  const prefix = `${key}:`;
+
+  return summaryLines.flatMap((line) => {
+    if (!line.startsWith(prefix)) return [];
+
+    const value = line.slice(prefix.length).trim();
+    return value.length > 0 ? [value] : [];
+  });
+}
+
+function isExtraDetailLine(line: string, rollLine: ParsedRollLine): boolean {
+  if (line.startsWith("Forma:")) return false;
+  if (line.startsWith("Custo:")) return false;
+  if (line.startsWith("Dados:")) return false;
+  if (line.startsWith(`Dados (${rollLine.label}):`)) return false;
+  if (line.startsWith("Tipo:")) return false;
+  if (line.startsWith("Observação:")) return false;
+  if (parseRollLine(line)) return false;
+  return line.trim().length > 0;
 }
 
 function findPromptsForMessage(message: unknown, root: HTMLElement): RenderableItemUseAutomationPrompt[] {
@@ -461,6 +720,7 @@ function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt): PersistedIte
     messageId: prompt.messageId,
     itemId: prompt.itemId,
     actorId: prompt.actorId,
+    itemName: prompt.itemName,
     summary: prompt.summary,
     executed: prompt.executed
   };
@@ -497,11 +757,16 @@ function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationP
     isNullableString(value.messageId) &&
     isNullableString(value.itemId) &&
     isNullableString(value.actorId) &&
+    isNullableString(value.itemName) &&
     isOptionalString(value.title) &&
     isOptionalString(value.buttonLabel) &&
     isOptionalString(value.executedLabel) &&
     isOptionalStringArray(value.summaryLines)
   );
+}
+
+function isParsedRollLine(value: ParsedRollLine | null): value is ParsedRollLine {
+  return value !== null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -518,6 +783,10 @@ function isOptionalString(value: unknown): value is string | undefined {
 
 function isOptionalStringArray(value: unknown): value is string[] | undefined {
   return value === undefined || (Array.isArray(value) && value.every((entry) => typeof entry === "string"));
+}
+
+function isNonEmptyString(value: string | null): value is string {
+  return typeof value === "string" && value.length > 0;
 }
 
 function resolveRootElement(html: unknown): HTMLElement | null {

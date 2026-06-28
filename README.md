@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.11.1`.
+Versão experimental atual: `v0.11.6`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -201,6 +201,10 @@ O Verdadeiro também imprime no chat uma observação para aplicar Atordoado man
 ## Animação de dados com Dice So Nice
 
 A partir da `0.11.1`, as rolagens feitas pelo workflow do Toolkit podem acionar o Dice So Nice quando ele estiver instalado e ativo.
+
+A partir da `0.11.4`, os resultados do Toolkit no chat usam um card próprio mais legível: total em destaque, fórmula visível, metadados de forma/custo/tipo e detalhes expansíveis da rolagem. A ideia é deixar a automação parecer ferramenta de mesa, não só debug formatado.
+
+A partir da `0.11.6`, os detalhes expansíveis do card mantêm labels limpos, valores alinhados à esquerda e breakdown de dados com dados rolados entre parênteses, por exemplo `(4, 5) + 2`.
 
 O Toolkit chama a API 3D diretamente e **não cria uma mensagem extra no chat** para essas rolagens. O resultado continua sendo mostrado no bloco do Paranormal Toolkit dentro do card original do item.
 

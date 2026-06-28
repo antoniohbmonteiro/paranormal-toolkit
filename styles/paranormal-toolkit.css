@@ -189,3 +189,221 @@
 .paranormal-toolkit-ritual-cast-dialog__variant--disabled {
   opacity: 0.55;
 }
+
+/* 0.11.2 — Card de rolagem assistida */
+/* 0.11.3 — Melhora contraste e leitura dos detalhes expansíveis */
+.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
+  position: relative;
+  gap: 8px;
+  border: 1px solid rgba(66, 47, 34, 0.28);
+  border-left: 4px solid rgba(89, 36, 42, 0.72);
+  border-radius: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(32, 24, 22, 0.08), rgba(120, 102, 82, 0.08));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.paranormal-toolkit-item-use-prompt__header {
+  gap: 3px;
+}
+
+.paranormal-toolkit-item-use-prompt__kicker {
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-item-use-prompt__title {
+  color: rgba(24, 19, 18, 0.94);
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.paranormal-toolkit-item-use-prompt__summary {
+  font-size: 0.78rem;
+  opacity: 0.76;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 7px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.paranormal-toolkit-item-use-prompt__roll-summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-chip--healing {
+  background: rgba(39, 112, 72, 0.94);
+}
+
+.paranormal-toolkit-item-use-prompt__roll-chip--damage {
+  background: rgba(125, 39, 43, 0.94);
+}
+
+.paranormal-toolkit-item-use-prompt__roll-chip--generic {
+  background: rgba(74, 64, 54, 0.94);
+}
+
+.paranormal-toolkit-item-use-prompt__roll-total {
+  color: rgba(24, 19, 18, 0.96);
+  font-size: 1.62rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.paranormal-toolkit-item-use-prompt__roll-formula {
+  justify-self: end;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.42);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-meta-pill {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.28);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  opacity: 0.88;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-toggle {
+  width: fit-content;
+  margin: 0;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: rgba(89, 36, 42, 0.96);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-toggle:hover,
+.paranormal-toolkit-item-use-prompt__roll-detail-toggle:focus {
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 10px;
+  margin: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 7px 8px;
+  background: rgba(255, 255, 255, 0.24);
+  color: rgba(24, 19, 18, 0.94);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-list[hidden] {
+  display: none;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-list dt {
+  margin: 0;
+  color: rgba(64, 48, 44, 0.9);
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  font-family: var(--font-primary, inherit);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  opacity: 1;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 transparent;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-list dt::after {
+  content: "";
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-list dd {
+  justify-self: start;
+  max-width: 100%;
+  margin: 0;
+  color: rgba(24, 19, 18, 0.96);
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-align: left;
+  text-shadow: none !important;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-detail-list dd::after {
+  content: none;
+  display: none;
+}
+
+.paranormal-toolkit-item-use-prompt__actions {
+  padding-top: 2px;
+}
+
+.paranormal-toolkit-item-use-prompt__button {
+  width: 100%;
+  border: 1px solid rgba(89, 36, 42, 0.42);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(89, 36, 42, 0.12);
+  color: rgba(24, 19, 18, 0.96);
+  font-weight: 900;
+}
+
+.paranormal-toolkit-item-use-prompt__button:hover,
+.paranormal-toolkit-item-use-prompt__button:focus {
+  background: rgba(89, 36, 42, 0.18);
+  box-shadow: 0 0 0 1px rgba(89, 36, 42, 0.28) inset;
+}
+
+.paranormal-toolkit-item-use-prompt__button--executed {
+  border-color: rgba(39, 112, 72, 0.42);
+  background: rgba(39, 112, 72, 0.12);
+}

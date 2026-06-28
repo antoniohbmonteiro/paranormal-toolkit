@@ -341,7 +341,7 @@ function createRitualSummaryLines(
   return [
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
     createCostSummaryLine(options, form, cost),
-    ...Object.values(context.rolls).map(createRollSummaryLine),
+    ...Object.values(context.rolls).flatMap(createRollSummaryLines),
     ...createFormNoteLines(form)
   ];
 }
@@ -365,8 +365,123 @@ function createCostSummaryLine(options: RitualCastOptions, form: AutomationRitua
   return `Custo: ${cost.amount} ${cost.resource} gasto`;
 }
 
-function createRollSummaryLine(roll: WorkflowRollResult): string {
-  return `${getRollLabel(roll)}: ${roll.formula} = ${Math.trunc(roll.total)}`;
+function createRollSummaryLines(roll: WorkflowRollResult): string[] {
+  const label = getRollLabel(roll);
+  const lines = [`${label}: ${roll.formula} = ${Math.trunc(roll.total)}`];
+  const breakdown = describeRollBreakdown(roll.roll);
+
+  if (breakdown) {
+    lines.push(`Dados: ${breakdown}`);
+  }
+
+  if (roll.damageType) {
+    lines.push(`Tipo: ${formatLabel(roll.damageType)}`);
+  }
+
+  return lines;
+}
+
+type RollBreakdownTerm = {
+  operator?: unknown;
+  number?: unknown;
+  faces?: unknown;
+  results?: unknown;
+};
+
+type RollBreakdownPart = {
+  value: string;
+  operator?: "+" | "-";
+};
+
+type RollDieResult = {
+  result?: unknown;
+  active?: unknown;
+  discarded?: unknown;
+};
+
+function describeRollBreakdown(roll: unknown): string | null {
+  if (!roll || typeof roll !== "object") return null;
+
+  const terms = (roll as { terms?: unknown }).terms;
+  if (!Array.isArray(terms)) return null;
+
+  const parts: string[] = [];
+  let pendingOperator: "+" | "-" = "+";
+
+  for (const term of terms) {
+    if (!term || typeof term !== "object") continue;
+
+    const typedTerm = term as RollBreakdownTerm;
+
+    if (typedTerm.operator === "+" || typedTerm.operator === "-") {
+      pendingOperator = typedTerm.operator;
+      continue;
+    }
+
+    const part = describeBreakdownPart(typedTerm);
+
+    if (!part) continue;
+
+    appendRollBreakdownPart(parts, part.operator ?? pendingOperator, part.value);
+    pendingOperator = "+";
+  }
+
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
+function describeBreakdownPart(term: RollBreakdownTerm): RollBreakdownPart | null {
+  const diceResults = describeDieResults(term);
+
+  if (diceResults.length > 0) {
+    return { value: `(${diceResults.join(", ")})` };
+  }
+
+  return describeConstantTerm(term);
+}
+
+function describeDieResults(term: RollBreakdownTerm): string[] {
+  if (!Array.isArray(term.results)) return [];
+
+  return term.results.flatMap((result): string[] => {
+    if (!result || typeof result !== "object") return [];
+
+    const dieResult = result as RollDieResult;
+
+    if (typeof dieResult.result !== "number" || !Number.isFinite(dieResult.result)) {
+      return [];
+    }
+
+    const isActive = dieResult.active !== false && dieResult.discarded !== true;
+    return isActive ? [String(dieResult.result)] : [];
+  });
+}
+
+function describeConstantTerm(term: RollBreakdownTerm): RollBreakdownPart | null {
+  if (typeof term.faces === "number") return null;
+
+  if (typeof term.number === "number" && Number.isFinite(term.number)) {
+    const value = Math.abs(term.number);
+    return {
+      value: String(value),
+      operator: term.number < 0 ? "-" : undefined
+    };
+  }
+
+  return null;
+}
+
+function appendRollBreakdownPart(parts: string[], operator: "+" | "-", value: string): void {
+  if (parts.length === 0) {
+    parts.push(operator === "-" ? `- ${value}` : value);
+    return;
+  }
+
+  parts.push(`${operator} ${value}`);
+}
+
+function formatLabel(value: string): string {
+  if (value.length === 0) return value;
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
 
 function createFormNoteLines(form: AutomationRitualFormDefinition): string[] {
