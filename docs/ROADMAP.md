@@ -1,335 +1,300 @@
-# Roadmap
+# Roadmap do Paranormal Toolkit
 
-Este documento organiza a direção de desenvolvimento do **Paranormal Toolkit**.
+Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade prática, não por desejo. A regra é simples: primeiro estabilizar o que afeta mesa real, depois automatizar mais regras, depois deixar lindo.
 
-O objetivo é evitar crescimento caótico: cada versão deve melhorar a base do módulo sem transformar o projeto em um protótipo difícil de manter.
+## Legenda de prioridade
 
-> Projeto não-oficial e independente, compatível com o sistema não-oficial de Ordem Paranormal para Foundry VTT.
-
-## Visão geral
-
-O Paranormal Toolkit é uma camada companion para o sistema `ordemparanormal`.
-
-Ele não pretende substituir o sistema base. A ideia é complementar o fluxo da mesa com automações configuráveis, presets, workflows e integrações futuras com efeitos visuais.
-
-Prioridades atuais:
-
-```txt
-1. Paranormal Toolkit
-2. Paranormal FX
-3. Paranormal Sheets
-```
-
-A prioridade do Toolkit é construir uma base sólida para:
-
-- custo e gasto de recursos;
-- rituais automatizados;
-- workflows de cura, dano, resistência e efeitos;
-- automações opt-in por item;
-- botões e modos de automação no chat;
-- integração futura com animações;
-- armas, melhorias, modificações e categoria;
-- condições, Active Effects e Template Regions.
+| Prioridade | Significado |
+|---|---|
+| P0 | Crítico para manter o que já existe funcionando. Correção de bug, regressão ou dívida que bloqueia desenvolvimento. |
+| P1 | Próximo foco. Entrega com valor direto para uso em mesa ou para remover dependência de console/debug. |
+| P2 | Importante, mas deve esperar o fluxo principal estabilizar. Normalmente precisa de arquitetura mais clara antes de virar UI. |
+| P3 | Backlog futuro, polimento, integrações grandes ou frentes que dependem das anteriores. |
 
 ## Estado atual
 
-A linha `0.8.x` já possui uma fundação funcional:
+Versão base do roadmap: `v0.11.6`.
 
-- manifesto para Foundry VTT v14+;
-- build em TypeScript/Vite;
-- camada de adaptação para o sistema Ordem;
-- `ResourceEngine` para PV, SAN, PE e PD;
-- custo de ritual por círculo;
-- automações básicas de cura e dano;
-- `WorkflowEngine` com fases e hooks públicos;
-- presets aplicados por flags versionadas;
-- integração experimental com uso normal de item pela ficha;
-- debug e snapshots enxutos de workflow;
-- documentação inicial de arquitetura;
-- testes unitários iniciais para core.
+O Toolkit já tem:
 
-A UX final ainda não está pronta para mesa pública. A linha `0.8.x` deve continuar sendo tratada como experimental.
+- automações por flags próprias do módulo;
+- uso de item via hook `ordemparanormal.itemUsed`;
+- modo `ask` com ações assistidas no chat;
+- conjuração assistida de rituais;
+- formas estruturadas de ritual: Padrão, Discente e Verdadeiro;
+- presets iniciais para Cicatrização e Eletrocussão;
+- custo de PE/PD por ritual;
+- rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
+- card de resultado no chat com detalhes expansíveis da rolagem.
 
-## Linha 0.8.x — Fundação e segurança
+## Roadmap por prioridade
 
-Objetivo: estabilizar a base técnica antes de aumentar o número de automações.
+### P1 — Ação de GM para aplicar presets pela ficha
 
-### Concluído
+Objetivo: tirar o fluxo normal do console.
 
-- README enxuto e voltado para usuário.
-- Documentação inicial de arquitetura.
-- Base de testes com Vitest.
-- Testes unitários para `ResourceEngine`.
-- Testes unitários para leitura/validação de flags de automação.
+Entrega desejada:
 
-### Próximos passos
+- adicionar ação de GM na ficha do ator, idealmente no menu de ações/três pontinhos quando houver ponto de extensão limpo;
+- aplicar o melhor preset conhecido em todos os rituais do ator;
+- mostrar resumo de aplicados e ignorados;
+- manter os comandos de debug atuais para desenvolvimento.
 
-- Criar testes para partes menores do `AutomationRunner`.
-- Extrair resolução de quantidade para um módulo separado.
-- Reduzir responsabilidades do `AutomationRunner`.
-- Separar melhor core puro de APIs globais do Foundry.
-- Preparar portas para rolagem de dados e emissão de hooks.
-- Documentar decisões arquiteturais em `docs/DECISIONS.md`.
+Critérios de aceitação:
 
-### Fora de escopo da 0.8.x
+- apenas GM vê ou executa a ação;
+- Cicatrização e Eletrocussão recebem preset sem abrir console;
+- rituais sem preset compatível são ignorados sem erro;
+- o fluxo não depende de HTML frágil além do necessário.
 
-- UI final de mesa.
-- Compêndios públicos de conteúdo.
-- Automação completa de armas.
-- Active Effects completos.
-- Paranormal FX.
+Risco arquitetural:
 
-## Linha 0.9.x — UX real de mesa
+- se o sistema não expuser uma ação limpa na sheet, injetar botão por DOM pode ficar acoplado. Nesse caso, preferir uma integração pequena e bem isolada em `ui/` ou `adapters/ordem/`, com seletores mínimos e testes manuais claros.
 
-Objetivo: transformar a base de automação em uma experiência utilizável por mestre e jogadores.
+### P1 — Resistência assistida e modificadores de dano
 
-### Item use hook-first
+Objetivo: o Toolkit sugere as opções, mas o mestre decide o que aplicar.
 
-Quando o sistema `ordemparanormal` expuser o hook oficial `ordemparanormal.itemUsed`, o Toolkit deve priorizar esse fluxo.
+Entrega desejada:
 
-Plano:
+- presets podem declarar opções de resistência ou modificação de dano;
+- o card mostra dano normal e variações relevantes;
+- para Eletrocussão, mostrar pelo menos:
+  - aplicar dano normal;
+  - aplicar metade;
+- futuramente suportar dobro, redução fixa, imunidade, vulnerabilidade ou outro multiplicador.
 
-- usar `ordemparanormal.itemUsed` como strategy principal;
-- manter wrapper de `OrdemItem.roll()` apenas como fallback temporário e opcional;
-- melhorar deduplicação usando `message.id` quando disponível;
-- mostrar claramente no debug qual strategy executou a automação;
-- remover ou desativar o fallback quando ele não for mais necessário.
-
-### Modos de automação
-
-Trocar o modelo atual de `autoRun` boolean por modos explícitos:
-
-```ts
-type AutomationExecutionMode =
-  | "disabled"
-  | "buttons"
-  | "confirm"
-  | "automatic";
-```
-
-Comportamento esperado:
-
-- `disabled`: não executa automação ao usar item;
-- `buttons`: mostra botões no chat, sem aplicar nada sozinho;
-- `confirm`: pede confirmação antes de gastar/aplicar;
-- `automatic`: executa direto, recomendado apenas para mesas que querem automação completa.
-
-O padrão público deve ser conservador. Nada deve gastar PE, curar, causar dano ou aplicar efeito sem o mestre entender o que está acontecendo.
-
-### Botões no chat
-
-Adicionar ações assistidas no chat card:
-
-- rolar fórmula;
-- gastar custo;
-- aplicar cura;
-- aplicar dano;
-- executar automação completa;
-- cancelar/ignorar automação.
-
-O objetivo é reduzir dependência de comandos de debug e deixar a automação visível para a mesa.
-
-### Bloqueio de rolagem duplicada
-
-Quando um item tiver automação ativa, o Toolkit deve evitar confusão com rolagens inline da descrição, como `[[2d8+2]]`.
-
-Plano:
-
-- detectar item com automação ativa;
-- enriquecer o chat sem alterar a descrição original do item;
-- desativar visualmente ou bloquear rolagens inline apenas no card renderizado;
-- mostrar aviso curto explicando que a rolagem foi substituída pela automação do Toolkit.
-
-### Presets específicos por ritual
-
-Sair gradualmente dos presets genéricos de teste.
-
-Primeiro alvo:
+Exemplo de UX:
 
 ```txt
-ritual.cicatrizacao
+Dano: 18
+Resistência: Fortitude reduz à metade
+
+[Aplicar 18 de dano]
+[Aplicar 9 de dano]
 ```
 
-Depois:
+Decisão de produto:
 
-- suportar forma padrão;
-- preparar espaço para forma discente;
-- preparar espaço para forma verdadeira;
-- modelar alvo, resistência, duração, área e efeitos quando fizer sentido.
+- o Toolkit não deve escolher automaticamente o resultado da resistência neste momento;
+- o mestre deve poder ignorar a sugestão e aplicar dano normal;
+- o cálculo sugerido deve ser visível, mas não autoritário.
 
-## Marco 1.0.0
+### P2 — Condition Engine MVP
 
-A versão `1.0.0` deve representar um módulo público utilizável, não apenas um laboratório técnico.
+Objetivo: criar uma base própria para condições sem depender de texto de descrição ou de uma condição oficial inexistente/instável no sistema.
 
-Critérios desejados:
+Entrega inicial:
 
-- fluxo de rituais estável;
-- automações opt-in por item;
-- flags versionadas e documentadas;
-- UX mínima com botões/confirmações;
-- testes mínimos para core;
-- documentação de arquitetura;
-- documentação de instalação/desenvolvimento;
-- estratégia clara de releases;
-- compatibilidade clara com Foundry VTT v14+;
-- comportamento conservador por padrão.
+- aplicar condições como Active Effects informativos gerenciados pelo Toolkit;
+- usar flags próprias para identificar condição, origem, duração e versão da definição;
+- suportar duração simples em rodadas/cena quando possível;
+- permitir botões de chat para aplicar condição quando o preset pedir;
+- começar com poucas condições bem modeladas.
 
-A `1.0.0` não precisa automatizar tudo. Ela precisa automatizar bem o que se propõe a fazer.
+Condições candidatas:
 
-## Depois da 1.0.0
+| Condição | MVP informativo | Regra futura |
+|---|---:|---|
+| Atordoado | Sim | Impedir ações e/ou aplicar efeitos relacionados quando houver motor confiável. |
+| Abalado | Sim | Penalidade configurável em testes de perícia; reaplicar na mesma cena evolui para Apavorado. |
+| Apavorado | Sim | Penalidade configurável em testes de perícia e aviso de comportamento obrigatório. |
 
-Após a `1.0.0`, o projeto deve adotar práticas de manutenção mais formais.
+Decisão importante:
 
-### Processo de desenvolvimento
+- no MVP, condição é principalmente estado rastreável e visível;
+- penalidade automática só entra quando o Toolkit tiver integração confiável com testes de perícia;
+- não tentar automatizar penalidades mexendo em paths frágeis ou incompletos.
 
-- Git Flow ou fluxo equivalente com branches estáveis;
-- branch principal protegida;
-- Pull Requests para mudanças relevantes;
-- CI com typecheck, build e testes;
-- releases versionadas;
-- tags semânticas;
-- changelog por release;
-- política de compatibilidade para flags e presets;
-- critérios claros para breaking changes.
+Modelo conceitual:
 
-Antes da `1.0.0`, o projeto pode continuar usando fluxo simples para iterar rápido sem burocracia prematura.
+```ts
+type ToolkitConditionDefinition = {
+  id: string;
+  label: string;
+  category: "mental" | "physical" | "paranormal" | "other";
+  defaultDuration?: {
+    kind: "rounds" | "scene" | "unlimited";
+    value?: number;
+  };
+  escalation?: {
+    whenAppliedAgain: string;
+    scope: "scene" | "combat" | "actor";
+  };
+};
+```
 
-### Armas, melhorias e categoria
+Estrutura sugerida:
 
-Implementar automação e validação de armas considerando:
+```txt
+src/features/conditions/
+  condition-definition.ts
+  condition-engine.ts
+  condition-effect-factory.ts
+  condition-application-service.ts
+  condition-registry.ts
+```
+
+### P2 — Permissões e visibilidade no chat
+
+Objetivo: controlar quem vê detalhes e quem executa ações sem espalhar `game.user.isGM` pelo código.
+
+Status: em hold até as ações de chat ficarem mais estáveis.
+
+Defaults sugeridos futuramente:
+
+| Recurso | Default |
+|---|---|
+| Ver resultado e dados | Todos |
+| Ver detalhes sensíveis de resistência | GM |
+| Aplicar dano | GM |
+| Aplicar cura | GM e dono do ator, configurável |
+| Aplicar condição | GM |
+
+Estrutura sugerida:
+
+```txt
+src/features/chat/permissions/
+  chat-permission-settings.ts
+  chat-action-permission-service.ts
+```
+
+### P2 — Integração pré-chat com o sistema Ordem
+
+Objetivo: permitir que o Toolkit prepare ou cancele o uso de item antes do `ChatMessage.create` original do sistema.
+
+Motivação:
+
+- hoje o hook de uso de item acontece depois da criação do card;
+- isso limita cancelamento real do fluxo;
+- também dificulta bloquear rolagens inline duplicadas na descrição do item.
+
+Entrega desejada no sistema:
+
+```ts
+const preparation = await globalThis.ParanormalToolkit?.integrations?.ordem?.prepareItemUse?.({
+  item: this,
+  actor: this.actor,
+  token,
+  chatMessageData,
+});
+
+if (preparation?.cancelled) return null;
+
+const preparedChatMessageData = preparation?.chatMessageData ?? chatMessageData;
+const message = await ChatMessage.create(preparedChatMessageData);
+```
+
+Entrega desejada no Toolkit:
+
+- adapter para `prepareItemUse`;
+- fallback mantendo `ordemparanormal.itemUsed`;
+- sem quebrar mundos que usam versão antiga do sistema.
+
+### P2 — UI de configuração de automação do item
+
+Objetivo: permitir que o mestre veja o que foi aplicado no item sem abrir flag no console.
+
+Status: esperar o modelo estabilizar antes de criar UI.
+
+Entrega futura:
+
+- ApplicationV2 para inspecionar automação aplicada;
+- mostrar preset, versão, formas, custo, fórmula e ações;
+- no futuro, permitir overrides estruturados por item para homebrew.
+
+Não fazer agora:
+
+- editor completo de automação antes da API interna estabilizar;
+- UI que grava texto livre como regra.
+
+### P3 — Armas, melhorias e categoria
+
+Objetivo: automatizar a parte de armas sem tratar modificação como simples bônus.
+
+Escopo futuro:
 
 - categoria base;
 - melhorias aplicadas;
-- modificações;
 - aumento de categoria;
 - categoria final;
 - limite por patente/categoria;
-- validação visual para jogador e mestre.
+- validação visual para jogador e mestre;
+- integração com workflow de ataque, dano e resistência.
 
-Importante: melhorias/modificações não devem ser tratadas apenas como bônus numéricos. Elas também podem alterar categoria e restrições da arma.
+Decisão arquitetural:
 
-### Condições e Active Effects
+- manter cálculo em core puro;
+- paths internos do sistema ficam no adapter;
+- UI deve refletir validação, não ser fonte de verdade.
 
-Adicionar suporte gradual para:
+### P3 — Template Regions e rituais avançados
 
-- condições comuns;
-- Active Effects V2;
-- compêndios de efeitos próprios do Toolkit;
-- aplicação e remoção por workflow;
-- duração e expiração;
-- integração futura com Template Regions quando fizer sentido.
+Objetivo: sair de rituais apenas descritivos e permitir área, alvo, duração e efeitos persistentes.
 
-### Template Regions
+Escopo futuro:
 
-Usar Template Regions para rituais e efeitos de área quando o Foundry v14 oferecer um fluxo seguro e sustentável para isso.
+- Template Regions para área de ritual;
+- Active Effects temporários;
+- dano/condição por entrada ou permanência em região quando fizer sentido;
+- duração por rodada/cena;
+- integração futura com Paranormal FX.
 
-Possíveis usos:
+### P3 — Paranormal FX
 
-- dano por área;
-- condição em área;
-- efeitos persistentes;
-- regiões perigosas;
-- integração com FX.
+Objetivo: módulo companion para animações, sons e efeitos visuais.
 
-### Presets e compêndios funcionais
+Escopo futuro:
 
-Criar estrutura para presets mais completos sem redistribuir conteúdo protegido.
+- integração opcional com Sequencer;
+- integração opcional com bibliotecas instaladas pelo usuário, como JB2A;
+- eventos emitidos pelo Toolkit para armas, rituais e condições;
+- presets visuais configuráveis;
+- não empacotar asset de terceiro sem licença.
 
-Regras:
+### P3 — Paranormal Sheets
 
-- não copiar textos oficiais;
-- não empacotar artes protegidas;
-- não vender o módulo como oficial;
-- separar motor de automação de conteúdo/presets;
-- permitir que mestres apliquem automações em itens existentes.
+Objetivo: UX moderna para fichas alternativas.
 
-## Integração com o sistema Ordem
+Escopo futuro:
 
-O Toolkit deve respeitar o que o sistema `ordemparanormal` já faz.
+- ficha de agente mais bonita;
+- ficha de ameaça;
+- organização melhor de perícias, armas, rituais e inventário;
+- experiência visual mais amigável para jogadores e mestres.
 
-Se o sistema implementar fluxo próprio de ataque, dano, defesa ou reações, o Toolkit não deve duplicar esse comportamento.
+Prioridade atual: depois de Toolkit e FX.
 
-Divisão desejada:
+## Ordem recomendada de entrega
 
-```txt
-Sistema Ordem:
-- ficha base
-- dados do sistema
-- rolagens principais
-- fluxo padrão de combate
-- aplicação básica de dano quando existir
+| Versão alvo | Prioridade | Entrega |
+|---|---|---|
+| `0.11.7` | P1 | Ação de GM na ficha para aplicar presets em todos os rituais conhecidos. |
+| `0.12.0` | P1 | Resistência assistida com opções de dano normal, metade e multiplicadores futuros. |
+| `0.12.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
+| `0.13.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
+| `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
+| `0.14.0` | P2 | Permissões/visibilidade de ações no chat. |
+| `0.15.x` | P2 | UI de inspeção/configuração de automação do item. |
+| `0.16.x+` | P3 | Armas, melhorias, categorias, Template Regions e integrações visuais. |
 
-Paranormal Toolkit:
-- automações configuráveis
-- custo de rituais
-- gasto de PE/PD
-- presets por item
-- workflows extensíveis
-- condições e efeitos complementares
-- validação de armas/melhorias
-- eventos para FX
-```
+## Não objetivos por enquanto
 
-Quando existir hook oficial, o Toolkit deve preferir hook ao invés de monkey patch/wrapper.
+- Não copiar textos oficiais, artes, compêndios protegidos ou assets de terceiros.
+- Não usar descrição do item como fonte de regra.
+- Não automatizar penalidades de condição antes de controlar testes de perícia de forma confiável.
+- Não acoplar core a paths internos do sistema `ordemparanormal`.
+- Não transformar o Toolkit em substituto do sistema base.
+- Não criar UI complexa antes do modelo de automação estabilizar.
 
-## Paranormal FX
+## Critério para `1.0.0`
 
-Paranormal FX deve ser um módulo companion separado.
+A versão `1.0.0` deve ter:
 
-Responsabilidade esperada:
-
-- escutar hooks do Toolkit;
-- tocar animações;
-- tocar sons;
-- integrar com Sequencer;
-- integrar opcionalmente com bibliotecas como JB2A quando instaladas pelo usuário;
-- oferecer presets visuais configuráveis.
-
-O Toolkit não deve depender diretamente de assets de animação.
-
-Fluxo desejado:
-
-```txt
-Toolkit executa workflow
-↓
-emite hook público
-↓
-Paranormal FX escuta
-↓
-toca efeito visual/sonoro
-```
-
-## Paranormal Sheets
-
-Paranormal Sheets fica em prioridade menor enquanto o sistema base ainda estiver evoluindo fichas e UX.
-
-Responsabilidade futura:
-
-- fichas alternativas;
-- layout moderno;
-- melhor organização de perícias, armas, rituais e inventário;
-- experiência visual mais amigável;
-- melhorias de UX para jogadores e mestres.
-
-Não deve ser prioridade antes do Toolkit ter uma base estável.
-
-## Fora de escopo
-
-O Toolkit público não deve:
-
-- distribuir textos oficiais de Ordem Paranormal;
-- distribuir artes oficiais ou protegidas;
-- empacotar compêndios oficiais;
-- empacotar assets de terceiros sem licença;
-- se apresentar como módulo oficial;
-- substituir o sistema `ordemparanormal`;
-- depender de HTML interno frágil do sistema quando houver API/hook melhor;
-- automatizar regras de forma invisível sem controle do mestre.
-
-## Princípio final
-
-A prioridade não é automatizar tudo rápido.
-
-A prioridade é criar uma base sustentável para que cada automação nova seja fácil de entender, testar, configurar e manter.
-
-Código bonito aqui não é perfumaria. É sobrevivência.
+- flags documentadas;
+- API interna minimamente estável;
+- presets versionados;
+- testes mínimos para core;
+- workflows de ritual e recursos confiáveis em mesa real;
+- UX sem dependência de console para operações comuns;
+- documentação técnica separada para adapters, presets e condições.

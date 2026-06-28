@@ -353,17 +353,19 @@ A descrição original é substituída por um aviso curto do Paranormal Toolkit.
 
 ## Roadmap resumido
 
-Antes da `1.0.0`, o foco é estabilizar a base:
+O roadmap detalhado, com níveis de prioridade, fica em [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-- adicionar testes unitários para core;
-- separar melhor core puro de APIs globais do Foundry;
-- reduzir responsabilidades do `AutomationRunner`;
-- evoluir o modo `ask` para mais ações específicas no chat, como aplicar condição e resistência;
-- evoluir diálogo de conjuração de ritual para alterar fórmula/custo por forma base/discente/verdadeira;
-- criar bloqueio visual de rolagens inline duplicadas;
-- criar presets específicos por ritual;
-- iniciar automações de armas, melhorias e categoria;
-- preparar integração com condições, Active Effects V2 e Template Regions.
+Prioridades atuais antes da `1.0.0`:
+
+| Prioridade | Frente | Objetivo |
+|---|---|---|
+| P1 | Presets na ficha | Adicionar uma ação de GM na ficha do ator para aplicar presets do Toolkit em todos os rituais conhecidos, sem depender do console. |
+| P1 | Resistência assistida | Quando um ritual sugerir redução, aumento ou outro modificador de dano, mostrar opções para o mestre aplicar dano normal, metade, dobro ou outra variação configurada. |
+| P2 | Condições informativas | Criar Condition Engine inicial com Active Effects gerenciados pelo Toolkit, flags próprias, duração e progressão simples, como Abalado evoluindo para Apavorado. |
+| P2 | Permissões e visibilidade | Controlar quem vê detalhes e quem pode executar ações de chat, como aplicar dano, cura, resistência ou condição. Esta frente está em hold até o fluxo de ações estabilizar. |
+| P2 | Hook pré-chat no sistema | Evoluir a integração com o sistema Ordem para uma etapa pré-`ChatMessage.create`, permitindo cancelar ou preparar o uso de item antes do card original. |
+| P3 | Armas e categorias | Automatizar melhorias, modificações, categoria base, aumento de categoria, categoria final e validação por patente/categoria. |
+| P3 | FX e Sheets | Preparar eventos para Paranormal FX e, depois, evoluir Paranormal Sheets com UX moderna. |
 
 A versão `1.0.0` deve representar uma API interna mais estável, flags documentadas, UX utilizável em mesa real, testes mínimos para core e documentação técnica separada.
 
