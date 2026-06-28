@@ -509,7 +509,11 @@ function createRollSummaryLines(roll: WorkflowRollResult): string[] {
 function createResistanceSummaryLines(resistance: AutomationResistanceDefinition | undefined): string[] {
   if (!resistance) return [];
 
-  return [`Resistência: ${resistance.summary}`];
+  return [
+    `Resistência: ${resistance.summary}`,
+    `Resistência Perícia: ${resistance.skill}`,
+    `Resistência Rótulo: ${resistance.label}`
+  ];
 }
 
 type RollBreakdownTerm = {

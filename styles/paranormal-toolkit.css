@@ -848,3 +848,77 @@
 .paranormal-toolkit-item-use-prompt__actions[data-paranormal-toolkit-action-section="apply-resources"] {
   border-color: rgba(79, 72, 125, 0.16);
 }
+
+/* 0.13.4 — botão d20 para rolagem assistida de resistência */
+.paranormal-toolkit-item-use-prompt__resistance-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-description {
+  display: block;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-roll-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+  border: 1px solid rgba(125, 39, 43, 0.42);
+  border-radius: 7px;
+  padding: 0;
+  background: rgba(125, 39, 43, 0.72);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(36, 27, 24, 0.18);
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-roll-button:hover,
+.paranormal-toolkit-item-use-prompt__resistance-roll-button:focus {
+  border-color: rgba(125, 39, 43, 0.62);
+  background: rgba(125, 39, 43, 0.82);
+  box-shadow: 0 0 0 1px rgba(125, 39, 43, 0.24) inset, 0 1px 3px rgba(36, 27, 24, 0.22);
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-roll-button:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-roll-button--rolled {
+  background: rgba(255, 255, 255, 0.58);
+  color: rgba(36, 27, 24, 0.96);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.95rem;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-roll-fallback {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-roll-button i + .paranormal-toolkit-item-use-prompt__resistance-roll-fallback {
+  display: none;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-roll-result {
+  display: block;
+  border-top: 1px solid rgba(112, 85, 42, 0.16);
+  margin-top: 0.18rem;
+  padding-top: 0.34rem;
+  color: rgba(36, 27, 24, 0.82);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.28;
+}

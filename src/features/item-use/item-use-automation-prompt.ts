@@ -13,8 +13,14 @@ const DETAIL_KEY_ATTRIBUTE = "data-paranormal-toolkit-detail-key";
 const ROLL_CARD_ATTRIBUTE = "data-paranormal-toolkit-roll-card";
 const ROLL_DETAIL_TOGGLE_ATTRIBUTE = "data-paranormal-toolkit-roll-detail-toggle";
 const ROLL_DETAIL_ID_ATTRIBUTE = "data-paranormal-toolkit-roll-detail-id";
+const RESISTANCE_ROLL_BUTTON_ATTRIBUTE = "data-paranormal-toolkit-resistance-roll-button";
+const RESISTANCE_SKILL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill";
+const RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill-label";
+const RESISTANCE_TARGET_ACTOR_ID_ATTRIBUTE = "data-paranormal-toolkit-resistance-target-actor-id";
+const RESISTANCE_ROLL_RESULT_ATTRIBUTE = "data-paranormal-toolkit-resistance-roll-result";
 const BUTTON_SELECTOR = `[${PENDING_ID_ATTRIBUTE}]`;
 const ROLL_DETAIL_TOGGLE_SELECTOR = `[${ROLL_DETAIL_TOGGLE_ATTRIBUTE}]`;
+const RESISTANCE_ROLL_BUTTON_SELECTOR = `[${RESISTANCE_ROLL_BUTTON_ATTRIBUTE}]`;
 const ENRICHMENT_CLASS = `${MODULE_ID}-chat-enrichment`;
 const PROMPT_CLASS = `${MODULE_ID}-item-use-prompt`;
 const PROMPT_ACTIONS_CLASS = `${PROMPT_CLASS}__actions`;
@@ -56,6 +62,9 @@ type RenderableItemUseAutomationPrompt = {
   itemId: string | null;
   actorId: string | null;
   itemName: string | null;
+  resistanceTargetActorId: string | null;
+  resistanceTargetName: string | null;
+  resistanceRollResult?: ResistanceRollResultViewModel | null;
   summary: string;
   executed: boolean;
 };
@@ -79,6 +88,16 @@ type ParsedRollLine = {
   intent: "healing" | "damage" | "generic";
 };
 
+type ResistanceRollResultViewModel = {
+  skill: string;
+  skillLabel: string;
+  formula: string;
+  total: number;
+  targetName: string;
+  usedFallbackBonus: boolean;
+  rolledAt: string;
+};
+
 type ParsedRollCard = ParsedRollLine & {
   itemName: string;
   form: string | null;
@@ -86,8 +105,11 @@ type ParsedRollCard = ParsedRollLine & {
   diceBreakdown: string | null;
   damageType: string | null;
   resistance: string | null;
+  resistanceSkill: string | null;
+  resistanceSkillLabel: string | null;
   notes: string[];
   details: string[];
+  resistanceRollResult: ResistanceRollResultViewModel | null;
 };
 
 let promptRendererRegistered = false;
@@ -126,6 +148,7 @@ export async function unregisterPendingItemUseAutomationPrompt(pendingId: string
 
 function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUseAutomationPrompt {
   const messageId = getDocumentId(input.context.message);
+  const resistanceTarget = input.context.targets.find((target) => target.actor);
 
   return {
     ...input,
@@ -134,6 +157,9 @@ function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUs
     itemId: input.context.item.id ?? null,
     actorId: input.context.actor?.id ?? null,
     itemName: input.context.item.name ?? null,
+    resistanceTargetActorId: resistanceTarget?.actor?.id ?? null,
+    resistanceTargetName: resistanceTarget?.name ?? resistanceTarget?.actor?.name ?? null,
+    resistanceRollResult: null,
     choiceGroupId: input.choiceGroupId ?? null,
     skippedLabel: input.skippedLabel ?? null,
     actionSectionId: input.actionSectionId ?? null,
@@ -161,6 +187,7 @@ function renderPendingPromptsIntoChatMessage(
 
   bindPromptButtons(root, handler);
   bindRollDetailToggles(root);
+  bindResistanceRollButtons(root);
 }
 
 function renderPromptIntoExistingChatLog(pendingId: string): void {
@@ -173,6 +200,7 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
     appendPromptToRoot(messageElement, prompt);
     bindPromptButtonsIfPossible(messageElement);
     bindRollDetailToggles(messageElement);
+    bindResistanceRollButtons(messageElement);
     return;
   }
 
@@ -184,6 +212,7 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
     appendPromptToRoot(matchedElement, prompt);
     bindPromptButtonsIfPossible(matchedElement);
     bindRollDetailToggles(matchedElement);
+    bindResistanceRollButtons(matchedElement);
   }
 }
 
@@ -284,7 +313,7 @@ function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, promptId
   summary.append(chip, total, formula);
   article.append(summary);
   appendRollMeta(article, rollCard);
-  appendResistanceHint(article, rollCard);
+  appendResistanceHint(article, rollCard, prompt);
   appendRollDetails(article, rollCard, promptId);
 
   section.append(article);
@@ -312,20 +341,86 @@ function appendRollMeta(article: HTMLElement, rollCard: ParsedRollCard): void {
   article.append(meta);
 }
 
-function appendResistanceHint(article: HTMLElement, rollCard: ParsedRollCard): void {
+function appendResistanceHint(article: HTMLElement, rollCard: ParsedRollCard, prompt: RenderableItemUseAutomationPrompt): void {
   if (!rollCard.resistance) return;
 
   const resistance = document.createElement("div");
   resistance.classList.add(`${PROMPT_CLASS}__resistance`);
 
+  const header = document.createElement("div");
+  header.classList.add(`${PROMPT_CLASS}__resistance-header`);
+
   const title = document.createElement("strong");
   title.textContent = "Resistência";
 
+  const rollButton = createResistanceRollButton(rollCard, prompt);
+
+  header.append(title);
+  if (rollButton) header.append(rollButton);
+
   const description = document.createElement("span");
+  description.classList.add(`${PROMPT_CLASS}__resistance-description`);
   description.textContent = rollCard.resistance;
 
-  resistance.append(title, description);
+  resistance.append(header, description);
+
+  if (rollCard.resistanceRollResult) {
+    resistance.append(createResistanceRollResultLine(rollCard.resistanceRollResult));
+  }
+
   article.append(resistance);
+}
+
+function createResistanceRollButton(
+  rollCard: ParsedRollCard,
+  prompt: RenderableItemUseAutomationPrompt
+): HTMLButtonElement | null {
+  if (!rollCard.resistanceSkill) return null;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.classList.add(`${PROMPT_CLASS}__resistance-roll-button`);
+  button.setAttribute(PROMPT_ID_ATTRIBUTE, prompt.pendingId);
+  button.setAttribute(RESISTANCE_ROLL_BUTTON_ATTRIBUTE, "true");
+  button.setAttribute(RESISTANCE_SKILL_ATTRIBUTE, rollCard.resistanceSkill);
+  button.setAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE, rollCard.resistanceSkillLabel ?? rollCard.resistanceSkill);
+
+  if (prompt.resistanceTargetActorId) {
+    button.setAttribute(RESISTANCE_TARGET_ACTOR_ID_ATTRIBUTE, prompt.resistanceTargetActorId);
+  }
+
+  if (rollCard.resistanceRollResult) {
+    button.classList.add(`${PROMPT_CLASS}__resistance-roll-button--rolled`);
+    button.setAttribute(RESISTANCE_ROLL_RESULT_ATTRIBUTE, String(rollCard.resistanceRollResult.total));
+    button.textContent = String(rollCard.resistanceRollResult.total);
+    button.title = `Rolar ${rollCard.resistanceRollResult.skillLabel} novamente`;
+    button.setAttribute("aria-label", button.title);
+    return button;
+  }
+
+  const icon = document.createElement("i");
+  icon.classList.add("fa-solid", "fa-dice-d20");
+  icon.setAttribute("aria-hidden", "true");
+
+  const fallback = document.createElement("span");
+  fallback.classList.add(`${PROMPT_CLASS}__resistance-roll-fallback`);
+  fallback.textContent = "d20";
+
+  button.append(icon, fallback);
+  button.title = `Rolar ${rollCard.resistanceSkillLabel ?? rollCard.resistanceSkill} do alvo`;
+  button.setAttribute("aria-label", button.title);
+
+  return button;
+}
+
+function createResistanceRollResultLine(result: ResistanceRollResultViewModel): HTMLElement {
+  const line = document.createElement("span");
+  line.classList.add(`${PROMPT_CLASS}__resistance-roll-result`);
+
+  const fallbackText = result.usedFallbackBonus ? " · bônus não encontrado" : "";
+  line.textContent = `${result.skillLabel}: ${result.formula} = ${result.total}${fallbackText}`;
+
+  return line;
 }
 
 function appendRollDetails(article: HTMLElement, rollCard: ParsedRollCard, promptId: string): void {
@@ -531,6 +626,22 @@ function bindRollDetailToggles(html: unknown): void {
   }
 }
 
+function bindResistanceRollButtons(html: unknown): void {
+  const root = resolveRootElement(html);
+  if (!root) return;
+
+  const buttons = root.querySelectorAll<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR);
+
+  for (const button of buttons) {
+    if (button.dataset.paranormalToolkitResistanceRollBound === "true") continue;
+
+    button.dataset.paranormalToolkitResistanceRollBound = "true";
+    button.addEventListener("click", () => {
+      void handleResistanceRollClick(root, button);
+    });
+  }
+}
+
 function toggleRollDetails(root: HTMLElement, toggle: HTMLButtonElement): void {
   const detailId = toggle.getAttribute(ROLL_DETAIL_TOGGLE_ATTRIBUTE);
   if (!detailId) return;
@@ -542,6 +653,289 @@ function toggleRollDetails(root: HTMLElement, toggle: HTMLButtonElement): void {
   details.hidden = !willOpen;
   toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
   toggle.textContent = willOpen ? "▾ Ocultar detalhes" : "▸ Ver detalhes";
+}
+
+async function handleResistanceRollClick(root: HTMLElement, button: HTMLButtonElement): Promise<void> {
+  const promptId = button.getAttribute(PROMPT_ID_ATTRIBUTE);
+  const skill = button.getAttribute(RESISTANCE_SKILL_ATTRIBUTE);
+  const skillLabel = button.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : "Resistência");
+
+  if (!promptId || !skill) return;
+
+  const prompt = resolveRenderablePromptForButton(root, promptId);
+  const actor = resolveResistanceTargetActor(prompt, button);
+
+  if (!actor) {
+    ui.notifications?.warn("Paranormal Toolkit: não consegui encontrar o alvo para rolar a resistência.");
+    return;
+  }
+
+  button.disabled = true;
+  const originalContent = button.innerHTML;
+  button.textContent = "...";
+
+  try {
+    const rollPlan = createResistanceRollPlan(actor, skill, skillLabel);
+    const roll = new Roll(rollPlan.formula);
+    await Promise.resolve(roll.evaluate());
+    await showDiceAnimationIfAvailable(roll);
+
+    const total = typeof roll.total === "number" && Number.isFinite(roll.total) ? Math.trunc(roll.total) : 0;
+    const result: ResistanceRollResultViewModel = {
+      skill,
+      skillLabel,
+      formula: roll.formula,
+      total,
+      targetName: actor.name ?? prompt?.resistanceTargetName ?? "alvo",
+      usedFallbackBonus: rollPlan.usedFallbackBonus,
+      rolledAt: new Date().toISOString()
+    };
+
+    updateResistanceRollButton(button, result);
+    updateResistanceRollResultLine(button, result);
+    setPromptResistanceRollResult(promptId, result);
+    await persistResistanceRollResult(root, promptId, result);
+
+    if (rollPlan.usedFallbackBonus) {
+      ui.notifications?.info(`Paranormal Toolkit: bônus de ${skillLabel} não encontrado; rolando 1d20 puro.`);
+    }
+  } catch (cause) {
+    console.warn("Paranormal Toolkit: não foi possível rolar resistência assistida.", cause);
+    ui.notifications?.warn(`Paranormal Toolkit: não foi possível rolar ${skillLabel}.`);
+    button.innerHTML = originalContent;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function updateResistanceRollButton(button: HTMLButtonElement, result: ResistanceRollResultViewModel): void {
+  button.classList.add(`${PROMPT_CLASS}__resistance-roll-button--rolled`);
+  button.setAttribute(RESISTANCE_ROLL_RESULT_ATTRIBUTE, String(result.total));
+  button.textContent = String(result.total);
+  button.title = `Rolar ${result.skillLabel} novamente`;
+  button.setAttribute("aria-label", button.title);
+}
+
+function updateResistanceRollResultLine(button: HTMLButtonElement, result: ResistanceRollResultViewModel): void {
+  const resistance = button.closest<HTMLElement>(`.${PROMPT_CLASS}__resistance`);
+  if (!resistance) return;
+
+  const existing = resistance.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance-roll-result`);
+  const line = existing ?? createResistanceRollResultLine(result);
+
+  if (existing) {
+    const fallbackText = result.usedFallbackBonus ? " · bônus não encontrado" : "";
+    existing.textContent = `${result.skillLabel}: ${result.formula} = ${result.total}${fallbackText}`;
+    return;
+  }
+
+  resistance.append(line);
+}
+
+function resolveRenderablePromptForButton(root: HTMLElement, promptId: string): RenderableItemUseAutomationPrompt | null {
+  const pending = pendingPrompts.get(promptId);
+  if (pending) return pending;
+
+  const message = resolveChatMessageDocumentFromRoot(root);
+  return readPersistedPromptMap(message)[promptId] ?? null;
+}
+
+function resolveResistanceTargetActor(prompt: RenderableItemUseAutomationPrompt | null, button: HTMLButtonElement): Actor | null {
+  const liveContext = (prompt as { context?: ItemUseContext } | null)?.context;
+  const liveTarget = liveContext?.targets.find((target) => target.actor)?.actor;
+
+  if (liveTarget) return liveTarget;
+
+  const actorId =
+    button.getAttribute(RESISTANCE_TARGET_ACTOR_ID_ATTRIBUTE) ??
+    prompt?.resistanceTargetActorId ??
+    null;
+
+  if (!actorId) return null;
+
+  const actors = game.actors as { get?: (id: string) => unknown } | undefined;
+  const actor = actors?.get?.(actorId);
+
+  return isActorLike(actor) ? actor : null;
+}
+
+function isActorLike(value: unknown): value is Actor {
+  return Boolean(value && typeof value === "object" && "system" in value);
+}
+
+type ResistanceRollPlan = {
+  formula: string;
+  usedFallbackBonus: boolean;
+};
+
+function createResistanceRollPlan(actor: Actor, skill: string, skillLabel: string): ResistanceRollPlan {
+  void skillLabel;
+
+  const bonus = resolveResistanceBonus(actor, skill);
+
+  if (bonus === null) {
+    return { formula: "1d20", usedFallbackBonus: true };
+  }
+
+  return { formula: createD20Formula(bonus), usedFallbackBonus: false };
+}
+
+function createD20Formula(bonus: number): string {
+  const normalizedBonus = Math.trunc(bonus);
+
+  if (normalizedBonus === 0) return "1d20";
+
+  return normalizedBonus > 0 ? `1d20 + ${normalizedBonus}` : `1d20 - ${Math.abs(normalizedBonus)}`;
+}
+
+function resolveResistanceBonus(actor: Actor, skill: string): number | null {
+  const system = (actor as { system?: unknown }).system;
+  const rollData = getActorRollData(actor);
+  const keys = getResistanceSkillPathKeys(skill);
+
+  for (const source of [system, rollData]) {
+    if (!source || typeof source !== "object") continue;
+
+    for (const key of keys) {
+      const direct = toFiniteNumber(getPropertyByPath(source, key));
+      if (direct !== null) return direct;
+
+      for (const suffix of ["total", "value", "bonus", "mod", "modifier", "modificador", "valor"] as const) {
+        const nested = toFiniteNumber(getPropertyByPath(source, `${key}.${suffix}`));
+        if (nested !== null) return nested;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getActorRollData(actor: Actor): unknown {
+  const rollDataFactory = (actor as { getRollData?: () => unknown }).getRollData;
+
+  if (typeof rollDataFactory !== "function") return null;
+
+  try {
+    return rollDataFactory.call(actor);
+  } catch {
+    return null;
+  }
+}
+
+function getResistanceSkillPathKeys(skill: string): string[] {
+  const aliases = getResistanceSkillAliases(skill);
+  const prefixes = ["skills", "pericias", "perícias", "skill", "pericia", "perícia"];
+  const paths = new Set<string>();
+
+  for (const alias of aliases) {
+    paths.add(alias);
+
+    for (const prefix of prefixes) {
+      paths.add(`${prefix}.${alias}`);
+    }
+  }
+
+  return Array.from(paths);
+}
+
+function getResistanceSkillAliases(skill: string): string[] {
+  switch (skill) {
+    case "resilience":
+      return ["resilience", "fortitude"];
+    case "reflexes":
+      return ["reflexes", "reflexos"];
+    case "will":
+      return ["will", "vontade"];
+    default:
+      return [skill];
+  }
+}
+
+function getResistanceSkillLabel(skill: string): string {
+  switch (skill) {
+    case "resilience":
+      return "Fortitude";
+    case "reflexes":
+      return "Reflexos";
+    case "will":
+      return "Vontade";
+    default:
+      return skill;
+  }
+}
+
+function getPropertyByPath(source: unknown, path: string): unknown {
+  if (!source || typeof source !== "object") return undefined;
+
+  let current: unknown = source;
+
+  for (const part of path.split(".")) {
+    if (!current || typeof current !== "object") return undefined;
+    current = (current as Record<string, unknown>)[part];
+  }
+
+  return current;
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  return null;
+}
+
+async function showDiceAnimationIfAvailable(roll: Roll): Promise<void> {
+  const dice3d = (game as { dice3d?: { showForRoll?: (roll: Roll, user: unknown, synchronize?: boolean) => unknown } }).dice3d;
+
+  if (typeof dice3d?.showForRoll !== "function") return;
+
+  await Promise.resolve(dice3d.showForRoll(roll, game.user, true));
+}
+
+function setPromptResistanceRollResult(promptId: string, result: ResistanceRollResultViewModel): void {
+  const prompt = pendingPrompts.get(promptId);
+
+  if (prompt) {
+    prompt.resistanceRollResult = result;
+  }
+}
+
+async function persistResistanceRollResult(
+  root: HTMLElement,
+  promptId: string,
+  result: ResistanceRollResultViewModel
+): Promise<void> {
+  const message = resolveChatMessageDocumentFromRoot(root);
+  if (!message) return;
+
+  try {
+    const prompts = readPersistedPromptMap(message);
+    const persisted = prompts[promptId];
+    if (!persisted) return;
+
+    prompts[promptId] = {
+      ...persisted,
+      resistanceRollResult: result
+    };
+
+    await writePersistedPromptMap(message, prompts);
+  } catch (cause) {
+    console.warn("Paranormal Toolkit: não foi possível persistir rolagem de resistência.", cause);
+  }
+}
+
+function resolveChatMessageDocumentFromRoot(root: HTMLElement): ChatMessageFlagDocument | null {
+  const messageElement = root.closest<HTMLElement>("[data-message-id]") ?? root;
+  const messageId = messageElement.dataset.messageId ?? null;
+
+  if (!messageId) return null;
+
+  const messages = game.messages as { get?: (messageId: string) => unknown } | undefined;
+  return asChatMessageFlagDocument(messages?.get?.(messageId));
 }
 
 async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAutomationPromptHandler): Promise<void> {
@@ -599,6 +993,8 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
   const diceBreakdown = findSummaryValue(summaryLines, "Dados") ?? findSummaryValue(summaryLines, `Dados (${rollLine.label})`);
   const damageType = findSummaryValue(summaryLines, "Tipo");
   const resistance = findSummaryValue(summaryLines, "Resistência");
+  const resistanceSkill = findSummaryValue(summaryLines, "Resistência Perícia");
+  const resistanceSkillLabel = findSummaryValue(summaryLines, "Resistência Rótulo") ?? (resistanceSkill ? getResistanceSkillLabel(resistanceSkill) : null);
   const notes = findSummaryValues(summaryLines, "Observação");
   const details = summaryLines.filter((line) => isExtraDetailLine(line, rollLine));
 
@@ -610,8 +1006,11 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
     diceBreakdown,
     damageType,
     resistance,
+    resistanceSkill,
+    resistanceSkillLabel,
     notes,
-    details
+    details,
+    resistanceRollResult: prompt.resistanceRollResult ?? null
   };
 }
 
@@ -660,6 +1059,8 @@ function isExtraDetailLine(line: string, rollLine: ParsedRollLine): boolean {
   if (line.startsWith(`Dados (${rollLine.label}):`)) return false;
   if (line.startsWith("Tipo:")) return false;
   if (line.startsWith("Resistência:")) return false;
+  if (line.startsWith("Resistência Perícia:")) return false;
+  if (line.startsWith("Resistência Rótulo:")) return false;
   if (line.startsWith("Observação:")) return false;
   if (parseRollLine(line)) return false;
   return line.trim().length > 0;
@@ -822,6 +1223,9 @@ function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt): PersistedIte
     itemId: prompt.itemId,
     actorId: prompt.actorId,
     itemName: prompt.itemName,
+    resistanceTargetActorId: prompt.resistanceTargetActorId,
+    resistanceTargetName: prompt.resistanceTargetName,
+    resistanceRollResult: prompt.resistanceRollResult ?? null,
     choiceGroupId: prompt.choiceGroupId ?? null,
     skippedLabel: prompt.skippedLabel ?? null,
     actionSectionId: prompt.actionSectionId ?? null,
@@ -863,6 +1267,9 @@ function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationP
     isNullableString(value.itemId) &&
     isNullableString(value.actorId) &&
     isNullableString(value.itemName) &&
+    isOptionalNullableString(value.resistanceTargetActorId) &&
+    isOptionalNullableString(value.resistanceTargetName) &&
+    isOptionalResistanceRollResult(value.resistanceRollResult) &&
     isOptionalString(value.title) &&
     isOptionalString(value.buttonLabel) &&
     isOptionalString(value.executedLabel) &&
@@ -871,6 +1278,22 @@ function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationP
     isOptionalNullableString(value.actionSectionId) &&
     isOptionalNullableString(value.actionSectionTitle) &&
     isOptionalStringArray(value.summaryLines)
+  );
+}
+
+function isOptionalResistanceRollResult(value: unknown): value is ResistanceRollResultViewModel | null | undefined {
+  if (value === undefined || value === null) return true;
+  if (!isRecord(value)) return false;
+
+  return (
+    typeof value.skill === "string" &&
+    typeof value.skillLabel === "string" &&
+    typeof value.formula === "string" &&
+    typeof value.total === "number" &&
+    Number.isFinite(value.total) &&
+    typeof value.targetName === "string" &&
+    typeof value.usedFallbackBonus === "boolean" &&
+    typeof value.rolledAt === "string"
   );
 }
 
