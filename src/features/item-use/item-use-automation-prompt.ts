@@ -158,17 +158,25 @@ let promptHandler: ItemUseAutomationPromptHandler | null = null;
 const pendingPrompts = new Map<string, PendingItemUseAutomationPrompt>();
 const CHAT_MESSAGE_LOOKUP_RETRY_DELAYS_MS = [0, 100, 500, 1_500, 3_000] as const;
 const CHAT_MESSAGE_LOOKUP_WINDOW_MS = 30_000;
+const CHAT_CARD_REHYDRATION_DELAYS_MS = [0, 100, 500, 1_500, 3_000] as const;
 
 export function registerItemUseAutomationPromptRenderer(handler: ItemUseAutomationPromptHandler): void {
   promptHandler = handler;
 
-  if (promptRendererRegistered) return;
+  if (promptRendererRegistered) {
+    scheduleRenderedChatCardRehydration(handler);
+    return;
+  }
 
-  Hooks.on("renderChatMessageHTML", (message: unknown, html: unknown) => {
+  const renderChatMessage = (message: unknown, html: unknown): void => {
     renderPendingPromptsIntoChatMessage(message, html, handler);
-  });
+  };
+
+  Hooks.on("renderChatMessageHTML", renderChatMessage);
+  Hooks.on("renderChatMessage", renderChatMessage);
 
   promptRendererRegistered = true;
+  scheduleRenderedChatCardRehydration(handler);
 }
 
 export async function registerPendingItemUseAutomationPrompt(input: ItemUseAutomationPromptInput): Promise<void> {
@@ -306,6 +314,45 @@ function renderPendingPromptsIntoChatMessage(
   bindPromptButtons(root, handler);
   bindRollDetailToggles(root);
   bindResistanceRollButtons(root);
+}
+
+function scheduleRenderedChatCardRehydration(handler: ItemUseAutomationPromptHandler): void {
+  for (const delayMs of CHAT_CARD_REHYDRATION_DELAYS_MS) {
+    globalThis.setTimeout(() => {
+      rehydrateRenderedToolkitChatCards(handler);
+    }, delayMs);
+  }
+}
+
+function rehydrateRenderedToolkitChatCards(handler: ItemUseAutomationPromptHandler): void {
+  for (const root of getRenderedChatMessageElements()) {
+    const message = resolveChatMessageDocumentFromRoot(root);
+    if (!messageHasToolkitChatCard(message)) continue;
+
+    renderPendingPromptsIntoChatMessage(message, root, handler);
+  }
+}
+
+function getRenderedChatMessageElements(): HTMLElement[] {
+  const roots = new Set<HTMLElement>();
+
+  for (const element of document.querySelectorAll<HTMLElement>(".chat-message[data-message-id], [data-message-id]")) {
+    const root = element.classList.contains("chat-message")
+      ? element
+      : element.closest<HTMLElement>(".chat-message") ?? element;
+
+    if (root.dataset.messageId) {
+      roots.add(root);
+    }
+  }
+
+  return Array.from(roots);
+}
+
+function messageHasToolkitChatCard(message: ChatMessageFlagDocument | null): boolean {
+  if (!message) return false;
+  if (readToolkitChatCard(message)) return true;
+  return readPersistedPromptsFromMessage(message).length > 0;
 }
 
 function renderPromptIntoExistingChatLog(pendingId: string): void {
