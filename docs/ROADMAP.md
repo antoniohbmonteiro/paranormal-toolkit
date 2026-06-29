@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.13.9`.
+Versão base do roadmap: `v0.13.10`.
 
 O Toolkit já tem:
 
@@ -279,6 +279,7 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.13.7` | Concluído | Botão d20 para rolagem correta de resistência do alvo usando o roller nativo de perícia do sistema Ordem, ainda sem comparação automática de DT. |
 | `0.13.8` | Concluído | Setting para manter ou substituir visualmente o card original do sistema Ordem. |
 | `0.13.9` | Concluído | Modelo estruturado em flag de ChatMessage para reconstruir o card assistido após F5 e manter ações persistidas. |
+| `0.13.10` | Concluído | Escrita robusta do card estruturado na ChatMessage real, com busca por mensagem recente e retries quando o hook não entrega a mensagem resolvida. |
 | `0.13.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
 | `0.14.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
@@ -308,6 +309,13 @@ A versão `1.0.0` deve ter:
 - documentação técnica separada para adapters, presets e condições.
 
 
+
+## 0.13.10 — escrita robusta do card estruturado
+
+- O Toolkit tenta persistir o card na `ChatMessage` direta do hook quando ela existe.
+- Quando a mensagem ainda não está resolvida, procura a mensagem recém-criada por id, ator, nome/id do item e proximidade de timestamp.
+- A persistência é tentada novamente por alguns segundos para cobrir timing de render/criação do chat.
+- O comando de teste `game.messages.contents.at(-1)?.getFlag("paranormal-toolkit", "chatCard")` deve retornar o modelo logo após usar o ritual.
 
 ## 0.13.9 — card persistente estruturado
 

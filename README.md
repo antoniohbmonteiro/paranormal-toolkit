@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.9`.
+Versão experimental atual: `v0.13.10`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -69,13 +69,17 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+### 0.13.10 — Persistência robusta da ChatMessage
+
+A versão `0.13.10` corrige a gravação do card estruturado quando o hook do sistema não entrega uma `ChatMessage` resolvida imediatamente. O Toolkit agora procura a mensagem recém-criada no histórico do chat, tenta novamente por alguns segundos e grava `flags.paranormal-toolkit.chatCard` antes de depender do F5.
+
 ### 0.13.9 — Card persistente estruturado
 
-A versão `0.13.9` corrige a persistência real do card assistido: o Toolkit agora grava um modelo estruturado em `flags.paranormal-toolkit.chatCard`, reconstrói o card após F5, respeita o modo manter/substituir e mantém ações de dano/cura executáveis mesmo depois de recarregar a página.
+A versão `0.13.9` adicionou o modelo estruturado em `flags.paranormal-toolkit.chatCard`. A `0.13.10` corrige o ponto de escrita para garantir que a flag seja gravada na `ChatMessage` real.
 
 ### 0.13.8 — Card persistente e modo substituir
 
-A versão `0.13.8` adicionou a configuração para manter ou substituir visualmente o card original do sistema Ordem. A `0.13.9` corrige a base persistente para não depender de prompts em memória.
+A versão `0.13.8` adicionou a configuração para manter ou substituir visualmente o card original do sistema Ordem. A `0.13.10` corrige a base persistente para não depender de prompts em memória nem de mensagem resolvida cedo demais.
 
 ### 0.13.7 — Rolagem correta de resistência
 

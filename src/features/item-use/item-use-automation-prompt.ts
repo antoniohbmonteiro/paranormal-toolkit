@@ -156,6 +156,8 @@ let promptRendererRegistered = false;
 let promptHandler: ItemUseAutomationPromptHandler | null = null;
 
 const pendingPrompts = new Map<string, PendingItemUseAutomationPrompt>();
+const CHAT_MESSAGE_LOOKUP_RETRY_DELAYS_MS = [0, 100, 500, 1_500, 3_000] as const;
+const CHAT_MESSAGE_LOOKUP_WINDOW_MS = 30_000;
 
 export function registerItemUseAutomationPromptRenderer(handler: ItemUseAutomationPromptHandler): void {
   promptHandler = handler;
@@ -173,7 +175,12 @@ export async function registerPendingItemUseAutomationPrompt(input: ItemUseAutom
   const prompt = createPendingPrompt(input);
   pendingPrompts.set(input.pendingId, prompt);
 
-  await persistPromptInChatMessage(prompt);
+  const persisted = await persistPromptInChatMessage(prompt);
+
+  if (!persisted) {
+    schedulePromptPersistenceRetry(prompt);
+  }
+
   renderPromptIntoExistingChatLog(input.pendingId);
 }
 
@@ -317,7 +324,10 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
     return;
   }
 
-  if (prompt.messageId) return;
+  if (prompt.messageId) {
+    void persistPromptInBestAvailableChatMessage(prompt);
+    return;
+  }
 
   const matchedElement = findRenderedChatMessageByItem(prompt);
 
@@ -328,7 +338,10 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
     bindPromptButtonsIfPossible(matchedElement);
     bindRollDetailToggles(matchedElement);
     bindResistanceRollButtons(matchedElement);
+    return;
   }
+
+  void persistPromptInBestAvailableChatMessage(prompt);
 }
 
 function bindPromptButtonsIfPossible(root: HTMLElement): void {
@@ -1272,31 +1285,66 @@ function pruneExpiredPrompts(): void {
   }
 }
 
-async function persistPromptInRenderedChatMessage(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): Promise<void> {
+async function persistPromptInRenderedChatMessage(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): Promise<boolean> {
   const message = resolveChatMessageDocumentFromRoot(root);
-  if (!message) return;
+  if (!message) return false;
 
   try {
     const prompts = readPersistedPromptMap(message);
     prompts[prompt.pendingId] = toPersistedPrompt(prompt, getDocumentId(message));
     await writePersistedPromptMap(message, prompts);
+    return true;
   } catch (cause) {
     console.warn("Paranormal Toolkit: não foi possível persistir card assistido no chat renderizado.", cause);
+    return false;
   }
 }
 
-async function persistPromptInChatMessage(prompt: PendingItemUseAutomationPrompt): Promise<void> {
-  const message = resolveChatMessageDocument(prompt.context.message);
-  if (!message) return;
+async function persistPromptInChatMessage(prompt: PendingItemUseAutomationPrompt): Promise<boolean> {
+  const message = findBestChatMessageForPrompt(prompt);
+  if (!message) return false;
 
   try {
     const prompts = readPersistedPromptMap(message);
     prompts[prompt.pendingId] = toPersistedPrompt(prompt, getDocumentId(message));
 
     await writePersistedPromptMap(message, prompts);
+    return true;
   } catch (cause) {
     console.warn("Paranormal Toolkit: não foi possível persistir ação assistida no chat.", cause);
+    return false;
   }
+}
+
+function schedulePromptPersistenceRetry(prompt: PendingItemUseAutomationPrompt): void {
+  for (const delayMs of CHAT_MESSAGE_LOOKUP_RETRY_DELAYS_MS) {
+    globalThis.setTimeout(() => {
+      void persistPromptInBestAvailableChatMessage(prompt);
+    }, delayMs);
+  }
+}
+
+async function persistPromptInBestAvailableChatMessage(prompt: PendingItemUseAutomationPrompt): Promise<boolean> {
+  const existingMessage = findBestChatMessageForPrompt(prompt);
+  const existingCard = readToolkitChatCard(existingMessage);
+
+  if (existingCard?.prompts.some((persistedPrompt) => persistedPrompt.pendingId === prompt.pendingId)) {
+    return true;
+  }
+
+  const persisted = await persistPromptInChatMessage(prompt);
+
+  if (!persisted) {
+    console.warn("Paranormal Toolkit: ainda não encontrei a ChatMessage para persistir o card estruturado.", {
+      pendingId: prompt.pendingId,
+      itemId: prompt.itemId,
+      itemName: prompt.itemName,
+      actorId: prompt.actorId,
+      messageId: prompt.messageId
+    });
+  }
+
+  return persisted;
 }
 
 async function markPersistedPromptAsExecuted(prompt: PendingItemUseAutomationPrompt, executedLabelOverride?: string): Promise<void> {
@@ -1435,11 +1483,113 @@ function resolveChatMessageDocument(value: unknown): ChatMessageFlagDocument | n
     return direct;
   }
 
+  const nested = getNestedChatMessageDocument(value);
+  if (nested?.setFlag) {
+    return nested;
+  }
+
   const id = getDocumentId(value);
   if (!id) return null;
 
   const messages = game.messages as { get?: (messageId: string) => unknown } | undefined;
   return asChatMessageFlagDocument(messages?.get?.(id));
+}
+
+function getNestedChatMessageDocument(value: unknown): ChatMessageFlagDocument | null {
+  if (!value || typeof value !== "object") return null;
+
+  const nestedCandidates = [
+    (value as { document?: unknown }).document,
+    (value as { message?: unknown }).message,
+    (value as { chatMessage?: unknown }).chatMessage
+  ];
+
+  return nestedCandidates.map(asChatMessageFlagDocument).find((candidate) => typeof candidate?.setFlag === "function") ?? null;
+}
+
+function findBestChatMessageForPrompt(prompt: PendingItemUseAutomationPrompt): ChatMessageFlagDocument | null {
+  const direct = resolveChatMessageDocument(prompt.context.message);
+  if (direct) return direct;
+
+  const byId = prompt.messageId ? getChatMessageById(prompt.messageId) : null;
+  if (byId) return byId;
+
+  const messages = getChatMessages().slice().reverse();
+
+  return (
+    messages.find((message) => doesChatMessageStronglyMatchPrompt(message, prompt)) ??
+    messages.find((message) => doesChatMessageWeaklyMatchPrompt(message, prompt)) ??
+    null
+  );
+}
+
+function getChatMessageById(messageId: string): ChatMessageFlagDocument | null {
+  const messages = game.messages as { get?: (messageId: string) => unknown } | undefined;
+  return asChatMessageFlagDocument(messages?.get?.(messageId));
+}
+
+function doesChatMessageStronglyMatchPrompt(
+  message: ChatMessageFlagDocument,
+  prompt: PendingItemUseAutomationPrompt
+): boolean {
+  const messageId = getDocumentId(message);
+  if (prompt.messageId && messageId === prompt.messageId) return true;
+
+  const contentMatches = doesChatMessageContentMatchPrompt(message, prompt);
+  if (!contentMatches) return false;
+
+  const messageActorId = getChatMessageActorId(message);
+  return !prompt.actorId || !messageActorId || messageActorId === prompt.actorId;
+}
+
+function doesChatMessageWeaklyMatchPrompt(
+  message: ChatMessageFlagDocument,
+  prompt: PendingItemUseAutomationPrompt
+): boolean {
+  if (!isChatMessageCloseToPromptCreation(message, prompt)) return false;
+
+  const messageActorId = getChatMessageActorId(message);
+  if (prompt.actorId && messageActorId === prompt.actorId) return true;
+
+  return doesChatMessageContentMatchPrompt(message, prompt);
+}
+
+function doesChatMessageContentMatchPrompt(message: ChatMessageFlagDocument, prompt: PendingItemUseAutomationPrompt): boolean {
+  const content = normalizeLookupName(getChatMessageContent(message));
+  if (!content) return false;
+
+  const itemName = normalizeLookupName(prompt.itemName);
+  if (itemName && content.includes(itemName)) return true;
+
+  const itemId = normalizeLookupName(prompt.itemId);
+  return Boolean(itemId && content.includes(itemId));
+}
+
+function getChatMessageContent(message: ChatMessageFlagDocument): string | null {
+  const content = (message as { content?: unknown }).content;
+  return typeof content === "string" ? content : null;
+}
+
+function getChatMessageActorId(message: ChatMessageFlagDocument): string | null {
+  const speaker = (message as { speaker?: { actor?: unknown } }).speaker;
+  return typeof speaker?.actor === "string" && speaker.actor.length > 0 ? speaker.actor : null;
+}
+
+function isChatMessageCloseToPromptCreation(message: ChatMessageFlagDocument, prompt: PendingItemUseAutomationPrompt): boolean {
+  const timestamp = getChatMessageTimestamp(message);
+  if (timestamp === null) return false;
+
+  return Math.abs(timestamp - prompt.createdAt) <= CHAT_MESSAGE_LOOKUP_WINDOW_MS;
+}
+
+function getChatMessageTimestamp(message: ChatMessageFlagDocument): number | null {
+  const timestamp = (message as { timestamp?: unknown }).timestamp;
+  if (typeof timestamp === "number" && Number.isFinite(timestamp)) return timestamp;
+
+  const modifiedTime = (message as { _stats?: { modifiedTime?: unknown } })._stats?.modifiedTime;
+  if (typeof modifiedTime === "number" && Number.isFinite(modifiedTime)) return modifiedTime;
+
+  return null;
 }
 
 function asChatMessageFlagDocument(value: unknown): ChatMessageFlagDocument | null {
@@ -1599,10 +1749,14 @@ function resolveRootElement(html: unknown): HTMLElement | null {
 function getDocumentId(value: unknown): string | null {
   if (!value || typeof value !== "object") return null;
 
-  const documentLike = value as { id?: unknown };
+  const documentLike = value as { id?: unknown; _id?: unknown };
 
   if (typeof documentLike.id === "string" && documentLike.id.length > 0) {
     return documentLike.id;
+  }
+
+  if (typeof documentLike._id === "string" && documentLike._id.length > 0) {
+    return documentLike._id;
   }
 
   return null;
