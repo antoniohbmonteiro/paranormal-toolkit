@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../constants";
+import { getResistanceSkillLabel, rollOrdemResistance } from "../../adapters/ordem/ordem-resistance-roll-adapter";
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import type { ItemUseContext } from "./item-use-context";
 
@@ -98,7 +99,8 @@ type ResistanceRollResultViewModel = {
   formula: string;
   total: number;
   targetName: string;
-  usedFallbackBonus: boolean;
+  diceBreakdown: string | null;
+  usedFallbackBonus?: boolean;
   rolledAt: string;
 };
 
@@ -433,8 +435,7 @@ function createResistanceRollResultLine(result: ResistanceRollResultViewModel): 
   const line = document.createElement("span");
   line.classList.add(`${PROMPT_CLASS}__resistance-roll-result`);
 
-  const fallbackText = result.usedFallbackBonus ? " · bônus não encontrado" : "";
-  line.textContent = `${result.skillLabel}: ${result.formula} = ${result.total}${fallbackText}`;
+  line.textContent = formatResistanceRollResult(result);
 
   return line;
 }
@@ -691,19 +692,17 @@ async function handleResistanceRollClick(root: HTMLElement, button: HTMLButtonEl
   button.textContent = "...";
 
   try {
-    const rollPlan = createResistanceRollPlan(actor, skill, skillLabel);
-    const roll = new Roll(rollPlan.formula);
-    await Promise.resolve(roll.evaluate());
-    await showDiceAnimationIfAvailable(roll);
+    const resistanceRoll = await rollOrdemResistance(actor, skill);
+    await showDiceAnimationIfAvailable(resistanceRoll.roll);
 
-    const total = typeof roll.total === "number" && Number.isFinite(roll.total) ? Math.trunc(roll.total) : 0;
     const result: ResistanceRollResultViewModel = {
       skill,
       skillLabel,
-      formula: roll.formula,
-      total,
+      formula: resistanceRoll.formula,
+      total: resistanceRoll.total,
       targetName: actor.name ?? prompt?.resistanceTargetName ?? "alvo",
-      usedFallbackBonus: rollPlan.usedFallbackBonus,
+      diceBreakdown: resistanceRoll.diceBreakdown,
+      usedFallbackBonus: false,
       rolledAt: new Date().toISOString()
     };
 
@@ -711,10 +710,6 @@ async function handleResistanceRollClick(root: HTMLElement, button: HTMLButtonEl
     updateResistanceRollResultLine(button, result);
     setPromptResistanceRollResult(promptId, result);
     await persistResistanceRollResult(root, promptId, result);
-
-    if (rollPlan.usedFallbackBonus) {
-      ui.notifications?.info(`Paranormal Toolkit: bônus de ${skillLabel} não encontrado; rolando 1d20 puro.`);
-    }
   } catch (cause) {
     console.warn("Paranormal Toolkit: não foi possível rolar resistência assistida.", cause);
     ui.notifications?.warn(`Paranormal Toolkit: não foi possível rolar ${skillLabel}.`);
@@ -740,8 +735,7 @@ function updateResistanceRollResultLine(button: HTMLButtonElement, result: Resis
   const line = existing ?? createResistanceRollResultLine(result);
 
   if (existing) {
-    const fallbackText = result.usedFallbackBonus ? " · bônus não encontrado" : "";
-    existing.textContent = `${result.skillLabel}: ${result.formula} = ${result.total}${fallbackText}`;
+    existing.textContent = formatResistanceRollResult(result);
     return;
   }
 
@@ -874,129 +868,9 @@ function isActorLike(value: unknown): value is Actor {
   return Boolean(value && typeof value === "object" && "system" in value);
 }
 
-type ResistanceRollPlan = {
-  formula: string;
-  usedFallbackBonus: boolean;
-};
-
-function createResistanceRollPlan(actor: Actor, skill: string, skillLabel: string): ResistanceRollPlan {
-  void skillLabel;
-
-  const bonus = resolveResistanceBonus(actor, skill);
-
-  if (bonus === null) {
-    return { formula: "1d20", usedFallbackBonus: true };
-  }
-
-  return { formula: createD20Formula(bonus), usedFallbackBonus: false };
-}
-
-function createD20Formula(bonus: number): string {
-  const normalizedBonus = Math.trunc(bonus);
-
-  if (normalizedBonus === 0) return "1d20";
-
-  return normalizedBonus > 0 ? `1d20 + ${normalizedBonus}` : `1d20 - ${Math.abs(normalizedBonus)}`;
-}
-
-function resolveResistanceBonus(actor: Actor, skill: string): number | null {
-  const system = (actor as { system?: unknown }).system;
-  const rollData = getActorRollData(actor);
-  const keys = getResistanceSkillPathKeys(skill);
-
-  for (const source of [system, rollData]) {
-    if (!source || typeof source !== "object") continue;
-
-    for (const key of keys) {
-      const direct = toFiniteNumber(getPropertyByPath(source, key));
-      if (direct !== null) return direct;
-
-      for (const suffix of ["total", "value", "bonus", "mod", "modifier", "modificador", "valor"] as const) {
-        const nested = toFiniteNumber(getPropertyByPath(source, `${key}.${suffix}`));
-        if (nested !== null) return nested;
-      }
-    }
-  }
-
-  return null;
-}
-
-function getActorRollData(actor: Actor): unknown {
-  const rollDataFactory = (actor as { getRollData?: () => unknown }).getRollData;
-
-  if (typeof rollDataFactory !== "function") return null;
-
-  try {
-    return rollDataFactory.call(actor);
-  } catch {
-    return null;
-  }
-}
-
-function getResistanceSkillPathKeys(skill: string): string[] {
-  const aliases = getResistanceSkillAliases(skill);
-  const prefixes = ["skills", "pericias", "perícias", "skill", "pericia", "perícia"];
-  const paths = new Set<string>();
-
-  for (const alias of aliases) {
-    paths.add(alias);
-
-    for (const prefix of prefixes) {
-      paths.add(`${prefix}.${alias}`);
-    }
-  }
-
-  return Array.from(paths);
-}
-
-function getResistanceSkillAliases(skill: string): string[] {
-  switch (skill) {
-    case "resilience":
-      return ["resilience", "fortitude"];
-    case "reflexes":
-      return ["reflexes", "reflexos"];
-    case "will":
-      return ["will", "vontade"];
-    default:
-      return [skill];
-  }
-}
-
-function getResistanceSkillLabel(skill: string): string {
-  switch (skill) {
-    case "resilience":
-      return "Fortitude";
-    case "reflexes":
-      return "Reflexos";
-    case "will":
-      return "Vontade";
-    default:
-      return skill;
-  }
-}
-
-function getPropertyByPath(source: unknown, path: string): unknown {
-  if (!source || typeof source !== "object") return undefined;
-
-  let current: unknown = source;
-
-  for (const part of path.split(".")) {
-    if (!current || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[part];
-  }
-
-  return current;
-}
-
-function toFiniteNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-
-  if (typeof value === "string" && value.trim().length > 0) {
-    const numeric = Number(value);
-    return Number.isFinite(numeric) ? numeric : null;
-  }
-
-  return null;
+function formatResistanceRollResult(result: ResistanceRollResultViewModel): string {
+  const diceBreakdown = result.diceBreakdown ? ` ${result.diceBreakdown}` : "";
+  return `${result.skillLabel}: ${result.formula}${diceBreakdown} = ${result.total}`;
 }
 
 async function showDiceAnimationIfAvailable(roll: Roll): Promise<void> {

@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.6`.
+Versão experimental atual: `v0.13.7`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -69,9 +69,9 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
-### 0.13.6 — Ajustes do botão de resistência
+### 0.13.7 — Rolagem correta de resistência
 
-A versão `0.13.6` ajusta o botão d20 do bloco de resistência: ele fica alinhado à direita do card e usa o ator da ação assistida como alvo preferencial da rolagem, evitando falha quando o nome do alvo aparece no card mas o contexto original do hook não trazia o ator diretamente.
+A versão `0.13.7` corrige o botão d20 do bloco de resistência para usar a rolagem nativa de perícia do sistema Ordem. Fortitude, Reflexos e Vontade agora são roladas pelo `actor.rollSkill` do sistema, sem criar outro card de chat e sem fallback silencioso para `1d20`.
 
 ### 0.13.4 — Polish do card de resistência
 
@@ -488,9 +488,11 @@ Resistência assistida inicial:
 - Os textos dos botões ficaram mais curtos e dependem do cabeçalho do card para indicar origem e alvo.
 - Essa base prepara o card para ações futuras, como rolar resistência e aplicar condições, sem empilhar `if` visual no fluxo de ritual.
 
-### 0.13.4 — botão d20 de resistência
+### 0.13.7 — botão d20 de resistência
 
 - adiciona botão compacto de d20 no bloco de Resistência do card assistido;
 - o mestre pode rolar a resistência do alvo diretamente pelo card;
+- usa o roller nativo de perícia do sistema Ordem, então Fortitude com Vigor 3 rola como teste real de Fortitude do sistema;
+- não cria um segundo card de chat só para a resistência;
 - após a rolagem, o botão mostra o resultado e o card exibe a fórmula usada;
 - ainda não compara automaticamente com DT do ritual.

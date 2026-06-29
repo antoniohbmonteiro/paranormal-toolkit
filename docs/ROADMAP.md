@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.13.6`.
+Versão base do roadmap: `v0.13.7`.
 
 O Toolkit já tem:
 
@@ -275,7 +275,7 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.12.4` | Concluído | Polimento de legibilidade do gerenciador de presets, foco em rituais aplicáveis/automatizados e botão Aplicar com destaque verde. |
 | `0.13.0` | Concluído | Resistência assistida inicial com opções de dano normal/metade para Eletrocussão. |
 | `0.13.4` | Concluído | Polish de layout do card de resistência assistida em cards estreitos. |
-| `0.13.6` | Concluído | Botão d20 para rolagem simples de resistência do alvo, ainda sem comparação automática de DT. |
+| `0.13.7` | Concluído | Botão d20 para rolagem correta de resistência do alvo usando o roller nativo de perícia do sistema Ordem, ainda sem comparação automática de DT. |
 | `0.13.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
 | `0.14.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
@@ -306,11 +306,12 @@ A versão `1.0.0` deve ter:
 
 
 
-## 0.13.6 — ajuste do botão d20 de resistência
+## 0.13.7 — rolagem correta de resistência
 
-- Alinha o botão d20 à direita do bloco de resistência.
-- Usa o ator da ação assistida como alvo preferencial da rolagem.
-- Mantém fallback por ator/token no canvas quando necessário.
+- O botão d20 do bloco de resistência usa o roller nativo de perícia do sistema Ordem.
+- Fortitude, Reflexos e Vontade são chamadas como perícias reais do alvo, respeitando atributo e proficiência do sistema.
+- Não existe fallback silencioso para `1d20`: se não for possível rolar pelo sistema, o Toolkit mostra erro.
+- O resultado aparece no próprio card do Toolkit e não cria outro card de chat.
 - Ainda não compara automaticamente com DT.
 
 ## 0.13.4 — Chat Action Sections
