@@ -192,6 +192,28 @@ export async function registerPendingItemUseAutomationPrompt(input: ItemUseAutom
   renderPromptIntoExistingChatLog(input.pendingId);
 }
 
+
+export async function registerCompletedItemUseAutomationCard(
+  input: Omit<ItemUseAutomationPromptInput, "actionPayload"> & { actionPayload?: null }
+): Promise<void> {
+  const prompt = createPendingPrompt({
+    ...input,
+    actionPayload: null
+  });
+
+  prompt.executed = true;
+  prompt.executedLabel = input.executedLabel ?? "✓ Ritual conjurado";
+  pendingPrompts.set(input.pendingId, prompt);
+
+  const persisted = await persistPromptInChatMessage(prompt);
+
+  if (!persisted) {
+    schedulePromptPersistenceRetry(prompt);
+  }
+
+  renderPromptIntoExistingChatLog(input.pendingId);
+}
+
 export async function unregisterPendingItemUseAutomationPrompt(pendingId: string, executedLabelOverride?: string): Promise<void> {
   const prompt = pendingPrompts.get(pendingId);
   pendingPrompts.delete(pendingId);

@@ -9,6 +9,8 @@ export type RitualCastVariantOption = {
   label: string;
   enabled: boolean;
   details: string[];
+  /** Texto já calculado com o custo final daquela forma. Ex.: "3 PE". */
+  finalCostText?: string | null;
   unavailableReason?: string;
 };
 

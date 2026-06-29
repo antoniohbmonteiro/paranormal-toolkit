@@ -15,6 +15,7 @@ import {
   findPersistedPromptByPendingId,
   markPersistedChoiceGroupAlternativesAsResolved,
   markPersistedPromptAsExecutedById,
+  registerCompletedItemUseAutomationCard,
   registerItemUseAutomationPromptRenderer,
   registerPendingItemUseAutomationPrompt,
   unregisterPendingItemUseAutomationPrompt,
@@ -107,6 +108,11 @@ export class ItemUseIntegration {
     const definition = readAutomationDefinition(context.item);
 
     if (!definition.ok) {
+      if (definition.error.reason === "missing-automation" && isRitualItem(context.item) && settings.executionMode === "ask") {
+        await this.handleGenericRitual(context);
+        return;
+      }
+
       const status = definition.error.reason === "missing-automation" ? "ignored" : "failed";
       this.setAttempt(context, status, definition.error.reason);
 
@@ -229,6 +235,28 @@ export class ItemUseIntegration {
     await this.createPendingWorkflowPrompt(context, definition);
   }
 
+  private async handleGenericRitual(context: ItemUseContext): Promise<void> {
+    await neutralizeAutomatedItemInlineRolls(context);
+
+    if (!context.actor) {
+      this.setAttempt(context, "failed", "missing-actor");
+      this.debugOutput.warn({
+        title: "Conjuração de ritual sem ator",
+        message: `Não foi possível resolver o ator para ${context.item.name}.`,
+        data: createAttemptSnapshot(context, "failed", "missing-actor")
+      });
+      return;
+    }
+
+    if (this.isDuplicate(context)) {
+      this.setAttempt(context, "skipped", "duplicate-window");
+      return;
+    }
+
+    this.markExecution(context);
+    await this.handleAssistedRitual(context, createGenericRitualDefinition(context.item));
+  }
+
   private async handleAssistedRitual(context: ItemUseContext, definition: AutomationDefinition): Promise<void> {
     this.setAttempt(context, "running", "ritual-assisted-cast");
 
@@ -248,6 +276,7 @@ export class ItemUseIntegration {
         ui.notifications?.warn(`Paranormal Toolkit: ${result.message}`);
         return;
       case "completed-without-actions":
+        await this.registerCompletedRitualCard(context, result.summaryLines);
         this.setAttempt(context, "completed", "ritual-assisted-no-actions");
         ModuleLogger.info("Ritual assistido concluído sem ações pendentes.", createWorkflowDebugSnapshot(result.workflowContext));
         return;
@@ -275,6 +304,22 @@ export class ItemUseIntegration {
         alternative.action.choiceGroupResolvedLabel ?? "✓ Outra opção escolhida"
       );
     }
+  }
+
+  private async registerCompletedRitualCard(context: ItemUseContext, summaryLines: string[]): Promise<void> {
+    const pendingId = createPendingExecutionId();
+
+    await registerCompletedItemUseAutomationCard({
+      pendingId,
+      context,
+      mode: "ask",
+      title: "Paranormal Toolkit · Ritual",
+      buttonLabel: "Ritual conjurado",
+      executedLabel: "✓ Ritual conjurado",
+      actionSectionId: "ritual-log",
+      actionSectionTitle: "Registro",
+      summaryLines
+    });
   }
 
   private async registerAssistedResourceActions(
@@ -419,6 +464,18 @@ export class ItemUseIntegration {
   private setAttempt(context: ItemUseContext, status: ItemUseIntegrationAttempt["status"], reason?: string, pendingId?: string): void {
     this.lastAttempt = createAttemptSnapshot(context, status, reason, pendingId);
   }
+}
+
+function isRitualItem(item: Item): boolean {
+  return item.type === "ritual";
+}
+
+function createGenericRitualDefinition(item: Item): AutomationDefinition {
+  return {
+    version: 1,
+    label: `Conjuração de ${item.name ?? "ritual"}`,
+    steps: [{ type: "spendRitualCost" }]
+  };
 }
 
 function createPersistedResourceActionPayload(action: AssistedResourceAction): PersistedResourceActionPayload {

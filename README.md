@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.12`.
+Versão experimental atual: `v0.14.0`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -23,7 +23,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Uso pela ficha | Escuta o hook `ordemparanormal.itemUsed` do sistema e reage ao uso normal de itens automatizados. | Implementado inicial |
 | Modo perguntar no chat | Ao usar um item automatizado, cria ações assistidas no card de chat em vez de aplicar imediatamente. | Implementado inicial |
 | Modo automático | Executa a automação diretamente ao usar o item. | Experimental |
-| Conjuração assistida de rituais | Abre popup para forma do ritual, gasto opcional de PE/PD, rola dados pelo Toolkit e cria ações reais de cura/dano no chat. | MVP implementado |
+| Conjuração geral de rituais | Abre ApplicationV2 para qualquer ritual, mostra forma/custo final, gasta PE/PD quando escolhido e usa automação assistida quando houver preset. | MVP implementado |
 | Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
 | Dice So Nice | Quando o módulo Dice So Nice está ativo, as rolagens do Toolkit são animadas em 3D sem criar mensagem extra no chat. | Implementado inicial |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
@@ -68,6 +68,21 @@ Rituais sem preset conhecido são ignorados no painel para evitar uma lista giga
 Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de agente com rituais.
 
 
+
+
+### 0.14.0 — Dialog geral de conjuração em ApplicationV2
+
+A versão `0.14.0` troca o popup legado de ritual por uma `ApplicationV2` própria. O Toolkit passa a abrir a tela de conjuração para qualquer ritual usado pela ficha: rituais com preset continuam usando a automação assistida; rituais sem preset geram um card persistente simples de conjuração e, se o jogador escolher, gastam o custo base de PE/PD.
+
+Decisões importantes:
+
+```txt
+- o popup nasce ApplicationV2;
+- o visual segue a mesma família do card de chat do Toolkit;
+- formas Discente/Verdadeiro só ficam habilitadas quando houver dado estruturado/preset;
+- o custo exibido por forma é sempre valor final, não "+2 PE" ou "+5 PE";
+- sem preset, o Toolkit não inventa fórmula, efeito ou custo extra.
+```
 
 ### 0.13.12 — Card persistente como fonte primária
 

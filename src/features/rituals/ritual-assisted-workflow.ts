@@ -17,7 +17,7 @@ import { executeAutomationResourceOperation } from "../../core/automation/automa
 import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
 import type { RitualCost } from "../../core/rituals/ritual-types";
 import type { ResourceEngine, ResourceOperationResult } from "../../core/resources/resource-engine";
-import type { WorkflowContext } from "../../core/workflow/workflow-context";
+import { createWorkflowContext, type WorkflowContext } from "../../core/workflow/workflow-context";
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { WorkflowRollResult } from "../../core/workflow/workflow-roll";
 import type { ItemUseContext } from "../item-use/item-use-context";
@@ -110,7 +110,8 @@ export class RitualAssistedWorkflow {
       targetNames: context.targets.map((target) => target.name),
       cost,
       defaultSpendResource: hasRitualOrExplicitCost(definition),
-      variantOptions
+      variantOptions,
+      automationStatus: isGenericRitualDefinition(definition) ? "generic" : "assisted"
     });
 
     if (!options) {
@@ -121,10 +122,11 @@ export class RitualAssistedWorkflow {
     const preparationDefinition = createPreparationDefinition(definition, options, form, cost);
 
     if (preparationDefinition.steps.length === 0) {
+      const workflowContext = createEmptyRitualWorkflowContext(context, options);
       return {
-        status: "failed",
-        reason: "empty-preparation",
-        message: "O ritual não possui custo ou rolagem para preparar antes das ações no chat."
+        status: "completed-without-actions",
+        workflowContext,
+        summaryLines: createRitualSummaryLines(definition, options, form, cost, workflowContext)
       };
     }
 
@@ -472,22 +474,15 @@ function createRitualSummaryLines(
 }
 
 function createCostSummaryLine(options: RitualCastOptions, form: AutomationRitualFormDefinition, cost: RitualCost | null): string {
-  const extraCost = form.extraCost ?? 0;
+  const finalCost = calculateFinalRitualCost(cost, form);
 
-  if (!cost) {
-    if (!options.spendResource) return "Custo: não gasto";
-    return extraCost > 0 ? `Custo: não resolvido (+${extraCost} extra)` : "Custo: não resolvido";
+  if (!finalCost) {
+    return options.spendResource ? "Custo: não resolvido" : "Custo: não gasto";
   }
 
-  if (!options.spendResource) {
-    return extraCost > 0 ? `Custo: ${cost.amount} ${cost.resource} + ${extraCost} extra não gasto` : `Custo: ${cost.amount} ${cost.resource} não gasto`;
-  }
-
-  if (extraCost > 0) {
-    return `Custo: ${cost.amount + extraCost} ${cost.resource} gasto (${cost.amount} base + ${extraCost} extra)`;
-  }
-
-  return `Custo: ${cost.amount} ${cost.resource} gasto`;
+  return options.spendResource
+    ? `Custo: ${finalCost.amount} ${finalCost.resource} gasto`
+    : `Custo: ${finalCost.amount} ${finalCost.resource} não gasto`;
 }
 
 function createRollSummaryLines(roll: WorkflowRollResult): string[] {
@@ -653,6 +648,7 @@ function createRitualCastVariantOptions(definition: AutomationDefinition, cost: 
       label: effectiveForm?.label ?? getRitualCastVariantLabel(variant),
       enabled,
       details: effectiveForm ? createVariantDetails(effectiveForm, cost) : [],
+      finalCostText: effectiveForm ? createFinalCostText(cost, effectiveForm) : null,
       unavailableReason: enabled ? undefined : "não disponível neste ritual"
     };
   });
@@ -666,13 +662,55 @@ function createVariantDetails(form: AutomationRitualFormDefinition, cost: Ritual
     details.push(formulas.join(", "));
   }
 
-  if (isPositiveNumber(form.extraCost)) {
-    details.push(cost ? `+${form.extraCost} ${cost.resource}` : `+${form.extraCost} PE/PD`);
-  } else {
-    details.push("custo base");
-  }
+  const finalCost = calculateFinalRitualCost(cost, form);
+  details.push(finalCost ? `Custo final: ${finalCost.amount} ${finalCost.resource}` : "Custo final não resolvido");
 
   return details;
+}
+
+
+function calculateFinalRitualCost(
+  cost: RitualCost | null,
+  form: AutomationRitualFormDefinition
+): { resource: RitualCost["resource"]; amount: number } | null {
+  if (!cost) return null;
+  return {
+    resource: cost.resource,
+    amount: cost.amount + (form.extraCost ?? 0)
+  };
+}
+
+function createFinalCostText(cost: RitualCost | null, form: AutomationRitualFormDefinition): string | null {
+  const finalCost = calculateFinalRitualCost(cost, form);
+  return finalCost ? `${finalCost.amount} ${finalCost.resource}` : null;
+}
+
+function isGenericRitualDefinition(definition: AutomationDefinition): boolean {
+  return (
+    !definition.ritualForms &&
+    !definition.resistance &&
+    definition.steps.length > 0 &&
+    definition.steps.every(isCostStep)
+  );
+}
+
+function createEmptyRitualWorkflowContext(context: ItemUseContext, options: RitualCastOptions): WorkflowContext {
+  return createWorkflowContext({
+    sourceActor: context.actor as Actor,
+    sourceToken: context.token,
+    item: context.item,
+    targets: context.targets,
+    flags: {
+      itemUse: {
+        source: context.source,
+        executionMode: "ask"
+      },
+      ritualCast: {
+        variant: options.variant,
+        spendResource: options.spendResource
+      }
+    }
+  });
 }
 
 function resolveRitualForm(definition: AutomationDefinition, variant: RitualCastVariant): AutomationRitualFormDefinition {

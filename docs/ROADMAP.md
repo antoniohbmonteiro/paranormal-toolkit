@@ -13,20 +13,21 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.13.12`.
+Versão base do roadmap: `v0.14.0`.
 
 O Toolkit já tem:
 
 - automações por flags próprias do módulo;
 - uso de item via hook `ordemparanormal.itemUsed`;
 - modo `ask` com ações assistidas no chat;
-- conjuração assistida de rituais;
+- conjuração geral de rituais em ApplicationV2;
 - formas estruturadas de ritual: Padrão, Discente e Verdadeiro;
 - presets iniciais para Cicatrização e Eletrocussão;
 - custo de PE/PD por ritual;
 - rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
 - card de resultado no chat com detalhes expansíveis da rolagem;
 - card assistido persistente, com opção de substituir visualmente o card original do sistema;
+- card simples persistente para rituais sem preset conhecido;
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais.
 
 ## Roadmap por prioridade
@@ -82,6 +83,30 @@ Decisão de produto:
 - o Toolkit não deve escolher automaticamente o resultado da resistência neste momento;
 - o mestre deve poder ignorar a sugestão e aplicar dano normal;
 - o cálculo sugerido deve ser visível, mas não autoritário.
+
+
+### Concluído em 0.14.0 — Dialog geral de ritual em ApplicationV2
+
+Objetivo: transformar o Toolkit no ponto de entrada da conjuração de rituais, mesmo quando ainda não existe preset de automação para aquele ritual.
+
+Entrega feita:
+
+- substituir o popup legado por uma `ApplicationV2`;
+- abrir a tela para qualquer item do tipo ritual no modo `ask`;
+- mostrar forma, custo final, conjurador e alvos;
+- manter Padrão/Discente/Verdadeiro como modelo estruturado, mas só habilitar formas com dados conhecidos;
+- exibir custo final por forma, sem texto de `+2 PE`/`+5 PE`;
+- para ritual com preset, seguir o workflow assistido existente;
+- para ritual sem preset, gastar custo base quando escolhido e registrar conjuração em card persistente.
+
+Critérios de aceitação:
+
+- clicar em Eletrocussão continua abrindo popup e criando card com dano/resistência;
+- clicar em ritual sem preset abre o mesmo popup visual;
+- se gastar recurso, o custo base é aplicado;
+- se não gastar recurso, o card registra `não gasto`;
+- F5 mantém o card simples ou assistido, conforme `flags.paranormal-toolkit.chatCard`;
+- Discente/Verdadeiro não exibem custo extra inventado quando não houver preset/configuração.
 
 ### P2 — Condition Engine MVP
 

@@ -947,3 +947,204 @@
 .paranormal-toolkit-item-use-prompt--system-card-replaced .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
   border-top: 0;
 }
+
+/* 0.14.0 — ApplicationV2 para conjuração geral de rituais */
+.paranormal-toolkit-ritual-cast-app .window-content {
+  padding: 0;
+}
+
+.paranormal-toolkit-ritual-cast {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  color: rgba(36, 27, 24, 0.94);
+}
+
+.paranormal-toolkit-ritual-cast__header {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(66, 47, 34, 0.22);
+  border-left: 4px solid rgba(89, 36, 42, 0.72);
+  border-radius: 9px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(32, 24, 22, 0.08), rgba(120, 102, 82, 0.08));
+}
+
+.paranormal-toolkit-ritual-cast__eyebrow {
+  margin: 0;
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-ritual-cast__header h2 {
+  margin: 0;
+  color: rgba(36, 27, 24, 0.96);
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+
+.paranormal-toolkit-ritual-cast__header p:last-child {
+  margin: 3px 0 0;
+  color: rgba(36, 27, 24, 0.72);
+  font-size: 0.86rem;
+}
+
+.paranormal-toolkit-ritual-cast__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(66, 47, 34, 0.18);
+  border-radius: 9px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.paranormal-toolkit-ritual-cast__panel h3 {
+  margin: 0;
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-ritual-cast__forms {
+  display: grid;
+  gap: 7px;
+}
+
+.paranormal-toolkit-ritual-cast__form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: start;
+  border: 1px solid rgba(66, 47, 34, 0.16);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.paranormal-toolkit-ritual-cast__form:hover,
+.paranormal-toolkit-ritual-cast__form:focus-within {
+  border-color: rgba(89, 36, 42, 0.34);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.paranormal-toolkit-ritual-cast__form input {
+  margin-top: 0.2rem;
+}
+
+.paranormal-toolkit-ritual-cast__form-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.paranormal-toolkit-ritual-cast__form-main strong {
+  color: rgba(36, 27, 24, 0.96);
+  font-size: 0.94rem;
+}
+
+.paranormal-toolkit-ritual-cast__form-main em {
+  color: rgba(36, 27, 24, 0.76);
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-ritual-cast__form-details {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.paranormal-toolkit-ritual-cast__form-details span {
+  border: 1px solid rgba(112, 85, 42, 0.16);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: rgba(112, 85, 42, 0.08);
+  color: rgba(36, 27, 24, 0.76);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.paranormal-toolkit-ritual-cast__form--disabled {
+  opacity: 0.56;
+}
+
+.paranormal-toolkit-ritual-cast__spend-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+}
+
+.paranormal-toolkit-ritual-cast__summary {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.paranormal-toolkit-ritual-cast__summary div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.paranormal-toolkit-ritual-cast__summary dt {
+  color: rgba(36, 27, 24, 0.68);
+  font-weight: 700;
+}
+
+.paranormal-toolkit-ritual-cast__summary dd {
+  margin: 0;
+  color: rgba(36, 27, 24, 0.92);
+  text-align: right;
+}
+
+.paranormal-toolkit-ritual-cast__automation p {
+  margin: 0;
+  color: rgba(36, 27, 24, 0.78);
+  line-height: 1.35;
+}
+
+.paranormal-toolkit-ritual-cast__automation--generic {
+  border-color: rgba(112, 85, 42, 0.2);
+}
+
+.paranormal-toolkit-ritual-cast__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.paranormal-toolkit-ritual-cast__footer button {
+  min-height: 32px;
+}
+
+.paranormal-toolkit-ritual-cast__cast-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: rgba(43, 109, 75, 0.5) !important;
+  background: #eef7f0 !important;
+  color: #245238 !important;
+  font-weight: 800;
+}
+
+.paranormal-toolkit-ritual-cast__cast-button:hover,
+.paranormal-toolkit-ritual-cast__cast-button:focus {
+  border-color: rgba(43, 109, 75, 0.62) !important;
+  background: #e2f1e6 !important;
+  color: #1d442e !important;
+}
