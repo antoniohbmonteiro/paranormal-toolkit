@@ -4,7 +4,7 @@ import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import { getItemUseSystemCardMode } from "./item-use-settings";
 import type { ItemUseContext } from "./item-use-context";
 
-const PROMPT_FLAG_KEY = "itemUsePrompts";
+const LEGACY_PROMPT_FLAG_KEY = "itemUsePrompts";
 const CHAT_CARD_FLAG_KEY = "chatCard";
 const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
@@ -352,7 +352,7 @@ function getRenderedChatMessageElements(): HTMLElement[] {
 function messageHasToolkitChatCard(message: ChatMessageFlagDocument | null): boolean {
   if (!message) return false;
   if (readToolkitChatCard(message)) return true;
-  return readPersistedPromptsFromMessage(message).length > 0;
+  return readLegacyPersistedPromptsFromMessage(message).length > 0;
 }
 
 function renderPromptIntoExistingChatLog(pendingId: string): void {
@@ -1259,12 +1259,6 @@ function findPromptsForMessage(message: unknown, root: HTMLElement): RenderableI
     }
   }
 
-  for (const prompt of readPersistedPromptsFromChatCard(message)) {
-    if (doesPromptMatchMessage(prompt, message, root) && !prompts.has(prompt.pendingId)) {
-      prompts.set(prompt.pendingId, prompt);
-    }
-  }
-
   for (const prompt of readPersistedPromptsFromMessage(message)) {
     if (doesPromptMatchMessage(prompt, message, root) && !prompts.has(prompt.pendingId)) {
       prompts.set(prompt.pendingId, prompt);
@@ -1418,15 +1412,31 @@ function readPersistedPromptsFromMessage(message: unknown): PersistedItemUseAuto
   return Object.values(readPersistedPromptMap(asChatMessageFlagDocument(message))).filter(isPersistedPrompt);
 }
 
-function readPersistedPromptsFromChatCard(message: unknown): PersistedItemUseAutomationPrompt[] {
-  const card = readToolkitChatCard(asChatMessageFlagDocument(message));
-  return card?.prompts ?? [];
-}
-
 function readPersistedPromptMap(message: ChatMessageFlagDocument | null): Record<string, PersistedItemUseAutomationPrompt> {
   if (!message) return {};
 
-  const value = message.getFlag?.(MODULE_ID, PROMPT_FLAG_KEY);
+  const prompts: Record<string, PersistedItemUseAutomationPrompt> = {};
+  const card = readToolkitChatCard(message);
+
+  for (const prompt of card?.prompts ?? []) {
+    prompts[prompt.pendingId] = prompt;
+  }
+
+  for (const [pendingId, prompt] of Object.entries(readLegacyPersistedPromptMap(message))) {
+    prompts[pendingId] ??= prompt;
+  }
+
+  return prompts;
+}
+
+function readLegacyPersistedPromptsFromMessage(message: unknown): PersistedItemUseAutomationPrompt[] {
+  return Object.values(readLegacyPersistedPromptMap(asChatMessageFlagDocument(message))).filter(isPersistedPrompt);
+}
+
+function readLegacyPersistedPromptMap(message: ChatMessageFlagDocument | null): Record<string, PersistedItemUseAutomationPrompt> {
+  if (!message) return {};
+
+  const value = message.getFlag?.(MODULE_ID, LEGACY_PROMPT_FLAG_KEY);
 
   if (!isRecord(value)) {
     return {};
@@ -1449,8 +1459,15 @@ async function writePersistedPromptMap(
 ): Promise<void> {
   if (typeof message.setFlag !== "function") return;
 
-  await Promise.resolve(message.setFlag(MODULE_ID, PROMPT_FLAG_KEY, prompts));
   await writeToolkitChatCard(message, prompts);
+  await writeLegacyPersistedPromptMap(message, prompts);
+}
+
+async function writeLegacyPersistedPromptMap(
+  message: ChatMessageFlagDocument,
+  prompts: Record<string, PersistedItemUseAutomationPrompt>
+): Promise<void> {
+  await Promise.resolve(message.setFlag?.(MODULE_ID, LEGACY_PROMPT_FLAG_KEY, prompts));
 }
 
 function readToolkitChatCard(message: ChatMessageFlagDocument | null): ToolkitChatCard | null {

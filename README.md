@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.10`.
+Versão experimental atual: `v0.13.12`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -69,17 +69,40 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+### 0.13.12 — Card persistente como fonte primária
+
+A versão `0.13.12` fecha a base do card assistido persistente: `flags.paranormal-toolkit.chatCard` passa a ser a fonte primária de leitura e escrita do card do Toolkit. A flag legada `flags.paranormal-toolkit.itemUsePrompts` ainda é mantida como espelho temporário para compatibilidade com mensagens antigas, mas o renderer e os fluxos pós-F5 devem depender do modelo estruturado do `chatCard`.
+
+Arquitetura do card persistente:
+
+```txt
+ChatMessage do sistema Ordem
+├─ content original do sistema, mantido como fallback
+└─ flags.paranormal-toolkit.chatCard
+   ├─ source: ator e item
+   ├─ prompts/actions persistidos
+   ├─ resultado de resistência
+   └─ estado executado/skipped dos botões
+```
+
+O modo **Manter** adiciona o card do Toolkit abaixo do card original. O modo **Substituir** troca apenas a renderização visual da mensagem; a `ChatMessage` original não é destruída.
+
+### 0.13.11 — Reidratação após F5
+
+A versão `0.13.11` corrige a reidratação visual dos cards já renderizados no histórico do chat. Após reload, o Toolkit varre as mensagens existentes no DOM, lê `flags.paranormal-toolkit.chatCard` e redesenha o card assistido respeitando a configuração de manter/substituir.
+
+
 ### 0.13.10 — Persistência robusta da ChatMessage
 
 A versão `0.13.10` corrige a gravação do card estruturado quando o hook do sistema não entrega uma `ChatMessage` resolvida imediatamente. O Toolkit agora procura a mensagem recém-criada no histórico do chat, tenta novamente por alguns segundos e grava `flags.paranormal-toolkit.chatCard` antes de depender do F5.
 
 ### 0.13.9 — Card persistente estruturado
 
-A versão `0.13.9` adicionou o modelo estruturado em `flags.paranormal-toolkit.chatCard`. A `0.13.10` corrige o ponto de escrita para garantir que a flag seja gravada na `ChatMessage` real.
+A versão `0.13.9` adicionou o modelo estruturado em `flags.paranormal-toolkit.chatCard`. A `0.13.10` corrigiu o ponto de escrita para garantir que a flag seja gravada na `ChatMessage` real. A `0.13.12` consolida essa flag como fonte primária do card.
 
 ### 0.13.8 — Card persistente e modo substituir
 
-A versão `0.13.8` adicionou a configuração para manter ou substituir visualmente o card original do sistema Ordem. A `0.13.10` corrige a base persistente para não depender de prompts em memória nem de mensagem resolvida cedo demais.
+A versão `0.13.8` adicionou a configuração para manter ou substituir visualmente o card original do sistema Ordem. A base atual usa `flags.paranormal-toolkit.chatCard` para não depender de prompts em memória nem de mensagem resolvida cedo demais.
 
 ### 0.13.7 — Rolagem correta de resistência
 
@@ -499,6 +522,21 @@ Resistência assistida inicial:
 - O renderer cria seções independentes, como **Aplicar danos**, **Aplicar cura** e **Aplicar recursos**.
 - Os textos dos botões ficaram mais curtos e dependem do cabeçalho do card para indicar origem e alvo.
 - Essa base prepara o card para ações futuras, como rolar resistência e aplicar condições, sem empilhar `if` visual no fluxo de ritual.
+
+### 0.13.12 — card persistente como fonte primária
+
+- `flags.paranormal-toolkit.chatCard` passa a ser a fonte primária do card assistido;
+- `flags.paranormal-toolkit.itemUsePrompts` continua existindo apenas como espelho legado temporário;
+- cards antigos que só tenham `itemUsePrompts` ainda podem ser lidos;
+- novos updates de resistência e botões escrevem o modelo estruturado do card antes do espelho legado;
+- essa base prepara o popup geral de rituais para gerar cards próprios sem depender do card visual do sistema.
+
+### 0.13.11 — reidratação do card após F5
+
+- agenda reidratação após o `ready`;
+- varre mensagens já renderizadas no chat;
+- redesenha o card do Toolkit a partir de `flags.paranormal-toolkit.chatCard`;
+- respeita o modo **Manter** ou **Substituir** depois do reload.
 
 ### 0.13.8 — card persistente e substituição visual
 

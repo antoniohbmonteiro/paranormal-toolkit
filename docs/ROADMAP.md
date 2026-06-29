@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.13.10`.
+Versão base do roadmap: `v0.13.12`.
 
 O Toolkit já tem:
 
@@ -280,8 +280,11 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.13.8` | Concluído | Setting para manter ou substituir visualmente o card original do sistema Ordem. |
 | `0.13.9` | Concluído | Modelo estruturado em flag de ChatMessage para reconstruir o card assistido após F5 e manter ações persistidas. |
 | `0.13.10` | Concluído | Escrita robusta do card estruturado na ChatMessage real, com busca por mensagem recente e retries quando o hook não entrega a mensagem resolvida. |
+| `0.13.11` | Concluído | Reidratação dos cards persistidos após F5, respeitando o modo manter/substituir. |
+| `0.13.12` | Concluído | `flags.paranormal-toolkit.chatCard` consolidado como fonte primária do card assistido, com `itemUsePrompts` mantido apenas como espelho legado temporário. |
+| `0.14.0` | P1 | Popup geral de conjuração em ApplicationV2 para qualquer ritual, com visual alinhado ao card do chat. |
 | `0.13.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
-| `0.14.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
+| `0.14.x` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
 | `0.14.0` | P2 | Permissões/visibilidade de ações no chat. |
 | `0.15.x` | P2 | UI de inspeção/configuração de automação do item. |
@@ -308,6 +311,22 @@ A versão `1.0.0` deve ter:
 - UX sem dependência de console para operações comuns;
 - documentação técnica separada para adapters, presets e condições.
 
+
+
+## 0.13.12 — chatCard como fonte primária
+
+- `flags.paranormal-toolkit.chatCard` vira a fonte primária para reconstruir e atualizar cards assistidos.
+- `flags.paranormal-toolkit.itemUsePrompts` permanece como espelho legado temporário para compatibilidade com mensagens antigas.
+- A leitura mescla `chatCard` primeiro e só usa `itemUsePrompts` como fallback.
+- A escrita atualiza o modelo estruturado antes do espelho legado.
+- Esta decisão evita depender de estado em memória, HTML persistido ou estrutura interna do card visual do sistema Ordem.
+
+## 0.13.11 — reidratação após F5
+
+- O Toolkit agenda reidratação do chat após registrar os hooks de render.
+- Mensagens já existentes no DOM são varridas por `data-message-id`.
+- Quando a `ChatMessage` possui `flags.paranormal-toolkit.chatCard`, o card assistido é reconstruído e os botões são religados.
+- O modo manter/substituir é respeitado depois do reload.
 
 
 ## 0.13.10 — escrita robusta do card estruturado
