@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.13.7`.
+Versão experimental atual: `v0.13.9`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -68,6 +68,14 @@ Rituais sem preset conhecido são ignorados no painel para evitar uma lista giga
 Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de agente com rituais.
 
 
+
+### 0.13.9 — Card persistente estruturado
+
+A versão `0.13.9` corrige a persistência real do card assistido: o Toolkit agora grava um modelo estruturado em `flags.paranormal-toolkit.chatCard`, reconstrói o card após F5, respeita o modo manter/substituir e mantém ações de dano/cura executáveis mesmo depois de recarregar a página.
+
+### 0.13.8 — Card persistente e modo substituir
+
+A versão `0.13.8` adicionou a configuração para manter ou substituir visualmente o card original do sistema Ordem. A `0.13.9` corrige a base persistente para não depender de prompts em memória.
 
 ### 0.13.7 — Rolagem correta de resistência
 
@@ -487,6 +495,13 @@ Resistência assistida inicial:
 - O renderer cria seções independentes, como **Aplicar danos**, **Aplicar cura** e **Aplicar recursos**.
 - Os textos dos botões ficaram mais curtos e dependem do cabeçalho do card para indicar origem e alvo.
 - Essa base prepara o card para ações futuras, como rolar resistência e aplicar condições, sem empilhar `if` visual no fluxo de ritual.
+
+### 0.13.8 — card persistente e substituição visual
+
+- adiciona setting de mundo para o card original do sistema: **Manter card original** ou **Substituir pelo card do Toolkit**;
+- em modo substituir, o conteúdo visual da mensagem é trocado pelo card persistente do Toolkit sem apagar a `ChatMessage`;
+- o render do chat usa as flags persistidas para reconstruir o card após F5;
+- o resultado da rolagem de resistência continua persistido no card.
 
 ### 0.13.7 — botão d20 de resistência
 

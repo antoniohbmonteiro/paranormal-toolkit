@@ -1,4 +1,5 @@
 import type { AutomationDefinition } from "../../core/automation/automation-definition";
+import { executeAutomationResourceOperation } from "../../core/automation/automation-resource-executor";
 import type { AutomationRunFailure } from "../../core/automation/automation-runner";
 import { ModuleLogger } from "../../core/module-logger";
 import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
@@ -11,9 +12,13 @@ import { readAutomationDefinition } from "../automation/automation-flag-reader";
 import { neutralizeAutomatedItemInlineRolls } from "../chat/inline-roll-sanitizer";
 import { type AssistedResourceAction, RitualAssistedWorkflow } from "../rituals/ritual-assisted-workflow";
 import {
+  findPersistedPromptByPendingId,
+  markPersistedChoiceGroupAlternativesAsResolved,
+  markPersistedPromptAsExecutedById,
   registerItemUseAutomationPromptRenderer,
   registerPendingItemUseAutomationPrompt,
-  unregisterPendingItemUseAutomationPrompt
+  unregisterPendingItemUseAutomationPrompt,
+  type PersistedResourceActionPayload
 } from "./item-use-automation-prompt";
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import { getItemUseSettings, type ItemUseSettingsSnapshot } from "./item-use-settings";
@@ -63,7 +68,7 @@ export class ItemUseIntegration {
 
   constructor(
     private readonly workflow: WorkflowEngine,
-    resources: ResourceEngine,
+    private readonly resources: ResourceEngine,
     ritualCosts: RitualCostProvider,
     private readonly debugOutput: DebugOutputService
   ) {
@@ -149,8 +154,7 @@ export class ItemUseIntegration {
     const pending = this.pendingExecutions.get(pendingId);
 
     if (!pending) {
-      ui.notifications?.warn("Paranormal Toolkit: automação pendente não encontrada ou já executada.");
-      return false;
+      return this.executePersistedPendingAutomation(pendingId);
     }
 
     if (pending.kind === "workflow") {
@@ -172,6 +176,39 @@ export class ItemUseIntegration {
     await unregisterPendingItemUseAutomationPrompt(pendingId);
     await this.resolveAlternativeResourceActions(pending);
     this.setAttempt(pending.context, "completed");
+
+    return true;
+  }
+
+  private async executePersistedPendingAutomation(pendingId: string): Promise<boolean> {
+    const lookup = findPersistedPromptByPendingId(pendingId);
+
+    if (!lookup?.prompt.actionPayload) {
+      ui.notifications?.warn("Paranormal Toolkit: automação pendente não encontrada ou já executada.");
+      return false;
+    }
+
+    const action = lookup.prompt.actionPayload;
+    const actor = resolvePersistedActionActor(action);
+
+    if (!actor) {
+      ui.notifications?.warn(`Paranormal Toolkit: não consegui encontrar ${action.actorName} para aplicar a ação persistida.`);
+      return false;
+    }
+
+    const result = await executeAutomationResourceOperation(this.resources, actor, action.resource, action.operation, action.amount);
+
+    if (!result.ok) {
+      this.handleResourceActionFailure(result);
+      return false;
+    }
+
+    await markPersistedPromptAsExecutedById(pendingId);
+    await markPersistedChoiceGroupAlternativesAsResolved(
+      pendingId,
+      lookup.prompt.choiceGroupId,
+      lookup.prompt.skippedLabel ?? "✓ Outra opção escolhida"
+    );
 
     return true;
   }
@@ -275,7 +312,8 @@ export class ItemUseIntegration {
         summaryLines,
         resistanceTargetActor: action.actor,
         resistanceTargetActorId: action.actor.id ?? null,
-        resistanceTargetName: action.actorName
+        resistanceTargetName: action.actorName,
+        actionPayload: createPersistedResourceActionPayload(action)
       });
     }
 
@@ -381,6 +419,107 @@ export class ItemUseIntegration {
   private setAttempt(context: ItemUseContext, status: ItemUseIntegrationAttempt["status"], reason?: string, pendingId?: string): void {
     this.lastAttempt = createAttemptSnapshot(context, status, reason, pendingId);
   }
+}
+
+function createPersistedResourceActionPayload(action: AssistedResourceAction): PersistedResourceActionPayload {
+  return {
+    kind: "resource-operation",
+    actorId: action.actor.id ?? null,
+    actorUuid: action.actor.uuid ?? null,
+    actorName: action.actorName,
+    resource: action.resource,
+    operation: action.operation,
+    amount: action.amount
+  };
+}
+
+function resolvePersistedActionActor(action: PersistedResourceActionPayload): Actor | null {
+  const byUuid = action.actorUuid ? fromUuidSyncSafe(action.actorUuid) : null;
+  if (isActorLike(byUuid)) return byUuid;
+
+  const byId = action.actorId ? resolveActorById(action.actorId) : null;
+  if (byId) return byId;
+
+  return resolveActorByName(action.actorName);
+}
+
+function fromUuidSyncSafe(uuid: string): unknown {
+  const fromUuidSync = (globalThis as { fromUuidSync?: (uuid: string) => unknown }).fromUuidSync;
+  if (typeof fromUuidSync !== "function") return null;
+
+  try {
+    return fromUuidSync(uuid);
+  } catch {
+    return null;
+  }
+}
+
+function resolveActorById(actorId: string): Actor | null {
+  const actors = game.actors as { get?: (id: string) => unknown } | undefined;
+  const actor = actors?.get?.(actorId);
+  if (isActorLike(actor)) return actor;
+
+  for (const token of getCanvasTokens()) {
+    const tokenActor = resolveTokenActor(token);
+    if (tokenActor?.id === actorId) return tokenActor;
+  }
+
+  return null;
+}
+
+function resolveActorByName(actorName: string): Actor | null {
+  const normalizedName = normalizeLookupName(actorName);
+  if (!normalizedName) return null;
+
+  for (const token of getCanvasTokens()) {
+    const tokenName = getTokenName(token);
+    if (normalizeLookupName(tokenName) === normalizedName) {
+      const actor = resolveTokenActor(token);
+      if (actor) return actor;
+    }
+  }
+
+  const actors = game.actors as { find?: (predicate: (actor: unknown) => boolean) => unknown } | undefined;
+  const actor = actors?.find?.((candidate) => isActorLike(candidate) && normalizeLookupName(candidate.name) === normalizedName);
+
+  return isActorLike(actor) ? actor : null;
+}
+
+function getCanvasTokens(): unknown[] {
+  const placeables = (canvas as { tokens?: { placeables?: unknown[] } } | undefined)?.tokens?.placeables;
+  return Array.isArray(placeables) ? placeables : [];
+}
+
+function getTokenName(token: unknown): string | null {
+  if (!token || typeof token !== "object") return null;
+
+  const directName = (token as { name?: unknown }).name;
+  if (typeof directName === "string") return directName;
+
+  const documentName = (token as { document?: { name?: unknown } }).document?.name;
+  if (typeof documentName === "string") return documentName;
+
+  const actor = resolveTokenActor(token);
+  return actor?.name ?? null;
+}
+
+function resolveTokenActor(value: unknown): Actor | null {
+  if (!value || typeof value !== "object") return null;
+
+  const actor = (value as { actor?: unknown }).actor;
+  if (isActorLike(actor)) return actor;
+
+  const documentActor = (value as { document?: { actor?: unknown } }).document?.actor;
+  return isActorLike(documentActor) ? documentActor : null;
+}
+
+function normalizeLookupName(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toLocaleLowerCase();
+  return normalized && normalized.length > 0 ? normalized : null;
+}
+
+function isActorLike(value: unknown): value is Actor {
+  return Boolean(value && typeof value === "object" && "system" in value);
 }
 
 function createAttemptSnapshot(

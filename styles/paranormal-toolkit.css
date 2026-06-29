@@ -932,3 +932,18 @@
 .paranormal-toolkit-item-use-prompt__resistance-header {
   width: 100%;
 }
+
+/* 0.13.8 — modo de substituição do card original do sistema */
+.paranormal-toolkit-item-use-prompt--system-card-replaced .message-content,
+.paranormal-toolkit-item-use-prompt__host--system-card-replaced {
+  display: flex;
+  flex-direction: column;
+}
+
+.paranormal-toolkit-item-use-prompt__host--system-card-replaced > .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
+  margin-top: 0;
+}
+
+.paranormal-toolkit-item-use-prompt--system-card-replaced .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
+  border-top: 0;
+}

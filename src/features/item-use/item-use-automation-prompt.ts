@@ -1,9 +1,11 @@
 import { MODULE_ID } from "../../constants";
 import { getResistanceSkillLabel, rollOrdemResistance } from "../../adapters/ordem/ordem-resistance-roll-adapter";
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
+import { getItemUseSystemCardMode } from "./item-use-settings";
 import type { ItemUseContext } from "./item-use-context";
 
 const PROMPT_FLAG_KEY = "itemUsePrompts";
+const CHAT_CARD_FLAG_KEY = "chatCard";
 const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const PENDING_ID_ATTRIBUTE = "data-paranormal-toolkit-pending-id";
 const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
@@ -20,6 +22,7 @@ const RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-resistance-ski
 const RESISTANCE_TARGET_ACTOR_ID_ATTRIBUTE = "data-paranormal-toolkit-resistance-target-actor-id";
 const RESISTANCE_TARGET_NAME_ATTRIBUTE = "data-paranormal-toolkit-resistance-target-name";
 const RESISTANCE_ROLL_RESULT_ATTRIBUTE = "data-paranormal-toolkit-resistance-roll-result";
+const PROMPT_HOST_REPLACED_ATTRIBUTE = "data-paranormal-toolkit-system-card-replaced";
 const BUTTON_SELECTOR = `[${PENDING_ID_ATTRIBUTE}]`;
 const ROLL_DETAIL_TOGGLE_SELECTOR = `[${ROLL_DETAIL_TOGGLE_ATTRIBUTE}]`;
 const RESISTANCE_ROLL_BUTTON_SELECTOR = `[${RESISTANCE_ROLL_BUTTON_ATTRIBUTE}]`;
@@ -31,6 +34,16 @@ const PROMPT_SUMMARY_CLASS = `${PROMPT_CLASS}__summary`;
 const PROMPT_TITLE_CLASS = `${PROMPT_CLASS}__title`;
 const PROMPT_EXECUTED_BUTTON_CLASS = `${PROMPT_CLASS}__button--executed`;
 const PROMPT_ROLL_CARD_CLASS = `${PROMPT_CLASS}__roll-card`;
+
+export type PersistedResourceActionPayload = {
+  kind: "resource-operation";
+  actorId: string | null;
+  actorUuid: string | null;
+  actorName: string;
+  resource: "PV" | "SAN" | "PE" | "PD";
+  operation: "damage" | "heal" | "recover" | "spend";
+  amount: number;
+};
 
 export type ItemUseAutomationPromptInput = {
   pendingId: string;
@@ -47,6 +60,7 @@ export type ItemUseAutomationPromptInput = {
   resistanceTargetActor?: Actor | null;
   resistanceTargetActorId?: string | null;
   resistanceTargetName?: string | null;
+  actionPayload?: PersistedResourceActionPayload | null;
 };
 
 export type ItemUseAutomationPromptHandler = (pendingId: string) => Promise<boolean>;
@@ -70,6 +84,7 @@ type RenderableItemUseAutomationPrompt = {
   resistanceTargetActorId: string | null;
   resistanceTargetName: string | null;
   resistanceRollResult?: ResistanceRollResultViewModel | null;
+  actionPayload?: PersistedResourceActionPayload | null;
   summary: string;
   executed: boolean;
 };
@@ -78,6 +93,25 @@ type PendingItemUseAutomationPrompt = ItemUseAutomationPromptInput & RenderableI
 
 type PersistedItemUseAutomationPrompt = RenderableItemUseAutomationPrompt & {
   schemaVersion: 1;
+};
+
+type ToolkitChatCard = {
+  schemaVersion: 1;
+  kind: "item-use";
+  createdAt: number;
+  messageId: string | null;
+  source: {
+    actorId: string | null;
+    actorName: string | null;
+    itemId: string | null;
+    itemName: string | null;
+  };
+  prompts: PersistedItemUseAutomationPrompt[];
+};
+
+export type PersistedPromptLookupResult = {
+  message: ChatMessageFlagDocument;
+  prompt: PersistedItemUseAutomationPrompt;
 };
 
 type ChatMessageFlagDocument = {
@@ -152,6 +186,64 @@ export async function unregisterPendingItemUseAutomationPrompt(pendingId: string
   await markPersistedPromptAsExecuted(prompt, executedLabelOverride);
 }
 
+export function findPersistedPromptByPendingId(pendingId: string): PersistedPromptLookupResult | null {
+  const messages = getChatMessages();
+
+  for (const message of messages) {
+    const prompt = readPersistedPromptMap(message)[pendingId];
+    if (prompt) return { message, prompt };
+  }
+
+  return null;
+}
+
+export async function markPersistedPromptAsExecutedById(pendingId: string, executedLabelOverride?: string): Promise<void> {
+  const lookup = findPersistedPromptByPendingId(pendingId);
+  if (!lookup) return;
+
+  const prompts = readPersistedPromptMap(lookup.message);
+  const persisted = prompts[pendingId];
+  if (!persisted) return;
+
+  prompts[pendingId] = {
+    ...persisted,
+    executedLabel: executedLabelOverride ?? persisted.executedLabel,
+    executed: true
+  };
+
+  await writePersistedPromptMap(lookup.message, prompts);
+}
+
+export async function markPersistedChoiceGroupAlternativesAsResolved(
+  selectedPendingId: string,
+  choiceGroupId: string | null | undefined,
+  skippedLabel: string | null | undefined
+): Promise<void> {
+  if (!choiceGroupId) return;
+
+  const lookup = findPersistedPromptByPendingId(selectedPendingId);
+  if (!lookup) return;
+
+  const prompts = readPersistedPromptMap(lookup.message);
+  let changed = false;
+
+  for (const [pendingId, prompt] of Object.entries(prompts)) {
+    if (pendingId === selectedPendingId) continue;
+    if (prompt.choiceGroupId !== choiceGroupId) continue;
+
+    prompts[pendingId] = {
+      ...prompt,
+      executedLabel: skippedLabel ?? prompt.skippedLabel ?? "✓ Outra opção escolhida",
+      executed: true
+    };
+    changed = true;
+  }
+
+  if (changed) {
+    await writePersistedPromptMap(lookup.message, prompts);
+  }
+}
+
 function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUseAutomationPrompt {
   const messageId = getDocumentId(input.context.message);
   const contextTarget = input.context.targets.find((target) => resolveTargetActor(target));
@@ -174,6 +266,7 @@ function createPendingPrompt(input: ItemUseAutomationPromptInput): PendingItemUs
     resistanceTargetActorId: input.resistanceTargetActorId ?? resistanceTargetActor?.id ?? null,
     resistanceTargetName,
     resistanceRollResult: null,
+    actionPayload: input.actionPayload ?? null,
     choiceGroupId: input.choiceGroupId ?? null,
     skippedLabel: input.skippedLabel ?? null,
     actionSectionId: input.actionSectionId ?? null,
@@ -195,6 +288,10 @@ function renderPendingPromptsIntoChatMessage(
 
   const prompts = findPromptsForMessage(message, root);
 
+  if (prompts.length > 0) {
+    preparePromptRootForToolkitRendering(root);
+  }
+
   for (const prompt of prompts) {
     appendPromptToRoot(root, prompt);
   }
@@ -211,6 +308,8 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
   const messageElement = prompt.messageId ? findRenderedChatMessageById(prompt.messageId) : null;
 
   if (messageElement) {
+    void persistPromptInRenderedChatMessage(messageElement, prompt);
+    preparePromptRootForToolkitRendering(messageElement);
     appendPromptToRoot(messageElement, prompt);
     bindPromptButtonsIfPossible(messageElement);
     bindRollDetailToggles(messageElement);
@@ -223,6 +322,8 @@ function renderPromptIntoExistingChatLog(pendingId: string): void {
   const matchedElement = findRenderedChatMessageByItem(prompt);
 
   if (matchedElement) {
+    void persistPromptInRenderedChatMessage(matchedElement, prompt);
+    preparePromptRootForToolkitRendering(matchedElement);
     appendPromptToRoot(matchedElement, prompt);
     bindPromptButtonsIfPossible(matchedElement);
     bindRollDetailToggles(matchedElement);
@@ -235,7 +336,40 @@ function bindPromptButtonsIfPossible(root: HTMLElement): void {
   bindPromptButtons(root, promptHandler);
 }
 
+function preparePromptRootForToolkitRendering(root: HTMLElement): void {
+  const shouldReplace = shouldReplaceSystemCard();
+  root.classList.toggle(`${PROMPT_CLASS}--system-card-replaced`, shouldReplace);
+
+  const host = findMessageContentHost(root);
+  if (!host) return;
+
+  host.classList.toggle(`${PROMPT_CLASS}__host--system-card-replaced`, shouldReplace);
+
+  if (!shouldReplace) return;
+  if (host.getAttribute(PROMPT_HOST_REPLACED_ATTRIBUTE) === "true") return;
+
+  const existingToolkitSection = host.querySelector<HTMLElement>(`.${ENRICHMENT_CLASS}`);
+
+  if (existingToolkitSection) {
+    host.replaceChildren(existingToolkitSection);
+  } else {
+    host.replaceChildren();
+  }
+
+  host.setAttribute(PROMPT_HOST_REPLACED_ATTRIBUTE, "true");
+}
+
+function shouldReplaceSystemCard(): boolean {
+  try {
+    return getItemUseSystemCardMode() === "replace";
+  } catch {
+    return false;
+  }
+}
+
 function appendPromptToRoot(root: HTMLElement, prompt: RenderableItemUseAutomationPrompt): void {
+  preparePromptRootForToolkitRendering(root);
+
   if (root.querySelector(`[${PROMPT_ID_ATTRIBUTE}="${escapeCssAttributeValue(prompt.pendingId)}"]`)) return;
 
   const section = getOrCreateToolkitSection(root, prompt);
@@ -295,14 +429,14 @@ function appendPromptContent(section: HTMLElement, prompt: RenderableItemUseAuto
   const rollCard = createRollCard(summaryLines, prompt);
 
   if (rollCard) {
-    appendRollCard(section, rollCard, prompt.pendingId);
+    appendRollCard(section, rollCard, prompt);
     return;
   }
 
   appendSummaryLines(section, summaryLines);
 }
 
-function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, promptId: string): void {
+function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, prompt: RenderableItemUseAutomationPrompt): void {
   if (section.querySelector(`[${ROLL_CARD_ATTRIBUTE}="true"]`)) return;
 
   const article = document.createElement("article");
@@ -328,7 +462,7 @@ function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, promptId
   article.append(summary);
   appendRollMeta(article, rollCard);
   appendResistanceHint(article, rollCard, prompt);
-  appendRollDetails(article, rollCard, promptId);
+  appendRollDetails(article, rollCard, prompt.pendingId);
 
   section.append(article);
 }
@@ -608,7 +742,12 @@ function createTargetText(context: ItemUseContext): string {
 }
 
 function findPromptHost(root: HTMLElement): HTMLElement {
-  return root.querySelector<HTMLElement>(".message-content") ?? root;
+  return findMessageContentHost(root) ?? root;
+}
+
+function findMessageContentHost(root: HTMLElement): HTMLElement | null {
+  if (root.classList.contains("message-content")) return root;
+  return root.querySelector<HTMLElement>(".message-content");
 }
 
 function bindPromptButtons(html: unknown, handler: ItemUseAutomationPromptHandler): void {
@@ -1060,6 +1199,12 @@ function findPromptsForMessage(message: unknown, root: HTMLElement): RenderableI
     }
   }
 
+  for (const prompt of readPersistedPromptsFromChatCard(message)) {
+    if (doesPromptMatchMessage(prompt, message, root) && !prompts.has(prompt.pendingId)) {
+      prompts.set(prompt.pendingId, prompt);
+    }
+  }
+
   for (const prompt of readPersistedPromptsFromMessage(message)) {
     if (doesPromptMatchMessage(prompt, message, root) && !prompts.has(prompt.pendingId)) {
       prompts.set(prompt.pendingId, prompt);
@@ -1127,13 +1272,26 @@ function pruneExpiredPrompts(): void {
   }
 }
 
+async function persistPromptInRenderedChatMessage(root: HTMLElement, prompt: PendingItemUseAutomationPrompt): Promise<void> {
+  const message = resolveChatMessageDocumentFromRoot(root);
+  if (!message) return;
+
+  try {
+    const prompts = readPersistedPromptMap(message);
+    prompts[prompt.pendingId] = toPersistedPrompt(prompt, getDocumentId(message));
+    await writePersistedPromptMap(message, prompts);
+  } catch (cause) {
+    console.warn("Paranormal Toolkit: não foi possível persistir card assistido no chat renderizado.", cause);
+  }
+}
+
 async function persistPromptInChatMessage(prompt: PendingItemUseAutomationPrompt): Promise<void> {
   const message = resolveChatMessageDocument(prompt.context.message);
   if (!message) return;
 
   try {
     const prompts = readPersistedPromptMap(message);
-    prompts[prompt.pendingId] = toPersistedPrompt(prompt);
+    prompts[prompt.pendingId] = toPersistedPrompt(prompt, getDocumentId(message));
 
     await writePersistedPromptMap(message, prompts);
   } catch (cause) {
@@ -1147,7 +1305,7 @@ async function markPersistedPromptAsExecuted(prompt: PendingItemUseAutomationPro
 
   try {
     const prompts = readPersistedPromptMap(message);
-    const persisted = prompts[prompt.pendingId] ?? toPersistedPrompt(prompt);
+    const persisted = prompts[prompt.pendingId] ?? toPersistedPrompt(prompt, getDocumentId(message));
 
     prompts[prompt.pendingId] = {
       ...persisted,
@@ -1163,6 +1321,11 @@ async function markPersistedPromptAsExecuted(prompt: PendingItemUseAutomationPro
 
 function readPersistedPromptsFromMessage(message: unknown): PersistedItemUseAutomationPrompt[] {
   return Object.values(readPersistedPromptMap(asChatMessageFlagDocument(message))).filter(isPersistedPrompt);
+}
+
+function readPersistedPromptsFromChatCard(message: unknown): PersistedItemUseAutomationPrompt[] {
+  const card = readToolkitChatCard(asChatMessageFlagDocument(message));
+  return card?.prompts ?? [];
 }
 
 function readPersistedPromptMap(message: ChatMessageFlagDocument | null): Record<string, PersistedItemUseAutomationPrompt> {
@@ -1192,9 +1355,53 @@ async function writePersistedPromptMap(
   if (typeof message.setFlag !== "function") return;
 
   await Promise.resolve(message.setFlag(MODULE_ID, PROMPT_FLAG_KEY, prompts));
+  await writeToolkitChatCard(message, prompts);
 }
 
-function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt): PersistedItemUseAutomationPrompt {
+function readToolkitChatCard(message: ChatMessageFlagDocument | null): ToolkitChatCard | null {
+  if (!message) return null;
+  const value = message.getFlag?.(MODULE_ID, CHAT_CARD_FLAG_KEY);
+  return isToolkitChatCard(value) ? value : null;
+}
+
+async function writeToolkitChatCard(
+  message: ChatMessageFlagDocument,
+  prompts: Record<string, PersistedItemUseAutomationPrompt>
+): Promise<void> {
+  if (typeof message.setFlag !== "function") return;
+
+  const promptList = Object.values(prompts).filter(isPersistedPrompt).sort((left, right) => left.createdAt - right.createdAt);
+  if (promptList.length === 0) return;
+
+  const firstPrompt = promptList[0];
+  if (!firstPrompt) return;
+
+  const card: ToolkitChatCard = {
+    schemaVersion: 1,
+    kind: "item-use",
+    createdAt: Math.min(...promptList.map((prompt) => prompt.createdAt)),
+    messageId: firstPrompt.messageId ?? getDocumentId(message) ?? null,
+    source: {
+      actorId: firstPrompt.actorId,
+      actorName: readSourceNameFromSummary(firstPrompt.summary),
+      itemId: firstPrompt.itemId,
+      itemName: firstPrompt.itemName
+    },
+    prompts: promptList
+  };
+
+  await Promise.resolve(message.setFlag(MODULE_ID, CHAT_CARD_FLAG_KEY, card));
+}
+
+function readSourceNameFromSummary(summary: string): string | null {
+  const separator = "→";
+  if (!summary.includes(separator)) return summary.trim() || null;
+
+  const source = summary.split(separator)[0]?.trim();
+  return source && source.length > 0 ? source : null;
+}
+
+function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt, messageIdOverride?: string | null): PersistedItemUseAutomationPrompt {
   return {
     schemaVersion: 1,
     pendingId: prompt.pendingId,
@@ -1204,13 +1411,14 @@ function toPersistedPrompt(prompt: PendingItemUseAutomationPrompt): PersistedIte
     executedLabel: prompt.executedLabel,
     summaryLines: prompt.summaryLines ? [...prompt.summaryLines] : undefined,
     createdAt: prompt.createdAt,
-    messageId: prompt.messageId,
+    messageId: messageIdOverride ?? prompt.messageId,
     itemId: prompt.itemId,
     actorId: prompt.actorId,
     itemName: prompt.itemName,
     resistanceTargetActorId: prompt.resistanceTargetActorId,
     resistanceTargetName: prompt.resistanceTargetName,
     resistanceRollResult: prompt.resistanceRollResult ?? null,
+    actionPayload: prompt.actionPayload ?? null,
     choiceGroupId: prompt.choiceGroupId ?? null,
     skippedLabel: prompt.skippedLabel ?? null,
     actionSectionId: prompt.actionSectionId ?? null,
@@ -1255,6 +1463,7 @@ function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationP
     isOptionalNullableString(value.resistanceTargetActorId) &&
     isOptionalNullableString(value.resistanceTargetName) &&
     isOptionalResistanceRollResult(value.resistanceRollResult) &&
+    isOptionalPersistedResourceActionPayload(value.actionPayload) &&
     isOptionalString(value.title) &&
     isOptionalString(value.buttonLabel) &&
     isOptionalString(value.executedLabel) &&
@@ -1263,6 +1472,48 @@ function isPersistedPrompt(value: unknown): value is PersistedItemUseAutomationP
     isOptionalNullableString(value.actionSectionId) &&
     isOptionalNullableString(value.actionSectionTitle) &&
     isOptionalStringArray(value.summaryLines)
+  );
+}
+
+function isOptionalPersistedResourceActionPayload(value: unknown): value is PersistedResourceActionPayload | null | undefined {
+  if (value === undefined || value === null) return true;
+  if (!isRecord(value)) return false;
+
+  return (
+    value.kind === "resource-operation" &&
+    isNullableString(value.actorId) &&
+    isNullableString(value.actorUuid) &&
+    typeof value.actorName === "string" &&
+    isResourceName(value.resource) &&
+    isResourceOperation(value.operation) &&
+    typeof value.amount === "number" &&
+    Number.isFinite(value.amount)
+  );
+}
+
+function isResourceName(value: unknown): value is PersistedResourceActionPayload["resource"] {
+  return value === "PV" || value === "SAN" || value === "PE" || value === "PD";
+}
+
+function isResourceOperation(value: unknown): value is PersistedResourceActionPayload["operation"] {
+  return value === "damage" || value === "heal" || value === "recover" || value === "spend";
+}
+
+function isToolkitChatCard(value: unknown): value is ToolkitChatCard {
+  if (!isRecord(value)) return false;
+
+  return (
+    value.schemaVersion === 1 &&
+    value.kind === "item-use" &&
+    typeof value.createdAt === "number" &&
+    isNullableString(value.messageId) &&
+    isRecord(value.source) &&
+    isNullableString(value.source.actorId) &&
+    isNullableString(value.source.actorName) &&
+    isNullableString(value.source.itemId) &&
+    isNullableString(value.source.itemName) &&
+    Array.isArray(value.prompts) &&
+    value.prompts.every(isPersistedPrompt)
   );
 }
 
@@ -1277,7 +1528,8 @@ function isOptionalResistanceRollResult(value: unknown): value is ResistanceRoll
     typeof value.total === "number" &&
     Number.isFinite(value.total) &&
     typeof value.targetName === "string" &&
-    typeof value.usedFallbackBonus === "boolean" &&
+    isOptionalNullableString(value.diceBreakdown) &&
+    (value.usedFallbackBonus === undefined || typeof value.usedFallbackBonus === "boolean") &&
     typeof value.rolledAt === "string"
   );
 }
@@ -1308,6 +1560,24 @@ function isOptionalStringArray(value: unknown): value is string[] | undefined {
 
 function isNonEmptyString(value: string | null): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+function getChatMessages(): ChatMessageFlagDocument[] {
+  const messages = game.messages as unknown;
+
+  if (!messages || typeof messages !== "object") return [];
+
+  const contents = (messages as { contents?: unknown }).contents;
+  if (Array.isArray(contents)) {
+    return contents.map(asChatMessageFlagDocument).filter((message): message is ChatMessageFlagDocument => message !== null);
+  }
+
+  const values = (messages as { values?: () => Iterable<unknown> }).values;
+  if (typeof values === "function") {
+    return Array.from(values.call(messages)).map(asChatMessageFlagDocument).filter((message): message is ChatMessageFlagDocument => message !== null);
+  }
+
+  return [];
 }
 
 function resolveRootElement(html: unknown): HTMLElement | null {

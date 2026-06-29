@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.13.7`.
+Versão base do roadmap: `v0.13.9`.
 
 O Toolkit já tem:
 
@@ -26,6 +26,7 @@ O Toolkit já tem:
 - custo de PE/PD por ritual;
 - rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
 - card de resultado no chat com detalhes expansíveis da rolagem;
+- card assistido persistente, com opção de substituir visualmente o card original do sistema;
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais.
 
 ## Roadmap por prioridade
@@ -276,6 +277,8 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.13.0` | Concluído | Resistência assistida inicial com opções de dano normal/metade para Eletrocussão. |
 | `0.13.4` | Concluído | Polish de layout do card de resistência assistida em cards estreitos. |
 | `0.13.7` | Concluído | Botão d20 para rolagem correta de resistência do alvo usando o roller nativo de perícia do sistema Ordem, ainda sem comparação automática de DT. |
+| `0.13.8` | Concluído | Setting para manter ou substituir visualmente o card original do sistema Ordem. |
+| `0.13.9` | Concluído | Modelo estruturado em flag de ChatMessage para reconstruir o card assistido após F5 e manter ações persistidas. |
 | `0.13.x` | P2 | Ajustes de hook pré-chat e bloqueio visual de rolagem inline duplicada. |
 | `0.14.0` | P2 | Condition Engine MVP com Active Effects informativos e flags próprias. |
 | `0.13.x` | P2 | Abalado evolui para Apavorado ao reaplicar na mesma cena. |
@@ -305,6 +308,20 @@ A versão `1.0.0` deve ter:
 - documentação técnica separada para adapters, presets e condições.
 
 
+
+## 0.13.9 — card persistente estruturado
+
+- `flags.paranormal-toolkit.chatCard` passa a guardar o modelo estruturado do card assistido.
+- O renderer reconstrói o card a partir da flag após F5.
+- Ações de dano/cura persistidas continuam executáveis após reload.
+- O modo manter/substituir passa a depender da presença do card persistente, não de estado em memória.
+
+## 0.13.8 — card persistente e substituição visual
+
+- Setting de mundo para escolher se o card original do sistema deve ser mantido ou substituído pelo card persistente do Toolkit.
+- O modo substituir limpa apenas o conteúdo visual renderizado da mensagem; a `ChatMessage` original continua existindo.
+- O card do Toolkit é reconstruído pelas flags persistidas da mensagem, inclusive após F5.
+- O resultado da resistência rolada permanece no card quando a mensagem é renderizada novamente.
 
 ## 0.13.7 — rolagem correta de resistência
 
