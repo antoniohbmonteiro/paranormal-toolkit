@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.15.6`.
+Versão experimental atual: `v0.16.0`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -73,6 +73,13 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.16.0 — Refactor interno do card de item use
+
+- Separa a lógica incremental do card de item use em módulos menores por responsabilidade: registro, DOM, dados de rolagem, metadados de ritual, resistência e estilos.
+- Mantém o ponto de entrada antigo `registerItemUseWorkflowDiceToggle` apenas como compatibilidade interna.
+- Preserva o comportamento visual da série 0.15.x sem mudar regra, custo, resistência ou botões.
+- Prepara a base para melhorar o fluxo de ritual genérico sem continuar inflando um único arquivo de renderer/hidratação.
 
 ### 0.15.6 — Ajuste fino do bloco de resistência
 

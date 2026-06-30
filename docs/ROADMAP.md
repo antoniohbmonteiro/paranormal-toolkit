@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.15.6`.
+Versão base do roadmap: `v0.16.0`.
 
 O Toolkit já tem:
 
@@ -28,6 +28,7 @@ O Toolkit já tem:
 - card de resultado no chat com dados brutos expansíveis pela fórmula da rolagem;
 - metadados de ritual no cabeçalho do card usando badge de elemento/círculo e chips de custo, alvo, duração e resistência;
 - bloco de resistência com coluna reservada para o botão d20, sem a descrição invadir a área da ação;
+- card de item use com hidratação incremental separada em módulos menores por responsabilidade;
 - card assistido persistente, com opção de substituir visualmente o card original do sistema;
 - card simples persistente para rituais sem preset conhecido;
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
@@ -90,6 +91,26 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.16.0 — Refactor interno do card de item use
+
+Objetivo: preparar a base para melhorar o ritual genérico sem continuar acumulando leitura de flags, manipulação de DOM, metadados, resistência e dados de rolagem em um único arquivo.
+
+Entrega feita:
+
+- extração do ponto de entrada de enhancers do card para `src/features/item-use/chat-card/`;
+- separação de responsabilidades entre registro/hydration, utilitários DOM, rolagens expansíveis, metadados de ritual, layout de resistência e remoção de detalhes legados;
+- manutenção do entrypoint antigo `registerItemUseWorkflowDiceToggle` como delegador para evitar mexer em `main.ts` nesta etapa;
+- nenhuma mudança funcional intencional no card: Eletrocussão, Cicatrização, rituais sem preset, F5 do chat e botões assistidos devem continuar iguais.
+
+Critérios de aceitação:
+
+- Eletrocussão Padrão/Discente/Verdadeiro continua exibindo o mesmo card;
+- Cicatrização continua exibindo cura e botões esperados;
+- ritual sem preset continua abrindo o fluxo genérico atual;
+- dados da rolagem continuam escondidos por padrão e abrem ao clicar na fórmula;
+- metadados de ritual continuam no cabeçalho do card;
+- bloco de resistência continua com coluna reservada para o botão d20.
 
 ### Concluído em 0.15.6 — Layout do bloco de resistência
 
