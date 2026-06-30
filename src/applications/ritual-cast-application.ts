@@ -20,6 +20,7 @@ type RitualCastResolution = (value: RitualCastOptions | null) => void;
 export class RitualCastApplication extends ApplicationV2 {
   private readonly model: RitualCastDialogModel;
   private selectedVariant: RitualCastVariant = "base";
+  private spendResource = true;
   private isResolved = false;
 
   static DEFAULT_OPTIONS = {
@@ -61,6 +62,7 @@ export class RitualCastApplication extends ApplicationV2 {
 
     this.model = createRitualCastDialogModel(input);
     this.selectedVariant = this.model.forms.find((form) => form.checked && form.enabled)?.variant ?? "base";
+    this.spendResource = this.model.cost.spendResourceChecked;
   }
 
   async _renderHTML(_context: object, _options: object): Promise<HTMLElement> {
@@ -76,6 +78,9 @@ export class RitualCastApplication extends ApplicationV2 {
     const root = content.querySelector<HTMLElement>(".paranormal-toolkit-ritual-cast") ?? content;
     bindVariantSelection(root, (variant) => {
       this.selectedVariant = variant;
+    });
+    bindSpendResourceToggle(root, (spendResource) => {
+      this.spendResource = spendResource;
     });
   }
 
@@ -136,7 +141,7 @@ export class RitualCastApplication extends ApplicationV2 {
     event.preventDefault();
 
     const root = resolveActionRoot(event);
-    const options = readOptionsFromRoot(root, this.input.defaultSpendResource, this.selectedVariant);
+    const options = readOptionsFromRoot(root, this.spendResource, this.selectedVariant);
 
     this.settle(options);
     await this.close();
@@ -235,13 +240,23 @@ function updateVariantCardState(root: HTMLElement): RitualCastVariant | null {
   return selectedVariant;
 }
 
+function bindSpendResourceToggle(root: HTMLElement, onSpendResourceChanged: (spendResource: boolean) => void): void {
+  const input = root.querySelector<HTMLInputElement>('input[name="spendResource"]');
+  if (!input) return;
+
+  onSpendResourceChanged(input.checked);
+  input.addEventListener("change", () => {
+    onSpendResourceChanged(input.checked);
+  });
+}
+
 function readOptionsFromRoot(
   root: HTMLElement | null,
-  defaultSpendResource: boolean,
+  fallbackSpendResource: boolean,
   fallbackVariant: RitualCastVariant
 ): RitualCastOptions {
   const variant = readVariant(root) ?? fallbackVariant;
-  const spendResource = root?.querySelector<HTMLInputElement>('input[name="spendResource"]')?.checked ?? defaultSpendResource;
+  const spendResource = root?.querySelector<HTMLInputElement>('input[name="spendResource"]')?.checked ?? fallbackSpendResource;
 
   return {
     variant,

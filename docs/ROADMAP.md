@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.16.4`.
+Versão base do roadmap: `v0.16.5`.
 
 O Toolkit já tem:
 
@@ -96,11 +96,11 @@ Decisão de produto:
 
 
 
-### Concluído em 0.16.4 — Seleção de forma preservada na conjuração
+### Concluído em 0.16.5 — Estado explícito de conjuração
 
-- O popup mantém a forma selecionada no estado da aplicação além do radio escondido.
-- O fluxo de conjuração passa a receber corretamente Padrão, Discente ou Verdadeiro ao confirmar.
-- Corrige gasto de PE de Discente/Verdadeiro caindo para o custo base em rituais assistidos e genéricos.
+- O popup mantém a forma selecionada e a opção de gastar recurso no estado da aplicação além dos inputs escondidos/visuais.
+- O fluxo de conjuração passa a normalizar `spendResource` antes de preparar custo, rolagem e card.
+- Quando “Gastar ao conjurar” está desmarcado, steps de custo e custo extra de forma são ignorados mesmo se o ator estiver com 0 PE/PD.
 
 ### Concluído em 0.16.3 — Seleção robusta de forma no popup de conjuração
 

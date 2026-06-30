@@ -140,12 +140,13 @@ export class RitualAssistedWorkflow {
       return { status: "cancelled" };
     }
 
-    const form = resolveRitualForm(definition, context.item, options.variant, isGenericRitual);
+    const castOptions = normalizeRitualCastOptions(options);
+    const form = resolveRitualForm(definition, context.item, castOptions.variant, isGenericRitual);
     const shouldRollCastingCheck = getRitualCastingCheckEnabled();
     let castingCheck: RitualCastingCheckSummary | null = null;
 
     if (shouldRollCastingCheck) {
-      const costResult = await spendRitualCostForCastingAttempt(this.resources, context.actor as Actor, options, form, cost);
+      const costResult = await spendRitualCostForCastingAttempt(this.resources, context.actor as Actor, castOptions, form, cost);
 
       if (!costResult.ok) {
         return {
@@ -167,27 +168,27 @@ export class RitualAssistedWorkflow {
       }
 
       if (!castingCheck.success) {
-        const workflowContext = createEmptyRitualWorkflowContext(context, options);
+        const workflowContext = createEmptyRitualWorkflowContext(context, castOptions);
         return {
           status: "completed-without-actions",
           workflowContext,
-          summaryLines: createRitualSummaryLines(definition, options, form, cost, workflowContext, castingCheck, {
+          summaryLines: createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck, {
             effectStopped: true
           })
         };
       }
     }
 
-    const preparationDefinition = createPreparationDefinition(definition, options, form, cost, {
+    const preparationDefinition = createPreparationDefinition(definition, castOptions, form, cost, {
       includeCostSteps: !shouldRollCastingCheck
     });
 
     if (preparationDefinition.steps.length === 0) {
-      const workflowContext = createEmptyRitualWorkflowContext(context, options);
+      const workflowContext = createEmptyRitualWorkflowContext(context, castOptions);
       return {
         status: "completed-without-actions",
         workflowContext,
-        summaryLines: createRitualSummaryLines(definition, options, form, cost, workflowContext, castingCheck)
+        summaryLines: createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck)
       };
     }
 
@@ -202,8 +203,8 @@ export class RitualAssistedWorkflow {
           executionMode: "ask"
         },
         ritualCast: {
-          variant: options.variant,
-          spendResource: options.spendResource
+          variant: castOptions.variant,
+          spendResource: castOptions.spendResource
         }
       }
     });
@@ -219,7 +220,7 @@ export class RitualAssistedWorkflow {
 
     const workflowContext = runResult.value.context;
     const actionResult = createAssistedResourceActions(definition, context, workflowContext);
-    const summaryLines = createRitualSummaryLines(definition, options, form, cost, workflowContext, castingCheck);
+    const summaryLines = createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck);
 
     if (!actionResult.ok) {
       return {
@@ -261,6 +262,13 @@ export class RitualAssistedWorkflow {
   }
 }
 
+function normalizeRitualCastOptions(options: RitualCastOptions): RitualCastOptions {
+  return {
+    variant: options.variant,
+    spendResource: options.spendResource === true
+  };
+}
+
 function createPreparationDefinition(
   definition: AutomationDefinition,
   options: RitualCastOptions,
@@ -269,15 +277,16 @@ function createPreparationDefinition(
   buildOptions: RitualPreparationBuildOptions
 ): RitualPreparationDefinition {
   const steps: RitualPreparationStep[] = [];
+  const shouldSpendResource = options.spendResource === true;
 
   for (const step of definition.steps) {
     if (step.type === "modifyResource" || step.type === "chatCard") continue;
-    if (isCostStep(step) && (!buildOptions.includeCostSteps || !options.spendResource)) continue;
+    if (isCostStep(step) && (!buildOptions.includeCostSteps || !shouldSpendResource)) continue;
 
     steps.push(applyFormOverridesToStep(step, form));
   }
 
-  if (buildOptions.includeCostSteps && options.spendResource && cost && isPositiveNumber(form.extraCost)) {
+  if (buildOptions.includeCostSteps && shouldSpendResource && cost && isPositiveNumber(form.extraCost)) {
     steps.push({
       type: "spendResource",
       actor: "self",
@@ -300,7 +309,7 @@ async function spendRitualCostForCastingAttempt(
   form: AutomationRitualFormDefinition,
   cost: RitualCost | null
 ): Promise<{ ok: true } | { ok: false; reason: string; message: string }> {
-  if (!options.spendResource) return { ok: true };
+  if (options.spendResource !== true) return { ok: true };
 
   const finalCost = calculateFinalRitualCost(cost, form);
 
