@@ -428,9 +428,8 @@ function createAssistedConditionActions(
       };
     }
 
-    const durationAnchor = createCurrentCombatDurationAnchor(itemUseContext.actor as Actor | null);
-
     for (const actor of actors) {
+      const durationAnchor = createCurrentCombatDurationAnchor(actor);
       actions.push(createAssistedConditionAction(application, actor, itemUseContext.item, durationAnchor));
     }
   }

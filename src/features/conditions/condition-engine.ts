@@ -1,7 +1,12 @@
 import { MODULE_ID } from "../../constants";
 import { failure, type Result, success } from "../../core/result";
 import type { ToolkitConditionDefinition } from "./condition-definition";
-import { resolveConditionDuration, type ToolkitConditionDurationInput, type ToolkitConditionExpiryEvent } from "./condition-duration";
+import {
+  resolveConditionDuration,
+  type ToolkitConditionDurationInput,
+  type ToolkitConditionDurationMode,
+  type ToolkitConditionExpiryEvent
+} from "./condition-duration";
 import { ConditionRegistry } from "./condition-registry";
 
 export type ApplyConditionInput = {
@@ -160,7 +165,7 @@ type ToolkitConditionEffectFlag = {
   startRound: number | null;
   startTurn: number | null;
   expiryEvent: ToolkitConditionExpiryEvent | null;
-  durationMode: "none" | "sourceTurn";
+  durationMode: ToolkitConditionDurationMode;
   deleteOnExpire: boolean;
   expiresWithCombat: boolean;
 };
@@ -175,7 +180,7 @@ type ToolkitConditionEffectMetadata = {
   startRound: number | null;
   startTurn: number | null;
   expiryEvent: ToolkitConditionExpiryEvent | null;
-  durationMode: "none" | "sourceTurn";
+  durationMode: ToolkitConditionDurationMode;
   deleteOnExpire: boolean;
   expiresWithCombat: boolean;
 };
@@ -229,7 +234,7 @@ export class ConditionEngine {
     }
 
     const definition = definitionResult.value;
-    const duration = resolveConditionDuration(input.duration);
+    const duration = resolveConditionDuration(input.duration, actor);
     const effectData = createActiveEffectData(definition, input, duration);
     const refreshExisting = input.refreshExisting ?? true;
     const existing = refreshExisting ? findToolkitConditionEffect(actor, definition.id) : null;
@@ -458,18 +463,18 @@ function shouldRemoveExpiredToolkitCondition(
     return Boolean(input.combatId && metadata.combatId === input.combatId);
   }
 
-  if (isEffectMarkedExpiredByFoundry(effect)) return true;
-
   const combat = getActiveCombat();
+
+  if (metadata.durationMode === "combatantTurn") {
+    return isCombatantTurnDurationExpired(metadata, combat);
+  }
+
+  if (isEffectMarkedExpiredByFoundry(effect)) return true;
 
   if (!combat?.id) return true;
   if (metadata.combatId && metadata.combatId !== combat.id) return true;
   if (!isPositiveInteger(metadata.startRound) || !isPositiveInteger(metadata.requestedRounds)) return false;
   if (!isPositiveInteger(combat.round)) return false;
-
-  if (metadata.durationMode === "sourceTurn") {
-    return isSourceTurnDurationExpired(metadata, combat);
-  }
 
   return combat.round >= metadata.startRound + metadata.requestedRounds;
 }
@@ -490,7 +495,9 @@ function isEffectMarkedExpiredByFoundry(effect: ActiveEffectLike): boolean {
   return typeof remaining === "number" && Number.isFinite(remaining) && remaining <= 0;
 }
 
-function isSourceTurnDurationExpired(metadata: ToolkitConditionEffectMetadata, combat: CombatLike): boolean {
+function isCombatantTurnDurationExpired(metadata: ToolkitConditionEffectMetadata, combat: CombatLike | null): boolean {
+  if (!combat?.id) return true;
+  if (metadata.combatId && metadata.combatId !== combat.id) return true;
   if (!isPositiveInteger(metadata.startRound) || !isPositiveInteger(metadata.requestedRounds)) return false;
   if (!isPositiveInteger(combat.round)) return false;
 
@@ -649,7 +656,9 @@ function readExpiryEventFlag(effect: ActiveEffectLike, key: string): ToolkitCond
 }
 
 function readDurationModeFlag(effect: ActiveEffectLike, key: string): ToolkitConditionEffectMetadata["durationMode"] {
-  return effect.getFlag?.(MODULE_ID, key) === "sourceTurn" ? "sourceTurn" : "none";
+  const value = effect.getFlag?.(MODULE_ID, key);
+  if (value === "combatantTurn" || value === "sourceTurn") return "combatantTurn";
+  return "none";
 }
 
 function readBooleanFlag(effect: ActiveEffectLike, key: string): boolean {

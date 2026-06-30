@@ -1,7 +1,9 @@
 export type ToolkitConditionExpiryEvent = "turnStart" | "turnEnd";
 
+export type ToolkitConditionDurationMode = "none" | "combatantTurn";
+
 export type ToolkitConditionDurationAnchor = {
-  mode: "sourceTurn";
+  mode: "combatantTurn" | "sourceTurn";
   combatId: string;
   combatantId: string | null;
   round: number;
@@ -27,7 +29,7 @@ export type ToolkitConditionDurationResolution = {
   startRound: number | null;
   startTurn: number | null;
   expiryEvent: ToolkitConditionExpiryEvent | null;
-  durationMode: "none" | "sourceTurn";
+  durationMode: ToolkitConditionDurationMode;
   warning: string | null;
 };
 
@@ -49,7 +51,8 @@ type CombatantLike = {
 };
 
 export function resolveConditionDuration(
-  input: ToolkitConditionDurationInput | null | undefined
+  input: ToolkitConditionDurationInput | null | undefined,
+  anchorActor?: Actor | null
 ): ToolkitConditionDurationResolution {
   const rounds = normalizeRounds(input?.rounds);
 
@@ -57,7 +60,7 @@ export function resolveConditionDuration(
     return createEmptyDurationResolution(null);
   }
 
-  const anchor = input?.anchor ?? createCurrentCombatDurationAnchor();
+  const anchor = input?.anchor ?? createCurrentCombatDurationAnchor(anchorActor);
 
   if (!anchor) {
     return {
@@ -69,19 +72,12 @@ export function resolveConditionDuration(
   const expiryEvent = input?.expiry ?? "turnStart";
 
   return {
-    duration: {
-      value: rounds,
-      units: "rounds",
-      expiry: expiryEvent
-    },
-    start: {
-      combat: anchor.combatId,
-      combatant: anchor.combatantId,
-      initiative: anchor.initiative,
-      round: anchor.round,
-      turn: anchor.turn,
-      time: anchor.time
-    },
+    // Importante: não usamos a duração nativa do Foundry para esse modo.
+    // No sistema de Ordem, "1 rodada" precisa expirar no próximo turno do combatente ancorado.
+    // O Foundry estava marcando o efeito como expirado já na virada da rodada, então a duração
+    // real fica sob controle do ConditionEngine via flags + cleanup pós-turno.
+    duration: {},
+    start: {},
     requestedRounds: rounds,
     combatDurationApplied: true,
     combatId: anchor.combatId,
@@ -90,24 +86,24 @@ export function resolveConditionDuration(
     startRound: anchor.round,
     startTurn: anchor.turn,
     expiryEvent,
-    durationMode: "sourceTurn",
+    durationMode: "combatantTurn",
     warning: null
   };
 }
 
-export function createCurrentCombatDurationAnchor(sourceActor?: Actor | null): ToolkitConditionDurationAnchor | null {
+export function createCurrentCombatDurationAnchor(anchorActor?: Actor | null): ToolkitConditionDurationAnchor | null {
   const combat = getActiveCombat();
 
   if (!combat?.id || !isPositiveInteger(combat.round)) return null;
 
   const combatants = getCombatants(combat);
-  const sourceCombatant = resolveSourceCombatant(combat, sourceActor, combatants) ?? getActiveCombatant(combat);
-  const combatantId = readString((sourceCombatant as CombatantLike | null)?.id);
-  const initiative = readFiniteNumber((sourceCombatant as CombatantLike | null)?.initiative);
-  const startTurn = resolveCombatantTurn(combat, sourceCombatant, combatants);
+  const anchorCombatant = resolveActorCombatant(anchorActor, combatants) ?? getActiveCombatant(combat);
+  const combatantId = readString((anchorCombatant as CombatantLike | null)?.id);
+  const initiative = readFiniteNumber((anchorCombatant as CombatantLike | null)?.initiative);
+  const startTurn = resolveCombatantTurn(combat, anchorCombatant, combatants);
 
   return {
-    mode: "sourceTurn",
+    mode: "combatantTurn",
     combatId: combat.id,
     combatantId,
     round: combat.round,
@@ -134,17 +130,12 @@ function createEmptyDurationResolution(requestedRounds: number | null): ToolkitC
   };
 }
 
-function resolveSourceCombatant(
-  combat: CombatLike,
-  sourceActor: Actor | null | undefined,
+function resolveActorCombatant(
+  actor: Actor | null | undefined,
   combatants: CombatantLike[]
 ): CombatantLike | null {
-  if (!sourceActor?.id) return null;
-
-  const activeCombatant = getActiveCombatant(combat);
-  if (activeCombatant && getCombatantActorId(activeCombatant) === sourceActor.id) return activeCombatant;
-
-  return combatants.find((combatant) => getCombatantActorId(combatant) === sourceActor.id) ?? null;
+  if (!actor?.id) return null;
+  return combatants.find((combatant) => getCombatantActorId(combatant) === actor.id) ?? null;
 }
 
 function resolveCombatantTurn(

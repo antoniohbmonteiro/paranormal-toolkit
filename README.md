@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.17.6`.
+Versão experimental atual: `v0.17.7`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -77,12 +77,12 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
-### 0.17.6 — Duração de condição por turno de origem
+### 0.17.7 — Duração de condição por turno do afetado
 
-- Atualiza a duração de condições em combate para usar o modelo v14 de Active Effects: `duration.value`, `duration.units`, `duration.expiry` e `start`.
-- Condições com duração em rodadas passam a expirar no início do turno de origem, usando `expiry: "turnStart"`.
-- A ação assistida da Eletrocussão captura o combatente de origem na conjuração, não no momento em que o mestre clica no botão.
-- O cleanup defensivo do Toolkit deixa de remover efeito de 1 rodada assim que a rodada vira; ele espera voltar ao turno do conjurador/origem.
+- Corrige a expiração de condições de 1 rodada para não sair na simples virada da rodada.
+- O Toolkit passa a controlar a duração por flags próprias, sem depender da expiração nativa do Foundry para esse caso.
+- A ação assistida da Eletrocussão ancora a duração no combatente que recebeu a condição.
+- Vulnerável aplicado no Amendoim, por exemplo, permanece após a virada da rodada e sai no início do próximo turno do Amendoim.
 - Fora de combate, a duração por rodadas continua sendo ignorada com aviso, evitando criar uma expiração ambígua.
 
 ### 0.17.5 — Catálogo inicial de condições

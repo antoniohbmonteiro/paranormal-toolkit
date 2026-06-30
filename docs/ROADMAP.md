@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.6`.
+Versão base do roadmap: `v0.17.7`.
 
 O Toolkit já tem:
 
@@ -37,7 +37,7 @@ O Toolkit já tem:
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
-- Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, duração por turno de origem usando Active Effects v14, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
+- Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, duração por turno do afetado usando flags próprias, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
 
 ## Roadmap por prioridade
 
@@ -99,16 +99,16 @@ Decisão de produto:
 
 
 
-### Concluído em 0.17.6 — Duração por turno de origem
+### Concluído em 0.17.7 — Duração por turno do afetado
 
-Objetivo: alinhar condições de 1 rodada com a regra prática de mesa: o efeito sai quando volta no turno de quem gerou a condição.
+Objetivo: alinhar condições de 1 rodada com a expectativa prática da mesa: o efeito permanece após a virada da rodada e sai no início do próximo turno do combatente afetado.
 
 Entrega feita:
 
-- usa o modelo de duração de Active Effects do Foundry v14 com `value`, `units`, `expiry` e `start`;
-- condições com duração em rodadas usam `expiry: "turnStart"` por padrão;
-- ações assistidas de ritual capturam a âncora de combate na conjuração, evitando que o clique tardio do mestre mude a duração;
-- o cleanup defensivo do Toolkit remove o efeito quando chega no turno de origem após o número de rodadas solicitado;
+- deixa de usar a expiração nativa do Foundry para condições com duração em rodadas controladas pelo Toolkit;
+- registra round, turno, iniciativa e combatente afetado nas flags do Active Effect;
+- ações assistidas de ritual ancoram a duração no ator que recebeu a condição;
+- o cleanup defensivo remove o efeito quando chega no turno do afetado após o número de rodadas solicitado;
 - mantém fallback seguro fora de combate, onde duração por rodadas é ignorada com aviso.
 
 Critérios de aceitação:
