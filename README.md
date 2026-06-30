@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.15.3`.
+Versão experimental atual: `v0.15.6`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -71,6 +71,28 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+
+
+### 0.15.6 — Ajuste fino do bloco de resistência
+
+- Reorganiza o bloco de resistência em duas colunas: conteúdo à esquerda e botão de rolagem à direita.
+- Garante que a descrição da resistência não avance para a área reservada ao botão d20.
+- Alinha título, descrição e resultado de resistência com espaçamento consistente.
+
+### 0.15.5 — Correção de hierarquia visual dos metadados de ritual
+
+- Move os chips de custo, alvo, duração e resistência para o cabeçalho do card, junto do nome/forma e do alvo selecionado.
+- Mantém as seções de workflow focadas apenas em conjuração, dano/cura/efeito e resistência assistida.
+- Garante o estilo do badge de elemento/círculo e dos chips mesmo em cards reidratados do chat.
+
+### 0.15.4 — Metadados de ritual no topo do card
+
+- Move os metadados do ritual para o topo do card, antes das seções de conjuração e dano.
+- Remove a tag de forma duplicada, já que a forma aparece no título do card.
+- Exibe o elemento/círculo como badge principal abaixo do nome do ritual.
+- Adiciona chips compactos para custo gasto, alvo de regra, duração e resistência.
+- Usa dados estruturados do `chatCard` e do `item.system` do ritual, sem depender do HTML do card original do sistema.
 
 ### 0.15.3 — Dados da rolagem sob demanda no card de ritual
 

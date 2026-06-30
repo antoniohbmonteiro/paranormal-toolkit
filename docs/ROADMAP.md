@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.15.3`.
+Versão base do roadmap: `v0.15.6`.
 
 O Toolkit já tem:
 
@@ -26,6 +26,8 @@ O Toolkit já tem:
 - custo de PE/PD por ritual;
 - rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
 - card de resultado no chat com dados brutos expansíveis pela fórmula da rolagem;
+- metadados de ritual no cabeçalho do card usando badge de elemento/círculo e chips de custo, alvo, duração e resistência;
+- bloco de resistência com coluna reservada para o botão d20, sem a descrição invadir a área da ação;
 - card assistido persistente, com opção de substituir visualmente o card original do sistema;
 - card simples persistente para rituais sem preset conhecido;
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
@@ -88,12 +90,34 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.15.6 — Layout do bloco de resistência
+
+- O bloco de resistência passa a reservar uma coluna própria para o botão de rolagem.
+- O título, a descrição e o resultado da resistência ficam agrupados na coluna esquerda.
+- A descrição não atravessa por baixo do botão d20, mantendo leitura e clique mais previsíveis em cards estreitos.
+
 ### Concluído em 0.15.3 — Card de ritual mais compacto
 
 - O bloco de detalhes duplicados das seções de workflow foi removido visualmente.
 - A fórmula da rolagem virou o controle de expansão dos dados brutos.
 - O card fechado mantém apenas o essencial: seção, status, resumo, fórmula e total.
 - O card aberto mostra somente as pílulas dos dados rolados, sem repetir resultado, DT ou fórmula.
+
+
+### Concluído em 0.15.5 — Metadados fora do workflow
+
+- Os chips de custo, alvo, duração e resistência passam a ficar no cabeçalho do card, abaixo do resumo de origem → alvo selecionado.
+- O workflow deixa de ser esticado por metadados do ritual; ele fica reservado para conjuração, dano/cura/efeito e resistência assistida.
+- O badge de elemento/círculo mantém cor por elemento: Energia, Sangue, Morte, Conhecimento e Medo.
+
+### Concluído em 0.15.4 — Hierarquia visual do card de ritual
+
+- O elemento/círculo do ritual passa a aparecer como badge principal abaixo do nome do ritual.
+- As tags de regra ficam acima do workflow: custo gasto, alvo, duração e resistência.
+- A tag de forma foi removida porque a forma já aparece no título do card.
+- As cores dos elementos seguem a identidade visual do sistema: Energia roxo, Sangue vermelho, Morte escuro, Conhecimento dourado e Medo cinza/prata.
+- A leitura de alvo, duração, resistência e elemento usa dados estruturados do `chatCard` e do `item.system`, não scraping do HTML do card original.
 
 ### Concluído em 0.15.0 — Teste de Ocultismo em rituais
 

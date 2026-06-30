@@ -32,3 +32,128 @@
   font-size: 0.62rem;
   opacity: 0.72;
 }
+
+/* 0.15.4 — Metadados estruturados do ritual no topo do card */
+.paranormal-toolkit-item-use-prompt__header .paranormal-toolkit-item-use-prompt__ritual-element-badge {
+  justify-self: start;
+  width: fit-content;
+  margin-top: 1px;
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-element-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.08rem;
+  border: 1px solid rgba(36, 27, 24, 0.14);
+  border-radius: 2px;
+  padding: 0.06rem 0.3rem 0.07rem;
+  background: rgba(74, 64, 54, 0.86);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.025em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-element-badge--energy {
+  border-color: rgba(103, 61, 164, 0.54);
+  background: #7b3fc6;
+  color: #fff7ff;
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-element-badge--blood {
+  border-color: rgba(143, 29, 39, 0.58);
+  background: #b72635;
+  color: #fff5f5;
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-element-badge--death {
+  border-color: rgba(0, 0, 0, 0.62);
+  background: #171717;
+  color: #f3f0ea;
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-element-badge--knowledge {
+  border-color: rgba(149, 119, 0, 0.56);
+  background: #c9a900;
+  color: #281f00;
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-element-badge--fear {
+  border-color: rgba(132, 137, 146, 0.58);
+  background: #b8bec7;
+  color: #252933;
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.24rem;
+  margin-bottom: 0.02rem;
+}
+
+.paranormal-toolkit-item-use-prompt__ritual-metadata-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid rgba(66, 47, 34, 0.14);
+  border-radius: 999px;
+  padding: 0.12rem 0.42rem;
+  background: rgba(255, 255, 255, 0.42);
+  color: rgba(36, 27, 24, 0.82);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+
+/* 0.15.6 — Resistência com coluna reservada para o botão de rolagem */
+.paranormal-toolkit-item-use-prompt__resistance {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  grid-template-areas: "content button";
+  align-items: center !important;
+  column-gap: 0.62rem;
+  row-gap: 0;
+  padding: 0.56rem 0.58rem !important;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-content {
+  grid-area: content;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.34rem;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-content .paranormal-toolkit-item-use-prompt__resistance-header {
+  display: block !important;
+  width: auto !important;
+  min-width: 0;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-content .paranormal-toolkit-item-use-prompt__resistance-header strong {
+  display: block;
+  margin: 0;
+  line-height: 1;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-content .paranormal-toolkit-item-use-prompt__resistance-description {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.32;
+  overflow-wrap: break-word;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance > .paranormal-toolkit-item-use-prompt__resistance-roll-button {
+  grid-area: button;
+  justify-self: end;
+  align-self: center;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-content .paranormal-toolkit-item-use-prompt__resistance-roll-result {
+  margin-top: 0;
+}
