@@ -10,7 +10,8 @@ import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { DebugOutputService } from "../../debug/output/debug-output-service";
 import { readAutomationDefinition } from "../automation/automation-flag-reader";
 import { neutralizeAutomatedItemInlineRolls } from "../chat/inline-roll-sanitizer";
-import { type AssistedResourceAction, RitualAssistedWorkflow } from "../rituals/ritual-assisted-workflow";
+import type { ConditionEngine, ApplyConditionResult } from "../conditions/condition-engine";
+import { type AssistedConditionAction, type AssistedRitualAction, RitualAssistedWorkflow } from "../rituals/ritual-assisted-workflow";
 import {
   findPersistedPromptByPendingId,
   markPersistedChoiceGroupAlternativesAsResolved,
@@ -48,16 +49,16 @@ type PendingWorkflowExecution = {
   createdAt: number;
 };
 
-type PendingResourceActionExecution = {
-  kind: "resource-action";
+type PendingAssistedActionExecution = {
+  kind: "assisted-action";
   id: string;
-  action: AssistedResourceAction;
+  action: AssistedRitualAction;
   context: ItemUseContext;
   workflowContext: WorkflowContext;
   createdAt: number;
 };
 
-type PendingAutomationExecution = PendingWorkflowExecution | PendingResourceActionExecution;
+type PendingAutomationExecution = PendingWorkflowExecution | PendingAssistedActionExecution;
 
 export class ItemUseIntegration {
   private readonly strategies: ItemUseSourceStrategy[] = [];
@@ -71,6 +72,7 @@ export class ItemUseIntegration {
     private readonly workflow: WorkflowEngine,
     private readonly resources: ResourceEngine,
     ritualCosts: RitualCostProvider,
+    private readonly conditions: ConditionEngine,
     private readonly debugOutput: DebugOutputService
   ) {
     this.ritualAssistant = new RitualAssistedWorkflow(workflow, resources, ritualCosts);
@@ -170,17 +172,13 @@ export class ItemUseIntegration {
       return true;
     }
 
-    const result = await this.ritualAssistant.applyAction(pending.action);
+    const executed = await this.executeAssistedAction(pending.action, pending.workflowContext);
 
-    if (!result.ok) {
-      this.handleResourceActionFailure(result);
-      return false;
-    }
+    if (!executed) return false;
 
-    pending.workflowContext.resourceTransactions.push(result.value);
     this.pendingExecutions.delete(pendingId);
     await unregisterPendingItemUseAutomationPrompt(pendingId);
-    await this.resolveAlternativeResourceActions(pending);
+    await this.resolveAlternativeActions(pending);
     this.setAttempt(pending.context, "completed");
 
     return true;
@@ -281,22 +279,58 @@ export class ItemUseIntegration {
         ModuleLogger.info("Ritual assistido concluído sem ações pendentes.", createWorkflowDebugSnapshot(result.workflowContext));
         return;
       case "ready":
-        await this.registerAssistedResourceActions(context, result.workflowContext, result.actions, result.summaryLines);
+        await this.registerAssistedActions(context, result.workflowContext, result.actions, result.summaryLines);
         return;
     }
   }
 
-  private async resolveAlternativeResourceActions(selected: PendingResourceActionExecution): Promise<void> {
+  private async executeAssistedAction(action: AssistedRitualAction, workflowContext: WorkflowContext): Promise<boolean> {
+    if (action.kind === "resource-operation") {
+      const result = await this.ritualAssistant.applyAction(action);
+
+      if (!result.ok) {
+        this.handleResourceActionFailure(result);
+        return false;
+      }
+
+      workflowContext.resourceTransactions.push(result.value);
+      return true;
+    }
+
+    const result = await this.conditions.applyCondition({
+      actor: action.actor,
+      conditionId: action.conditionId,
+      duration: action.duration,
+      originUuid: action.originUuid,
+      source: action.source ?? "item-use.condition-action"
+    });
+
+    if (!result.ok) {
+      this.handleConditionActionFailure(result);
+      return false;
+    }
+
+    if (result.value.warning) {
+      ui.notifications?.warn(`Paranormal Toolkit: ${result.value.warning}`);
+    }
+
+    return true;
+  }
+
+  private async resolveAlternativeActions(selected: PendingAssistedActionExecution): Promise<void> {
+    if (selected.action.kind !== "resource-operation") return;
+
     const choiceGroupId = selected.action.choiceGroupId;
 
     if (!choiceGroupId) return;
 
     const alternativeEntries = Array.from(this.pendingExecutions.entries()).filter(([, pending]) => {
-      return pending.kind === "resource-action" && pending.action.choiceGroupId === choiceGroupId;
+      return pending.kind === "assisted-action" && pending.action.kind === "resource-operation" && pending.action.choiceGroupId === choiceGroupId;
     });
 
     for (const [alternativeId, alternative] of alternativeEntries) {
-      if (alternative.kind !== "resource-action") continue;
+      if (alternative.kind !== "assisted-action") continue;
+      if (alternative.action.kind !== "resource-operation") continue;
 
       this.pendingExecutions.delete(alternativeId);
       await unregisterPendingItemUseAutomationPrompt(
@@ -322,10 +356,10 @@ export class ItemUseIntegration {
     });
   }
 
-  private async registerAssistedResourceActions(
+  private async registerAssistedActions(
     context: ItemUseContext,
     workflowContext: WorkflowContext,
-    actions: AssistedResourceAction[],
+    actions: AssistedRitualAction[],
     summaryLines: string[]
   ): Promise<void> {
     let firstPendingId: string | undefined;
@@ -335,7 +369,7 @@ export class ItemUseIntegration {
       firstPendingId ??= pendingId;
 
       this.pendingExecutions.set(pendingId, {
-        kind: "resource-action",
+        kind: "assisted-action",
         id: pendingId,
         action,
         context,
@@ -350,15 +384,15 @@ export class ItemUseIntegration {
         title: "Paranormal Toolkit · Ritual",
         buttonLabel: action.label,
         executedLabel: action.executedLabel,
-        choiceGroupId: action.choiceGroupId ?? null,
-        skippedLabel: action.choiceGroupResolvedLabel ?? null,
+        choiceGroupId: action.kind === "resource-operation" ? action.choiceGroupId ?? null : null,
+        skippedLabel: action.kind === "resource-operation" ? action.choiceGroupResolvedLabel ?? null : null,
         actionSectionId: action.actionSectionId,
         actionSectionTitle: action.actionSectionTitle,
         summaryLines,
         resistanceTargetActor: action.actor,
         resistanceTargetActorId: action.actor.id ?? null,
         resistanceTargetName: action.actorName,
-        actionPayload: createPersistedResourceActionPayload(action)
+        actionPayload: createPromptActionPayload(action)
       });
     }
 
@@ -443,6 +477,11 @@ export class ItemUseIntegration {
     ui.notifications?.warn(`Paranormal Toolkit: ${result.error.message}`);
   }
 
+  private handleConditionActionFailure(result: Extract<ApplyConditionResult, { ok: false }>): void {
+    ModuleLogger.warn(`Ação assistida de condição falhou: ${result.error.message}`, result.error);
+    ui.notifications?.warn(`Paranormal Toolkit: ${result.error.message}`);
+  }
+
   private isDuplicate(context: ItemUseContext): boolean {
     const now = Date.now();
     const key = createExecutionKey(context);
@@ -478,7 +517,9 @@ function createGenericRitualDefinition(item: Item): AutomationDefinition {
   };
 }
 
-function createPersistedResourceActionPayload(action: AssistedResourceAction): PersistedResourceActionPayload {
+function createPromptActionPayload(action: AssistedRitualAction): PersistedResourceActionPayload | null {
+  if (action.kind !== "resource-operation") return null;
+
   return {
     kind: "resource-operation",
     actorId: action.actor.id ?? null,

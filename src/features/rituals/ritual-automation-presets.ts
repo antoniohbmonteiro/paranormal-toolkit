@@ -76,10 +76,10 @@ export function createRitualSimpleHealingPreset(): AutomationPreset {
 export function createRitualElectrocutionPreset(): AutomationPreset {
   return {
     id: RITUAL_ELECTROCUTION_PRESET_ID,
-    version: "1.1.0",
+    version: "1.3.0",
     label: "Eletrocussão",
     description:
-      "Preset inicial de dano de energia. Gasta o custo do ritual, rola dano conforme a forma escolhida e prepara ação assistida para aplicar dano em PV do alvo.",
+      "Preset inicial de dano de energia. Gasta o custo do ritual, rola 3d6/6d6/8d6 conforme a forma escolhida e prepara ações assistidas para aplicar dano em PV e Vulnerável por 1 rodada no alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [
@@ -192,7 +192,7 @@ export function createRitualSimpleHealingDefinition(formula = "2d8+2"): Automati
 
 export function createRitualElectrocutionDefinition(): AutomationDefinition {
   return {
-    ...createRitualSimpleDamageDefinition("1d8", {
+    ...createRitualSimpleDamageDefinition("3d6", {
       label: "Eletrocussão",
       title: "Eletrocussão",
       damageType: "energia",
@@ -219,25 +219,40 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
         }
       ]
     },
+    conditionApplications: [
+      {
+        id: "eletrocussao-vulnerable",
+        actor: "target",
+        conditionId: "vulnerable",
+        label: "Vulnerável",
+        duration: {
+          rounds: 1
+        },
+        source: "ritual.eletrocussao",
+        actionSectionId: "apply-effects",
+        actionSectionTitle: "Aplicar efeito",
+        executedLabel: "✓ Vulnerável aplicado"
+      }
+    ],
     ritualForms: {
       base: {
         label: "Padrão",
         rollFormulaOverrides: {
-          damage: "1d8"
+          damage: "3d6"
         }
       },
       discente: {
         label: "Discente",
         extraCost: 2,
         rollFormulaOverrides: {
-          damage: "3d8"
+          damage: "6d6"
         }
       },
       verdadeiro: {
         label: "Verdadeiro",
         extraCost: 5,
         rollFormulaOverrides: {
-          damage: "6d8"
+          damage: "8d6"
         },
         notes: ["Se o alvo falhar na Fortitude, aplique Atordoado por 1 rodada manualmente."]
       }

@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.17.3`.
+Versão experimental atual: `v0.17.4`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -27,7 +27,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
 | Dice So Nice | Quando o módulo Dice So Nice está ativo, as rolagens do Toolkit são animadas em 3D sem criar mensagem extra no chat. | Implementado inicial |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
-| Condições e efeitos | Cria Active Effects informativos no ator alvo, com registry em TypeScript, flags próprias, duração por rodada e limpeza automática tardia/defensiva de efeitos expirados. | MVP implementado |
+| Condições e efeitos | Cria Active Effects informativos no ator alvo, com registry em TypeScript, flags próprias, duração por rodada, limpeza automática tardia/defensiva e ações assistidas em rituais. | MVP implementado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
 | Integração com animações | Preparará eventos para efeitos visuais, sons e animações em um módulo companion. | Planejado |
 | Macro/Script Step | Camada futura de extensão controlada para casos avançados, sem virar a base das automações. | Planejado |
@@ -75,6 +75,14 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.17.4 — Eletrocussão aplica Vulnerável assistido
+
+- Atualiza o preset versionado de Eletrocussão para `1.3.0`.
+- O card assistido passa a mostrar uma seção **Aplicar efeito** perto das ações de dano.
+- A Eletrocussão cria a ação **Vulnerável: 1 rodada** para o alvo, independente da forma usada: Padrão, Discente ou Verdadeiro.
+- A ação usa o `ConditionEngine` para criar `ActiveEffect` no Actor alvo, com duração de 1 rodada quando houver combate ativo.
+- O Toolkit ainda não decide automaticamente se a Fortitude falhou; por enquanto o mestre clica no efeito quando fizer sentido.
 
 ### 0.17.3 — Cleanup automático tardio de condições temporárias
 

@@ -1,5 +1,6 @@
 import type {
   AutomationActorSelector,
+  AutomationConditionApplicationDefinition,
   AutomationDamageApplicationOption,
   AutomationDefinition,
   AutomationResistanceDefinition,
@@ -47,6 +48,24 @@ export type AssistedResourceAction = {
   actionSectionTitle: string;
 };
 
+
+export type AssistedConditionAction = {
+  kind: "condition-application";
+  actor: Actor;
+  actorName: string;
+  conditionId: string;
+  conditionLabel: string;
+  duration: AutomationConditionApplicationDefinition["duration"];
+  source: string | null;
+  originUuid: string | null;
+  label: string;
+  executedLabel: string;
+  actionSectionId: string;
+  actionSectionTitle: string;
+};
+
+export type AssistedRitualAction = AssistedResourceAction | AssistedConditionAction;
+
 type AssistedResourceActionSection = {
   id: string;
   title: string;
@@ -79,7 +98,7 @@ export type RitualAssistedRunResult =
   | {
       status: "ready";
       workflowContext: WorkflowContext;
-      actions: AssistedResourceAction[];
+      actions: AssistedRitualAction[];
       summaryLines: string[];
     };
 
@@ -222,6 +241,7 @@ export class RitualAssistedWorkflow {
 
     const workflowContext = runResult.value.context;
     const actionResult = createAssistedResourceActions(definition, context, workflowContext);
+    const conditionActionResult = createAssistedConditionActions(definition, context);
     const backlashActions = createCastingFailureSanityActions(context.actor as Actor, castingCheck, form, cost);
     const summaryLines = createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck);
 
@@ -233,7 +253,15 @@ export class RitualAssistedWorkflow {
       };
     }
 
-    const actions = [...backlashActions, ...actionResult.actions];
+    if (!conditionActionResult.ok) {
+      return {
+        status: "failed",
+        reason: conditionActionResult.reason,
+        message: conditionActionResult.message
+      };
+    }
+
+    const actions: AssistedRitualAction[] = [...backlashActions, ...actionResult.actions, ...conditionActionResult.actions];
 
     if (actions.length === 0) {
       return {
@@ -380,6 +408,80 @@ function createCastingFailureSanityActions(
       actionSectionTitle: "Dano na sanidade"
     }
   ];
+}
+
+function createAssistedConditionActions(
+  definition: AutomationDefinition,
+  itemUseContext: ItemUseContext
+): { ok: true; actions: AssistedConditionAction[] } | { ok: false; reason: string; message: string } {
+  const actions: AssistedConditionAction[] = [];
+
+  for (const application of definition.conditionApplications ?? []) {
+    const actors = resolveActors(application.actor, itemUseContext);
+
+    if (actors.length === 0) {
+      return {
+        ok: false,
+        reason: "no-target",
+        message: `Nenhum alvo válido encontrado para aplicar ${application.label ?? application.conditionId}.`
+      };
+    }
+
+    for (const actor of actors) {
+      actions.push(createAssistedConditionAction(application, actor, itemUseContext.item));
+    }
+  }
+
+  return { ok: true, actions };
+}
+
+function createAssistedConditionAction(
+  application: AutomationConditionApplicationDefinition,
+  actor: Actor,
+  item: Item
+): AssistedConditionAction {
+  const actorName = actor.name ?? "Ator sem nome";
+  const conditionLabel = application.label ?? formatConditionId(application.conditionId);
+
+  return {
+    kind: "condition-application",
+    actor,
+    actorName,
+    conditionId: application.conditionId,
+    conditionLabel,
+    duration: application.duration ?? null,
+    source: application.source ?? null,
+    originUuid: item.uuid ?? null,
+    label: createConditionActionLabel(conditionLabel, application.duration),
+    executedLabel: application.executedLabel ?? `✓ ${conditionLabel} aplicado`,
+    actionSectionId: application.actionSectionId ?? "apply-effects",
+    actionSectionTitle: application.actionSectionTitle ?? "Aplicar efeito"
+  };
+}
+
+function createConditionActionLabel(
+  conditionLabel: string,
+  duration: AutomationConditionApplicationDefinition["duration"]
+): string {
+  const rounds = duration?.rounds;
+
+  if (typeof rounds === "number" && Number.isInteger(rounds) && rounds > 0) {
+    const suffix = rounds === 1 ? "1 rodada" : `${rounds} rodadas`;
+    return `${conditionLabel}: ${suffix}`;
+  }
+
+  return conditionLabel;
+}
+
+function formatConditionId(conditionId: string): string {
+  const normalized = conditionId.trim();
+  if (normalized.length === 0) return "Condição";
+
+  return normalized
+    .split(/[._-]+/u)
+    .filter((part) => part.length > 0)
+    .map((part) => `${part.charAt(0).toLocaleUpperCase()}${part.slice(1)}`)
+    .join(" ");
 }
 
 function createAssistedResourceActions(

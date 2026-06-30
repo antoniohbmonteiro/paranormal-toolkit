@@ -4,6 +4,8 @@ import type { WorkflowRollIntent } from "../../core/workflow/workflow-roll";
 import type { AutomationFlagValue } from "../../core/automation/automation-binder";
 import type {
   AutomationActorSelector,
+  AutomationConditionApplicationDefinition,
+  AutomationConditionDurationDefinition,
   AutomationDefinition,
   AutomationStep,
   ChatCardStep,
@@ -63,7 +65,13 @@ export function isAutomationDefinition(value: unknown): value is AutomationDefin
 
   const candidate = value as Partial<AutomationDefinition>;
 
-  return candidate.version === 1 && isNonEmptyString(candidate.label) && Array.isArray(candidate.steps) && candidate.steps.every(isAutomationStep);
+  return (
+    candidate.version === 1 &&
+    isNonEmptyString(candidate.label) &&
+    Array.isArray(candidate.steps) &&
+    candidate.steps.every(isAutomationStep) &&
+    (candidate.conditionApplications === undefined || isConditionApplicationList(candidate.conditionApplications))
+  );
 }
 
 function isAutomationFlagSource(value: unknown): value is AutomationFlagValue["source"] {
@@ -154,6 +162,35 @@ function isChatCardStep(value: Partial<AutomationStep>): value is ChatCardStep {
   );
 }
 
+function isConditionApplicationList(value: unknown): value is AutomationConditionApplicationDefinition[] {
+  return Array.isArray(value) && value.every(isConditionApplicationDefinition);
+}
+
+function isConditionApplicationDefinition(value: unknown): value is AutomationConditionApplicationDefinition {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<AutomationConditionApplicationDefinition>;
+
+  return (
+    isNonEmptyString(candidate.id) &&
+    isAutomationActorSelector(candidate.actor) &&
+    isNonEmptyString(candidate.conditionId) &&
+    (candidate.label === undefined || isNonEmptyString(candidate.label)) &&
+    (candidate.duration === undefined || candidate.duration === null || isConditionDurationDefinition(candidate.duration)) &&
+    (candidate.source === undefined || isNonEmptyString(candidate.source)) &&
+    (candidate.actionSectionId === undefined || isNonEmptyString(candidate.actionSectionId)) &&
+    (candidate.actionSectionTitle === undefined || isNonEmptyString(candidate.actionSectionTitle)) &&
+    (candidate.executedLabel === undefined || isNonEmptyString(candidate.executedLabel))
+  );
+}
+
+function isConditionDurationDefinition(value: unknown): value is AutomationConditionDurationDefinition {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<AutomationConditionDurationDefinition>;
+  return candidate.rounds === undefined || candidate.rounds === null || isPositiveInteger(candidate.rounds);
+}
+
 function hasAmountSource(value: { amount?: unknown; amountFrom?: unknown }): boolean {
   return (
     (typeof value.amount === "number" && Number.isInteger(value.amount) && value.amount > 0) ||
@@ -183,6 +220,10 @@ function isWorkflowRollIntent(value: unknown): value is WorkflowRollIntent {
     value === "ritual" ||
     value === "generic"
   );
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
 function isNonEmptyString(value: unknown): value is string {

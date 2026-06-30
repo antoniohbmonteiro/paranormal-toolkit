@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.3`.
+Versão base do roadmap: `v0.17.4`.
 
 O Toolkit já tem:
 
@@ -22,7 +22,7 @@ O Toolkit já tem:
 - modo `ask` com ações assistidas no chat;
 - conjuração geral de rituais em ApplicationV2;
 - formas estruturadas de ritual: Padrão, Discente e Verdadeiro;
-- presets iniciais para Cicatrização e Eletrocussão, com Eletrocussão versionada em `1.2.0`;
+- presets iniciais para Cicatrização e Eletrocussão, com Eletrocussão versionada em `1.3.0`;
 - custo de PE/PD por ritual;
 - rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
 - card de resultado no chat com dados brutos expansíveis pela fórmula da rolagem;
@@ -37,7 +37,7 @@ O Toolkit já tem:
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
-- Condition Engine MVP com registry em TypeScript, condição Vulnerável, Active Effects informativos aplicados direto no Actor e limpeza automática tardia/defensiva de condições temporárias expiradas.
+- Condition Engine MVP com registry em TypeScript, condição Vulnerável, Active Effects informativos aplicados direto no Actor, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
 
 ## Roadmap por prioridade
 
@@ -97,6 +97,28 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.17.4 — Eletrocussão aplica Vulnerável assistido
+
+Objetivo: plugar o `ConditionEngine` validado em uma automação real sem automatizar ainda a decisão da resistência.
+
+Entrega feita:
+
+- adiciona `conditionApplications` ao modelo de automação;
+- atualiza o preset de Eletrocussão para `1.3.0`;
+- Eletrocussão cria uma ação assistida **Vulnerável: 1 rodada** no alvo;
+- o card mostra a ação em uma seção **Aplicar efeito**, perto das ações de dano;
+- a ação usa o `ConditionEngine` e cria `ActiveEffect` no Actor alvo;
+- a duração é sempre 1 rodada, independente de Padrão, Discente ou Verdadeiro;
+- a decisão de clicar no efeito continua manual, porque o Toolkit ainda não usa o resultado da Fortitude para escolher automaticamente.
+
+Critérios de aceitação:
+
+- reaplicar o preset de Eletrocussão deve marcar a automação como `1.3.0`;
+- usar Eletrocussão deve mostrar dano normal/metade e também **Vulnerável: 1 rodada**;
+- clicar em Vulnerável aplica o Active Effect no alvo;
+- em combate, o efeito expira e sai da ficha via cleanup automático;
+- Padrão, Discente e Verdadeiro usam o mesmo efeito de 1 rodada.
 
 ### Concluído em 0.17.3 — Cleanup automático tardio de condições temporárias
 

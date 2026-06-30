@@ -64,7 +64,7 @@ export function createToolkitServices(): ToolkitServices {
   const workflowHooks = new WorkflowHookEmitter();
   const automation = new AutomationRunner(resources, ritualCosts, chatMessages, workflowHooks);
   const workflow = new WorkflowEngine(automation, workflowHooks);
-  const itemUseIntegration = new ItemUseIntegration(workflow, resources, ritualCosts, debugOutput);
+  const itemUseIntegration = new ItemUseIntegration(workflow, resources, ritualCosts, conditions, debugOutput);
 
   itemUseIntegration.addStrategy(new OrdemItemUsedHookStrategy((context) => itemUseIntegration.handleItemUsed(context)));
 

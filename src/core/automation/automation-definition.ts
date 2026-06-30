@@ -8,6 +8,7 @@ export type AutomationDefinition = {
   steps: AutomationStep[];
   ritualForms?: Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>>;
   resistance?: AutomationResistanceDefinition;
+  conditionApplications?: AutomationConditionApplicationDefinition[];
 };
 
 export type AutomationResistanceEffect = "reducesByHalf";
@@ -30,6 +31,22 @@ export type AutomationResistanceDefinition = {
   effect: AutomationResistanceEffect;
   summary: string;
   damageApplications?: AutomationDamageApplicationOption[];
+};
+
+export type AutomationConditionDurationDefinition = {
+  rounds?: number | null;
+};
+
+export type AutomationConditionApplicationDefinition = {
+  id: string;
+  actor: AutomationActorSelector;
+  conditionId: string;
+  label?: string;
+  duration?: AutomationConditionDurationDefinition | null;
+  source?: string;
+  actionSectionId?: string;
+  actionSectionTitle?: string;
+  executedLabel?: string;
 };
 
 export type AutomationRitualFormId = "base" | "discente" | "verdadeiro";
