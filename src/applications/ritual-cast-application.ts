@@ -1,7 +1,6 @@
 import { MODULE_ID, MODULE_TITLE } from "../constants";
 import type { RitualCost } from "../core/rituals/ritual-types";
 import {
-  getRitualCastVariantLabel,
   isRitualCastVariant,
   type RitualCastOptions,
   type RitualCastVariant,
@@ -30,7 +29,7 @@ export class RitualCastApplication extends ApplicationV2 {
     classes: [MODULE_ID, "paranormal-toolkit-ritual-cast-app"],
     tag: "section",
     position: {
-      width: 560,
+      width: 540,
       height: "auto"
     },
     window: {
@@ -102,11 +101,13 @@ export class RitualCastApplication extends ApplicationV2 {
       </section>
 
       <section class="paranormal-toolkit-ritual-cast__panel paranormal-toolkit-ritual-cast__panel--cost">
-        <h3>Custo</h3>
-        <label class="paranormal-toolkit-ritual-cast__spend-toggle">
-          <input type="checkbox" name="spendResource" ${checked}>
-          <span>Gastar recurso ao conjurar</span>
-        </label>
+        <div class="paranormal-toolkit-ritual-cast__panel-heading">
+          <h3>Custo</h3>
+          <label class="paranormal-toolkit-ritual-cast__spend-toggle">
+            <input type="checkbox" name="spendResource" ${checked}>
+            <span>Gastar ao conjurar</span>
+          </label>
+        </div>
         <dl class="paranormal-toolkit-ritual-cast__summary">
           <div><dt>Custo base</dt><dd>${escapeHtml(baseCost)}</dd></div>
           <div><dt>Conjurador</dt><dd>${escapeHtml(this.input.actor.name ?? "Ator sem nome")}</dd></div>
@@ -159,6 +160,7 @@ function renderVariantOption(option: RitualCastVariantOption, cost: RitualCost |
   const finalCost = option.finalCostText ?? createFallbackFinalCostText(cost);
   const details = [...option.details, option.enabled ? "" : option.unavailableReason ?? "não disponível neste ritual"]
     .filter((detail) => detail.trim().length > 0)
+    .filter((detail) => !detail.toLocaleLowerCase().startsWith("custo final"))
     .map((detail) => `<span>${escapeHtml(detail)}</span>`)
     .join("");
 

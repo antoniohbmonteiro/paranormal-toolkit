@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.14.0`.
+Versão base do roadmap: `v0.14.3`.
 
 O Toolkit já tem:
 
@@ -28,7 +28,8 @@ O Toolkit já tem:
 - card de resultado no chat com detalhes expansíveis da rolagem;
 - card assistido persistente, com opção de substituir visualmente o card original do sistema;
 - card simples persistente para rituais sem preset conhecido;
-- ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais.
+- ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
+- decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 
 ## Roadmap por prioridade
 
@@ -85,7 +86,7 @@ Decisão de produto:
 - o cálculo sugerido deve ser visível, mas não autoritário.
 
 
-### Concluído em 0.14.0 — Dialog geral de ritual em ApplicationV2
+### Concluído em 0.14.3 — Dialog geral de ritual em ApplicationV2
 
 Objetivo: transformar o Toolkit no ponto de entrada da conjuração de rituais, mesmo quando ainda não existe preset de automação para aquele ritual.
 
@@ -93,6 +94,7 @@ Entrega feita:
 
 - substituir o popup legado por uma `ApplicationV2`;
 - abrir a tela para qualquer item do tipo ritual no modo `ask`;
+- usar layout compacto com formas em cards lado a lado;
 - mostrar forma, custo final, conjurador e alvos;
 - manter Padrão/Discente/Verdadeiro como modelo estruturado, mas só habilitar formas com dados conhecidos;
 - exibir custo final por forma, sem texto de `+2 PE`/`+5 PE`;
@@ -268,6 +270,59 @@ Escopo futuro:
 - duração por rodada/cena;
 - integração futura com Paranormal FX.
 
+### P3 — Macro/Script Step como extensão controlada
+
+Objetivo: permitir extensões avançadas sem transformar o Toolkit em uma coleção de macros frágeis.
+
+Decisão arquitetural:
+
+- o formato principal de automação continua sendo `AutomationDefinition` tipado em TypeScript;
+- presets internos devem preferir steps nativos (`spendRitualCost`, `rollFormula`, `modifyResource`, `chatCard`, futuros `applyCondition`, etc.);
+- macros/scripts entram apenas como escape hatch para casos avançados, homebrew ou integrações opcionais;
+- macros não devem acessar paths internos do sistema quando existir adapter;
+- macros devem receber um contexto limitado, documentado e seguro;
+- erros de macro precisam ser capturados e exibidos sem quebrar o workflow inteiro;
+- presets básicos do Toolkit não devem depender de macros para funcionar.
+
+Modelo conceitual futuro:
+
+```ts
+type MacroStep = {
+  type: "runMacro";
+  timing: "beforeRoll" | "afterRoll" | "beforeApply" | "afterApply";
+  macroUuid: string;
+  args?: Record<string, unknown>;
+};
+
+type ToolkitMacroContext = {
+  actor: Actor;
+  item: Item;
+  targets: WorkflowTarget[];
+  rolls: Record<string, WorkflowRollResult>;
+  flags: Record<string, unknown>;
+  toolkit: ToolkitSafeMacroApi;
+};
+```
+
+Estrutura sugerida:
+
+```txt
+src/core/macros/
+  macro-executor.ts
+  macro-context.ts
+  macro-error.ts
+
+src/core/automation/
+  automation-macro-step.ts
+```
+
+Não fazer:
+
+- não transformar presets como Eletrocussão em `macro.eletrocussao.js`;
+- não salvar HTML ou script solto como regra principal;
+- não exigir macro para recursos comuns de ritual, condição, arma ou dano;
+- não expor `globalThis` inteiro como API para macro.
+
 ### P3 — Paranormal FX
 
 Objetivo: módulo companion para animações, sons e efeitos visuais.
@@ -314,6 +369,7 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.14.0` | P2 | Permissões/visibilidade de ações no chat. |
 | `0.15.x` | P2 | UI de inspeção/configuração de automação do item. |
 | `0.16.x+` | P3 | Armas, melhorias, categorias, Template Regions e integrações visuais. |
+| `0.17.x+` | P3 | Macro/Script Step como extensão controlada para homebrew e integrações avançadas, sem substituir o core estruturado. |
 
 ## Não objetivos por enquanto
 
@@ -323,6 +379,7 @@ Prioridade atual: depois de Toolkit e FX.
 - Não acoplar core a paths internos do sistema `ordemparanormal`.
 - Não transformar o Toolkit em substituto do sistema base.
 - Não criar UI complexa antes do modelo de automação estabilizar.
+- Não basear automações principais em macros quando um step tipado resolve melhor.
 
 ## Critério para `1.0.0`
 
@@ -395,3 +452,12 @@ A versão `1.0.0` deve ter:
 - Botão compacto no bloco de resistência para o mestre rolar a resistência do alvo.
 - Resultado exibido no próprio botão e fórmula exibida abaixo da descrição.
 - DT automática continua fora do escopo desta versão.
+
+
+## 0.14.3 — decisão futura sobre Macro/Script Step
+
+- O Toolkit não deve copiar o modelo de depender de macros como fonte principal de regra.
+- O core continua em TypeScript, com definitions estruturadas, adapters, flags e steps tipados.
+- Macros/scripts serão uma camada opcional e avançada para homebrew, integrações e exceções difíceis de modelar.
+- A futura API de macro deve expor apenas um contexto seguro e documentado, não o estado interno inteiro do módulo.
+- Todo Macro Step deve ter executor próprio, tratamento de erro e logs claros.

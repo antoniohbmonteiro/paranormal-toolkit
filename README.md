@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.14.0`.
+Versão experimental atual: `v0.14.3`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -30,6 +30,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Condições e efeitos | Aplicará condições e Active Effects quando rituais, habilidades ou regras pedirem. | Planejado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
 | Integração com animações | Preparará eventos para efeitos visuais, sons e animações em um módulo companion. | Planejado |
+| Macro/Script Step | Camada futura de extensão controlada para casos avançados, sem virar a base das automações. | Planejado |
 
 O Paranormal Toolkit é pensado para ser configurável por mesa: o mestre pode deixar tudo desligado, usar modo assistido no chat ou ativar automações mais diretas conforme o estilo do grupo.
 
@@ -70,6 +71,25 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.14.3 — Decisão futura sobre macros
+
+A versão `0.14.3` documenta a decisão arquitetural para macros/scripts: o Toolkit **não** será baseado em macros como fonte principal de regra. O core continua sendo TypeScript tipado, presets estruturados, steps de automação e adapters do sistema.
+
+Quando a API estiver mais madura, macros entram como uma camada avançada e opcional de extensão, para casos específicos que ainda não justificam um step nativo.
+
+Regras da decisão:
+
+```txt
+- macro não é o formato principal de automação;
+- macro não substitui step nativo quando o step resolve;
+- macro recebe contexto limitado e documentado;
+- macro passa por executor próprio com try/catch e erro amigável;
+- macro não acessa paths internos do sistema se houver adapter;
+- macro é opt-in para mestre/preset avançado;
+- presets básicos do Toolkit não dependem de macro.
+```
+
 ### 0.14.0 — Dialog geral de conjuração em ApplicationV2
 
 A versão `0.14.0` troca o popup legado de ritual por uma `ApplicationV2` própria. O Toolkit passa a abrir a tela de conjuração para qualquer ritual usado pela ficha: rituais com preset continuam usando a automação assistida; rituais sem preset geram um card persistente simples de conjuração e, se o jogador escolher, gastam o custo base de PE/PD.
@@ -83,6 +103,10 @@ Decisões importantes:
 - o custo exibido por forma é sempre valor final, não "+2 PE" ou "+5 PE";
 - sem preset, o Toolkit não inventa fórmula, efeito ou custo extra.
 ```
+
+### 0.14.3 — Layout compacto do dialog de ritual
+
+A versão `0.14.3` reduz a altura do popup de conjuração: as formas Padrão, Discente e Verdadeiro aparecem em cards lado a lado, o bloco de custo usa resumo compacto para custo/conjurador/alvos e os radios passam a ter visual claro próprio do Toolkit.
 
 ### 0.13.12 — Card persistente como fonte primária
 
