@@ -18,6 +18,7 @@ import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { DebugOutputService } from "../../debug/output/debug-output-service";
 import { readAutomationDefinition } from "../automation/automation-flag-reader";
 import { neutralizeAutomatedItemInlineRolls } from "../chat/inline-roll-sanitizer";
+import { createRitualRollAutomationDefinition } from "../rituals/config/ritual-roll-config";
 import type {
   ConditionEngine,
   ApplyConditionResult,
@@ -816,7 +817,7 @@ function isRitualItem(item: Item): boolean {
 }
 
 function createGenericRitualDefinition(item: Item): AutomationDefinition {
-  return {
+  return createRitualRollAutomationDefinition(item) ?? {
     version: 1,
     label: `Conjuração de ${item.name ?? "ritual"}`,
     steps: [{ type: "spendRitualCost" }],

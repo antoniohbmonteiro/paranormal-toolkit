@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.19.3`.
+Versão base do roadmap: `v0.19.6`.
 
 O Toolkit já tem:
 
@@ -100,6 +100,56 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.19.6 — Labels de dano em português no card
+
+Objetivo: evitar que IDs canônicos internos, como `blood`, apareçam no card do chat para o mestre/jogador.
+
+Entrega feita:
+
+- adiciona label em português para tipos de dano do Toolkit;
+- troca o resumo `Tipo: Blood` por `Tipo: Sangue`;
+- cobre tipos físicos, paranormais e mundanos usados pelo Damage Adapter;
+- mantém os IDs internos em inglês/código para dados e integração, mudando apenas a apresentação.
+
+Critérios de aceitação:
+
+- ritual configurado com dano `blood` deve mostrar `Tipo: Sangue` no card;
+- ritual configurado com dano `electric` deve mostrar `Tipo: Eletricidade`;
+- o Damage Adapter continua recebendo o ID canônico, não o texto traduzido.
+
+### Concluído em 0.19.5 — Fórmula padrão no popup de conjuração
+
+Objetivo: corrigir a apresentação da fórmula da forma Padrão no popup de conjuração dos rituais configurados pela ficha.
+
+Entrega feita:
+
+- a forma Padrão passa a expor a fórmula configurada em `rollFormulaOverrides`;
+- o popup mostra Padrão, Discente e Verdadeiro de forma consistente;
+- a execução continua usando a mesma fórmula base, sem mudar regra de dano/cura/utilidade.
+
+### Concluído em 0.19.4 — Fórmula configurada no fluxo genérico
+
+Objetivo: fazer a configuração salva na ficha do ritual ser usada no uso real do item, sem depender de preset hardcoded.
+
+Entrega feita:
+
+- lê `ritualRollConfig` em rituais sem preset específico;
+- gera uma `AutomationDefinition` temporária para o fluxo assistido;
+- habilita no popup apenas as formas configuradas com fórmula;
+- rola a fórmula da forma escolhida;
+- tipo Dano cria ações assistidas de dano usando o Damage Adapter;
+- tipo Cura cria ação assistida de cura em PV;
+- tipo Utilidade apenas registra o resultado no card;
+- reutiliza a resistência original do item quando ela for `reducesByHalf`.
+
+Critérios de aceitação:
+
+- ritual sem preset, mas com fórmula Padrão, deve rolar e gerar card;
+- Discente/Verdadeiro só aparecem no popup quando há fórmula e a forma existe no item;
+- dano deve criar botões Normal/Metade quando o item tiver resistência de metade;
+- cura deve gerar botão de cura;
+- utilidade não deve gerar botão de aplicação.
 
 ### Concluído em 0.19.3 — Copy da fórmula de rolagem
 

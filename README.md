@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.19.3`.
+Versão experimental atual: `v0.19.6`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -78,6 +78,18 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+### 0.19.6 — Labels de dano em português no card
+
+- Corrige o resumo do card de ritual para exibir tipos de dano canônicos do Toolkit em português, como `Sangue`, `Eletricidade` e `Conhecimento`.
+- Evita que configurações genéricas salvas como `blood`, `electric` ou `knowledge` vazem para a UI do chat.
+- Centraliza uma função simples de label em `core/damage`, preparando reuso em outros pontos da UI.
+
+### 0.19.5 — Fórmula padrão no popup de conjuração
+
+- Corrige a exibição da fórmula da forma **Padrão** no popup de conjuração para rituais configurados pela ficha.
+- A forma Padrão agora também expõe `rollFormulaOverrides`, igual Discente e Verdadeiro, mantendo a UI do popup consistente.
+- A execução da fórmula não muda: a correção é de apresentação/consistência do modelo usado pelo popup.
+
 ### 0.19.3 — Copy da fórmula de rolagem
 
 - Renomeia o subtítulo do bloco de `Automação do ritual` para **Fórmula de rolagem**, deixando claro que o bloco configura a rolagem genérica/fallback do ritual.
@@ -110,6 +122,15 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 - O bloco não duplica resistência, círculo, elemento, alvo, duração ou formas: esses dados continuam vindo da ficha original do sistema.
 - Salva a configuração em `flags.paranormal-toolkit.ritualRollConfig`, sem alterar o DataModel do sistema.
 - Esta versão entrega a UI/configuração; a execução automática dessa configuração fica para a próxima etapa.
+
+### 0.19.4 — Fórmula configurada no ritual genérico
+
+- O fluxo genérico de ritual passa a ler `flags.paranormal-toolkit.ritualRollConfig` quando não houver preset específico.
+- A forma escolhida no popup usa a fórmula configurada para Padrão, Discente ou Verdadeiro.
+- Tipo **Dano** rola a fórmula e cria ações assistidas de dano usando o Damage Adapter.
+- Tipo **Cura** rola a fórmula e cria ação assistida de cura em PV.
+- Tipo **Utilidade** rola a fórmula e registra o resultado no card, sem criar ação de aplicação.
+- A resistência continua vindo dos campos originais do ritual e, por enquanto, só gera opções Normal/Metade quando o efeito original é `reducesByHalf`.
 
 ### 0.18.1 — Feedback de dano e Eletrocussão elétrica
 

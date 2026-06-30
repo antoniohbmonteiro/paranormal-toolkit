@@ -20,6 +20,7 @@ import {
 import { resolveAutomationAmount } from "../../core/automation/automation-amount-resolver";
 import { executeAutomationResourceOperation } from "../../core/automation/automation-resource-executor";
 import type { DamageApplicationInstanceInput } from "../../core/damage/damage-application";
+import { getToolkitDamageTypeLabel } from "../../core/damage/damage-types";
 import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
 import {
   createCurrentCombatDurationAnchor,
@@ -1093,7 +1094,7 @@ function createRollSummaryLines(roll: WorkflowRollResult): string[] {
   }
 
   if (roll.damageType) {
-    lines.push(`Tipo: ${formatLabel(roll.damageType)}`);
+    lines.push(`Tipo: ${getToolkitDamageTypeLabel(roll.damageType)}`);
   }
 
   return lines;

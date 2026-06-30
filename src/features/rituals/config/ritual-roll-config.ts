@@ -1,7 +1,16 @@
 import { MODULE_ID } from "../../../constants";
-import type { ToolkitDamageType } from "../../../core/damage/damage-types";
+import type {
+  AutomationDefinition,
+  AutomationResistanceDefinition,
+  AutomationRitualFormDefinition,
+  AutomationRitualFormId,
+  ModifyResourceStep,
+  RollFormulaStep,
+} from "../../../core/automation/automation-definition";
+import type { DamageTypeInput, ToolkitDamageType } from "../../../core/damage/damage-types";
 
 export const RITUAL_ROLL_CONFIG_FLAG_KEY = "ritualRollConfig";
+export const RITUAL_ROLL_CONFIG_ROLL_ID = "ritual-roll";
 
 export type RitualRollIntent = "damage" | "healing" | "utility";
 export type RitualRollFormId = "base" | "discente" | "verdadeiro";
@@ -105,6 +114,141 @@ export function getRitualRollIntentLabel(intent: RitualRollIntent): string {
   }
 }
 
+export function createRitualRollAutomationDefinition(item: Item): AutomationDefinition | null {
+  const config = readRitualRollConfig(item);
+  if (!config) return null;
+
+  const baseFormula = config.forms.base.formula.trim();
+  if (!baseFormula) return null;
+
+  const rollStep = createConfiguredRollStep(config, baseFormula);
+  const steps = [
+    { type: "spendRitualCost" as const },
+    rollStep,
+    ...createApplicationSteps(config),
+  ];
+
+  return {
+    version: 1,
+    label: `Fórmula de ${item.name ?? "ritual"}`,
+    steps,
+    ritualForms: createConfiguredRitualForms(item, config),
+    resistance: config.intent === "damage" ? createResistanceFromRitualItem(item) : undefined,
+  };
+}
+
+function createConfiguredRollStep(config: RitualRollConfig, formula: string): RollFormulaStep {
+  const step: RollFormulaStep = {
+    type: "rollFormula",
+    id: RITUAL_ROLL_CONFIG_ROLL_ID,
+    formula,
+    intent: toWorkflowRollIntent(config.intent),
+  };
+
+  if (config.intent === "damage" && config.damageType) {
+    step.damageType = config.damageType;
+  }
+
+  return step;
+}
+
+function createApplicationSteps(config: RitualRollConfig): ModifyResourceStep[] {
+  switch (config.intent) {
+    case "damage":
+      return [
+        {
+          type: "modifyResource",
+          actor: "target",
+          resource: "PV",
+          operation: "damage",
+          amountFrom: `${RITUAL_ROLL_CONFIG_ROLL_ID}.total`,
+          ...createDamageTypePayload(config.damageType),
+        },
+      ];
+    case "healing":
+      return [
+        {
+          type: "modifyResource",
+          actor: "target",
+          resource: "PV",
+          operation: "heal",
+          amountFrom: `${RITUAL_ROLL_CONFIG_ROLL_ID}.total`,
+        },
+      ];
+    case "utility":
+      return [];
+  }
+}
+
+function createDamageTypePayload(damageType: DamageTypeInput): Pick<ModifyResourceStep, "damageType"> {
+  return damageType ? { damageType } : {};
+}
+
+function createConfiguredRitualForms(
+  item: Item,
+  config: RitualRollConfig,
+): Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>> {
+  const baseFormula = config.forms.base.formula.trim();
+  const forms: Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>> = {
+    base: {
+      label: "Padrão",
+      rollFormulaOverrides: {
+        [RITUAL_ROLL_CONFIG_ROLL_ID]: baseFormula,
+      },
+    },
+  };
+
+  if (isRitualFormAvailableInItem(item, "discente") && config.forms.discente.formula.trim()) {
+    forms.discente = {
+      label: "Discente",
+      extraCost: 2,
+      rollFormulaOverrides: {
+        [RITUAL_ROLL_CONFIG_ROLL_ID]: config.forms.discente.formula.trim(),
+      },
+    };
+  }
+
+  if (isRitualFormAvailableInItem(item, "verdadeiro") && config.forms.verdadeiro.formula.trim()) {
+    forms.verdadeiro = {
+      label: "Verdadeiro",
+      extraCost: 5,
+      rollFormulaOverrides: {
+        [RITUAL_ROLL_CONFIG_ROLL_ID]: config.forms.verdadeiro.formula.trim(),
+      },
+    };
+  }
+
+  return forms;
+}
+
+function createResistanceFromRitualItem(item: Item): AutomationResistanceDefinition | undefined {
+  const system = readSystemRecord(item);
+  const skill = normalizeOptionalString(system.skillResis);
+  const resistance = normalizeOptionalString(system.resistance);
+
+  if (!skill || resistance !== "reducesByHalf") return undefined;
+
+  const label = getResistanceSkillLabel(skill);
+
+  return {
+    skill,
+    label,
+    effect: "reducesByHalf",
+    summary: `${label} reduz à metade`,
+  };
+}
+
+function toWorkflowRollIntent(intent: RitualRollIntent): RollFormulaStep["intent"] {
+  switch (intent) {
+    case "damage":
+      return "damage";
+    case "healing":
+      return "healing";
+    case "utility":
+      return "generic";
+  }
+}
+
 function normalizeIntent(value: unknown): RitualRollIntent | null {
   return value === "damage" || value === "healing" || value === "utility" ? value : null;
 }
@@ -123,6 +267,34 @@ function normalizeFormConfigs(value: unknown): Record<RitualRollFormId, RitualRo
 function normalizeFormConfig(value: unknown): RitualRollFormConfig {
   if (!isRecord(value)) return { formula: "" };
   return { formula: normalizeString(value.formula) };
+}
+
+function isRitualFormAvailableInItem(item: Item, variant: Exclude<RitualRollFormId, "base">): boolean {
+  const system = readSystemRecord(item);
+  const value = variant === "discente" ? system.studentForm : system.trueForm;
+  return isTruthyFlag(value);
+}
+
+function readSystemRecord(item: Item): Record<string, unknown> {
+  const system = item.system as unknown;
+  return isRecord(system) ? system : {};
+}
+
+function getResistanceSkillLabel(skill: string): string {
+  switch (skill) {
+    case "resilience":
+      return "Fortitude";
+    case "reflexes":
+      return "Reflexos";
+    case "will":
+      return "Vontade";
+    default:
+      return skill;
+  }
+}
+
+function isTruthyFlag(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function normalizeString(value: unknown): string {
