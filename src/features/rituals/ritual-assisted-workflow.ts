@@ -11,16 +11,29 @@ import type {
   ModifyResourceStep,
   RollFormulaStep,
   SpendResourceStep,
-  SpendRitualCostStep
+  SpendRitualCostStep,
 } from "../../core/automation/automation-definition";
-import { rollOrdemRitualCastingCheck, type OrdemRitualCastingCheckResult } from "../../adapters/ordem/ordem-ritual-casting-adapter";
+import {
+  rollOrdemRitualCastingCheck,
+  type OrdemRitualCastingCheckResult,
+} from "../../adapters/ordem/ordem-ritual-casting-adapter";
 import { resolveAutomationAmount } from "../../core/automation/automation-amount-resolver";
 import { executeAutomationResourceOperation } from "../../core/automation/automation-resource-executor";
+import type { DamageApplicationInstanceInput } from "../../core/damage/damage-application";
 import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
-import { createCurrentCombatDurationAnchor, type ToolkitConditionDurationInput } from "../conditions/condition-duration";
+import {
+  createCurrentCombatDurationAnchor,
+  type ToolkitConditionDurationInput,
+} from "../conditions/condition-duration";
 import type { RitualCost } from "../../core/rituals/ritual-types";
-import type { ResourceEngine, ResourceOperationResult } from "../../core/resources/resource-engine";
-import { createWorkflowContext, type WorkflowContext } from "../../core/workflow/workflow-context";
+import type {
+  ResourceEngine,
+  ResourceOperationResult,
+} from "../../core/resources/resource-engine";
+import {
+  createWorkflowContext,
+  type WorkflowContext,
+} from "../../core/workflow/workflow-context";
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { WorkflowRollResult } from "../../core/workflow/workflow-roll";
 import type { ItemUseContext } from "../item-use/item-use-context";
@@ -31,7 +44,7 @@ import {
   RITUAL_CAST_VARIANTS,
   type RitualCastOptions,
   type RitualCastVariant,
-  type RitualCastVariantOption
+  type RitualCastVariantOption,
 } from "./ritual-cast-options";
 
 export type AssistedResourceAction = {
@@ -49,6 +62,20 @@ export type AssistedResourceAction = {
   actionSectionTitle: string;
 };
 
+export type AssistedDamageAction = {
+  kind: "damage-application";
+  actor: Actor;
+  actorName: string;
+  instances: DamageApplicationInstanceInput[];
+  label: string;
+  executedLabel: string;
+  choiceGroupId?: string;
+  choiceGroupResolvedLabel?: string;
+  actionSectionId: string;
+  actionSectionTitle: string;
+  source: string | null;
+  originUuid: string | null;
+};
 
 export type AssistedConditionAction = {
   kind: "condition-application";
@@ -65,7 +92,8 @@ export type AssistedConditionAction = {
   actionSectionTitle: string;
 };
 
-export type AssistedRitualAction = AssistedResourceAction | AssistedConditionAction;
+export type AssistedRitualAction =
+  AssistedResourceAction | AssistedDamageAction | AssistedConditionAction;
 
 type AssistedResourceActionSection = {
   id: string;
@@ -74,7 +102,12 @@ type AssistedResourceActionSection = {
 
 type RitualCastingCheckSummary = Pick<
   OrdemRitualCastingCheckResult,
-  "skillLabel" | "formula" | "total" | "difficulty" | "success" | "diceBreakdown"
+  | "skillLabel"
+  | "formula"
+  | "total"
+  | "difficulty"
+  | "success"
+  | "diceBreakdown"
 >;
 
 type RitualPreparationBuildOptions = {
@@ -103,49 +136,66 @@ export type RitualAssistedRunResult =
       summaryLines: string[];
     };
 
-type RitualPreparationStep = Exclude<AutomationStep, ModifyResourceStep | ChatCardStep>;
+type RitualPreparationStep = Exclude<
+  AutomationStep,
+  ModifyResourceStep | ChatCardStep
+>;
 
 type RitualPreparationDefinition = AutomationDefinition & {
   steps: RitualPreparationStep[];
 };
 
 const BASE_RITUAL_FORM: AutomationRitualFormDefinition = {
-  label: "Padrão"
+  label: "Padrão",
 };
 
 const GENERIC_DISCENTE_FORM: AutomationRitualFormDefinition = {
   label: "Discente",
-  extraCost: 2
+  extraCost: 2,
 };
 
 const GENERIC_VERDADEIRO_FORM: AutomationRitualFormDefinition = {
   label: "Verdadeiro",
-  extraCost: 5
+  extraCost: 5,
 };
 
 export class RitualAssistedWorkflow {
   constructor(
     private readonly workflow: WorkflowEngine,
     private readonly resources: ResourceEngine,
-    private readonly ritualCosts: RitualCostProvider
+    private readonly ritualCosts: RitualCostProvider,
   ) {}
 
-  canHandle(context: ItemUseContext, definition: AutomationDefinition): boolean {
-    return context.item.type === "ritual" || definition.steps.some((step) => step.type === "spendRitualCost");
+  canHandle(
+    context: ItemUseContext,
+    definition: AutomationDefinition,
+  ): boolean {
+    return (
+      context.item.type === "ritual" ||
+      definition.steps.some((step) => step.type === "spendRitualCost")
+    );
   }
 
-  async run(context: ItemUseContext, definition: AutomationDefinition): Promise<RitualAssistedRunResult> {
+  async run(
+    context: ItemUseContext,
+    definition: AutomationDefinition,
+  ): Promise<RitualAssistedRunResult> {
     if (!context.actor) {
       return {
         status: "failed",
         reason: "missing-actor",
-        message: "Não foi possível resolver o conjurador do ritual."
+        message: "Não foi possível resolver o conjurador do ritual.",
       };
     }
 
     const cost = this.resolveCostPreview(context);
     const isGenericRitual = isGenericRitualDefinition(definition);
-    const variantOptions = createRitualCastVariantOptions(definition, context.item, cost, isGenericRitual);
+    const variantOptions = createRitualCastVariantOptions(
+      definition,
+      context.item,
+      cost,
+      isGenericRitual,
+    );
     const options = await requestRitualCastOptions({
       actor: context.actor,
       ritual: context.item,
@@ -153,7 +203,7 @@ export class RitualAssistedWorkflow {
       cost,
       defaultSpendResource: hasRitualOrExplicitCost(definition),
       variantOptions,
-      automationStatus: isGenericRitual ? "generic" : "assisted"
+      automationStatus: isGenericRitual ? "generic" : "assisted",
     });
 
     if (!options) {
@@ -161,56 +211,92 @@ export class RitualAssistedWorkflow {
     }
 
     const castOptions = normalizeRitualCastOptions(options);
-    const form = resolveRitualForm(definition, context.item, castOptions.variant, isGenericRitual);
+    const form = resolveRitualForm(
+      definition,
+      context.item,
+      castOptions.variant,
+      isGenericRitual,
+    );
     const shouldRollCastingCheck = getRitualCastingCheckEnabled();
     let castingCheck: RitualCastingCheckSummary | null = null;
 
     if (shouldRollCastingCheck) {
-      const costResult = await spendRitualCostForCastingAttempt(this.resources, context.actor as Actor, castOptions, form, cost);
+      const costResult = await spendRitualCostForCastingAttempt(
+        this.resources,
+        context.actor as Actor,
+        castOptions,
+        form,
+        cost,
+      );
 
       if (!costResult.ok) {
         return {
           status: "failed",
           reason: costResult.reason,
-          message: costResult.message
+          message: costResult.message,
         };
       }
 
       try {
-        castingCheck = await rollOrdemRitualCastingCheck(context.actor as Actor);
+        castingCheck = await rollOrdemRitualCastingCheck(
+          context.actor as Actor,
+        );
       } catch (cause) {
         return {
           status: "failed",
           reason: "ritual-casting-check-failed",
-          message: cause instanceof Error ? cause.message : "Não foi possível rolar Ocultismo para conjurar o ritual.",
-          cause
+          message:
+            cause instanceof Error
+              ? cause.message
+              : "Não foi possível rolar Ocultismo para conjurar o ritual.",
+          cause,
         };
       }
-
     }
 
-    const preparationDefinition = createPreparationDefinition(definition, castOptions, form, cost, {
-      includeCostSteps: !shouldRollCastingCheck
-    });
+    const preparationDefinition = createPreparationDefinition(
+      definition,
+      castOptions,
+      form,
+      cost,
+      {
+        includeCostSteps: !shouldRollCastingCheck,
+      },
+    );
 
     if (preparationDefinition.steps.length === 0) {
-      const workflowContext = createEmptyRitualWorkflowContext(context, castOptions);
-      const backlashActions = createCastingFailureSanityActions(context.actor as Actor, castingCheck, form, cost);
-      const summaryLines = createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck);
+      const workflowContext = createEmptyRitualWorkflowContext(
+        context,
+        castOptions,
+      );
+      const backlashActions = createCastingFailureSanityActions(
+        context.actor as Actor,
+        castingCheck,
+        form,
+        cost,
+      );
+      const summaryLines = createRitualSummaryLines(
+        definition,
+        castOptions,
+        form,
+        cost,
+        workflowContext,
+        castingCheck,
+      );
 
       if (backlashActions.length > 0) {
         return {
           status: "ready",
           workflowContext,
           actions: backlashActions,
-          summaryLines
+          summaryLines,
         };
       }
 
       return {
         status: "completed-without-actions",
         workflowContext,
-        summaryLines
+        summaryLines,
       };
     }
 
@@ -222,13 +308,13 @@ export class RitualAssistedWorkflow {
       flags: {
         itemUse: {
           source: context.source,
-          executionMode: "ask"
+          executionMode: "ask",
         },
         ritualCast: {
           variant: castOptions.variant,
-          spendResource: castOptions.spendResource
-        }
-      }
+          spendResource: castOptions.spendResource,
+        },
+      },
     });
 
     if (!runResult.ok) {
@@ -236,21 +322,40 @@ export class RitualAssistedWorkflow {
         status: "failed",
         reason: runResult.error.reason,
         message: runResult.error.message,
-        cause: runResult.error
+        cause: runResult.error,
       };
     }
 
     const workflowContext = runResult.value.context;
-    const actionResult = createAssistedResourceActions(definition, context, workflowContext);
-    const conditionActionResult = createAssistedConditionActions(definition, context);
-    const backlashActions = createCastingFailureSanityActions(context.actor as Actor, castingCheck, form, cost);
-    const summaryLines = createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck);
+    const actionResult = createAssistedResourceActions(
+      definition,
+      context,
+      workflowContext,
+    );
+    const conditionActionResult = createAssistedConditionActions(
+      definition,
+      context,
+    );
+    const backlashActions = createCastingFailureSanityActions(
+      context.actor as Actor,
+      castingCheck,
+      form,
+      cost,
+    );
+    const summaryLines = createRitualSummaryLines(
+      definition,
+      castOptions,
+      form,
+      cost,
+      workflowContext,
+      castingCheck,
+    );
 
     if (!actionResult.ok) {
       return {
         status: "failed",
         reason: actionResult.reason,
-        message: actionResult.message
+        message: actionResult.message,
       };
     }
 
@@ -258,17 +363,21 @@ export class RitualAssistedWorkflow {
       return {
         status: "failed",
         reason: conditionActionResult.reason,
-        message: conditionActionResult.message
+        message: conditionActionResult.message,
       };
     }
 
-    const actions: AssistedRitualAction[] = [...backlashActions, ...actionResult.actions, ...conditionActionResult.actions];
+    const actions: AssistedRitualAction[] = [
+      ...backlashActions,
+      ...actionResult.actions,
+      ...conditionActionResult.actions,
+    ];
 
     if (actions.length === 0) {
       return {
         status: "completed-without-actions",
         workflowContext,
-        summaryLines
+        summaryLines,
       };
     }
 
@@ -276,12 +385,20 @@ export class RitualAssistedWorkflow {
       status: "ready",
       workflowContext,
       actions,
-      summaryLines
+      summaryLines,
     };
   }
 
-  async applyAction(action: AssistedResourceAction): Promise<ResourceOperationResult> {
-    return executeAutomationResourceOperation(this.resources, action.actor, action.resource, action.operation, action.amount);
+  async applyAction(
+    action: AssistedResourceAction,
+  ): Promise<ResourceOperationResult> {
+    return executeAutomationResourceOperation(
+      this.resources,
+      action.actor,
+      action.resource,
+      action.operation,
+      action.amount,
+    );
   }
 
   private resolveCostPreview(context: ItemUseContext): RitualCost | null {
@@ -289,17 +406,19 @@ export class RitualAssistedWorkflow {
 
     const result = this.ritualCosts.getCost({
       actor: context.actor,
-      ritual: context.item
+      ritual: context.item,
     });
 
     return result.ok ? result.value : null;
   }
 }
 
-function normalizeRitualCastOptions(options: RitualCastOptions): RitualCastOptions {
+function normalizeRitualCastOptions(
+  options: RitualCastOptions,
+): RitualCastOptions {
   return {
     variant: options.variant,
-    spendResource: options.spendResource === true
+    spendResource: options.spendResource === true,
   };
 }
 
@@ -308,31 +427,40 @@ function createPreparationDefinition(
   options: RitualCastOptions,
   form: AutomationRitualFormDefinition,
   cost: RitualCost | null,
-  buildOptions: RitualPreparationBuildOptions
+  buildOptions: RitualPreparationBuildOptions,
 ): RitualPreparationDefinition {
   const steps: RitualPreparationStep[] = [];
   const shouldSpendResource = options.spendResource === true;
 
   for (const step of definition.steps) {
     if (step.type === "modifyResource" || step.type === "chatCard") continue;
-    if (isCostStep(step) && (!buildOptions.includeCostSteps || !shouldSpendResource)) continue;
+    if (
+      isCostStep(step) &&
+      (!buildOptions.includeCostSteps || !shouldSpendResource)
+    )
+      continue;
 
     steps.push(applyFormOverridesToStep(step, form));
   }
 
-  if (buildOptions.includeCostSteps && shouldSpendResource && cost && isPositiveNumber(form.extraCost)) {
+  if (
+    buildOptions.includeCostSteps &&
+    shouldSpendResource &&
+    cost &&
+    isPositiveNumber(form.extraCost)
+  ) {
     steps.push({
       type: "spendResource",
       actor: "self",
       resource: cost.resource,
-      amount: form.extraCost
+      amount: form.extraCost,
     });
   }
 
   return {
     ...definition,
     label: `${definition.label} · Conjuração assistida`,
-    steps
+    steps,
   };
 }
 
@@ -341,7 +469,7 @@ async function spendRitualCostForCastingAttempt(
   actor: Actor,
   options: RitualCastOptions,
   form: AutomationRitualFormDefinition,
-  cost: RitualCost | null
+  cost: RitualCost | null,
 ): Promise<{ ok: true } | { ok: false; reason: string; message: string }> {
   if (options.spendResource !== true) return { ok: true };
 
@@ -351,26 +479,33 @@ async function spendRitualCostForCastingAttempt(
     return {
       ok: false,
       reason: "ritual-cost-unresolved",
-      message: "Não foi possível resolver o custo do ritual."
+      message: "Não foi possível resolver o custo do ritual.",
     };
   }
 
   if (finalCost.amount <= 0) return { ok: true };
 
-  const result = await resources.spend(actor, finalCost.resource, finalCost.amount);
+  const result = await resources.spend(
+    actor,
+    finalCost.resource,
+    finalCost.amount,
+  );
 
   if (!result.ok) {
     return {
       ok: false,
       reason: result.error.reason,
-      message: result.error.message
+      message: result.error.message,
     };
   }
 
   return { ok: true };
 }
 
-function applyFormOverridesToStep(step: RitualPreparationStep, form: AutomationRitualFormDefinition): RitualPreparationStep {
+function applyFormOverridesToStep(
+  step: RitualPreparationStep,
+  form: AutomationRitualFormDefinition,
+): RitualPreparationStep {
   if (step.type !== "rollFormula") return step;
 
   const formula = form.rollFormulaOverrides?.[step.id];
@@ -378,7 +513,7 @@ function applyFormOverridesToStep(step: RitualPreparationStep, form: AutomationR
 
   return {
     ...step,
-    formula
+    formula,
   } satisfies RollFormulaStep;
 }
 
@@ -386,7 +521,7 @@ function createCastingFailureSanityActions(
   actor: Actor,
   castingCheck: RitualCastingCheckSummary | null,
   form: AutomationRitualFormDefinition,
-  cost: RitualCost | null
+  cost: RitualCost | null,
 ): AssistedResourceAction[] {
   if (!castingCheck || castingCheck.success) return [];
 
@@ -406,15 +541,17 @@ function createCastingFailureSanityActions(
       label: `Aplicar ${finalCost.amount} SAN`,
       executedLabel: "✓ Dano na SAN aplicado",
       actionSectionId: "casting-backlash",
-      actionSectionTitle: "Dano na sanidade"
-    }
+      actionSectionTitle: "Dano na sanidade",
+    },
   ];
 }
 
 function createAssistedConditionActions(
   definition: AutomationDefinition,
-  itemUseContext: ItemUseContext
-): { ok: true; actions: AssistedConditionAction[] } | { ok: false; reason: string; message: string } {
+  itemUseContext: ItemUseContext,
+):
+  | { ok: true; actions: AssistedConditionAction[] }
+  | { ok: false; reason: string; message: string } {
   const actions: AssistedConditionAction[] = [];
 
   for (const application of definition.conditionApplications ?? []) {
@@ -424,13 +561,20 @@ function createAssistedConditionActions(
       return {
         ok: false,
         reason: "no-target",
-        message: `Nenhum alvo válido encontrado para aplicar ${application.label ?? application.conditionId}.`
+        message: `Nenhum alvo válido encontrado para aplicar ${application.label ?? application.conditionId}.`,
       };
     }
 
     for (const actor of actors) {
       const durationAnchor = createCurrentCombatDurationAnchor(actor);
-      actions.push(createAssistedConditionAction(application, actor, itemUseContext.item, durationAnchor));
+      actions.push(
+        createAssistedConditionAction(
+          application,
+          actor,
+          itemUseContext.item,
+          durationAnchor,
+        ),
+      );
     }
   }
 
@@ -441,10 +585,11 @@ function createAssistedConditionAction(
   application: AutomationConditionApplicationDefinition,
   actor: Actor,
   item: Item,
-  durationAnchor: ToolkitConditionDurationInput["anchor"]
+  durationAnchor: ToolkitConditionDurationInput["anchor"],
 ): AssistedConditionAction {
   const actorName = actor.name ?? "Ator sem nome";
-  const conditionLabel = application.label ?? formatConditionId(application.conditionId);
+  const conditionLabel =
+    application.label ?? formatConditionId(application.conditionId);
 
   return {
     kind: "condition-application",
@@ -452,32 +597,35 @@ function createAssistedConditionAction(
     actorName,
     conditionId: application.conditionId,
     conditionLabel,
-    duration: createConditionActionDuration(application.duration ?? null, durationAnchor),
+    duration: createConditionActionDuration(
+      application.duration ?? null,
+      durationAnchor,
+    ),
     source: application.source ?? null,
     originUuid: item.uuid ?? null,
     label: createConditionActionLabel(conditionLabel, application.duration),
     executedLabel: application.executedLabel ?? `✓ ${conditionLabel} aplicado`,
     actionSectionId: application.actionSectionId ?? "apply-effects",
-    actionSectionTitle: application.actionSectionTitle ?? "Aplicar efeito"
+    actionSectionTitle: application.actionSectionTitle ?? "Aplicar efeito",
   };
 }
 
 function createConditionActionDuration(
   duration: AutomationConditionApplicationDefinition["duration"],
-  anchor: ToolkitConditionDurationInput["anchor"]
+  anchor: ToolkitConditionDurationInput["anchor"],
 ): ToolkitConditionDurationInput | null {
   if (!duration) return null;
 
   return {
     ...duration,
     expiry: duration.expiry ?? "turnStart",
-    anchor
+    anchor,
   };
 }
 
 function createConditionActionLabel(
   conditionLabel: string,
-  duration: AutomationConditionApplicationDefinition["duration"]
+  duration: AutomationConditionApplicationDefinition["duration"],
 ): string {
   const rounds = duration?.rounds;
 
@@ -503,9 +651,12 @@ function formatConditionId(conditionId: string): string {
 function createAssistedResourceActions(
   definition: AutomationDefinition,
   itemUseContext: ItemUseContext,
-  workflowContext: WorkflowContext
-): { ok: true; actions: AssistedResourceAction[] } | { ok: false; reason: string; message: string } {
-  const actions: AssistedResourceAction[] = [];
+  workflowContext: WorkflowContext,
+):
+  | { ok: true; actions: Array<AssistedResourceAction | AssistedDamageAction> }
+  | { ok: false; reason: string; message: string } {
+  const actions: Array<AssistedResourceAction | AssistedDamageAction> = [];
+  const damageGroups = new Map<string, PendingDamageActionGroup>();
 
   for (const step of definition.steps) {
     if (step.type !== "modifyResource") continue;
@@ -516,7 +667,7 @@ function createAssistedResourceActions(
       return {
         ok: false,
         reason: amount.error.reason,
-        message: amount.error.message
+        message: amount.error.message,
       };
     }
 
@@ -526,36 +677,141 @@ function createAssistedResourceActions(
       return {
         ok: false,
         reason: "no-target",
-        message: "Nenhum alvo válido encontrado para criar ação assistida do ritual."
+        message:
+          "Nenhum alvo válido encontrado para criar ação assistida do ritual.",
       };
     }
 
     for (const actor of actors) {
-      actions.push(...createAssistedResourceActionsForActor(definition, step, actor, amount.value));
+      if (isDamageApplicationStep(step)) {
+        addPendingDamageEntry(
+          damageGroups,
+          actor,
+          createPendingDamageEntry(step, workflowContext, amount.value),
+        );
+        continue;
+      }
+
+      actions.push(createAssistedResourceAction(step, actor, amount.value));
     }
+  }
+
+  for (const group of damageGroups.values()) {
+    actions.push(
+      ...createAssistedDamageActionsForActor(
+        definition,
+        itemUseContext.item,
+        group.actor,
+        group.entries,
+      ),
+    );
   }
 
   return { ok: true, actions };
 }
 
-function createAssistedResourceActionsForActor(
-  definition: AutomationDefinition,
-  step: ModifyResourceStep,
+type PendingDamageActionEntry = {
+  step: ModifyResourceStep;
+  amount: number;
+  damageType: DamageApplicationInstanceInput["damageType"];
+  sourceRollId: string | null;
+};
+
+type PendingDamageActionGroup = {
+  actor: Actor;
+  entries: PendingDamageActionEntry[];
+};
+
+function isDamageApplicationStep(step: ModifyResourceStep): boolean {
+  return step.operation === "damage" && step.resource === "PV";
+}
+
+function addPendingDamageEntry(
+  groups: Map<string, PendingDamageActionGroup>,
   actor: Actor,
-  baseAmount: number
-): AssistedResourceAction[] {
-  if (!shouldCreateDamageApplicationChoices(definition, step)) {
-    return [createAssistedResourceAction(step, actor, baseAmount)];
+  entry: PendingDamageActionEntry,
+): void {
+  const key = createActorActionKey(actor);
+  const group = groups.get(key);
+
+  if (group) {
+    group.entries.push(entry);
+    return;
   }
 
-  const choiceGroupId = createChoiceGroupId();
+  groups.set(key, {
+    actor,
+    entries: [entry],
+  });
+}
 
-  return getDamageApplicationOptions(definition).map((option) => {
-    const amount = calculateDamageApplicationAmount(baseAmount, option);
-    return createAssistedResourceAction(step, actor, amount, {
-      option,
-      choiceGroupId
-    });
+function createPendingDamageEntry(
+  step: ModifyResourceStep,
+  workflowContext: WorkflowContext,
+  amount: number,
+): PendingDamageActionEntry {
+  const sourceRollId = resolveAmountSourceRollId(step.amountFrom);
+  const rollDamageType = sourceRollId
+    ? workflowContext.rolls[sourceRollId]?.damageType
+    : undefined;
+
+  return {
+    step,
+    amount,
+    damageType: step.damageType ?? rollDamageType ?? null,
+    sourceRollId,
+  };
+}
+
+function createAssistedDamageActionsForActor(
+  definition: AutomationDefinition,
+  item: Item,
+  actor: Actor,
+  entries: PendingDamageActionEntry[],
+): AssistedDamageAction[] {
+  const options = getDamageApplicationOptions(definition);
+  const choiceGroupId = options.length > 1 ? createChoiceGroupId() : undefined;
+
+  return options.map((option) => {
+    const instances = entries.map(
+      (entry, index): DamageApplicationInstanceInput => {
+        const amount = calculateDamageApplicationAmount(entry.amount, option);
+
+        return {
+          id: createDamageInstanceId(entry, option, index),
+          amount,
+          damageType: entry.damageType,
+          sourceRollId: entry.sourceRollId,
+          ignoreResistance: entry.step.ignoreResistance === true,
+        };
+      },
+    );
+
+    const totalAmount = instances.reduce(
+      (total, instance) => total + instance.amount,
+      0,
+    );
+
+    return {
+      kind: "damage-application",
+      actor,
+      actorName: actor.name ?? "Ator sem nome",
+      instances,
+      label: createDamageActionLabel(totalAmount, option, options.length > 1),
+      executedLabel: createDamageExecutedLabel(
+        actor.name ?? "Ator sem nome",
+        option,
+        options.length > 1,
+      ),
+      choiceGroupId,
+      choiceGroupResolvedLabel: choiceGroupId
+        ? "✓ Outra opção escolhida"
+        : undefined,
+      actionSectionId: "apply-damage",
+      actionSectionTitle: "Aplicar danos",
+      source: "item-use.damage-action",
+      originUuid: item.uuid ?? null,
+    };
   });
 }
 
@@ -563,7 +819,6 @@ function createAssistedResourceAction(
   step: ModifyResourceStep,
   actor: Actor,
   amount: number,
-  damageChoice?: { option: AutomationDamageApplicationOption; choiceGroupId: string }
 ): AssistedResourceAction {
   const actorName = actor.name ?? "Ator sem nome";
   const actionSection = createActionSection(step);
@@ -575,20 +830,76 @@ function createAssistedResourceAction(
     resource: step.resource,
     operation: step.operation,
     amount,
-    label: createActionLabel(step, actorName, amount, damageChoice?.option),
-    executedLabel: createExecutedLabel(step, actorName, damageChoice?.option),
-    choiceGroupId: damageChoice?.choiceGroupId,
-    choiceGroupResolvedLabel: damageChoice ? "✓ Outra opção escolhida" : undefined,
+    label: createActionLabel(step, actorName, amount),
+    executedLabel: createExecutedLabel(step, actorName),
     actionSectionId: actionSection.id,
-    actionSectionTitle: actionSection.title
+    actionSectionTitle: actionSection.title,
   };
+}
+
+function createDamageInstanceId(
+  entry: PendingDamageActionEntry,
+  option: AutomationDamageApplicationOption,
+  index: number,
+): string {
+  const source = entry.sourceRollId ?? `damage-${index + 1}`;
+  return `${source}:${index + 1}:${option.id}`;
+}
+
+function createDamageActionLabel(
+  amount: number,
+  option: AutomationDamageApplicationOption,
+  hasChoices: boolean,
+): string {
+  if (hasChoices) {
+    const prefix = option.id === "normal" ? "Normal" : option.label;
+    return `${prefix}: ${amount} PV`;
+  }
+
+  return `Dano: ${amount} PV`;
+}
+
+function createDamageExecutedLabel(
+  actorName: string,
+  option: AutomationDamageApplicationOption,
+  hasChoices: boolean,
+): string {
+  if (hasChoices) {
+    const prefix =
+      option.id === "normal" ? "dano normal" : option.label.toLowerCase();
+    return `✓ ${prefix} aplicado`;
+  }
+
+  return `✓ Dano aplicado em ${actorName}`;
+}
+
+function createActorActionKey(actor: Actor): string {
+  return (
+    actor.uuid ??
+    actor.id ??
+    actor.name ??
+    `actor-${Math.random().toString(36).slice(2)}`
+  );
+}
+
+function resolveAmountSourceRollId(
+  amountFrom: string | undefined,
+): string | null {
+  const value = amountFrom?.trim();
+  if (!value) return null;
+
+  if (value.endsWith(".total")) {
+    return value.slice(0, -".total".length);
+  }
+
+  const [firstPathPart] = value.split(".");
+  return firstPathPart && firstPathPart.length > 0 ? firstPathPart : null;
 }
 
 function createActionLabel(
   step: ModifyResourceStep,
   actorName: string,
   amount: number,
-  damageOption?: AutomationDamageApplicationOption
 ): string {
   void actorName;
 
@@ -597,12 +908,7 @@ function createActionLabel(
   }
 
   if (step.operation === "damage") {
-    if (damageOption) {
-      const prefix = damageOption.id === "normal" ? "Normal" : damageOption.label;
-      return `${prefix}: ${amount} PV`;
-    }
-
-    return `Dano: ${amount} PV`;
+    return `Dano: ${amount} ${step.resource}`;
   }
 
   if (step.operation === "recover") {
@@ -616,17 +922,15 @@ function createActionLabel(
   return `Aplicar ${amount} ${step.resource}`;
 }
 
-function createExecutedLabel(step: ModifyResourceStep, actorName: string, damageOption?: AutomationDamageApplicationOption): string {
+function createExecutedLabel(
+  step: ModifyResourceStep,
+  actorName: string,
+): string {
   if (step.operation === "heal" && step.resource === "PV") {
     return `✓ ${actorName} curado`;
   }
 
   if (step.operation === "damage") {
-    if (damageOption) {
-      const prefix = damageOption.id === "normal" ? "dano normal" : damageOption.label.toLowerCase();
-      return `✓ ${prefix} aplicado`;
-    }
-
     return `✓ Dano aplicado em ${actorName}`;
   }
 
@@ -641,7 +945,9 @@ function createExecutedLabel(step: ModifyResourceStep, actorName: string, damage
   return "✓ Ação aplicada";
 }
 
-function createActionSection(step: ModifyResourceStep): AssistedResourceActionSection {
+function createActionSection(
+  step: ModifyResourceStep,
+): AssistedResourceActionSection {
   if (step.operation === "damage" && step.resource === "PV") {
     return { id: "apply-damage", title: "Aplicar danos" };
   }
@@ -657,11 +963,9 @@ function createActionSection(step: ModifyResourceStep): AssistedResourceActionSe
   return { id: "actions", title: "Ações" };
 }
 
-function shouldCreateDamageApplicationChoices(definition: AutomationDefinition, step: ModifyResourceStep): boolean {
-  return step.operation === "damage" && step.resource === "PV" && getDamageApplicationOptions(definition).length > 1;
-}
-
-function getDamageApplicationOptions(definition: AutomationDefinition): AutomationDamageApplicationOption[] {
+function getDamageApplicationOptions(
+  definition: AutomationDefinition,
+): AutomationDamageApplicationOption[] {
   const configured = definition.resistance?.damageApplications;
 
   if (configured && configured.length > 0) {
@@ -671,20 +975,29 @@ function getDamageApplicationOptions(definition: AutomationDefinition): Automati
   if (definition.resistance?.effect === "reducesByHalf") {
     return [
       { id: "normal", label: "Dano normal", multiplier: 1 },
-      { id: "half", label: "Metade", multiplier: 0.5, rounding: "floor" }
+      { id: "half", label: "Metade", multiplier: 0.5, rounding: "floor" },
     ];
   }
 
   return [{ id: "normal", label: "Dano normal", multiplier: 1 }];
 }
 
-function calculateDamageApplicationAmount(baseAmount: number, option: AutomationDamageApplicationOption): number {
+function calculateDamageApplicationAmount(
+  baseAmount: number,
+  option: AutomationDamageApplicationOption,
+): number {
   const rawAmount = baseAmount * option.multiplier;
-  const roundedAmount = roundDamageApplicationAmount(rawAmount, option.rounding ?? "floor");
+  const roundedAmount = roundDamageApplicationAmount(
+    rawAmount,
+    option.rounding ?? "floor",
+  );
   return Math.max(0, roundedAmount);
 }
 
-function roundDamageApplicationAmount(amount: number, rounding: NonNullable<AutomationDamageApplicationOption["rounding"]>): number {
+function roundDamageApplicationAmount(
+  amount: number,
+  rounding: NonNullable<AutomationDamageApplicationOption["rounding"]>,
+): number {
   switch (rounding) {
     case "ceil":
       return Math.ceil(amount);
@@ -696,7 +1009,8 @@ function roundDamageApplicationAmount(amount: number, rounding: NonNullable<Auto
 }
 
 function createChoiceGroupId(): string {
-  const cryptoObject = globalThis.crypto as { randomUUID?: () => string } | undefined;
+  const cryptoObject = globalThis.crypto as
+    { randomUUID?: () => string } | undefined;
 
   if (cryptoObject?.randomUUID) {
     return cryptoObject.randomUUID();
@@ -705,12 +1019,17 @@ function createChoiceGroupId(): string {
   return `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function resolveActors(selector: AutomationActorSelector, context: ItemUseContext): Actor[] {
+function resolveActors(
+  selector: AutomationActorSelector,
+  context: ItemUseContext,
+): Actor[] {
   switch (selector) {
     case "self":
       return context.actor ? [context.actor as Actor] : [];
     case "target":
-      return context.targets.flatMap((target) => (target.actor ? [target.actor] : []));
+      return context.targets.flatMap((target) =>
+        target.actor ? [target.actor] : [],
+      );
   }
 }
 
@@ -720,7 +1039,7 @@ function createRitualSummaryLines(
   form: AutomationRitualFormDefinition,
   cost: RitualCost | null,
   context: WorkflowContext,
-  castingCheck: RitualCastingCheckSummary | null = null
+  castingCheck: RitualCastingCheckSummary | null = null,
 ): string[] {
   return [
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
@@ -728,11 +1047,13 @@ function createRitualSummaryLines(
     ...createCastingCheckSummaryLines(castingCheck),
     ...Object.values(context.rolls).flatMap(createRollSummaryLines),
     ...createResistanceSummaryLines(definition.resistance),
-    ...createFormNoteLines(form)
+    ...createFormNoteLines(form),
   ];
 }
 
-function createCastingCheckSummaryLines(castingCheck: RitualCastingCheckSummary | null): string[] {
+function createCastingCheckSummaryLines(
+  castingCheck: RitualCastingCheckSummary | null,
+): string[] {
   if (!castingCheck) return [];
 
   return [
@@ -740,11 +1061,17 @@ function createCastingCheckSummaryLines(castingCheck: RitualCastingCheckSummary 
     `Conjuração Fórmula: ${castingCheck.formula}`,
     `Conjuração DT: ${castingCheck.difficulty}`,
     `Conjuração Resultado: ${castingCheck.success ? "Sucesso" : "Falha"}`,
-    ...(castingCheck.diceBreakdown ? [`Dados (Conjuração): ${castingCheck.diceBreakdown}`] : [])
+    ...(castingCheck.diceBreakdown
+      ? [`Dados (Conjuração): ${castingCheck.diceBreakdown}`]
+      : []),
   ];
 }
 
-function createCostSummaryLine(options: RitualCastOptions, form: AutomationRitualFormDefinition, cost: RitualCost | null): string {
+function createCostSummaryLine(
+  options: RitualCastOptions,
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null,
+): string {
   const finalCost = calculateFinalRitualCost(cost, form);
 
   if (!finalCost) {
@@ -772,13 +1099,15 @@ function createRollSummaryLines(roll: WorkflowRollResult): string[] {
   return lines;
 }
 
-function createResistanceSummaryLines(resistance: AutomationResistanceDefinition | undefined): string[] {
+function createResistanceSummaryLines(
+  resistance: AutomationResistanceDefinition | undefined,
+): string[] {
   if (!resistance) return [];
 
   return [
     `Resistência: ${resistance.summary}`,
     `Resistência Perícia: ${resistance.skill}`,
-    `Resistência Rótulo: ${resistance.label}`
+    `Resistência Rótulo: ${resistance.label}`,
   ];
 }
 
@@ -823,14 +1152,20 @@ function describeRollBreakdown(roll: unknown): string | null {
 
     if (!part) continue;
 
-    appendRollBreakdownPart(parts, part.operator ?? pendingOperator, part.value);
+    appendRollBreakdownPart(
+      parts,
+      part.operator ?? pendingOperator,
+      part.value,
+    );
     pendingOperator = "+";
   }
 
   return parts.length > 0 ? parts.join(" ") : null;
 }
 
-function describeBreakdownPart(term: RollBreakdownTerm): RollBreakdownPart | null {
+function describeBreakdownPart(
+  term: RollBreakdownTerm,
+): RollBreakdownPart | null {
   const diceResults = describeDieResults(term);
 
   if (diceResults.length > 0) {
@@ -848,7 +1183,10 @@ function describeDieResults(term: RollBreakdownTerm): string[] {
 
     const dieResult = result as RollDieResult;
 
-    if (typeof dieResult.result !== "number" || !Number.isFinite(dieResult.result)) {
+    if (
+      typeof dieResult.result !== "number" ||
+      !Number.isFinite(dieResult.result)
+    ) {
       return [];
     }
 
@@ -857,21 +1195,27 @@ function describeDieResults(term: RollBreakdownTerm): string[] {
   });
 }
 
-function describeConstantTerm(term: RollBreakdownTerm): RollBreakdownPart | null {
+function describeConstantTerm(
+  term: RollBreakdownTerm,
+): RollBreakdownPart | null {
   if (typeof term.faces === "number") return null;
 
   if (typeof term.number === "number" && Number.isFinite(term.number)) {
     const value = Math.abs(term.number);
     return {
       value: String(value),
-      operator: term.number < 0 ? "-" : undefined
+      operator: term.number < 0 ? "-" : undefined,
     };
   }
 
   return null;
 }
 
-function appendRollBreakdownPart(parts: string[], operator: "+" | "-", value: string): void {
+function appendRollBreakdownPart(
+  parts: string[],
+  operator: "+" | "-",
+  value: string,
+): void {
   if (parts.length === 0) {
     parts.push(operator === "-" ? `- ${value}` : value);
     return;
@@ -912,10 +1256,15 @@ function createRitualCastVariantOptions(
   definition: AutomationDefinition,
   ritual: Item,
   cost: RitualCost | null,
-  isGenericRitual: boolean
+  isGenericRitual: boolean,
 ): RitualCastVariantOption[] {
   return RITUAL_CAST_VARIANTS.map((variant) => {
-    const form = resolveOptionalRitualForm(definition, ritual, variant, isGenericRitual);
+    const form = resolveOptionalRitualForm(
+      definition,
+      ritual,
+      variant,
+      isGenericRitual,
+    );
     const enabled = form !== null;
 
     return {
@@ -924,12 +1273,16 @@ function createRitualCastVariantOptions(
       enabled,
       details: form ? createVariantDetails(form, cost, isGenericRitual) : [],
       finalCostText: form ? createFinalCostText(cost, form) : null,
-      unavailableReason: enabled ? undefined : "não disponível neste ritual"
+      unavailableReason: enabled ? undefined : "não disponível neste ritual",
     };
   });
 }
 
-function createVariantDetails(form: AutomationRitualFormDefinition, cost: RitualCost | null, isGenericRitual: boolean): string[] {
+function createVariantDetails(
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null,
+  isGenericRitual: boolean,
+): string[] {
   const details: string[] = [];
   const formulas = Object.values(form.rollFormulaOverrides ?? {});
 
@@ -940,32 +1293,46 @@ function createVariantDetails(form: AutomationRitualFormDefinition, cost: Ritual
   }
 
   const finalCost = calculateFinalRitualCost(cost, form);
-  details.push(finalCost ? `Custo final: ${finalCost.amount} ${finalCost.resource}` : "Custo final não resolvido");
+  details.push(
+    finalCost
+      ? `Custo final: ${finalCost.amount} ${finalCost.resource}`
+      : "Custo final não resolvido",
+  );
 
   return details;
 }
 
 function calculateFinalRitualCost(
   cost: RitualCost | null,
-  form: AutomationRitualFormDefinition
+  form: AutomationRitualFormDefinition,
 ): { resource: RitualCost["resource"]; amount: number } | null {
   if (!cost) return null;
   return {
     resource: cost.resource,
-    amount: cost.amount + (form.extraCost ?? 0)
+    amount: cost.amount + (form.extraCost ?? 0),
   };
 }
 
-function createFinalCostText(cost: RitualCost | null, form: AutomationRitualFormDefinition): string | null {
+function createFinalCostText(
+  cost: RitualCost | null,
+  form: AutomationRitualFormDefinition,
+): string | null {
   const finalCost = calculateFinalRitualCost(cost, form);
   return finalCost ? `${finalCost.amount} ${finalCost.resource}` : null;
 }
 
 function isGenericRitualDefinition(definition: AutomationDefinition): boolean {
-  return !definition.resistance && definition.steps.length > 0 && definition.steps.every(isCostStep);
+  return (
+    !definition.resistance &&
+    definition.steps.length > 0 &&
+    definition.steps.every(isCostStep)
+  );
 }
 
-function createEmptyRitualWorkflowContext(context: ItemUseContext, options: RitualCastOptions): WorkflowContext {
+function createEmptyRitualWorkflowContext(
+  context: ItemUseContext,
+  options: RitualCastOptions,
+): WorkflowContext {
   return createWorkflowContext({
     sourceActor: context.actor as Actor,
     sourceToken: context.token,
@@ -974,13 +1341,13 @@ function createEmptyRitualWorkflowContext(context: ItemUseContext, options: Ritu
     flags: {
       itemUse: {
         source: context.source,
-        executionMode: "ask"
+        executionMode: "ask",
       },
       ritualCast: {
         variant: options.variant,
-        spendResource: options.spendResource
-      }
-    }
+        spendResource: options.spendResource,
+      },
+    },
   });
 }
 
@@ -988,16 +1355,19 @@ function resolveRitualForm(
   definition: AutomationDefinition,
   ritual: Item,
   variant: RitualCastVariant,
-  isGenericRitual: boolean
+  isGenericRitual: boolean,
 ): AutomationRitualFormDefinition {
-  return resolveOptionalRitualForm(definition, ritual, variant, isGenericRitual) ?? BASE_RITUAL_FORM;
+  return (
+    resolveOptionalRitualForm(definition, ritual, variant, isGenericRitual) ??
+    BASE_RITUAL_FORM
+  );
 }
 
 function resolveOptionalRitualForm(
   definition: AutomationDefinition,
   ritual: Item,
   variant: AutomationRitualFormId,
-  isGenericRitual: boolean
+  isGenericRitual: boolean,
 ): AutomationRitualFormDefinition | null {
   const configured = definition.ritualForms?.[variant] ?? null;
   if (configured) return configured;
@@ -1010,7 +1380,9 @@ function resolveOptionalRitualForm(
   return createGenericRitualForm(variant);
 }
 
-function createGenericRitualForm(variant: AutomationRitualFormId): AutomationRitualFormDefinition {
+function createGenericRitualForm(
+  variant: AutomationRitualFormId,
+): AutomationRitualFormDefinition {
   switch (variant) {
     case "base":
       return BASE_RITUAL_FORM;
@@ -1021,10 +1393,14 @@ function createGenericRitualForm(variant: AutomationRitualFormId): AutomationRit
   }
 }
 
-function isRitualFormAvailableInItem(ritual: Item, variant: AutomationRitualFormId): boolean {
+function isRitualFormAvailableInItem(
+  ritual: Item,
+  variant: AutomationRitualFormId,
+): boolean {
   if (variant === "base") return true;
 
-  const path = variant === "discente" ? "system.studentForm" : "system.trueForm";
+  const path =
+    variant === "discente" ? "system.studentForm" : "system.trueForm";
   return isTruthyFlag(foundry.utils.getProperty(ritual, path));
 }
 
@@ -1036,7 +1412,9 @@ function hasRitualOrExplicitCost(definition: AutomationDefinition): boolean {
   return definition.steps.some(isCostStep);
 }
 
-function isCostStep(step: AutomationStep): step is SpendResourceStep | SpendRitualCostStep {
+function isCostStep(
+  step: AutomationStep,
+): step is SpendResourceStep | SpendRitualCostStep {
   return step.type === "spendResource" || step.type === "spendRitualCost";
 }
 

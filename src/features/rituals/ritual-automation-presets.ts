@@ -1,5 +1,11 @@
-import type { AutomationDefinition, AutomationStep } from "../../core/automation/automation-definition";
-import type { AutomationPreset, AutomationPresetItemPatch } from "../../core/automation/automation-preset";
+import type {
+  AutomationDefinition,
+  AutomationStep,
+} from "../../core/automation/automation-definition";
+import type {
+  AutomationPreset,
+  AutomationPresetItemPatch,
+} from "../../core/automation/automation-preset";
 
 export const RITUAL_COST_ONLY_PRESET_ID = "ritual.costOnly";
 export const RITUAL_SIMPLE_HEALING_PRESET_ID = "ritual.simpleHealing";
@@ -19,7 +25,7 @@ export function createBuiltInAutomationPresets(): AutomationPreset[] {
     createRitualSimpleHealingPreset(),
     createRitualElectrocutionPreset(),
     createRitualSimpleDamagePreset(),
-    createGenericSimpleHealingPreset()
+    createGenericSimpleHealingPreset(),
   ];
 }
 
@@ -28,7 +34,8 @@ export function createRitualCostOnlyPreset(): AutomationPreset {
     id: RITUAL_COST_ONLY_PRESET_ID,
     version: "1.0.0",
     label: "Gasto de custo de ritual",
-    description: "Calcula o custo do ritual pelo círculo e gasta o recurso configurado.",
+    description:
+      "Calcula o custo do ritual pelo círculo e gasta o recurso configurado.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [],
@@ -37,20 +44,21 @@ export function createRitualCostOnlyPreset(): AutomationPreset {
       label: "Gasto de custo de ritual",
       ritualForms: {
         base: {
-          label: "Padrão"
-        }
+          label: "Padrão",
+        },
       },
       steps: [
         {
-          type: "spendRitualCost"
+          type: "spendRitualCost",
         },
         {
           type: "chatCard",
           title: "Gasto de custo de ritual",
-          message: "Calcula o custo do ritual pelo círculo e gasta o recurso configurado."
-        }
-      ]
-    }
+          message:
+            "Calcula o custo do ritual pelo círculo e gasta o recurso configurado.",
+        },
+      ],
+    },
   };
 }
 
@@ -59,37 +67,38 @@ export function createRitualSimpleHealingPreset(): AutomationPreset {
     id: RITUAL_SIMPLE_HEALING_PRESET_ID,
     version: "1.0.0",
     label: "Cicatrização",
-    description: "Gasta o custo do ritual, rola 2d8+2 de cura e recupera PV do alvo.",
+    description:
+      "Gasta o custo do ritual, rola 2d8+2 de cura e recupera PV do alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [
       {
         type: "normalizedName",
-        names: ["cicatrizacao"]
-      }
+        names: ["cicatrizacao"],
+      },
     ],
     automation: createRitualSimpleHealingDefinition(),
-    itemPatch: createCicatrizationItemPatch()
+    itemPatch: createCicatrizationItemPatch(),
   };
 }
 
 export function createRitualElectrocutionPreset(): AutomationPreset {
   return {
     id: RITUAL_ELECTROCUTION_PRESET_ID,
-    version: "1.3.0",
+    version: "1.4.1",
     label: "Eletrocussão",
     description:
-      "Preset inicial de dano de energia. Gasta o custo do ritual, rola 3d6/6d6/8d6 conforme a forma escolhida e prepara ações assistidas para aplicar dano em PV e Vulnerável por 1 rodada no alvo.",
+      "Preset inicial de dano de eletricidade. Gasta o custo do ritual, rola 3d6/6d6/8d6 conforme a forma escolhida e prepara ações assistidas para aplicar dano via adapter do sistema e Vulnerável por 1 rodada no alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [
       {
         type: "normalizedName",
-        names: ["eletrocussao", "eletrocucao"]
-      }
+        names: ["eletrocussao", "eletrocucao"],
+      },
     ],
     automation: createRitualElectrocutionDefinition(),
-    itemPatch: createElectrocutionItemPatch()
+    itemPatch: createElectrocutionItemPatch(),
   };
 }
 
@@ -98,11 +107,12 @@ export function createRitualSimpleDamagePreset(): AutomationPreset {
     id: RITUAL_SIMPLE_DAMAGE_PRESET_ID,
     version: "1.0.0",
     label: "Ritual de dano simples",
-    description: "Gasta o custo do ritual, rola dano e causa dano em PV do alvo.",
+    description:
+      "Gasta o custo do ritual, rola dano e causa dano em PV do alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [],
-    automation: createRitualSimpleDamageDefinition()
+    automation: createRitualSimpleDamageDefinition(),
   };
 }
 
@@ -123,32 +133,34 @@ export function createGenericSimpleHealingPreset(): AutomationPreset {
           type: "spendResource",
           actor: "self",
           resource: "PE",
-          amount: 1
+          amount: 1,
         },
         {
           type: "rollFormula",
           id: "healing",
           formula: "1d8",
-          intent: "healing"
+          intent: "healing",
         },
         {
           type: "modifyResource",
           actor: "target",
           resource: "PV",
           operation: "heal",
-          amountFrom: "healing.total"
+          amountFrom: "healing.total",
         },
         {
           type: "chatCard",
           title: "Cura simples de teste",
-          message: "Gasta 1 PE, rola 1d8 e cura PV do alvo."
-        }
-      ]
-    }
+          message: "Gasta 1 PE, rola 1d8 e cura PV do alvo.",
+        },
+      ],
+    },
   };
 }
 
-export function createRitualSimpleHealingDefinition(formula = "2d8+2"): AutomationDefinition {
+export function createRitualSimpleHealingDefinition(
+  formula = "2d8+2",
+): AutomationDefinition {
   return replaceRollFormula(
     {
       version: 1,
@@ -157,36 +169,37 @@ export function createRitualSimpleHealingDefinition(formula = "2d8+2"): Automati
         base: {
           label: "Padrão",
           rollFormulaOverrides: {
-            healing: formula
-          }
-        }
+            healing: formula,
+          },
+        },
       },
       steps: [
         {
-          type: "spendRitualCost"
+          type: "spendRitualCost",
         },
         {
           type: "rollFormula",
           id: "healing",
           formula: "1d8",
-          intent: "healing"
+          intent: "healing",
         },
         {
           type: "modifyResource",
           actor: "target",
           resource: "PV",
           operation: "heal",
-          amountFrom: "healing.total"
+          amountFrom: "healing.total",
         },
         {
           type: "chatCard",
           title: "Cicatrização",
-          message: "Gasta o custo do ritual, rola a fórmula de cura e recupera PV do alvo."
-        }
-      ]
+          message:
+            "Gasta o custo do ritual, rola a fórmula de cura e recupera PV do alvo.",
+        },
+      ],
     },
     "healing",
-    formula
+    formula,
   );
 }
 
@@ -195,9 +208,9 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
     ...createRitualSimpleDamageDefinition("3d6", {
       label: "Eletrocussão",
       title: "Eletrocussão",
-      damageType: "energia",
+      damageType: "electric",
       message:
-        "Gasta o custo do ritual, rola dano de energia e prepara aplicação de dano em PV do alvo. Resistência deve ser resolvida manualmente por enquanto."
+        "Gasta o custo do ritual, rola dano de eletricidade e prepara aplicação de dano em PV do alvo pelo adapter do sistema. Resistência deve ser resolvida manualmente por enquanto.",
     }),
     resistance: {
       skill: "resilience",
@@ -208,16 +221,16 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
         {
           id: "normal",
           label: "Dano normal",
-          multiplier: 1
+          multiplier: 1,
         },
         {
           id: "half",
           label: "Metade",
           multiplier: 0.5,
           rounding: "floor",
-          summary: "Use se o alvo resistiu."
-        }
-      ]
+          summary: "Use se o alvo resistiu.",
+        },
+      ],
     },
     conditionApplications: [
       {
@@ -226,37 +239,39 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
         conditionId: "vulnerable",
         label: "Vulnerável",
         duration: {
-          rounds: 1
+          rounds: 1,
         },
         source: "ritual.eletrocussao",
         actionSectionId: "apply-effects",
         actionSectionTitle: "Aplicar efeito",
-        executedLabel: "✓ Vulnerável aplicado"
-      }
+        executedLabel: "✓ Vulnerável aplicado",
+      },
     ],
     ritualForms: {
       base: {
         label: "Padrão",
         rollFormulaOverrides: {
-          damage: "3d6"
-        }
+          damage: "3d6",
+        },
       },
       discente: {
         label: "Discente",
         extraCost: 2,
         rollFormulaOverrides: {
-          damage: "6d6"
-        }
+          damage: "6d6",
+        },
       },
       verdadeiro: {
         label: "Verdadeiro",
         extraCost: 5,
         rollFormulaOverrides: {
-          damage: "8d6"
+          damage: "8d6",
         },
-        notes: ["Se o alvo falhar na Fortitude, aplique Atordoado por 1 rodada manualmente."]
-      }
-    }
+        notes: [
+          "Se o alvo falhar na Fortitude, aplique Atordoado por 1 rodada manualmente.",
+        ],
+      },
+    },
   };
 }
 
@@ -267,12 +282,14 @@ export function createRitualSimpleDamageDefinition(
     title?: string;
     damageType?: string;
     message?: string;
-  } = {}
+  } = {},
 ): AutomationDefinition {
   const label = options.label ?? "Ritual de dano simples";
   const title = options.title ?? "Ritual de dano simples";
   const damageType = options.damageType ?? "generic";
-  const message = options.message ?? "Gasta o custo do ritual, rola a fórmula de dano e causa dano em PV do alvo.";
+  const message =
+    options.message ??
+    "Gasta o custo do ritual, rola a fórmula de dano e causa dano em PV do alvo.";
 
   return replaceRollFormula(
     {
@@ -282,37 +299,37 @@ export function createRitualSimpleDamageDefinition(
         base: {
           label: "Padrão",
           rollFormulaOverrides: {
-            damage: formula
-          }
-        }
+            damage: formula,
+          },
+        },
       },
       steps: [
         {
-          type: "spendRitualCost"
+          type: "spendRitualCost",
         },
         {
           type: "rollFormula",
           id: "damage",
           formula: "1d8",
           intent: "damage",
-          damageType
+          damageType,
         },
         {
           type: "modifyResource",
           actor: "target",
           resource: "PV",
           operation: "damage",
-          amountFrom: "damage.total"
+          amountFrom: "damage.total",
         },
         {
           type: "chatCard",
           title,
-          message
-        }
-      ]
+          message,
+        },
+      ],
     },
     "damage",
-    formula
+    formula,
   );
 }
 
@@ -332,8 +349,8 @@ function createCicatrizationItemPatch(): AutomationPresetItemPatch {
       resistanceSkill: "",
       resistance: "",
       studentForm: false,
-      trueForm: false
-    }
+      trueForm: false,
+    },
   };
 }
 
@@ -353,20 +370,24 @@ function createElectrocutionItemPatch(): AutomationPresetItemPatch {
       resistanceSkill: "resilience",
       resistance: "reducesByHalf",
       studentForm: true,
-      trueForm: true
-    }
+      trueForm: true,
+    },
   };
 }
 
-function replaceRollFormula(definition: AutomationDefinition, rollId: string, formula: string): AutomationDefinition {
+function replaceRollFormula(
+  definition: AutomationDefinition,
+  rollId: string,
+  formula: string,
+): AutomationDefinition {
   return {
     ...definition,
     steps: definition.steps.map((step): AutomationStep => {
       if (step.type !== "rollFormula" || step.id !== rollId) return step;
       return {
         ...step,
-        formula
+        formula,
       };
-    })
+    }),
   };
 }

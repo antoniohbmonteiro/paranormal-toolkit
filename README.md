@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.17.9`.
+Versão experimental atual: `v0.18.1`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -17,7 +17,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Recurso | O que faz | Status |
 |---|---|---|
 | Custo de rituais | Calcula o custo pelo círculo e gasta PE quando a automação é usada. | Implementado |
-| Cura e dano automáticos | Rola a fórmula configurada e aplica cura ou dano no alvo selecionado. | Implementado |
+| Cura e dano automáticos | Rola a fórmula configurada; cura usa o ResourceEngine e dano em PV usa o adapter do sistema Ordem com suporte a RD por tipo. | Implementado |
 | Controle de recursos | Gasta, cura, recupera ou reduz PV, SAN, PE e PD respeitando limites da ficha. | Implementado |
 | Automações por item | Permite aplicar automações em rituais, habilidades ou itens usando flags próprias do módulo. | Implementado |
 | Uso pela ficha | Escuta o hook `ordemparanormal.itemUsed` do sistema e reage ao uso normal de itens automatizados. | Implementado inicial |
@@ -76,6 +76,22 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.18.1 — Feedback de dano e Eletrocussão elétrica
+
+- Corrige o preset de Eletrocussão para `1.4.1`, usando `damageType: "electric"`.
+- Mantém o elemento do ritual como Energia, mas aplica o dano como Eletricidade no adapter do sistema.
+- Ao aplicar dano assistido, o botão do card passa a mostrar o resultado real: `✓ X PV aplicado (RD Y)`.
+- Cria um whisper para GMs com resumo de dano bruto, dano final, RD bloqueada e PV atual.
+- O resumo suporta dano simples e dano misto, mostrando uma linha por tipo de dano.
+
+### 0.18.0 — Damage Adapter para Ordem
+
+- Adiciona uma camada `core/damage` para o Toolkit modelar dano por instâncias.
+- Adiciona `OrdemDamageAdapter`, que chama `actor.applyDamage` do sistema Ordem em vez de reduzir PV manualmente.
+- Mapeia tipos canônicos do Toolkit, como `energy`, `cutting` e `electric`, para os tipos internos do sistema, como `energyDamage`, `cuttingDamage` e `eletricDamage`.
+- Suporta dano misto separando instâncias e aplicando cada tipo em uma chamada própria, permitindo que a RD correta do sistema seja usada por tipo de dano.
+- Atualiza o preset de Eletrocussão para `1.4.0`, usando temporariamente `damageType: "energy"`.
 
 ### 0.17.9 — Duração Toolkit desacoplada do Foundry
 

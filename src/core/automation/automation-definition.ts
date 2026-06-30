@@ -1,19 +1,23 @@
 import type { ActorResource } from "../resources/actor-resource";
 import type { ResourceOperation } from "../resources/resource-operation";
 import type { WorkflowRollIntent } from "../workflow/workflow-roll";
+import type { DamageTypeInput } from "../damage/damage-types";
 
 export type AutomationDefinition = {
   version: 1;
   label: string;
   steps: AutomationStep[];
-  ritualForms?: Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>>;
+  ritualForms?: Partial<
+    Record<AutomationRitualFormId, AutomationRitualFormDefinition>
+  >;
   resistance?: AutomationResistanceDefinition;
   conditionApplications?: AutomationConditionApplicationDefinition[];
 };
 
 export type AutomationResistanceEffect = "reducesByHalf";
 
-export type AutomationResistanceSkill = "resilience" | "reflexes" | "will" | string;
+export type AutomationResistanceSkill =
+  "resilience" | "reflexes" | "will" | string;
 
 export type AutomationDamageApplicationRounding = "floor" | "ceil" | "round";
 
@@ -79,7 +83,7 @@ export type RollFormulaStep = {
   id: string;
   formula: string;
   intent?: WorkflowRollIntent;
-  damageType?: string;
+  damageType?: DamageTypeInput;
 };
 
 export type ModifyResourceStep = AutomationAmountSource & {
@@ -87,6 +91,8 @@ export type ModifyResourceStep = AutomationAmountSource & {
   actor: AutomationActorSelector;
   resource: ActorResource;
   operation: ResourceOperation;
+  damageType?: DamageTypeInput;
+  ignoreResistance?: boolean;
 };
 
 export type SpendRitualCostStep = {
@@ -99,4 +105,9 @@ export type ChatCardStep = {
   message?: string;
 };
 
-export type AutomationStep = SpendResourceStep | SpendRitualCostStep | RollFormulaStep | ModifyResourceStep | ChatCardStep;
+export type AutomationStep =
+  | SpendResourceStep
+  | SpendRitualCostStep
+  | RollFormulaStep
+  | ModifyResourceStep
+  | ChatCardStep;

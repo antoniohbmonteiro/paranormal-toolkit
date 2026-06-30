@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.9`.
+Versão base do roadmap: `v0.18.1`.
 
 O Toolkit já tem:
 
@@ -22,7 +22,7 @@ O Toolkit já tem:
 - modo `ask` com ações assistidas no chat;
 - conjuração geral de rituais em ApplicationV2;
 - formas estruturadas de ritual: Padrão, Discente e Verdadeiro;
-- presets iniciais para Cicatrização e Eletrocussão, com Eletrocussão versionada em `1.3.0`;
+- presets iniciais para Cicatrização e Eletrocussão, com Eletrocussão versionada em `1.4.1`;
 - custo de PE/PD por ritual;
 - rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
 - card de resultado no chat com dados brutos expansíveis pela fórmula da rolagem;
@@ -38,6 +38,7 @@ O Toolkit já tem:
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
 - Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, duração por turno do afetado usando flags próprias, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
+- Damage Adapter para Ordem, chamando `actor.applyDamage` do sistema e separando instâncias de dano para suportar RD por tipo.
 
 ## Roadmap por prioridade
 
@@ -98,6 +99,45 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.18.1 — Feedback de dano e Eletrocussão elétrica
+
+Objetivo: melhorar a resposta visual da aplicação de dano e corrigir o tipo de dano da Eletrocussão.
+
+Entrega feita:
+
+- corrige Eletrocussão para preset `1.4.1` com `damageType: "electric"`;
+- mantém o elemento do ritual como Energia e o dano aplicado como Eletricidade;
+- o botão executado do card passa a mostrar o resultado real aplicado após RD;
+- cria whisper para GMs com resumo da aplicação de dano;
+- o resumo mostra dano bruto, dano final, RD bloqueada, PV atual e suporte a dano misto.
+
+Critérios de aceitação:
+
+- Eletrocussão reaplicada deve aparecer como preset `1.4.1`;
+- aplicar dano deve atualizar o botão para `✓ X PV aplicado (RD Y)` quando houver RD;
+- o GM deve receber um whisper com detalhes do dano aplicado;
+- Eletrocussão deve testar RD de Eletricidade, não RD de Energia.
+
+### Concluído em 0.18.0 — Damage Adapter para Ordem
+
+Objetivo: parar de duplicar regra de dano/PV no Toolkit e delegar a aplicação de dano para o sistema Ordem.
+
+Entrega feita:
+
+- adiciona `core/damage` com tipos e contrato de adapter de dano;
+- adiciona `OrdemDamageAdapter`, que chama `actor.applyDamage`;
+- mantém tipos canônicos no Toolkit e mapeia para os IDs internos do sistema no adapter;
+- suporta dano misto separando instâncias e aplicando uma chamada por tipo de dano;
+- registra o resultado agregado no `workflowContext.damageInstances`;
+- mantém cura, SAN, PE e PD no `ResourceEngine`;
+- atualiza Eletrocussão para preset `1.4.0` com `damageType: "energy"`.
+
+Critérios de aceitação:
+
+- aplicar dano normal/metade deve chamar `actor.applyDamage` no alvo;
+- RD do sistema deve ser considerada conforme o tipo de dano;
+- dano misto deve ser modelável como múltiplas instâncias, sem somar tudo em um tipo único.
 
 ### Concluído em 0.17.9 — Duração do Toolkit sem expiração nativa
 

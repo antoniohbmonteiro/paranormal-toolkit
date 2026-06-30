@@ -12,12 +12,13 @@ import type {
   ModifyResourceStep,
   RollFormulaStep,
   SpendResourceStep,
-  SpendRitualCostStep
+  SpendRitualCostStep,
 } from "../../core/automation/automation-definition";
 import { failure, type Result, success } from "../../core/result";
 import { MODULE_ID } from "../../constants";
 
-export type AutomationFlagFailureReason = "missing-automation" | "invalid-automation";
+export type AutomationFlagFailureReason =
+  "missing-automation" | "invalid-automation";
 
 export type AutomationFlagFailure = {
   reason: AutomationFlagFailureReason;
@@ -25,7 +26,10 @@ export type AutomationFlagFailure = {
   value?: unknown;
 };
 
-export type AutomationFlagResult = Result<AutomationDefinition, AutomationFlagFailure>;
+export type AutomationFlagResult = Result<
+  AutomationDefinition,
+  AutomationFlagFailure
+>;
 
 export function readAutomationDefinition(item: Item): AutomationFlagResult {
   const value = item.getFlag(MODULE_ID, "automation");
@@ -33,7 +37,7 @@ export function readAutomationDefinition(item: Item): AutomationFlagResult {
   if (value === undefined || value === null) {
     return failure({
       reason: "missing-automation",
-      message: `Item ${item.name} não possui automação do Paranormal Toolkit.`
+      message: `Item ${item.name} não possui automação do Paranormal Toolkit.`,
     });
   }
 
@@ -41,7 +45,7 @@ export function readAutomationDefinition(item: Item): AutomationFlagResult {
     return failure({
       reason: "invalid-automation",
       message: `Automação do item ${item.name} usa formato inválido ou antigo. Reaplique um preset do Paranormal Toolkit.`,
-      value
+      value,
     });
   }
 
@@ -52,15 +56,23 @@ export function hasValidAutomationFlag(item: Item): boolean {
   return isAutomationFlagValue(item.getFlag(MODULE_ID, "automation"));
 }
 
-export function isAutomationFlagValue(value: unknown): value is AutomationFlagValue {
+export function isAutomationFlagValue(
+  value: unknown,
+): value is AutomationFlagValue {
   if (!value || typeof value !== "object") return false;
 
   const candidate = value as Partial<AutomationFlagValue>;
 
-  return candidate.schemaVersion === 1 && isAutomationFlagSource(candidate.source) && isAutomationDefinition(candidate.definition);
+  return (
+    candidate.schemaVersion === 1 &&
+    isAutomationFlagSource(candidate.source) &&
+    isAutomationDefinition(candidate.definition)
+  );
 }
 
-export function isAutomationDefinition(value: unknown): value is AutomationDefinition {
+export function isAutomationDefinition(
+  value: unknown,
+): value is AutomationDefinition {
   if (!value || typeof value !== "object") return false;
 
   const candidate = value as Partial<AutomationDefinition>;
@@ -70,21 +82,30 @@ export function isAutomationDefinition(value: unknown): value is AutomationDefin
     isNonEmptyString(candidate.label) &&
     Array.isArray(candidate.steps) &&
     candidate.steps.every(isAutomationStep) &&
-    (candidate.conditionApplications === undefined || isConditionApplicationList(candidate.conditionApplications))
+    (candidate.conditionApplications === undefined ||
+      isConditionApplicationList(candidate.conditionApplications))
   );
 }
 
-function isAutomationFlagSource(value: unknown): value is AutomationFlagValue["source"] {
+function isAutomationFlagSource(
+  value: unknown,
+): value is AutomationFlagValue["source"] {
   if (!value || typeof value !== "object") return false;
 
   const candidate = value as Partial<AutomationFlagValue["source"]>;
 
   if (candidate.type === "preset") {
-    return isNonEmptyString(candidate.presetId) && isNonEmptyString(candidate.presetVersion) && isNonEmptyString(candidate.appliedAt);
+    return (
+      isNonEmptyString(candidate.presetId) &&
+      isNonEmptyString(candidate.presetVersion) &&
+      isNonEmptyString(candidate.appliedAt)
+    );
   }
 
   if (candidate.type === "manual") {
-    return isNonEmptyString(candidate.label) && isNonEmptyString(candidate.appliedAt);
+    return (
+      isNonEmptyString(candidate.label) && isNonEmptyString(candidate.appliedAt)
+    );
   }
 
   return false;
@@ -111,7 +132,9 @@ function isAutomationStep(value: unknown): value is AutomationStep {
   }
 }
 
-function isSpendResourceStep(value: Partial<AutomationStep>): value is SpendResourceStep {
+function isSpendResourceStep(
+  value: Partial<AutomationStep>,
+): value is SpendResourceStep {
   const candidate = value as Partial<SpendResourceStep>;
 
   return (
@@ -122,25 +145,33 @@ function isSpendResourceStep(value: Partial<AutomationStep>): value is SpendReso
   );
 }
 
-function isSpendRitualCostStep(value: Partial<AutomationStep>): value is SpendRitualCostStep {
+function isSpendRitualCostStep(
+  value: Partial<AutomationStep>,
+): value is SpendRitualCostStep {
   const candidate = value as Partial<SpendRitualCostStep>;
 
   return candidate.type === "spendRitualCost";
 }
 
-function isRollFormulaStep(value: Partial<AutomationStep>): value is RollFormulaStep {
+function isRollFormulaStep(
+  value: Partial<AutomationStep>,
+): value is RollFormulaStep {
   const candidate = value as Partial<RollFormulaStep>;
 
   return (
     candidate.type === "rollFormula" &&
     isNonEmptyString(candidate.id) &&
     isNonEmptyString(candidate.formula) &&
-    (candidate.intent === undefined || isWorkflowRollIntent(candidate.intent)) &&
-    (candidate.damageType === undefined || isNonEmptyString(candidate.damageType))
+    (candidate.intent === undefined ||
+      isWorkflowRollIntent(candidate.intent)) &&
+    (candidate.damageType === undefined ||
+      isNonEmptyString(candidate.damageType))
   );
 }
 
-function isModifyResourceStep(value: Partial<AutomationStep>): value is ModifyResourceStep {
+function isModifyResourceStep(
+  value: Partial<AutomationStep>,
+): value is ModifyResourceStep {
   const candidate = value as Partial<ModifyResourceStep>;
 
   return (
@@ -148,7 +179,12 @@ function isModifyResourceStep(value: Partial<AutomationStep>): value is ModifyRe
     isAutomationActorSelector(candidate.actor) &&
     isActorResource(candidate.resource) &&
     isResourceOperation(candidate.operation) &&
-    hasAmountSource(candidate)
+    hasAmountSource(candidate) &&
+    (candidate.damageType === undefined ||
+      candidate.damageType === null ||
+      isNonEmptyString(candidate.damageType)) &&
+    (candidate.ignoreResistance === undefined ||
+      typeof candidate.ignoreResistance === "boolean")
   );
 }
 
@@ -162,11 +198,15 @@ function isChatCardStep(value: Partial<AutomationStep>): value is ChatCardStep {
   );
 }
 
-function isConditionApplicationList(value: unknown): value is AutomationConditionApplicationDefinition[] {
+function isConditionApplicationList(
+  value: unknown,
+): value is AutomationConditionApplicationDefinition[] {
   return Array.isArray(value) && value.every(isConditionApplicationDefinition);
 }
 
-function isConditionApplicationDefinition(value: unknown): value is AutomationConditionApplicationDefinition {
+function isConditionApplicationDefinition(
+  value: unknown,
+): value is AutomationConditionApplicationDefinition {
   if (!value || typeof value !== "object") return false;
 
   const candidate = value as Partial<AutomationConditionApplicationDefinition>;
@@ -176,36 +216,56 @@ function isConditionApplicationDefinition(value: unknown): value is AutomationCo
     isAutomationActorSelector(candidate.actor) &&
     isNonEmptyString(candidate.conditionId) &&
     (candidate.label === undefined || isNonEmptyString(candidate.label)) &&
-    (candidate.duration === undefined || candidate.duration === null || isConditionDurationDefinition(candidate.duration)) &&
+    (candidate.duration === undefined ||
+      candidate.duration === null ||
+      isConditionDurationDefinition(candidate.duration)) &&
     (candidate.source === undefined || isNonEmptyString(candidate.source)) &&
-    (candidate.actionSectionId === undefined || isNonEmptyString(candidate.actionSectionId)) &&
-    (candidate.actionSectionTitle === undefined || isNonEmptyString(candidate.actionSectionTitle)) &&
-    (candidate.executedLabel === undefined || isNonEmptyString(candidate.executedLabel))
+    (candidate.actionSectionId === undefined ||
+      isNonEmptyString(candidate.actionSectionId)) &&
+    (candidate.actionSectionTitle === undefined ||
+      isNonEmptyString(candidate.actionSectionTitle)) &&
+    (candidate.executedLabel === undefined ||
+      isNonEmptyString(candidate.executedLabel))
   );
 }
 
-function isConditionDurationDefinition(value: unknown): value is AutomationConditionDurationDefinition {
+function isConditionDurationDefinition(
+  value: unknown,
+): value is AutomationConditionDurationDefinition {
   if (!value || typeof value !== "object") return false;
 
   const candidate = value as Partial<AutomationConditionDurationDefinition>;
   return (
-    (candidate.rounds === undefined || candidate.rounds === null || isPositiveInteger(candidate.rounds)) &&
-    (candidate.expiry === undefined || candidate.expiry === null || isConditionExpiryEvent(candidate.expiry))
+    (candidate.rounds === undefined ||
+      candidate.rounds === null ||
+      isPositiveInteger(candidate.rounds)) &&
+    (candidate.expiry === undefined ||
+      candidate.expiry === null ||
+      isConditionExpiryEvent(candidate.expiry))
   );
 }
 
-function isConditionExpiryEvent(value: unknown): value is NonNullable<AutomationConditionDurationDefinition["expiry"]> {
+function isConditionExpiryEvent(
+  value: unknown,
+): value is NonNullable<AutomationConditionDurationDefinition["expiry"]> {
   return value === "turnStart" || value === "turnEnd";
 }
 
-function hasAmountSource(value: { amount?: unknown; amountFrom?: unknown }): boolean {
+function hasAmountSource(value: {
+  amount?: unknown;
+  amountFrom?: unknown;
+}): boolean {
   return (
-    (typeof value.amount === "number" && Number.isInteger(value.amount) && value.amount > 0) ||
+    (typeof value.amount === "number" &&
+      Number.isInteger(value.amount) &&
+      value.amount > 0) ||
     isNonEmptyString(value.amountFrom)
   );
 }
 
-function isAutomationActorSelector(value: unknown): value is AutomationActorSelector {
+function isAutomationActorSelector(
+  value: unknown,
+): value is AutomationActorSelector {
   return value === "self" || value === "target";
 }
 
@@ -214,7 +274,12 @@ function isActorResource(value: unknown): value is ActorResource {
 }
 
 function isResourceOperation(value: unknown): value is ResourceOperation {
-  return value === "spend" || value === "damage" || value === "heal" || value === "recover";
+  return (
+    value === "spend" ||
+    value === "damage" ||
+    value === "heal" ||
+    value === "recover"
+  );
 }
 
 function isWorkflowRollIntent(value: unknown): value is WorkflowRollIntent {

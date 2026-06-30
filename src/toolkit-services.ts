@@ -1,3 +1,4 @@
+import { OrdemDamageAdapter } from "./adapters/ordem/ordem-damage-adapter";
 import { OrdemResourceAdapter } from "./adapters/ordem/ordem-resource-adapter";
 import { OrdemRitualAdapter } from "./adapters/ordem/ordem-ritual-adapter";
 import { OrdemRitualCostProvider } from "./adapters/ordem/ordem-ritual-cost-provider";
@@ -12,7 +13,10 @@ import { WorkflowEngine } from "./core/workflow/workflow-engine";
 import { WorkflowHookEmitter } from "./core/workflow/workflow-hook-emitter";
 import { DebugOutputService } from "./debug/output/debug-output-service";
 import { ConditionEngine } from "./features/conditions/condition-engine";
-import { createToolkitConditionRegistry, type ConditionRegistry } from "./features/conditions/condition-registry";
+import {
+  createToolkitConditionRegistry,
+  type ConditionRegistry,
+} from "./features/conditions/condition-registry";
 import { ItemUseIntegration } from "./features/item-use/item-use-integration";
 import { createBuiltInAutomationPresets } from "./features/rituals/ritual-automation-presets";
 import { RitualPresetApplicationService } from "./features/rituals/presets/ritual-preset-application-service";
@@ -25,6 +29,7 @@ export type ToolkitServices = {
   ritualAdapter: OrdemRitualAdapter;
   ritualCosts: OrdemRitualCostProvider;
   resources: ResourceEngine;
+  damage: OrdemDamageAdapter;
   automationRegistry: AutomationRegistry;
   automationBinder: AutomationBinder;
   itemPatches: OrdemItemPatchAdapter;
@@ -43,11 +48,14 @@ export type ToolkitServices = {
 export function createToolkitServices(): ToolkitServices {
   const resourceAdapter = new OrdemResourceAdapter();
   const resources = new ResourceEngine(resourceAdapter);
+  const damage = new OrdemDamageAdapter();
   const ritualAdapter = new OrdemRitualAdapter();
   const ritualCosts = new OrdemRitualCostProvider(ritualAdapter);
   const ordem = new OrdemSystemAdapter(resourceAdapter);
   const automationRegistry = new AutomationRegistry();
-  const registeredPresets = automationRegistry.registerMany(createBuiltInAutomationPresets());
+  const registeredPresets = automationRegistry.registerMany(
+    createBuiltInAutomationPresets(),
+  );
 
   if (!registeredPresets.ok) {
     throw new Error(registeredPresets.error.message);
@@ -57,16 +65,38 @@ export function createToolkitServices(): ToolkitServices {
   const itemPatches = new OrdemItemPatchAdapter();
   const conditionRegistry = createToolkitConditionRegistry();
   const conditions = new ConditionEngine(conditionRegistry);
-  const ritualPresetDiagnostic = new RitualPresetDiagnosticService(automationRegistry);
-  const ritualPresetApplications = new RitualPresetApplicationService(ritualPresetDiagnostic, automationBinder, itemPatches);
+  const ritualPresetDiagnostic = new RitualPresetDiagnosticService(
+    automationRegistry,
+  );
+  const ritualPresetApplications = new RitualPresetApplicationService(
+    ritualPresetDiagnostic,
+    automationBinder,
+    itemPatches,
+  );
   const debugOutput = new DebugOutputService();
   const chatMessages = new ChatMessageService(debugOutput);
   const workflowHooks = new WorkflowHookEmitter();
-  const automation = new AutomationRunner(resources, ritualCosts, chatMessages, workflowHooks);
+  const automation = new AutomationRunner(
+    resources,
+    ritualCosts,
+    chatMessages,
+    workflowHooks,
+  );
   const workflow = new WorkflowEngine(automation, workflowHooks);
-  const itemUseIntegration = new ItemUseIntegration(workflow, resources, ritualCosts, conditions, debugOutput);
+  const itemUseIntegration = new ItemUseIntegration(
+    workflow,
+    resources,
+    ritualCosts,
+    damage,
+    conditions,
+    debugOutput,
+  );
 
-  itemUseIntegration.addStrategy(new OrdemItemUsedHookStrategy((context) => itemUseIntegration.handleItemUsed(context)));
+  itemUseIntegration.addStrategy(
+    new OrdemItemUsedHookStrategy((context) =>
+      itemUseIntegration.handleItemUsed(context),
+    ),
+  );
 
   return {
     ordem,
@@ -74,6 +104,7 @@ export function createToolkitServices(): ToolkitServices {
     ritualAdapter,
     ritualCosts,
     resources,
+    damage,
     automationRegistry,
     automationBinder,
     itemPatches,
@@ -86,6 +117,6 @@ export function createToolkitServices(): ToolkitServices {
     workflow,
     itemUseIntegration,
     ritualPresetDiagnostic,
-    ritualPresetApplications
+    ritualPresetApplications,
   };
 }
