@@ -73,6 +73,12 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.15.1 — animação Dice So Nice no teste de conjuração
+
+- Corrige o teste de Ocultismo de conjuração para também passar pelo serviço de animação do Dice So Nice.
+- Mantém a rolagem sem mensagem extra de chat; apenas anima os dados e registra o resultado no card persistente do Toolkit.
+
 ### 0.15.0 — Teste de Ocultismo na conjuração
 
 A versão `0.15.0` adiciona a etapa de conjuração real no fluxo de rituais: antes de resolver dano, cura ou efeitos, o Toolkit rola **Ocultismo** pelo método nativo do sistema Ordem e compara o resultado com `actor.system.ritual.DT`.

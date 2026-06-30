@@ -473,3 +473,10 @@ A versão `1.0.0` deve ter:
 - Macros/scripts serão uma camada opcional e avançada para homebrew, integrações e exceções difíceis de modelar.
 - A futura API de macro deve expor apenas um contexto seguro e documentado, não o estado interno inteiro do módulo.
 - Todo Macro Step deve ter executor próprio, tratamento de erro e logs claros.
+
+
+### 0.15.1 — Ritual Casting Check / Dice So Nice
+
+- Corrigir o teste de Ocultismo de conjuração para animar com Dice So Nice quando a integração estiver ativa.
+- Manter o resultado persistido em `flags.paranormal-toolkit.chatCard` sem criar mensagem extra de rolagem.
+

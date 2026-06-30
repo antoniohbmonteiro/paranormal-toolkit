@@ -1,3 +1,5 @@
+import { animateRollWithDiceSoNice } from "../../features/dice/dice-animation-service";
+
 export type OrdemRitualCastingCheckResult = {
   skill: "occultism";
   skillLabel: "Ocultismo";
@@ -50,6 +52,8 @@ export async function rollOrdemRitualCastingCheck(actor: Actor): Promise<OrdemRi
   if (!roll) {
     throw new Error("Não foi possível rolar Ocultismo pelo sistema Ordem.");
   }
+
+  await animateRollWithDiceSoNice(roll);
 
   const total = getRollTotal(roll);
 
