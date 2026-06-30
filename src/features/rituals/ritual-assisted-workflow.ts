@@ -569,6 +569,7 @@ function createCastingCheckSummaryLines(castingCheck: RitualCastingCheckSummary 
 
   return [
     `Conjuração: ${castingCheck.skillLabel} = ${Math.trunc(castingCheck.total)}`,
+    `Conjuração Fórmula: ${castingCheck.formula}`,
     `Conjuração DT: ${castingCheck.difficulty}`,
     `Conjuração Resultado: ${castingCheck.success ? "Sucesso" : "Falha"}`,
     ...(castingCheck.diceBreakdown ? [`Dados (Conjuração): ${castingCheck.diceBreakdown}`] : [])

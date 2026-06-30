@@ -129,10 +129,29 @@ type ParsedRollLine = {
 
 type CastingCheckViewModel = {
   label: string;
+  formula: string;
   total: number;
   difficulty: number;
   success: boolean;
   diceBreakdown: string | null;
+};
+
+type RollDieViewModel = {
+  value: number;
+  active: boolean;
+};
+
+type WorkflowRollSectionInput = {
+  kind: "casting" | "effect";
+  title: string;
+  label: string;
+  formula: string;
+  total: number;
+  diceBreakdown: string | null;
+  status?: "success" | "failure" | null;
+  statusLabel?: string | null;
+  description?: string | null;
+  detailRows: { label: string; value: string }[];
 };
 
 type ResistanceRollResultViewModel = {
@@ -534,67 +553,190 @@ function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, prompt: 
   article.classList.add(PROMPT_ROLL_CARD_CLASS, `${PROMPT_ROLL_CARD_CLASS}--${rollCard.intent}`);
   article.setAttribute(ROLL_CARD_ATTRIBUTE, "true");
 
-  const summary = document.createElement("div");
-  summary.classList.add(`${PROMPT_CLASS}__roll-summary`);
+  if (rollCard.castingCheck) {
+    appendWorkflowRollSection(article, createCastingWorkflowSection(rollCard.castingCheck), prompt.pendingId, "casting");
+  }
 
-  const chip = document.createElement("span");
-  chip.classList.add(`${PROMPT_CLASS}__roll-chip`, `${PROMPT_CLASS}__roll-chip--${rollCard.intent}`);
-  chip.textContent = rollCard.label.toUpperCase();
+  if (shouldRenderEffectRollSection(rollCard)) {
+    appendWorkflowRollSection(article, createEffectWorkflowSection(rollCard), prompt.pendingId, "effect");
+  }
 
-  const total = document.createElement("strong");
-  total.classList.add(`${PROMPT_CLASS}__roll-total`);
-  total.textContent = String(rollCard.total);
-
-  const formula = document.createElement("span");
-  formula.classList.add(`${PROMPT_CLASS}__roll-formula`);
-  formula.textContent = rollCard.formula;
-
-  summary.append(chip, total, formula);
-  article.append(summary);
-  appendCastingCheck(article, rollCard);
   appendRollMeta(article, rollCard);
   appendResistanceHint(article, rollCard, prompt);
-  appendRollDetails(article, rollCard, prompt.pendingId);
+  appendObservationNotes(article, rollCard);
 
   section.append(article);
 }
 
-function appendCastingCheck(article: HTMLElement, rollCard: ParsedRollCard): void {
-  const castingCheck = rollCard.castingCheck;
-  if (!castingCheck) return;
+function shouldRenderEffectRollSection(rollCard: ParsedRollCard): boolean {
+  return rollCard.intent !== "casting";
+}
 
-  const block = document.createElement("div");
+function createCastingWorkflowSection(castingCheck: CastingCheckViewModel): WorkflowRollSectionInput {
+  const statusLabel = castingCheck.success ? "Sucesso" : "Falha";
+
+  return {
+    kind: "casting",
+    title: "Conjuração",
+    label: castingCheck.label,
+    formula: castingCheck.formula,
+    total: castingCheck.total,
+    diceBreakdown: castingCheck.diceBreakdown,
+    status: castingCheck.success ? "success" : "failure",
+    statusLabel,
+    description: `${castingCheck.label}: ${castingCheck.total} vs DT ${castingCheck.difficulty}`,
+    detailRows: [
+      { label: "Perícia", value: castingCheck.label },
+      { label: "DT", value: String(castingCheck.difficulty) },
+      { label: "Resultado", value: statusLabel },
+      { label: "Fórmula", value: castingCheck.formula },
+      ...(castingCheck.diceBreakdown ? [{ label: "Dados", value: castingCheck.diceBreakdown }] : [])
+    ]
+  };
+}
+
+function createEffectWorkflowSection(rollCard: ParsedRollCard): WorkflowRollSectionInput {
+  const title = rollCard.intent === "healing" ? "Cura" : rollCard.intent === "damage" ? "Dano" : rollCard.label;
+  const description = rollCard.damageType ? `${rollCard.damageType}` : null;
+
+  return {
+    kind: "effect",
+    title,
+    label: rollCard.label,
+    formula: rollCard.formula,
+    total: rollCard.total,
+    diceBreakdown: rollCard.diceBreakdown,
+    description,
+    detailRows: [
+      { label: "Fórmula", value: rollCard.formula },
+      ...(rollCard.diceBreakdown ? [{ label: "Dados", value: rollCard.diceBreakdown }] : []),
+      ...(rollCard.damageType ? [{ label: "Tipo", value: rollCard.damageType }] : [])
+    ]
+  };
+}
+
+function appendWorkflowRollSection(
+  article: HTMLElement,
+  sectionInput: WorkflowRollSectionInput,
+  promptId: string,
+  detailSuffix: string
+): void {
+  const block = document.createElement("section");
   block.classList.add(
-    `${PROMPT_CLASS}__casting-check`,
-    `${PROMPT_CLASS}__casting-check--${castingCheck.success ? "success" : "failure"}`
+    `${PROMPT_CLASS}__workflow-section`,
+    `${PROMPT_CLASS}__workflow-section--${sectionInput.kind}`
   );
 
-  const header = document.createElement("div");
-  header.classList.add(`${PROMPT_CLASS}__casting-check-header`);
-
-  const title = document.createElement("strong");
-  title.textContent = "Conjuração";
-
-  const status = document.createElement("span");
-  status.classList.add(`${PROMPT_CLASS}__casting-check-status`);
-  status.textContent = castingCheck.success ? "Sucesso" : "Falha";
-
-  header.append(title, status);
-
-  const result = document.createElement("span");
-  result.classList.add(`${PROMPT_CLASS}__casting-check-result`);
-  result.textContent = `${castingCheck.label}: ${castingCheck.total} vs DT ${castingCheck.difficulty}`;
-
-  block.append(header, result);
-
-  if (castingCheck.diceBreakdown) {
-    const dice = document.createElement("span");
-    dice.classList.add(`${PROMPT_CLASS}__casting-check-dice`);
-    dice.textContent = `Dados: ${castingCheck.diceBreakdown}`;
-    block.append(dice);
+  if (sectionInput.status) {
+    block.classList.add(`${PROMPT_CLASS}__workflow-section--${sectionInput.status}`);
   }
 
+  const header = document.createElement("div");
+  header.classList.add(`${PROMPT_CLASS}__workflow-section-header`);
+
+  const title = document.createElement("strong");
+  title.textContent = sectionInput.title;
+
+  header.append(title);
+
+  if (sectionInput.statusLabel) {
+    const status = document.createElement("span");
+    status.classList.add(`${PROMPT_CLASS}__workflow-section-status`);
+    status.textContent = sectionInput.statusLabel;
+    header.append(status);
+  }
+
+  block.append(header);
+
+  if (sectionInput.description) {
+    const description = document.createElement("span");
+    description.classList.add(`${PROMPT_CLASS}__workflow-section-description`);
+    description.textContent = sectionInput.description;
+    block.append(description);
+  }
+
+  appendWorkflowRollDisplay(block, sectionInput);
+  appendSectionRollDetails(block, sectionInput.detailRows, promptId, detailSuffix, `▸ Detalhes de ${sectionInput.title.toLowerCase()}`);
+
   article.append(block);
+}
+
+function appendWorkflowRollDisplay(block: HTMLElement, sectionInput: WorkflowRollSectionInput): void {
+  const roll = document.createElement("div");
+  roll.classList.add(`${PROMPT_CLASS}__workflow-roll`);
+
+  const formula = document.createElement("span");
+  formula.classList.add(`${PROMPT_CLASS}__workflow-roll-formula`);
+  formula.textContent = sectionInput.formula;
+
+  const total = document.createElement("strong");
+  total.classList.add(`${PROMPT_CLASS}__workflow-roll-total`);
+  total.textContent = String(sectionInput.total);
+
+  roll.append(formula, total);
+
+  const dice = createDiceTray(sectionInput.formula, sectionInput.diceBreakdown);
+  if (dice) roll.append(dice);
+
+  block.append(roll);
+}
+
+function createDiceTray(formula: string, diceBreakdown: string | null): HTMLElement | null {
+  const dice = parseDiceValues(diceBreakdown);
+  if (dice.length === 0) return null;
+
+  const tray = document.createElement("div");
+  tray.classList.add(`${PROMPT_CLASS}__workflow-dice-tray`);
+
+  for (const die of markActiveDice(dice, formula)) {
+    const chip = document.createElement("span");
+    chip.classList.add(`${PROMPT_CLASS}__workflow-die`);
+    if (!die.active) chip.classList.add(`${PROMPT_CLASS}__workflow-die--inactive`);
+    chip.textContent = String(die.value);
+    tray.append(chip);
+  }
+
+  return tray;
+}
+
+function parseDiceValues(diceBreakdown: string | null): number[] {
+  if (!diceBreakdown) return [];
+
+  const firstGroup = /\(([^)]+)\)/u.exec(diceBreakdown);
+  const source = firstGroup?.[1] ?? diceBreakdown;
+
+  return source
+    .split(",")
+    .map((part) => Number(part.trim()))
+    .filter((value) => Number.isFinite(value))
+    .map((value) => Math.trunc(value));
+}
+
+function markActiveDice(values: number[], formula: string): RollDieViewModel[] {
+  if (values.length <= 1) return values.map((value) => ({ value, active: true }));
+
+  const normalizedFormula = formula.toLowerCase();
+
+  if (normalizedFormula.includes("kh")) {
+    return markExtremeDie(values, "highest");
+  }
+
+  if (normalizedFormula.includes("kl")) {
+    return markExtremeDie(values, "lowest");
+  }
+
+  return values.map((value) => ({ value, active: true }));
+}
+
+function markExtremeDie(values: number[], mode: "highest" | "lowest"): RollDieViewModel[] {
+  const extreme = mode === "highest" ? Math.max(...values) : Math.min(...values);
+  let selected = false;
+
+  return values.map((value) => {
+    const active = !selected && value === extreme;
+    if (active) selected = true;
+    return { value, active };
+  });
 }
 
 function appendRollMeta(article: HTMLElement, rollCard: ParsedRollCard): void {
@@ -704,25 +846,31 @@ function createResistanceRollResultLine(result: ResistanceRollResultViewModel): 
   return line;
 }
 
-function appendRollDetails(article: HTMLElement, rollCard: ParsedRollCard, promptId: string): void {
-  const detailRows = createRollDetailRows(rollCard);
-  if (detailRows.length === 0) return;
+function appendSectionRollDetails(
+  article: HTMLElement,
+  detailRows: { label: string; value: string }[],
+  promptId: string,
+  detailSuffix: string,
+  buttonLabel: string
+): void {
+  const rows = detailRows.filter((row) => row.value.trim().length > 0);
+  if (rows.length === 0) return;
 
-  const detailId = `${promptId}-roll-details`;
+  const detailId = `${promptId}-roll-details-${detailSuffix}`;
 
   const toggle = document.createElement("button");
   toggle.type = "button";
   toggle.classList.add(`${PROMPT_CLASS}__roll-detail-toggle`);
   toggle.setAttribute(ROLL_DETAIL_TOGGLE_ATTRIBUTE, detailId);
   toggle.setAttribute("aria-expanded", "false");
-  toggle.textContent = "▸ Ver detalhes";
+  toggle.textContent = buttonLabel;
 
   const details = document.createElement("dl");
   details.classList.add(`${PROMPT_CLASS}__roll-detail-list`);
   details.setAttribute(ROLL_DETAIL_ID_ATTRIBUTE, detailId);
   details.hidden = true;
 
-  for (const row of detailRows) {
+  for (const row of rows) {
     const term = document.createElement("dt");
     term.textContent = row.label;
 
@@ -735,33 +883,19 @@ function appendRollDetails(article: HTMLElement, rollCard: ParsedRollCard, promp
   article.append(toggle, details);
 }
 
-function createRollDetailRows(rollCard: ParsedRollCard): { label: string; value: string }[] {
-  const rows: { label: string; value: string }[] = [
-    { label: "Fórmula", value: rollCard.formula }
-  ];
+function appendObservationNotes(article: HTMLElement, rollCard: ParsedRollCard): void {
+  if (rollCard.notes.length === 0 && rollCard.details.length === 0) return;
 
-  if (rollCard.diceBreakdown) rows.push({ label: "Dados", value: rollCard.diceBreakdown });
-  if (rollCard.castingCheck) {
-    rows.push({
-      label: "Conjuração",
-      value: `${rollCard.castingCheck.label}: ${rollCard.castingCheck.total} vs DT ${rollCard.castingCheck.difficulty}`
-    });
-    rows.push({ label: "Resultado", value: rollCard.castingCheck.success ? "Sucesso" : "Falha" });
-  }
-  if (rollCard.damageType) rows.push({ label: "Tipo", value: rollCard.damageType });
-  if (rollCard.resistance) rows.push({ label: "Resistência", value: rollCard.resistance });
-  if (rollCard.form) rows.push({ label: "Forma", value: rollCard.form });
-  if (rollCard.cost) rows.push({ label: "Custo", value: rollCard.cost });
+  const notes = document.createElement("div");
+  notes.classList.add(`${PROMPT_CLASS}__workflow-notes`);
 
-  for (const note of rollCard.notes) {
-    rows.push({ label: "Observação", value: note });
+  for (const note of [...rollCard.notes, ...rollCard.details]) {
+    const line = document.createElement("span");
+    line.textContent = note;
+    notes.append(line);
   }
 
-  for (const detail of rollCard.details) {
-    rows.push({ label: "Detalhe", value: detail });
-  }
-
-  return rows;
+  article.append(notes);
 }
 
 type PromptActionSection = {
@@ -1290,6 +1424,7 @@ function createCastingCheckViewModel(summaryLines: string[]): CastingCheckViewMo
 
   return {
     label: castingRoll.formula,
+    formula: findSummaryValue(summaryLines, "Conjuração Fórmula") ?? castingRoll.formula,
     total: castingRoll.total,
     difficulty: Math.trunc(difficulty),
     success: resultText.toLowerCase() === "sucesso",
@@ -1346,6 +1481,7 @@ function isExtraDetailLine(line: string, rollLine: ParsedRollLine): boolean {
   if (line.startsWith("Resistência Perícia:")) return false;
   if (line.startsWith("Resistência Rótulo:")) return false;
   if (line.startsWith("Observação:")) return false;
+  if (line.startsWith("Conjuração Fórmula:")) return false;
   if (line.startsWith("Conjuração DT:")) return false;
   if (line.startsWith("Conjuração Resultado:")) return false;
   if (line.startsWith("Dados (Conjuração):")) return false;

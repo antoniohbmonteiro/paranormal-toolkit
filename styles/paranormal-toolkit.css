@@ -1329,3 +1329,188 @@
   font-family: var(--font-mono, monospace);
   font-size: 0.72rem;
 }
+
+/* 0.15.2 — Card de ritual em seções de workflow */
+.paranormal-toolkit-item-use-prompt__roll-card {
+  gap: 9px;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-left: 3px solid rgba(74, 64, 54, 0.42);
+  border-radius: 7px;
+  padding: 0.5rem 0.56rem;
+  background: rgba(252, 250, 246, 0.64);
+  color: rgba(36, 27, 24, 0.94);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--casting {
+  border-color: rgba(79, 72, 125, 0.2);
+  border-left-color: rgba(79, 72, 125, 0.54);
+  background: rgba(241, 239, 250, 0.66);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect {
+  border-color: rgba(125, 39, 43, 0.16);
+  border-left-color: rgba(125, 39, 43, 0.58);
+  background: rgba(250, 246, 241, 0.76);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--success {
+  border-color: rgba(43, 109, 75, 0.22);
+  border-left-color: rgba(43, 109, 75, 0.58);
+  background: rgba(238, 247, 240, 0.76);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--failure {
+  border-color: rgba(125, 39, 43, 0.22);
+  border-left-color: rgba(125, 39, 43, 0.62);
+  background: rgba(249, 236, 235, 0.78);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section-header strong {
+  color: rgba(70, 43, 39, 0.92);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--casting .paranormal-toolkit-item-use-prompt__workflow-section-header strong {
+  color: rgba(53, 47, 91, 0.96);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section-status {
+  border-radius: 999px;
+  padding: 0.12rem 0.42rem;
+  background: rgba(255, 255, 255, 0.68);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--success .paranormal-toolkit-item-use-prompt__workflow-section-status {
+  color: #245238;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--failure .paranormal-toolkit-item-use-prompt__workflow-section-status {
+  color: #7d272b;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section-description {
+  display: block;
+  color: rgba(36, 27, 24, 0.84);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 0.32rem;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll-formula,
+.paranormal-toolkit-item-use-prompt__workflow-roll-total {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 5px;
+  background: rgba(252, 250, 246, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll-formula {
+  min-width: 0;
+  padding: 0.16rem 0.4rem;
+  color: rgba(36, 27, 24, 0.82);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll-total {
+  min-width: 46px;
+  padding: 0.12rem 0.45rem;
+  color: rgba(24, 19, 18, 0.96);
+  font-size: 1.3rem;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-dice-tray {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.22rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.09);
+  margin-top: 0.08rem;
+  padding-top: 0.34rem;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  border: 1px solid rgba(89, 36, 42, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: rgba(36, 27, 24, 0.9);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-die--inactive {
+  opacity: 0.32;
+  filter: grayscale(0.55);
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section .paranormal-toolkit-item-use-prompt__roll-detail-toggle {
+  margin-top: 0.02rem;
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section .paranormal-toolkit-item-use-prompt__roll-detail-list {
+  background: rgba(255, 255, 255, 0.3);
+  font-size: 0.74rem;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  border: 1px dashed rgba(125, 39, 43, 0.26);
+  border-radius: 6px;
+  padding: 0.42rem 0.5rem;
+  background: rgba(255, 255, 255, 0.22);
+  color: rgba(70, 43, 39, 0.9);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
