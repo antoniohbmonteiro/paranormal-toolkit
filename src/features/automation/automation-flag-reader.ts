@@ -188,7 +188,14 @@ function isConditionDurationDefinition(value: unknown): value is AutomationCondi
   if (!value || typeof value !== "object") return false;
 
   const candidate = value as Partial<AutomationConditionDurationDefinition>;
-  return candidate.rounds === undefined || candidate.rounds === null || isPositiveInteger(candidate.rounds);
+  return (
+    (candidate.rounds === undefined || candidate.rounds === null || isPositiveInteger(candidate.rounds)) &&
+    (candidate.expiry === undefined || candidate.expiry === null || isConditionExpiryEvent(candidate.expiry))
+  );
+}
+
+function isConditionExpiryEvent(value: unknown): value is NonNullable<AutomationConditionDurationDefinition["expiry"]> {
+  return value === "turnStart" || value === "turnEnd";
 }
 
 function hasAmountSource(value: { amount?: unknown; amountFrom?: unknown }): boolean {

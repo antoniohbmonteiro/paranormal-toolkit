@@ -1,14 +1,33 @@
+export type ToolkitConditionExpiryEvent = "turnStart" | "turnEnd";
+
+export type ToolkitConditionDurationAnchor = {
+  mode: "sourceTurn";
+  combatId: string;
+  combatantId: string | null;
+  round: number;
+  turn: number | null;
+  initiative: number | null;
+  time: number;
+};
+
 export type ToolkitConditionDurationInput = {
   rounds?: number | null;
+  expiry?: ToolkitConditionExpiryEvent | null;
+  anchor?: ToolkitConditionDurationAnchor | null;
 };
 
 export type ToolkitConditionDurationResolution = {
   duration: Record<string, unknown>;
+  start: Record<string, unknown>;
   requestedRounds: number | null;
   combatDurationApplied: boolean;
   combatId: string | null;
+  startCombatantId: string | null;
+  startInitiative: number | null;
   startRound: number | null;
   startTurn: number | null;
+  expiryEvent: ToolkitConditionExpiryEvent | null;
+  durationMode: "none" | "sourceTurn";
   warning: string | null;
 };
 
@@ -16,6 +35,17 @@ type CombatLike = {
   id?: string | null;
   round?: number | null;
   turn?: number | null;
+  combatant?: unknown;
+  combatants?: unknown;
+};
+
+type CombatantLike = {
+  id?: string | null;
+  initiative?: number | null;
+  actor?: { id?: string | null } | null;
+  actorId?: string | null;
+  token?: { actor?: { id?: string | null } | null; actorId?: string | null } | null;
+  document?: { actor?: { id?: string | null } | null; actorId?: string | null } | null;
 };
 
 export function resolveConditionDuration(
@@ -24,47 +54,143 @@ export function resolveConditionDuration(
   const rounds = normalizeRounds(input?.rounds);
 
   if (!rounds) {
-    return {
-      duration: {},
-      requestedRounds: null,
-      combatDurationApplied: false,
-      combatId: null,
-      startRound: null,
-      startTurn: null,
-      warning: null
-    };
+    return createEmptyDurationResolution(null);
   }
 
-  const combat = getActiveCombat();
+  const anchor = input?.anchor ?? createCurrentCombatDurationAnchor();
 
-  if (!combat?.id || !isPositiveInteger(combat.round)) {
+  if (!anchor) {
     return {
-      duration: {},
-      requestedRounds: rounds,
-      combatDurationApplied: false,
-      combatId: null,
-      startRound: null,
-      startTurn: null,
+      ...createEmptyDurationResolution(rounds),
       warning: `Duração de ${rounds} rodada(s) ignorada porque não há combate ativo.`
     };
   }
 
-  const startTurn = isNonNegativeInteger(combat.turn) ? combat.turn : 0;
+  const expiryEvent = input?.expiry ?? "turnStart";
 
   return {
     duration: {
-      rounds,
-      startRound: combat.round,
-      startTurn,
-      combat: combat.id
+      value: rounds,
+      units: "rounds",
+      expiry: expiryEvent
+    },
+    start: {
+      combat: anchor.combatId,
+      combatant: anchor.combatantId,
+      initiative: anchor.initiative,
+      round: anchor.round,
+      turn: anchor.turn,
+      time: anchor.time
     },
     requestedRounds: rounds,
     combatDurationApplied: true,
-    combatId: combat.id,
-    startRound: combat.round,
-    startTurn,
+    combatId: anchor.combatId,
+    startCombatantId: anchor.combatantId,
+    startInitiative: anchor.initiative,
+    startRound: anchor.round,
+    startTurn: anchor.turn,
+    expiryEvent,
+    durationMode: "sourceTurn",
     warning: null
   };
+}
+
+export function createCurrentCombatDurationAnchor(sourceActor?: Actor | null): ToolkitConditionDurationAnchor | null {
+  const combat = getActiveCombat();
+
+  if (!combat?.id || !isPositiveInteger(combat.round)) return null;
+
+  const combatants = getCombatants(combat);
+  const sourceCombatant = resolveSourceCombatant(combat, sourceActor, combatants) ?? getActiveCombatant(combat);
+  const combatantId = readString((sourceCombatant as CombatantLike | null)?.id);
+  const initiative = readFiniteNumber((sourceCombatant as CombatantLike | null)?.initiative);
+  const startTurn = resolveCombatantTurn(combat, sourceCombatant, combatants);
+
+  return {
+    mode: "sourceTurn",
+    combatId: combat.id,
+    combatantId,
+    round: combat.round,
+    turn: startTurn,
+    initiative,
+    time: getWorldTime()
+  };
+}
+
+function createEmptyDurationResolution(requestedRounds: number | null): ToolkitConditionDurationResolution {
+  return {
+    duration: {},
+    start: {},
+    requestedRounds,
+    combatDurationApplied: false,
+    combatId: null,
+    startCombatantId: null,
+    startInitiative: null,
+    startRound: null,
+    startTurn: null,
+    expiryEvent: null,
+    durationMode: "none",
+    warning: null
+  };
+}
+
+function resolveSourceCombatant(
+  combat: CombatLike,
+  sourceActor: Actor | null | undefined,
+  combatants: CombatantLike[]
+): CombatantLike | null {
+  if (!sourceActor?.id) return null;
+
+  const activeCombatant = getActiveCombatant(combat);
+  if (activeCombatant && getCombatantActorId(activeCombatant) === sourceActor.id) return activeCombatant;
+
+  return combatants.find((combatant) => getCombatantActorId(combatant) === sourceActor.id) ?? null;
+}
+
+function resolveCombatantTurn(
+  combat: CombatLike,
+  sourceCombatant: CombatantLike | null,
+  combatants: CombatantLike[]
+): number | null {
+  const combatantId = readString(sourceCombatant?.id);
+
+  if (combatantId) {
+    const index = combatants.findIndex((combatant) => combatant.id === combatantId);
+    if (index >= 0) return index;
+  }
+
+  return isNonNegativeInteger(combat.turn) ? combat.turn : null;
+}
+
+function getActiveCombatant(combat: CombatLike): CombatantLike | null {
+  return isCombatantLike(combat.combatant) ? combat.combatant : null;
+}
+
+function getCombatants(combat: CombatLike): CombatantLike[] {
+  const collection = combat.combatants;
+
+  if (Array.isArray(collection)) return collection.filter(isCombatantLike);
+
+  if (collection && typeof collection === "object") {
+    const contents = (collection as { contents?: unknown }).contents;
+    if (Array.isArray(contents)) return contents.filter(isCombatantLike);
+
+    const values = (collection as { values?: () => Iterable<unknown> }).values;
+    if (typeof values === "function") {
+      return Array.from(values.call(collection)).filter(isCombatantLike);
+    }
+  }
+
+  return [];
+}
+
+function getCombatantActorId(combatant: CombatantLike): string | null {
+  return readString(combatant.actor?.id) ??
+    readString(combatant.actorId) ??
+    readString(combatant.token?.actor?.id) ??
+    readString(combatant.token?.actorId) ??
+    readString(combatant.document?.actor?.id) ??
+    readString(combatant.document?.actorId);
 }
 
 function normalizeRounds(value: number | null | undefined): number | null {
@@ -74,6 +200,23 @@ function normalizeRounds(value: number | null | undefined): number | null {
 
 function getActiveCombat(): CombatLike | null {
   return ((game as { combat?: CombatLike | null }).combat ?? null) as CombatLike | null;
+}
+
+function getWorldTime(): number {
+  const time = (game as { time?: { worldTime?: unknown } }).time?.worldTime;
+  return typeof time === "number" && Number.isFinite(time) ? time : 0;
+}
+
+function isCombatantLike(value: unknown): value is CombatantLike {
+  return Boolean(value && typeof value === "object");
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function readFiniteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function isPositiveInteger(value: unknown): value is number {

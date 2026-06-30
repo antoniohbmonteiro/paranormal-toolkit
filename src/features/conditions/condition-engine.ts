@@ -1,7 +1,7 @@
 import { MODULE_ID } from "../../constants";
 import { failure, type Result, success } from "../../core/result";
 import type { ToolkitConditionDefinition } from "./condition-definition";
-import { resolveConditionDuration, type ToolkitConditionDurationInput } from "./condition-duration";
+import { resolveConditionDuration, type ToolkitConditionDurationInput, type ToolkitConditionExpiryEvent } from "./condition-duration";
 import { ConditionRegistry } from "./condition-registry";
 
 export type ApplyConditionInput = {
@@ -111,6 +111,7 @@ type CombatLike = {
   id?: string | null;
   round?: number | null;
   turn?: number | null;
+  combatant?: { id?: string | null } | null;
 };
 
 type EffectCollectionLike = {
@@ -123,6 +124,7 @@ type ActiveEffectLike = {
   id?: string | null;
   name?: string | null;
   duration?: Record<string, unknown> | null;
+  start?: Record<string, unknown> | null;
   getFlag?: (scope: string, key: string) => unknown;
   update?: (data: ActiveEffectData) => Promise<unknown> | unknown;
   delete?: () => Promise<unknown> | unknown;
@@ -137,6 +139,7 @@ type ActiveEffectData = {
   transfer: boolean;
   changes: ToolkitConditionDefinition["changes"];
   duration: Record<string, unknown>;
+  start: Record<string, unknown>;
   flags: Record<string, unknown>;
 };
 
@@ -152,8 +155,12 @@ type ToolkitConditionEffectFlag = {
   requestedRounds: number | null;
   combatDurationApplied: boolean;
   combatId: string | null;
+  startCombatantId: string | null;
+  startInitiative: number | null;
   startRound: number | null;
   startTurn: number | null;
+  expiryEvent: ToolkitConditionExpiryEvent | null;
+  durationMode: "none" | "sourceTurn";
   deleteOnExpire: boolean;
   expiresWithCombat: boolean;
 };
@@ -163,7 +170,12 @@ type ToolkitConditionEffectMetadata = {
   requestedRounds: number | null;
   combatDurationApplied: boolean;
   combatId: string | null;
+  startCombatantId: string | null;
+  startInitiative: number | null;
   startRound: number | null;
+  startTurn: number | null;
+  expiryEvent: ToolkitConditionExpiryEvent | null;
+  durationMode: "none" | "sourceTurn";
   deleteOnExpire: boolean;
   expiresWithCombat: boolean;
 };
@@ -363,8 +375,12 @@ function createActiveEffectData(
     requestedRounds: duration.requestedRounds,
     combatDurationApplied: duration.combatDurationApplied,
     combatId: duration.combatId,
+    startCombatantId: duration.startCombatantId,
+    startInitiative: duration.startInitiative,
     startRound: duration.startRound,
     startTurn: duration.startTurn,
+    expiryEvent: duration.expiryEvent,
+    durationMode: duration.durationMode,
     deleteOnExpire: duration.combatDurationApplied,
     expiresWithCombat: duration.combatDurationApplied
   };
@@ -378,6 +394,7 @@ function createActiveEffectData(
     transfer: false,
     changes: definition.changes.map((change) => ({ ...change })),
     duration: createEffectDurationData(duration.duration),
+    start: createEffectStartData(duration.start),
     flags: {
       [MODULE_ID]: flags
     }
@@ -386,14 +403,22 @@ function createActiveEffectData(
 
 function createEffectDurationData(duration: Record<string, unknown>): Record<string, unknown> {
   return {
-    seconds: null,
-    rounds: null,
-    turns: null,
-    startTime: null,
-    startRound: null,
-    startTurn: null,
-    combat: null,
+    value: null,
+    units: "rounds",
+    expiry: null,
     ...duration
+  };
+}
+
+function createEffectStartData(start: Record<string, unknown>): Record<string, unknown> {
+  return {
+    combat: null,
+    combatant: null,
+    initiative: null,
+    round: null,
+    turn: null,
+    time: getWorldTime(),
+    ...start
   };
 }
 
@@ -442,6 +467,10 @@ function shouldRemoveExpiredToolkitCondition(
   if (!isPositiveInteger(metadata.startRound) || !isPositiveInteger(metadata.requestedRounds)) return false;
   if (!isPositiveInteger(combat.round)) return false;
 
+  if (metadata.durationMode === "sourceTurn") {
+    return isSourceTurnDurationExpired(metadata, combat);
+  }
+
   return combat.round >= metadata.startRound + metadata.requestedRounds;
 }
 
@@ -461,15 +490,44 @@ function isEffectMarkedExpiredByFoundry(effect: ActiveEffectLike): boolean {
   return typeof remaining === "number" && Number.isFinite(remaining) && remaining <= 0;
 }
 
+function isSourceTurnDurationExpired(metadata: ToolkitConditionEffectMetadata, combat: CombatLike): boolean {
+  if (!isPositiveInteger(metadata.startRound) || !isPositiveInteger(metadata.requestedRounds)) return false;
+  if (!isPositiveInteger(combat.round)) return false;
+
+  const targetRound = metadata.startRound + metadata.requestedRounds;
+
+  if (combat.round < targetRound) return false;
+  if (combat.round > targetRound) return true;
+
+  const currentCombatantId = getCurrentCombatantId(combat);
+  if (metadata.startCombatantId && currentCombatantId === metadata.startCombatantId) return true;
+
+  if (isNonNegativeInteger(metadata.startTurn) && isNonNegativeInteger(combat.turn)) {
+    return combat.turn >= metadata.startTurn;
+  }
+
+  return false;
+}
+
+function getCurrentCombatantId(combat: CombatLike): string | null {
+  return readString(combat.combatant?.id);
+}
+
 function readToolkitConditionEffectMetadata(effect: ActiveEffectLike): ToolkitConditionEffectMetadata {
   const duration = effect.duration && typeof effect.duration === "object" ? effect.duration : {};
+  const start = effect.start && typeof effect.start === "object" ? effect.start : {};
 
   return {
     conditionId: readStringFlag(effect, "conditionId"),
-    requestedRounds: readNumberFlag(effect, "requestedRounds") ?? readPositiveNumber(duration.rounds),
+    requestedRounds: readNumberFlag(effect, "requestedRounds") ?? readPositiveNumber(duration.value) ?? readPositiveNumber(duration.rounds),
     combatDurationApplied: readBooleanFlag(effect, "combatDurationApplied"),
-    combatId: readStringFlag(effect, "combatId") ?? readString(duration.combat),
-    startRound: readNumberFlag(effect, "startRound") ?? readPositiveNumber(duration.startRound),
+    combatId: readStringFlag(effect, "combatId") ?? readString(start.combat) ?? readString(duration.combat),
+    startCombatantId: readStringFlag(effect, "startCombatantId") ?? readString(start.combatant),
+    startInitiative: readFiniteNumberFlag(effect, "startInitiative") ?? readFiniteNumber(start.initiative),
+    startRound: readNumberFlag(effect, "startRound") ?? readPositiveNumber(start.round) ?? readPositiveNumber(duration.startRound),
+    startTurn: readNonNegativeNumberFlag(effect, "startTurn") ?? readNonNegativeNumber(start.turn) ?? readNonNegativeNumber(duration.startTurn),
+    expiryEvent: readExpiryEventFlag(effect, "expiryEvent") ?? readExpiryEvent(duration.expiry),
+    durationMode: readDurationModeFlag(effect, "durationMode"),
     deleteOnExpire: readBooleanFlag(effect, "deleteOnExpire"),
     expiresWithCombat: readBooleanFlag(effect, "expiresWithCombat")
   };
@@ -578,6 +636,22 @@ function readNumberFlag(effect: ActiveEffectLike, key: string): number | null {
   return readPositiveNumber(effect.getFlag?.(MODULE_ID, key));
 }
 
+function readNonNegativeNumberFlag(effect: ActiveEffectLike, key: string): number | null {
+  return readNonNegativeNumber(effect.getFlag?.(MODULE_ID, key));
+}
+
+function readFiniteNumberFlag(effect: ActiveEffectLike, key: string): number | null {
+  return readFiniteNumber(effect.getFlag?.(MODULE_ID, key));
+}
+
+function readExpiryEventFlag(effect: ActiveEffectLike, key: string): ToolkitConditionExpiryEvent | null {
+  return readExpiryEvent(effect.getFlag?.(MODULE_ID, key));
+}
+
+function readDurationModeFlag(effect: ActiveEffectLike, key: string): ToolkitConditionEffectMetadata["durationMode"] {
+  return effect.getFlag?.(MODULE_ID, key) === "sourceTurn" ? "sourceTurn" : "none";
+}
+
 function readBooleanFlag(effect: ActiveEffectLike, key: string): boolean {
   return effect.getFlag?.(MODULE_ID, key) === true;
 }
@@ -591,6 +665,19 @@ function readPositiveNumber(value: unknown): number | null {
   return Math.trunc(value);
 }
 
+function readNonNegativeNumber(value: unknown): number | null {
+  if (!isNonNegativeInteger(value)) return null;
+  return Math.trunc(value);
+}
+
+function readFiniteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function readExpiryEvent(value: unknown): ToolkitConditionExpiryEvent | null {
+  return value === "turnStart" || value === "turnEnd" ? value : null;
+}
+
 function isActorWithEffects(value: unknown): value is ActorWithEffects {
   return Boolean(value && typeof value === "object" && "effects" in value);
 }
@@ -599,8 +686,17 @@ function getActiveCombat(): CombatLike | null {
   return ((game as { combat?: CombatLike | null }).combat ?? null) as CombatLike | null;
 }
 
+function getWorldTime(): number {
+  const worldTime = (game as { time?: { worldTime?: unknown } }).time?.worldTime;
+  return typeof worldTime === "number" && Number.isFinite(worldTime) ? worldTime : 0;
+}
+
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
 function getCurrentUserId(): string | null {

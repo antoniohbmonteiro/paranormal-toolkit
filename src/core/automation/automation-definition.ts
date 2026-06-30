@@ -33,8 +33,11 @@ export type AutomationResistanceDefinition = {
   damageApplications?: AutomationDamageApplicationOption[];
 };
 
+export type AutomationConditionExpiryEvent = "turnStart" | "turnEnd";
+
 export type AutomationConditionDurationDefinition = {
   rounds?: number | null;
+  expiry?: AutomationConditionExpiryEvent | null;
 };
 
 export type AutomationConditionApplicationDefinition = {

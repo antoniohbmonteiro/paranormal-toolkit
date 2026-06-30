@@ -17,6 +17,7 @@ import { rollOrdemRitualCastingCheck, type OrdemRitualCastingCheckResult } from 
 import { resolveAutomationAmount } from "../../core/automation/automation-amount-resolver";
 import { executeAutomationResourceOperation } from "../../core/automation/automation-resource-executor";
 import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
+import { createCurrentCombatDurationAnchor, type ToolkitConditionDurationInput } from "../conditions/condition-duration";
 import type { RitualCost } from "../../core/rituals/ritual-types";
 import type { ResourceEngine, ResourceOperationResult } from "../../core/resources/resource-engine";
 import { createWorkflowContext, type WorkflowContext } from "../../core/workflow/workflow-context";
@@ -55,7 +56,7 @@ export type AssistedConditionAction = {
   actorName: string;
   conditionId: string;
   conditionLabel: string;
-  duration: AutomationConditionApplicationDefinition["duration"];
+  duration: ToolkitConditionDurationInput | null;
   source: string | null;
   originUuid: string | null;
   label: string;
@@ -427,8 +428,10 @@ function createAssistedConditionActions(
       };
     }
 
+    const durationAnchor = createCurrentCombatDurationAnchor(itemUseContext.actor as Actor | null);
+
     for (const actor of actors) {
-      actions.push(createAssistedConditionAction(application, actor, itemUseContext.item));
+      actions.push(createAssistedConditionAction(application, actor, itemUseContext.item, durationAnchor));
     }
   }
 
@@ -438,7 +441,8 @@ function createAssistedConditionActions(
 function createAssistedConditionAction(
   application: AutomationConditionApplicationDefinition,
   actor: Actor,
-  item: Item
+  item: Item,
+  durationAnchor: ToolkitConditionDurationInput["anchor"]
 ): AssistedConditionAction {
   const actorName = actor.name ?? "Ator sem nome";
   const conditionLabel = application.label ?? formatConditionId(application.conditionId);
@@ -449,13 +453,26 @@ function createAssistedConditionAction(
     actorName,
     conditionId: application.conditionId,
     conditionLabel,
-    duration: application.duration ?? null,
+    duration: createConditionActionDuration(application.duration ?? null, durationAnchor),
     source: application.source ?? null,
     originUuid: item.uuid ?? null,
     label: createConditionActionLabel(conditionLabel, application.duration),
     executedLabel: application.executedLabel ?? `✓ ${conditionLabel} aplicado`,
     actionSectionId: application.actionSectionId ?? "apply-effects",
     actionSectionTitle: application.actionSectionTitle ?? "Aplicar efeito"
+  };
+}
+
+function createConditionActionDuration(
+  duration: AutomationConditionApplicationDefinition["duration"],
+  anchor: ToolkitConditionDurationInput["anchor"]
+): ToolkitConditionDurationInput | null {
+  if (!duration) return null;
+
+  return {
+    ...duration,
+    expiry: duration.expiry ?? "turnStart",
+    anchor
   };
 }
 

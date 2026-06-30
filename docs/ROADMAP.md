@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.5`.
+Versão base do roadmap: `v0.17.6`.
 
 O Toolkit já tem:
 
@@ -37,7 +37,7 @@ O Toolkit já tem:
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
-- Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
+- Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, duração por turno de origem usando Active Effects v14, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
 
 ## Roadmap por prioridade
 
@@ -97,6 +97,26 @@ Decisão de produto:
 
 
 
+
+
+### Concluído em 0.17.6 — Duração por turno de origem
+
+Objetivo: alinhar condições de 1 rodada com a regra prática de mesa: o efeito sai quando volta no turno de quem gerou a condição.
+
+Entrega feita:
+
+- usa o modelo de duração de Active Effects do Foundry v14 com `value`, `units`, `expiry` e `start`;
+- condições com duração em rodadas usam `expiry: "turnStart"` por padrão;
+- ações assistidas de ritual capturam a âncora de combate na conjuração, evitando que o clique tardio do mestre mude a duração;
+- o cleanup defensivo do Toolkit remove o efeito quando chega no turno de origem após o número de rodadas solicitado;
+- mantém fallback seguro fora de combate, onde duração por rodadas é ignorada com aviso.
+
+Critérios de aceitação:
+
+- conjurar Eletrocussão em combate e aplicar Vulnerável deve manter o efeito até voltar no turno do conjurador;
+- virar a rodada antes do turno do conjurador não deve remover o efeito;
+- ao chegar no turno do conjurador na rodada seguinte, o efeito deve sair da ficha automaticamente;
+- o comportamento deve continuar sem erro de `EmbeddedCollectionDelta`.
 
 ### Concluído em 0.17.5 — Catálogo inicial de condições
 
