@@ -2,7 +2,7 @@
   "id": "paranormal-toolkit",
   "title": "Paranormal Toolkit",
   "description": "Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v14+.",
-  "version": "0.18.1",
+  "version": "0.19.1",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
@@ -19,7 +19,8 @@
   "styles": [
     "styles/paranormal-toolkit.css",
     "styles/item-use-workflow-dice-toggle.css",
-    "styles/ritual-cast-dialog.css"
+    "styles/ritual-cast-dialog.css",
+    "styles/ritual-roll-config.css"
   ],
   "url": "https://github.com/antoniohbmonteiro/paranormal-toolkit",
   "manifest": "https://github.com/antoniohbmonteiro/paranormal-toolkit/releases/latest/download/module.json",

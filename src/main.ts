@@ -11,6 +11,7 @@ import { registerItemUseSettings } from "./features/item-use/item-use-settings";
 import { registerItemUseWorkflowDiceToggle } from "./features/item-use/item-use-workflow-dice-toggle";
 import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
 import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/actor-sheet-ritual-preset-action";
+import { registerItemSheetRitualRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ritual-roll-config-block";
 
 let services: ToolkitServices | null = null;
 
@@ -25,7 +26,7 @@ Hooks.once("init", () => {
 Hooks.once("ready", () => {
   if (!SystemGuard.isSupportedSystem()) {
     ModuleLogger.warn(
-      `Sistema não suportado: ${SystemGuard.getCurrentSystemId()}. O módulo requer ordemparanormal.`
+      `Sistema não suportado: ${SystemGuard.getCurrentSystemId()}. O módulo requer ordemparanormal.`,
     );
     return;
   }
@@ -37,9 +38,12 @@ Hooks.once("ready", () => {
   registerChatTargetCapture();
   registerChatEnrichmentRenderer();
   registerActorSheetRitualPresetAction(services);
+  registerItemSheetRitualRollConfigBlock();
 
   ModuleLogger.info("Inicializado para o sistema Ordem Paranormal.");
-  ModuleLogger.info(`API de debug disponível em globalThis["${MODULE_ID}"] e globalThis.ParanormalToolkit.`);
+  ModuleLogger.info(
+    `API de debug disponível em globalThis["${MODULE_ID}"] e globalThis.ParanormalToolkit.`,
+  );
   ui.notifications?.info(`${MODULE_TITLE} inicializado.`);
 });
 

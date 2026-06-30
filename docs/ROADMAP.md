@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.18.1`.
+Versão base do roadmap: `v0.19.1`.
 
 O Toolkit já tem:
 
@@ -39,6 +39,7 @@ O Toolkit já tem:
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
 - Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, duração por turno do afetado usando flags próprias, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
 - Damage Adapter para Ordem, chamando `actor.applyDamage` do sistema e separando instâncias de dano para suportar RD por tipo.
+- bloco Paranormal Toolkit na aba Atributos do item ritual para configurar fórmula genérica por forma, tipo de rolagem, tipo de dano e nota em flags do módulo.
 
 ## Roadmap por prioridade
 
@@ -99,6 +100,49 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.19.1 — Correção do bloco de fórmula na ficha de ritual
+
+Objetivo: corrigir a injeção do bloco da 0.19.0 para não quebrar a navegação da ficha de item.
+
+Entrega feita:
+
+- troca o seletor genérico `[data-tab="ritualAttr"]` por `section[data-tab="ritualAttr"]`;
+- impede que o bloco seja inserido dentro do botão/aba **Atributos** da navegação;
+- mantém a âncora logo depois dos campos originais `system.studentForm` e `system.trueForm`;
+- adiciona fallback de CSS injetado em runtime para o bloco renderizar corretamente mesmo antes de reiniciar o Foundry.
+
+Critérios de aceitação:
+
+- abrir um item ritual não deve mover as abas Descrição/Atributos/Efeitos;
+- o bloco Paranormal Toolkit deve aparecer dentro da aba Atributos, abaixo de Forma Discente/Forma Verdadeira;
+- o bloco deve aparecer com caixa/borda e layout em duas colunas quando houver largura suficiente.
+
+### Concluído em 0.19.0 — Configuração de fórmula no item ritual
+
+Objetivo: permitir que rituais genéricos e homebrews tenham uma rolagem principal configurável diretamente na ficha do ritual, sem depender de preset hardcoded.
+
+Entrega feita:
+
+- adiciona um bloco **Paranormal Toolkit** na aba **Atributos** da ficha de item de ritual;
+- ancora a inserção logo após os campos originais `system.studentForm` e `system.trueForm`;
+- fórmula Padrão fica sempre disponível;
+- fórmulas Discente e Verdadeira ficam habilitadas conforme as formas marcadas no ritual original;
+- permite escolher tipo de rolagem: dano, cura ou utilidade;
+- permite escolher tipo de dano canônico do Toolkit quando o tipo é dano;
+- mantém resistência, círculo, elemento, alvo, duração e formas como dados do sistema, sem duplicar campos;
+- salva em `flags.paranormal-toolkit.ritualRollConfig`;
+- mantém a execução dessa configuração para uma próxima etapa, evitando misturar UI nova com regra de automação no mesmo corte.
+
+Critérios de aceitação:
+
+- a ficha de item ritual deve mostrar o bloco abaixo de Forma Discente/Forma Verdadeira na aba Atributos;
+- Padrão deve estar sempre habilitado;
+- Discente deve desabilitar quando `system.studentForm` estiver falso;
+- Verdadeiro deve desabilitar quando `system.trueForm` estiver falso;
+- salvar deve persistir a configuração em flags do item;
+- limpar deve remover a flag;
+- o bloco não deve criar campos duplicados de resistência ou alterar `system.*`.
 
 ### Concluído em 0.18.1 — Feedback de dano e Eletrocussão elétrica
 

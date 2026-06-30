@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.18.1`.
+Versão experimental atual: `v0.19.1`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -25,6 +25,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Modo automático | Executa a automação diretamente ao usar o item. | Experimental |
 | Conjuração geral de rituais | Abre ApplicationV2 para qualquer ritual, mostra forma/custo final, rola Ocultismo contra a DT de ritual do conjurador e usa automação assistida quando houver preset. | MVP implementado |
 | Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
+| Configuração de fórmula no ritual | Adiciona um bloco Paranormal Toolkit na aba Atributos da ficha de ritual, com tipo de rolagem e fórmula por forma salvos em flags do módulo. | MVP implementado |
 | Dice So Nice | Quando o módulo Dice So Nice está ativo, as rolagens do Toolkit são animadas em 3D sem criar mensagem extra no chat. | Implementado inicial |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
 | Condições e efeitos | Cria Active Effects informativos no ator alvo, com registry em TypeScript, catálogo inicial de condições, flags próprias, duração por rodada, limpeza automática tardia/defensiva e ações assistidas em rituais. | MVP implementado |
@@ -76,6 +77,24 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.19.1 — Correção do encaixe da configuração no item ritual
+
+- Corrige o alvo de injeção do bloco de configuração para usar especificamente `section[data-tab="ritualAttr"]`, evitando inserir o bloco dentro da navegação de abas.
+- O bloco agora entra abaixo de Forma Discente/Forma Verdadeira sem deslocar Descrição, Atributos ou Efeitos.
+- Injeta estilos mínimos em runtime como fallback, para não depender do carregamento imediato de um stylesheet novo após atualização do módulo.
+
+### 0.19.0 — Configuração de fórmula no item ritual
+
+- Adiciona um bloco **Paranormal Toolkit** na aba **Atributos** da ficha de item de ritual.
+- O bloco é inserido logo abaixo dos campos originais **Forma Discente** e **Forma Verdadeira**, usando esses campos como âncora.
+- Permite configurar uma rolagem principal por forma: Padrão, Discente e Verdadeiro.
+- A fórmula Padrão fica sempre habilitada; Discente e Verdadeiro ficam habilitados somente quando as formas correspondentes existem no ritual.
+- Permite escolher o tipo da rolagem: Dano, Cura ou Utilidade.
+- Para Dano, permite escolher o tipo de dano canônico do Toolkit, como Eletricidade, Sangue ou Corte.
+- O bloco não duplica resistência, círculo, elemento, alvo, duração ou formas: esses dados continuam vindo da ficha original do sistema.
+- Salva a configuração em `flags.paranormal-toolkit.ritualRollConfig`, sem alterar o DataModel do sistema.
+- Esta versão entrega a UI/configuração; a execução automática dessa configuração fica para a próxima etapa.
 
 ### 0.18.1 — Feedback de dano e Eletrocussão elétrica
 

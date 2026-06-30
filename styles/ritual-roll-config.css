@@ -1,0 +1,139 @@
+.paranormal-toolkit-ritual-roll-config {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  border: 1px solid rgba(89, 36, 42, 0.28);
+  border-left: 4px solid rgba(89, 36, 42, 0.78);
+  border-radius: 8px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(248, 244, 237, 0.96), rgba(234, 226, 214, 0.98));
+  color: rgba(24, 19, 18, 0.94);
+}
+
+.paranormal-toolkit-ritual-roll-config__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.paranormal-toolkit-ritual-roll-config__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paranormal-toolkit-ritual-roll-config__title strong {
+  color: rgba(89, 36, 42, 0.96);
+  font-size: 0.84rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-ritual-roll-config__title span {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.paranormal-toolkit-ritual-roll-config__badge {
+  border: 1px solid rgba(89, 36, 42, 0.25);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.36);
+  color: rgba(89, 36, 42, 0.9);
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-ritual-roll-config__hint,
+.paranormal-toolkit-ritual-roll-config__status {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  opacity: 0.8;
+}
+
+.paranormal-toolkit-ritual-roll-config__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.paranormal-toolkit-ritual-roll-config__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.paranormal-toolkit-ritual-roll-config__field input,
+.paranormal-toolkit-ritual-roll-config__field select,
+.paranormal-toolkit-ritual-roll-config__field textarea {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.paranormal-toolkit-ritual-roll-config__field textarea {
+  resize: vertical;
+}
+
+.paranormal-toolkit-ritual-roll-config__field small {
+  color: rgba(89, 36, 42, 0.78);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.paranormal-toolkit-ritual-roll-config__summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.28);
+  font-size: 0.78rem;
+}
+
+.paranormal-toolkit-ritual-roll-config__summary-row span {
+  font-weight: 700;
+  opacity: 0.78;
+}
+
+.paranormal-toolkit-ritual-roll-config__summary-row strong {
+  font-size: 0.84rem;
+}
+
+.paranormal-toolkit-ritual-roll-config__note-field {
+  grid-column: 1 / -1;
+}
+
+.paranormal-toolkit-ritual-roll-config__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.paranormal-toolkit-ritual-roll-config__actions button {
+  width: auto;
+  margin: 0;
+}
+
+.paranormal-toolkit-ritual-roll-config [hidden] {
+  display: none !important;
+}
+
+@media (max-width: 620px) {
+  .paranormal-toolkit-ritual-roll-config__fields {
+    grid-template-columns: 1fr;
+  }
+}
