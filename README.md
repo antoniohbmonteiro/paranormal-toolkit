@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.16.6`.
+Versão experimental atual: `v0.16.7`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -76,6 +76,12 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.16.7 — Ação contextual de SAN na conjuração
+
+- A ação de dano de SAN por falha no Ocultismo deixa de aparecer como seção separada no fim do card.
+- O botão agora aparece no cabeçalho da seção **Conjuração**, ao lado do status `Falha`, como ação contextual.
+- Remove a observação redundante “Falha de conjuração...” do corpo do card; a consequência fica indicada pelo botão.
 
 ### 0.16.6 — Falha de conjuração causa dano de SAN
 

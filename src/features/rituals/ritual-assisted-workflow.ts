@@ -608,24 +608,10 @@ function createRitualSummaryLines(
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
     createCostSummaryLine(options, form, cost),
     ...createCastingCheckSummaryLines(castingCheck),
-    ...createCastingFailureSanitySummaryLines(castingCheck, form, cost),
     ...Object.values(context.rolls).flatMap(createRollSummaryLines),
     ...createResistanceSummaryLines(definition.resistance),
     ...createFormNoteLines(form)
   ];
-}
-
-function createCastingFailureSanitySummaryLines(
-  castingCheck: RitualCastingCheckSummary | null,
-  form: AutomationRitualFormDefinition,
-  cost: RitualCost | null
-): string[] {
-  if (!castingCheck || castingCheck.success) return [];
-
-  const finalCost = calculateFinalRitualCost(cost, form);
-  if (!finalCost || finalCost.amount <= 0) return ["Falha de conjuração: dano na SAN não resolvido."];
-
-  return [`Falha de conjuração: aplicar ${finalCost.amount} SAN no conjurador.`];
 }
 
 function createCastingCheckSummaryLines(castingCheck: RitualCastingCheckSummary | null): string[] {

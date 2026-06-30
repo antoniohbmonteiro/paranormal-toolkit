@@ -169,6 +169,67 @@ export function ensureItemUseChatCardStyles(): void {
 .${PROMPT_CLASS}__resistance-content .${PROMPT_CLASS}__resistance-roll-result {
   margin-top: 0;
 }
+.${PROMPT_CLASS}__workflow-section--casting .${PROMPT_CLASS}__workflow-section-header--casting-backlash {
+  grid-template-columns: minmax(0, 1fr) 34px;
+}
+
+.${PROMPT_CLASS}__workflow-section-title-row {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.${PROMPT_CLASS}__workflow-section-title-row .${PROMPT_CLASS}__workflow-section-status {
+  flex: 0 0 auto;
+}
+
+.${PROMPT_CLASS}__casting-backlash-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  justify-self: end;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(125, 39, 43, 0.46) !important;
+  border-radius: 7px !important;
+  padding: 0 !important;
+  background: rgba(158, 82, 87, 0.88) !important;
+  color: #fffaf3 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+  overflow: hidden !important;
+  text-shadow: none !important;
+}
+
+.${PROMPT_CLASS}__casting-backlash-button::before {
+  content: "↪";
+  font-size: 1rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.${PROMPT_CLASS}__casting-backlash-button:hover,
+.${PROMPT_CLASS}__casting-backlash-button:focus {
+  border-color: rgba(125, 39, 43, 0.66) !important;
+  background: rgba(143, 62, 67, 0.94) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 0 0 2px rgba(125, 39, 43, 0.16) !important;
+  outline: none !important;
+}
+
+.${PROMPT_CLASS}__casting-backlash-button:disabled {
+  cursor: default !important;
+  opacity: 0.78 !important;
+}
+
+.${PROMPT_CLASS}__casting-backlash-button.${PROMPT_CLASS}__button--executed::before {
+  content: "✓";
+}
+
 `;
 
   document.head.append(style);

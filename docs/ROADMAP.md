@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.16.6`.
+Versão base do roadmap: `v0.16.7`.
 
 O Toolkit já tem:
 
@@ -97,6 +97,12 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.16.7 — Ação contextual de SAN na conjuração
+
+- A ação assistida de dano na SAN por falha no Ocultismo passa a ser renderizada no cabeçalho da seção **Conjuração**.
+- O status `Falha` fica junto do título da seção, e o botão contextual fica isolado à direita.
+- A seção separada “Dano na sanidade” deixa de aparecer para essa consequência específica.
 
 ### Concluído em 0.16.6 — Falha de conjuração causa dano de SAN
 

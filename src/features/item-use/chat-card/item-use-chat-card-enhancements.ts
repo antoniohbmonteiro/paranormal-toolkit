@@ -1,3 +1,4 @@
+import { enhanceCastingBacklashAction } from "./item-use-card-casting-backlash";
 import { removeWorkflowRollDetails } from "./item-use-card-details";
 import { enhanceResistanceLayout } from "./item-use-card-resistance";
 import { enhanceRitualMetadata } from "./item-use-card-ritual-metadata";
@@ -65,4 +66,5 @@ function enhanceItemUseChatCards(root: ParentNode | null): void {
   enhanceRitualMetadata(root);
   enhanceResistanceLayout(root);
   enhanceWorkflowRolls(root);
+  enhanceCastingBacklashAction(root);
 }
