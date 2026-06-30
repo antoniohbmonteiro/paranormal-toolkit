@@ -72,16 +72,11 @@ export function resolveConditionDuration(
   const expiryEvent = input?.expiry ?? "turnStart";
 
   return {
-    // O Foundry precisa enxergar este ActiveEffect como temporário para exibir o ícone no token
-    // e classificar o efeito corretamente na ficha. Porém não podemos dar uma duração finita
-    // nativa, porque isso faz o Foundry marcar o efeito como expirado na virada da rodada.
-    // Valor null vira duração infinita; o expiry mantém o efeito como trackable/temporário.
-    // A expiração real por rodada de Ordem é controlada pelo ConditionEngine usando as flags.
-    duration: {
-      value: null,
-      units: "rounds",
-      expiry: expiryEvent
-    },
+    // A regra de duração de Ordem fica 100% nas flags do Toolkit.
+    // Não damos uma duração finita nem evento de expiração nativo para o Foundry,
+    // porque o registry de ActiveEffect do Foundry pode marcar o efeito como expirado
+    // na virada da rodada antes do turno correto do combatente afetado.
+    duration: createIndefiniteFoundryDuration(),
     start: {
       combat: anchor.combatId,
       combatant: anchor.combatantId,
@@ -122,6 +117,14 @@ export function createCurrentCombatDurationAnchor(anchorActor?: Actor | null): T
     turn: startTurn,
     initiative,
     time: getWorldTime()
+  };
+}
+
+function createIndefiniteFoundryDuration(): Record<string, unknown> {
+  return {
+    value: null,
+    units: "seconds",
+    expiry: null
   };
 }
 

@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.8`.
+Versão base do roadmap: `v0.17.9`.
 
 O Toolkit já tem:
 
@@ -98,6 +98,14 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.17.9 — Duração do Toolkit sem expiração nativa
+
+- Duração real das condições temporárias fica nas flags do Paranormal Toolkit.
+- O ActiveEffect criado pelo Toolkit não recebe duração finita nativa do Foundry.
+- Cleanup automático não usa mais `effect.duration.expired`/`remaining` para condições com duração especial do Toolkit.
+- Condições de 1 rodada expiram no turno do combatente afetado, não na virada da rodada.
+- Ícone do efeito é forçado no token com `showIcon`.
 
 ### Concluído em 0.17.8 — Duração por turno do afetado
 

@@ -139,6 +139,7 @@ type ActiveEffectLike = {
 type ActiveEffectData = {
   name: string;
   icon: string;
+  img: string;
   description: string;
   origin?: string | null;
   disabled: boolean;
@@ -146,6 +147,8 @@ type ActiveEffectData = {
   changes: ToolkitConditionDefinition["changes"];
   duration: Record<string, unknown>;
   start: Record<string, unknown>;
+  showIcon: number;
+  statuses: string[];
   flags: Record<string, unknown>;
 };
 
@@ -394,6 +397,7 @@ function createActiveEffectData(
   return {
     name: definition.label,
     icon: definition.icon,
+    img: definition.icon,
     description: definition.description,
     origin: input.originUuid ?? undefined,
     disabled: false,
@@ -401,6 +405,8 @@ function createActiveEffectData(
     changes: definition.changes.map((change) => ({ ...change })),
     duration: createEffectDurationData(duration.duration),
     start: createEffectStartData(duration.start),
+    showIcon: 2,
+    statuses: [definition.id],
     flags: {
       [MODULE_ID]: flags
     }
@@ -467,6 +473,9 @@ function shouldRemoveExpiredToolkitCondition(
   const combat = getActiveCombat();
 
   if (metadata.durationMode === "combatantTurn" || hasCombatantTurnDurationMetadata(metadata)) {
+    // Condições com duração de rodada do Toolkit não podem respeitar o estado
+    // de expiração nativo do Foundry, porque a regra de Ordem expira no turno
+    // do combatente afetado, não necessariamente na virada da rodada.
     return isCombatantTurnDurationExpired(metadata, combat);
   }
 
@@ -506,8 +515,8 @@ function isEffectMarkedExpiredByFoundry(effect: ActiveEffectLike): boolean {
 }
 
 function isCombatantTurnDurationExpired(metadata: ToolkitConditionEffectMetadata, combat: CombatLike | null): boolean {
-  if (!combat?.id) return true;
-  if (metadata.combatId && metadata.combatId !== combat.id) return true;
+  if (!combat?.id) return false;
+  if (metadata.combatId && metadata.combatId !== combat.id) return false;
   if (!isPositiveInteger(metadata.startRound) || !isPositiveInteger(metadata.requestedRounds)) return false;
   if (!isPositiveInteger(combat.round)) return false;
 
@@ -517,10 +526,13 @@ function isCombatantTurnDurationExpired(metadata: ToolkitConditionEffectMetadata
   if (combat.round > targetRound) return true;
 
   const currentCombatantId = getCurrentCombatantId(combat);
-  if (metadata.startCombatantId && currentCombatantId === metadata.startCombatantId) return true;
+
+  if (metadata.startCombatantId) {
+    return currentCombatantId === metadata.startCombatantId;
+  }
 
   if (isNonNegativeInteger(metadata.startTurn) && isNonNegativeInteger(combat.turn)) {
-    return combat.turn >= metadata.startTurn;
+    return combat.turn === metadata.startTurn;
   }
 
   return false;
