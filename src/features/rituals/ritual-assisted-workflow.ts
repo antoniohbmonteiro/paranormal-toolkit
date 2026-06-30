@@ -282,6 +282,7 @@ export class RitualAssistedWorkflow {
         form,
         cost,
         workflowContext,
+        context,
         castingCheck,
       );
 
@@ -349,6 +350,7 @@ export class RitualAssistedWorkflow {
       form,
       cost,
       workflowContext,
+      context,
       castingCheck,
     );
 
@@ -559,6 +561,8 @@ function createAssistedConditionActions(
     const actors = resolveActors(application.actor, itemUseContext);
 
     if (actors.length === 0) {
+      if (application.actor === "target") continue;
+
       return {
         ok: false,
         reason: "no-target",
@@ -675,6 +679,8 @@ function createAssistedResourceActions(
     const actors = resolveActors(step.actor, itemUseContext);
 
     if (actors.length === 0) {
+      if (step.actor === "target") continue;
+
       return {
         ok: false,
         reason: "no-target",
@@ -1039,17 +1045,42 @@ function createRitualSummaryLines(
   options: RitualCastOptions,
   form: AutomationRitualFormDefinition,
   cost: RitualCost | null,
-  context: WorkflowContext,
+  workflowContext: WorkflowContext,
+  itemUseContext: ItemUseContext,
   castingCheck: RitualCastingCheckSummary | null = null,
 ): string[] {
   return [
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
     createCostSummaryLine(options, form, cost),
     ...createCastingCheckSummaryLines(castingCheck),
-    ...Object.values(context.rolls).flatMap(createRollSummaryLines),
+    ...Object.values(workflowContext.rolls).flatMap(createRollSummaryLines),
+    ...createManualTargetSummaryLines(definition, itemUseContext),
     ...createResistanceSummaryLines(definition.resistance),
     ...createFormNoteLines(form),
   ];
+}
+
+function createManualTargetSummaryLines(
+  definition: AutomationDefinition,
+  context: ItemUseContext,
+): string[] {
+  if (!hasTargetDocumentAction(definition)) return [];
+  if (resolveActors("target", context).length > 0) return [];
+
+  return [
+    "Aplicação manual: nenhum alvo com ficha foi selecionado; use o resultado do card manualmente.",
+  ];
+}
+
+function hasTargetDocumentAction(definition: AutomationDefinition): boolean {
+  return (
+    definition.steps.some(
+      (step) => step.type === "modifyResource" && step.actor === "target",
+    ) ||
+    (definition.conditionApplications ?? []).some(
+      (application) => application.actor === "target",
+    )
+  );
 }
 
 function createCastingCheckSummaryLines(
@@ -1225,10 +1256,6 @@ function appendRollBreakdownPart(
   parts.push(`${operator} ${value}`);
 }
 
-function formatLabel(value: string): string {
-  if (value.length === 0) return value;
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
-}
 
 function createFormNoteLines(form: AutomationRitualFormDefinition): string[] {
   return (form.notes ?? []).map((note) => `Observação: ${note}`);

@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.19.7`.
+Versão base do roadmap: `v0.19.8`.
 
 O Toolkit já tem:
 
@@ -40,6 +40,7 @@ O Toolkit já tem:
 - Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, duração por turno do afetado usando flags próprias, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
 - Damage Adapter para Ordem, chamando `actor.applyDamage` do sistema e separando instâncias de dano para suportar RD por tipo.
 - bloco Paranormal Toolkit na aba Atributos do item ritual para configurar fórmula genérica por forma, tipo de rolagem e tipo de dano em flags do módulo.
+- rituais assistidos podem ser conjurados sem alvo selecionado; nesse caso o Toolkit rola e registra o resultado, mas não cria ações que alteram atores.
 
 ## Roadmap por prioridade
 
@@ -100,6 +101,25 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.19.8 — Ritual assistido sem alvo selecionado
+
+Objetivo: permitir conjuração e rolagem de rituais usados contra ambiente, área, objeto narrativo ou qualquer coisa sem ficha/token.
+
+Entrega feita:
+
+- ritual assistido não falha mais só porque não há alvo selecionado;
+- fórmulas configuradas continuam rolando e aparecendo no card;
+- ações que alteram documentos, como dano, cura e condição em alvo, são omitidas quando não há ator alvo;
+- o card adiciona uma linha de aplicação manual para orientar o mestre;
+- com alvo selecionado, o fluxo assistido continua criando os botões de dano/cura/efeito normalmente.
+
+Critérios de aceitação:
+
+- conjurar ritual configurado sem alvo deve rolar Ocultismo e a fórmula escolhida;
+- o card deve ser criado sem erro;
+- o card não deve criar botão de aplicar dano/cura/efeito em alvo inexistente;
+- conjurar o mesmo ritual com alvo selecionado deve manter os botões assistidos.
 
 ### Concluído em 0.19.7 — Elemento em português no popup de conjuração
 

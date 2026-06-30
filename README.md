@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.19.7`.
+Versão experimental atual: `v0.19.8`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -77,6 +77,14 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.19.8 — Rituais sem alvo selecionado
+
+- Rituais assistidos podem ser conjurados sem alvo selecionado.
+- Fórmulas configuradas continuam rolando normalmente para dano, cura ou utilidade.
+- Quando não há alvo com ficha/token, o Toolkit não cria botões de aplicar dano, cura ou efeitos.
+- O card passa a indicar que o resultado deve ser usado manualmente.
+- Com alvo selecionado, os botões assistidos continuam funcionando como antes.
 
 ### 0.19.7 — Elemento em português no popup de conjuração
 
