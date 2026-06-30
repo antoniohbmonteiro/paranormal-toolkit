@@ -157,3 +157,53 @@
 .paranormal-toolkit-item-use-prompt__resistance-content .paranormal-toolkit-item-use-prompt__resistance-roll-result {
   margin-top: 0;
 }
+
+
+/* 0.16.2 — Garante o layout novo do popup de conjuração em stylesheet já carregado */
+.paranormal-toolkit-ritual-cast .paranormal-toolkit-ritual-cast__form {
+  display: flex !important;
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  min-height: 68px !important;
+  padding: 10px !important;
+}
+
+.paranormal-toolkit-ritual-cast .paranormal-toolkit-ritual-cast__form input[type="radio"] {
+  position: absolute !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  appearance: none !important;
+}
+
+.paranormal-toolkit-ritual-cast .paranormal-toolkit-ritual-cast__form-main {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.paranormal-toolkit-ritual-cast .paranormal-toolkit-ritual-cast__form-main strong {
+  min-width: 0 !important;
+}
+
+.paranormal-toolkit-ritual-cast .paranormal-toolkit-ritual-cast__form-main em {
+  flex: 0 0 auto !important;
+}
+
+.paranormal-toolkit-ritual-cast .paranormal-toolkit-ritual-cast__form-details {
+  grid-column: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-self: stretch !important;
+  gap: 4px !important;
+}

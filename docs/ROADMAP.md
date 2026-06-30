@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.16.1`.
+Versão base do roadmap: `v0.16.2`.
 
 O Toolkit já tem:
 
@@ -94,6 +94,12 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.16.2 — Correção visual do popup de conjuração
+
+- O estilo novo dos cards de forma também passa a existir no stylesheet de workflow já carregado pelo módulo.
+- O radio visual deixa de aparecer nos cards de forma.
+- O custo da forma permanece alinhado ao lado do nome, evitando altura desperdiçada.
 
 ### Concluído em 0.16.1 — DialogModel do popup de conjuração
 
