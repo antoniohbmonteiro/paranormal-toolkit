@@ -480,3 +480,11 @@ A versão `1.0.0` deve ter:
 - Corrigir o teste de Ocultismo de conjuração para animar com Dice So Nice quando a integração estiver ativa.
 - Manter o resultado persistido em `flags.paranormal-toolkit.chatCard` sem criar mensagem extra de rolagem.
 
+### 0.15.2 — Card de ritual em seções de workflow
+
+- O card de ritual agora separa visualmente Conjuração, Dano/Cura e Resistência.
+- O bloco de Conjuração aparece primeiro e mostra Ocultismo vs DT.
+- Se a conjuração falhar, o card para na etapa de Conjuração e não mostra efeito/dano.
+- As rolagens ganharam visual compacto com fórmula, total e dados individuais.
+- Dados descartados por `kh`/`kl` ficam esmaecidos quando o Toolkit consegue inferir isso pela fórmula.
+- O antigo detalhe global foi substituído por detalhes por bloco.

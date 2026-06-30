@@ -614,3 +614,12 @@ Resistência assistida inicial:
 - não cria um segundo card de chat só para a resistência;
 - após a rolagem, o botão mostra o resultado e o card exibe a fórmula usada;
 - ainda não compara automaticamente com DT do ritual.
+
+### 0.15.2 — Card de ritual em seções de workflow
+
+- O card de ritual agora separa visualmente Conjuração, Dano/Cura e Resistência.
+- O bloco de Conjuração aparece primeiro e mostra Ocultismo vs DT.
+- Se a conjuração falhar, o card para na etapa de Conjuração e não mostra efeito/dano.
+- As rolagens ganharam visual compacto com fórmula, total e dados individuais.
+- Dados descartados por `kh`/`kl` ficam esmaecidos quando o Toolkit consegue inferir isso pela fórmula.
+- O antigo detalhe global foi substituído por detalhes por bloco.
