@@ -1,6 +1,6 @@
 {
   "name": "paranormal-toolkit",
-  "version": "0.14.3",
+  "version": "0.15.0",
   "private": true,
   "type": "module",
   "description": "Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v14+.",

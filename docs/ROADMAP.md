@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.14.3`.
+Versão base do roadmap: `v0.15.0`.
 
 O Toolkit já tem:
 
@@ -30,6 +30,7 @@ O Toolkit já tem:
 - card simples persistente para rituais sem preset conhecido;
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
+- teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`.
 
 ## Roadmap por prioridade
 
@@ -85,6 +86,16 @@ Decisão de produto:
 - o mestre deve poder ignorar a sugestão e aplicar dano normal;
 - o cálculo sugerido deve ser visível, mas não autoritário.
 
+
+
+### Concluído em 0.15.0 — Teste de Ocultismo em rituais
+
+- Rituais conjurados pelo Toolkit agora podem rolar Ocultismo antes de resolver dano, cura ou efeitos.
+- A DT é lida de `actor.system.ritual.DT`, que já é calculada pelo sistema Ordem.
+- A rolagem usa `actor.rollSkill({ skill: "occultism" })` via adapter do sistema, mantendo a regra nativa fora do core do Toolkit.
+- Se a conjuração falhar, o card registra a falha e não cria botões de aplicação de dano/cura.
+- O resultado de conjuração entra em `flags.paranormal-toolkit.chatCard` junto do restante do workflow.
+- Existe setting de mundo para desativar o teste se a mesa quiser continuar no fluxo simplificado.
 
 ### Concluído em 0.14.3 — Dialog geral de ritual em ApplicationV2
 
@@ -369,6 +380,7 @@ Prioridade atual: depois de Toolkit e FX.
 | `0.14.0` | P2 | Permissões/visibilidade de ações no chat. |
 | `0.15.x` | P2 | UI de inspeção/configuração de automação do item. |
 | `0.16.x+` | P3 | Armas, melhorias, categorias, Template Regions e integrações visuais. |
+| `0.15.0` | P1 | Teste de Ocultismo na conjuração, usando DT de ritual do ator e rolagem nativa do sistema. |
 | `0.17.x+` | P3 | Macro/Script Step como extensão controlada para homebrew e integrações avançadas, sem substituir o core estruturado. |
 
 ## Não objetivos por enquanto

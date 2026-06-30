@@ -124,7 +124,15 @@ type ParsedRollLine = {
   label: string;
   formula: string;
   total: number;
-  intent: "healing" | "damage" | "generic";
+  intent: "healing" | "damage" | "casting" | "generic";
+};
+
+type CastingCheckViewModel = {
+  label: string;
+  total: number;
+  difficulty: number;
+  success: boolean;
+  diceBreakdown: string | null;
 };
 
 type ResistanceRollResultViewModel = {
@@ -149,6 +157,7 @@ type ParsedRollCard = ParsedRollLine & {
   resistanceSkillLabel: string | null;
   notes: string[];
   details: string[];
+  castingCheck: CastingCheckViewModel | null;
   resistanceRollResult: ResistanceRollResultViewModel | null;
 };
 
@@ -542,11 +551,50 @@ function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, prompt: 
 
   summary.append(chip, total, formula);
   article.append(summary);
+  appendCastingCheck(article, rollCard);
   appendRollMeta(article, rollCard);
   appendResistanceHint(article, rollCard, prompt);
   appendRollDetails(article, rollCard, prompt.pendingId);
 
   section.append(article);
+}
+
+function appendCastingCheck(article: HTMLElement, rollCard: ParsedRollCard): void {
+  const castingCheck = rollCard.castingCheck;
+  if (!castingCheck) return;
+
+  const block = document.createElement("div");
+  block.classList.add(
+    `${PROMPT_CLASS}__casting-check`,
+    `${PROMPT_CLASS}__casting-check--${castingCheck.success ? "success" : "failure"}`
+  );
+
+  const header = document.createElement("div");
+  header.classList.add(`${PROMPT_CLASS}__casting-check-header`);
+
+  const title = document.createElement("strong");
+  title.textContent = "Conjuração";
+
+  const status = document.createElement("span");
+  status.classList.add(`${PROMPT_CLASS}__casting-check-status`);
+  status.textContent = castingCheck.success ? "Sucesso" : "Falha";
+
+  header.append(title, status);
+
+  const result = document.createElement("span");
+  result.classList.add(`${PROMPT_CLASS}__casting-check-result`);
+  result.textContent = `${castingCheck.label}: ${castingCheck.total} vs DT ${castingCheck.difficulty}`;
+
+  block.append(header, result);
+
+  if (castingCheck.diceBreakdown) {
+    const dice = document.createElement("span");
+    dice.classList.add(`${PROMPT_CLASS}__casting-check-dice`);
+    dice.textContent = `Dados: ${castingCheck.diceBreakdown}`;
+    block.append(dice);
+  }
+
+  article.append(block);
 }
 
 function appendRollMeta(article: HTMLElement, rollCard: ParsedRollCard): void {
@@ -693,6 +741,13 @@ function createRollDetailRows(rollCard: ParsedRollCard): { label: string; value:
   ];
 
   if (rollCard.diceBreakdown) rows.push({ label: "Dados", value: rollCard.diceBreakdown });
+  if (rollCard.castingCheck) {
+    rows.push({
+      label: "Conjuração",
+      value: `${rollCard.castingCheck.label}: ${rollCard.castingCheck.total} vs DT ${rollCard.castingCheck.difficulty}`
+    });
+    rows.push({ label: "Resultado", value: rollCard.castingCheck.success ? "Sucesso" : "Falha" });
+  }
   if (rollCard.damageType) rows.push({ label: "Tipo", value: rollCard.damageType });
   if (rollCard.resistance) rows.push({ label: "Resistência", value: rollCard.resistance });
   if (rollCard.form) rows.push({ label: "Forma", value: rollCard.form });
@@ -1191,7 +1246,8 @@ function markChoiceGroupButtonsAsResolved(selectedButton: HTMLButtonElement): vo
 }
 
 function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomationPrompt): ParsedRollCard | null {
-  const rollLine = summaryLines.map(parseRollLine).find(isParsedRollLine);
+  const rollLines = summaryLines.map(parseRollLine).filter(isParsedRollLine);
+  const rollLine = rollLines.find((line) => line.intent !== "casting") ?? rollLines[0] ?? null;
   if (!rollLine) return null;
 
   const form = findSummaryValue(summaryLines, "Forma");
@@ -1203,6 +1259,7 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
   const resistanceSkillLabel = findSummaryValue(summaryLines, "Resistência Rótulo") ?? (resistanceSkill ? getResistanceSkillLabel(resistanceSkill) : null);
   const notes = findSummaryValues(summaryLines, "Observação");
   const details = summaryLines.filter((line) => isExtraDetailLine(line, rollLine));
+  const castingCheck = createCastingCheckViewModel(summaryLines);
 
   return {
     ...rollLine,
@@ -1216,12 +1273,32 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
     resistanceSkillLabel,
     notes,
     details,
+    castingCheck,
     resistanceRollResult: prompt.resistanceRollResult ?? null
   };
 }
 
+function createCastingCheckViewModel(summaryLines: string[]): CastingCheckViewModel | null {
+  const castingRoll = summaryLines.map(parseRollLine).find((line) => line?.intent === "casting") ?? null;
+  const difficultyText = findSummaryValue(summaryLines, "Conjuração DT");
+  const resultText = findSummaryValue(summaryLines, "Conjuração Resultado");
+
+  if (!castingRoll || !difficultyText || !resultText) return null;
+
+  const difficulty = Number(difficultyText);
+  if (!Number.isFinite(difficulty)) return null;
+
+  return {
+    label: castingRoll.formula,
+    total: castingRoll.total,
+    difficulty: Math.trunc(difficulty),
+    success: resultText.toLowerCase() === "sucesso",
+    diceBreakdown: findSummaryValue(summaryLines, "Dados (Conjuração)")
+  };
+}
+
 function parseRollLine(line: string): ParsedRollLine | null {
-  const match = /^(Cura|Dano|Ataque|Resistência|Ritual|Perícia|Rolagem):\s*(.+?)\s*=\s*(-?\d+)/u.exec(line.trim());
+  const match = /^(Cura|Dano|Ataque|Resistência|Ritual|Perícia|Rolagem|Conjuração):\s*(.+?)\s*=\s*(-?\d+)/u.exec(line.trim());
   if (!match) return null;
 
   const [, label, formula, totalText] = match;
@@ -1240,6 +1317,7 @@ function parseRollLine(line: string): ParsedRollLine | null {
 function getRollIntent(label: string): ParsedRollLine["intent"] {
   if (label === "Cura") return "healing";
   if (label === "Dano") return "damage";
+  if (label === "Conjuração") return "casting";
   return "generic";
 }
 
@@ -1268,6 +1346,9 @@ function isExtraDetailLine(line: string, rollLine: ParsedRollLine): boolean {
   if (line.startsWith("Resistência Perícia:")) return false;
   if (line.startsWith("Resistência Rótulo:")) return false;
   if (line.startsWith("Observação:")) return false;
+  if (line.startsWith("Conjuração DT:")) return false;
+  if (line.startsWith("Conjuração Resultado:")) return false;
+  if (line.startsWith("Dados (Conjuração):")) return false;
   if (parseRollLine(line)) return false;
   return line.trim().length > 0;
 }

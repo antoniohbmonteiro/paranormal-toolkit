@@ -1253,3 +1253,79 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* 0.15.0 — Teste de Ocultismo na conjuração de ritual */
+.paranormal-toolkit-item-use-prompt__casting-check {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  border: 1px solid rgba(79, 72, 125, 0.18);
+  border-left: 3px solid rgba(79, 72, 125, 0.46);
+  border-radius: 6px;
+  padding: 0.48rem 0.56rem;
+  background: rgba(241, 239, 250, 0.72);
+  color: rgba(36, 27, 24, 0.92);
+  font-size: 0.78rem;
+  line-height: 1.34;
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check--success {
+  border-color: rgba(43, 109, 75, 0.2);
+  border-left-color: rgba(43, 109, 75, 0.52);
+  background: rgba(238, 247, 240, 0.78);
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check--failure {
+  border-color: rgba(125, 39, 43, 0.2);
+  border-left-color: rgba(125, 39, 43, 0.56);
+  background: rgba(249, 236, 235, 0.78);
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check-header strong {
+  color: rgba(53, 47, 91, 0.96);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check-status {
+  border-radius: 999px;
+  padding: 0.12rem 0.42rem;
+  background: rgba(255, 255, 255, 0.62);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check--success .paranormal-toolkit-item-use-prompt__casting-check-status {
+  color: #245238;
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check--failure .paranormal-toolkit-item-use-prompt__casting-check-status {
+  color: #7d272b;
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check-result,
+.paranormal-toolkit-item-use-prompt__casting-check-dice {
+  display: block;
+  color: rgba(36, 27, 24, 0.84);
+  font-weight: 700;
+}
+
+.paranormal-toolkit-item-use-prompt__casting-check-dice {
+  border-top: 1px solid rgba(79, 72, 125, 0.14);
+  margin-top: 0.12rem;
+  padding-top: 0.3rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+}

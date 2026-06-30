@@ -10,16 +10,19 @@ export const ITEM_USE_SYSTEM_CARD_MODES = ["keep", "replace"] as const;
 export type ItemUseSystemCardMode = (typeof ITEM_USE_SYSTEM_CARD_MODES)[number];
 
 const DEFAULT_ITEM_USE_SYSTEM_CARD_MODE: ItemUseSystemCardMode = "keep";
+const DEFAULT_RITUAL_CASTING_CHECK_ENABLED = true;
 
 export const ITEM_USE_SETTING_KEYS = {
   executionMode: "itemUse.executionMode",
   systemCardMode: "itemUse.systemCardMode",
-  autoRun: "itemUse.autoRun.enabled"
+  autoRun: "itemUse.autoRun.enabled",
+  ritualCastingCheckEnabled: "ritual.castingCheck.enabled"
 } as const;
 
 export type ItemUseSettingsSnapshot = {
   executionMode: AutomationExecutionMode;
   systemCardMode: ItemUseSystemCardMode;
+  ritualCastingCheckEnabled: boolean;
 };
 
 export function registerItemUseSettings(): void {
@@ -50,6 +53,15 @@ export function registerItemUseSettings(): void {
     default: DEFAULT_ITEM_USE_SYSTEM_CARD_MODE
   });
 
+  game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled, {
+    name: "Rolar Ocultismo ao conjurar ritual",
+    hint: "Quando ativo, rituais conjurados pelo Toolkit rolam Ocultismo contra a DT de ritual do conjurador antes de resolver dano, cura ou efeitos.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: DEFAULT_RITUAL_CASTING_CHECK_ENABLED
+  });
+
   // Setting legado da 0.8.x. Mantido escondido para não quebrar mundos/APIs antigas.
   game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.autoRun, {
     name: "Executar automações ao usar item",
@@ -67,12 +79,17 @@ export function getItemUseSettings(): ItemUseSettingsSnapshot {
 
   return {
     executionMode,
-    systemCardMode
+    systemCardMode,
+    ritualCastingCheckEnabled: getRitualCastingCheckEnabled()
   };
 }
 
 export function getItemUseSystemCardMode(): ItemUseSystemCardMode {
   return coerceItemUseSystemCardMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.systemCardMode));
+}
+
+export function getRitualCastingCheckEnabled(): boolean {
+  return game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled) === true;
 }
 
 export async function setItemUseExecutionMode(mode: AutomationExecutionMode): Promise<void> {

@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.14.3`.
+Versão experimental atual: `v0.15.0`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -23,7 +23,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Uso pela ficha | Escuta o hook `ordemparanormal.itemUsed` do sistema e reage ao uso normal de itens automatizados. | Implementado inicial |
 | Modo perguntar no chat | Ao usar um item automatizado, cria ações assistidas no card de chat em vez de aplicar imediatamente. | Implementado inicial |
 | Modo automático | Executa a automação diretamente ao usar o item. | Experimental |
-| Conjuração geral de rituais | Abre ApplicationV2 para qualquer ritual, mostra forma/custo final, gasta PE/PD quando escolhido e usa automação assistida quando houver preset. | MVP implementado |
+| Conjuração geral de rituais | Abre ApplicationV2 para qualquer ritual, mostra forma/custo final, rola Ocultismo contra a DT de ritual do conjurador e usa automação assistida quando houver preset. | MVP implementado |
 | Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
 | Dice So Nice | Quando o módulo Dice So Nice está ativo, as rolagens do Toolkit são animadas em 3D sem criar mensagem extra no chat. | Implementado inicial |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
@@ -71,6 +71,22 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+
+### 0.15.0 — Teste de Ocultismo na conjuração
+
+A versão `0.15.0` adiciona a etapa de conjuração real no fluxo de rituais: antes de resolver dano, cura ou efeitos, o Toolkit rola **Ocultismo** pelo método nativo do sistema Ordem e compara o resultado com `actor.system.ritual.DT`.
+
+Decisões desta versão:
+
+```txt
+- a DT vem do ator, não de cálculo próprio do Toolkit;
+- a rolagem usa actor.rollSkill({ skill: "occultism" }) via adapter;
+- em falha, o efeito do ritual não é resolvido e nenhum botão de dano/cura é criado;
+- o custo é gasto na tentativa de conjuração quando o jogador marcou gasto de recurso;
+- o resultado é persistido no chatCard do Toolkit e sobrevive a reload;
+- existe setting de mundo para desligar essa etapa se a mesa quiser fluxo rápido.
+```
 
 ### 0.14.3 — Decisão futura sobre macros
 

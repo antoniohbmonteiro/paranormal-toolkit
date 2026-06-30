@@ -12,6 +12,7 @@ import type {
   SpendResourceStep,
   SpendRitualCostStep
 } from "../../core/automation/automation-definition";
+import { rollOrdemRitualCastingCheck, type OrdemRitualCastingCheckResult } from "../../adapters/ordem/ordem-ritual-casting-adapter";
 import { resolveAutomationAmount } from "../../core/automation/automation-amount-resolver";
 import { executeAutomationResourceOperation } from "../../core/automation/automation-resource-executor";
 import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
@@ -21,6 +22,7 @@ import { createWorkflowContext, type WorkflowContext } from "../../core/workflow
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { WorkflowRollResult } from "../../core/workflow/workflow-roll";
 import type { ItemUseContext } from "../item-use/item-use-context";
+import { getRitualCastingCheckEnabled } from "../item-use/item-use-settings";
 import { requestRitualCastOptions } from "./ritual-cast-dialog";
 import {
   getRitualCastVariantLabel,
@@ -48,6 +50,15 @@ export type AssistedResourceAction = {
 type AssistedResourceActionSection = {
   id: string;
   title: string;
+};
+
+type RitualCastingCheckSummary = Pick<
+  OrdemRitualCastingCheckResult,
+  "skillLabel" | "formula" | "total" | "difficulty" | "success" | "diceBreakdown"
+>;
+
+type RitualPreparationBuildOptions = {
+  includeCostSteps: boolean;
 };
 
 export type RitualAssistedRunResult =
@@ -119,14 +130,53 @@ export class RitualAssistedWorkflow {
     }
 
     const form = resolveRitualForm(definition, options.variant);
-    const preparationDefinition = createPreparationDefinition(definition, options, form, cost);
+    const shouldRollCastingCheck = getRitualCastingCheckEnabled();
+    let castingCheck: RitualCastingCheckSummary | null = null;
+
+    if (shouldRollCastingCheck) {
+      const costResult = await spendRitualCostForCastingAttempt(this.resources, context.actor as Actor, options, form, cost);
+
+      if (!costResult.ok) {
+        return {
+          status: "failed",
+          reason: costResult.reason,
+          message: costResult.message
+        };
+      }
+
+      try {
+        castingCheck = await rollOrdemRitualCastingCheck(context.actor as Actor);
+      } catch (cause) {
+        return {
+          status: "failed",
+          reason: "ritual-casting-check-failed",
+          message: cause instanceof Error ? cause.message : "Não foi possível rolar Ocultismo para conjurar o ritual.",
+          cause
+        };
+      }
+
+      if (!castingCheck.success) {
+        const workflowContext = createEmptyRitualWorkflowContext(context, options);
+        return {
+          status: "completed-without-actions",
+          workflowContext,
+          summaryLines: createRitualSummaryLines(definition, options, form, cost, workflowContext, castingCheck, {
+            effectStopped: true
+          })
+        };
+      }
+    }
+
+    const preparationDefinition = createPreparationDefinition(definition, options, form, cost, {
+      includeCostSteps: !shouldRollCastingCheck
+    });
 
     if (preparationDefinition.steps.length === 0) {
       const workflowContext = createEmptyRitualWorkflowContext(context, options);
       return {
         status: "completed-without-actions",
         workflowContext,
-        summaryLines: createRitualSummaryLines(definition, options, form, cost, workflowContext)
+        summaryLines: createRitualSummaryLines(definition, options, form, cost, workflowContext, castingCheck)
       };
     }
 
@@ -158,7 +208,7 @@ export class RitualAssistedWorkflow {
 
     const workflowContext = runResult.value.context;
     const actionResult = createAssistedResourceActions(definition, context, workflowContext);
-    const summaryLines = createRitualSummaryLines(definition, options, form, cost, workflowContext);
+    const summaryLines = createRitualSummaryLines(definition, options, form, cost, workflowContext, castingCheck);
 
     if (!actionResult.ok) {
       return {
@@ -204,18 +254,19 @@ function createPreparationDefinition(
   definition: AutomationDefinition,
   options: RitualCastOptions,
   form: AutomationRitualFormDefinition,
-  cost: RitualCost | null
+  cost: RitualCost | null,
+  buildOptions: RitualPreparationBuildOptions
 ): RitualPreparationDefinition {
   const steps: RitualPreparationStep[] = [];
 
   for (const step of definition.steps) {
     if (step.type === "modifyResource" || step.type === "chatCard") continue;
-    if (isCostStep(step) && !options.spendResource) continue;
+    if (isCostStep(step) && (!buildOptions.includeCostSteps || !options.spendResource)) continue;
 
     steps.push(applyFormOverridesToStep(step, form));
   }
 
-  if (options.spendResource && cost && isPositiveNumber(form.extraCost)) {
+  if (buildOptions.includeCostSteps && options.spendResource && cost && isPositiveNumber(form.extraCost)) {
     steps.push({
       type: "spendResource",
       actor: "self",
@@ -229,6 +280,40 @@ function createPreparationDefinition(
     label: `${definition.label} · Conjuração assistida`,
     steps
   };
+}
+
+async function spendRitualCostForCastingAttempt(
+  resources: ResourceEngine,
+  actor: Actor,
+  options: RitualCastOptions,
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null
+): Promise<{ ok: true } | { ok: false; reason: string; message: string }> {
+  if (!options.spendResource) return { ok: true };
+
+  const finalCost = calculateFinalRitualCost(cost, form);
+
+  if (!finalCost) {
+    return {
+      ok: false,
+      reason: "ritual-cost-unresolved",
+      message: "Não foi possível resolver o custo do ritual."
+    };
+  }
+
+  if (finalCost.amount <= 0) return { ok: true };
+
+  const result = await resources.spend(actor, finalCost.resource, finalCost.amount);
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      reason: result.error.reason,
+      message: result.error.message
+    };
+  }
+
+  return { ok: true };
 }
 
 function applyFormOverridesToStep(step: RitualPreparationStep, form: AutomationRitualFormDefinition): RitualPreparationStep {
@@ -462,14 +547,31 @@ function createRitualSummaryLines(
   options: RitualCastOptions,
   form: AutomationRitualFormDefinition,
   cost: RitualCost | null,
-  context: WorkflowContext
+  context: WorkflowContext,
+  castingCheck: RitualCastingCheckSummary | null = null,
+  resultOptions: { effectStopped?: boolean } = {}
 ): string[] {
+  const effectStopped = resultOptions.effectStopped === true;
+
   return [
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
     createCostSummaryLine(options, form, cost),
-    ...Object.values(context.rolls).flatMap(createRollSummaryLines),
-    ...createResistanceSummaryLines(definition.resistance),
-    ...createFormNoteLines(form)
+    ...createCastingCheckSummaryLines(castingCheck),
+    ...(effectStopped ? [] : Object.values(context.rolls).flatMap(createRollSummaryLines)),
+    ...(effectStopped ? [] : createResistanceSummaryLines(definition.resistance)),
+    ...createFormNoteLines(form),
+    ...(effectStopped ? ["Observação: O efeito do ritual não foi resolvido porque a conjuração falhou."] : [])
+  ];
+}
+
+function createCastingCheckSummaryLines(castingCheck: RitualCastingCheckSummary | null): string[] {
+  if (!castingCheck) return [];
+
+  return [
+    `Conjuração: ${castingCheck.skillLabel} = ${Math.trunc(castingCheck.total)}`,
+    `Conjuração DT: ${castingCheck.difficulty}`,
+    `Conjuração Resultado: ${castingCheck.success ? "Sucesso" : "Falha"}`,
+    ...(castingCheck.diceBreakdown ? [`Dados (Conjuração): ${castingCheck.diceBreakdown}`] : [])
   ];
 }
 
