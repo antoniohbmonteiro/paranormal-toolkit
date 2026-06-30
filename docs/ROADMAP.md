@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.4`.
+Versão base do roadmap: `v0.17.5`.
 
 O Toolkit já tem:
 
@@ -37,7 +37,7 @@ O Toolkit já tem:
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
-- Condition Engine MVP com registry em TypeScript, condição Vulnerável, Active Effects informativos aplicados direto no Actor, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
+- Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
 
 ## Roadmap por prioridade
 
@@ -97,6 +97,27 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.17.5 — Catálogo inicial de condições
+
+Objetivo: criar o vocabulário base do `ConditionEngine` antes de automatizar mais rituais e regras.
+
+Entrega feita:
+
+- adiciona um catálogo inicial com 34 condições informativas;
+- mantém um arquivo por condição para facilitar evolução futura;
+- usa IDs canônicos em inglês/código e aliases em português sem acento;
+- mantém labels em português no Active Effect exibido ao jogador;
+- não copia textos oficiais e não adiciona mecânica automática ainda;
+- preserva `vulnerable` como ID principal de Vulnerável, mantendo compatibilidade com a Eletrocussão.
+
+Critérios de aceitação:
+
+- `ParanormalToolkit.conditions.list()` deve listar o catálogo completo;
+- `ParanormalToolkit.conditions.get("vulnerable")` e `get("vulneravel")` devem resolver a mesma condição;
+- aplicar condições novas pelo console deve criar Active Effect informativo sem `changes`;
+- remover por alias em português deve remover o efeito canônico quando o ator tiver permissão;
+- Eletrocussão continua aplicando `vulnerable` por 1 rodada.
 
 ### Concluído em 0.17.4 — Eletrocussão aplica Vulnerável assistido
 

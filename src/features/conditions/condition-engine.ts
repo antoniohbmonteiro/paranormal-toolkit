@@ -270,7 +270,8 @@ export class ConditionEngine {
       });
     }
 
-    const effects = findToolkitConditionEffects(actor, input.conditionId);
+    const canonicalConditionId = this.resolveCanonicalConditionId(input.conditionId);
+    const effects = findToolkitConditionEffects(actor, canonicalConditionId);
     let removed = 0;
 
     try {
@@ -294,9 +295,14 @@ export class ConditionEngine {
       actor,
       actorId: actor.id ?? null,
       actorName: actor.name ?? "Ator sem nome",
-      conditionId: input.conditionId,
+      conditionId: canonicalConditionId,
       removed
     });
+  }
+
+  private resolveCanonicalConditionId(conditionId: string): string {
+    const definitionResult = this.registry.get(conditionId);
+    return definitionResult.ok ? definitionResult.value.id : conditionId;
   }
 
   async cleanupExpiredConditions(input: CleanupExpiredConditionsInput = {}): Promise<ConditionCleanupSummary> {
