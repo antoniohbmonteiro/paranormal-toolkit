@@ -1,5 +1,11 @@
 import type { ToolkitConditionDefinition } from "./condition-definition";
-import { ConditionEngine, type ApplyConditionResult, type RemoveConditionResult } from "./condition-engine";
+import {
+  ConditionEngine,
+  type ApplyConditionResult,
+  type CleanupExpiredConditionsInput,
+  type ConditionCleanupSummary,
+  type RemoveConditionResult
+} from "./condition-engine";
 import type { ToolkitConditionDurationInput } from "./condition-duration";
 
 export type ToolkitConditionApiApplyOptions = {
@@ -23,6 +29,7 @@ export type ToolkitConditionApi = {
     options?: ToolkitConditionApiApplyOptions
   ) => Promise<ApplyConditionResult[]>;
   removeFromSelectedTokens: (conditionId: string) => Promise<RemoveConditionResult[]>;
+  cleanupExpired: (options?: CleanupExpiredConditionsInput) => Promise<ConditionCleanupSummary>;
 };
 
 type TokenLike = {
@@ -96,7 +103,11 @@ export function createConditionApi(conditionEngine: ConditionEngine): ToolkitCon
 
       notifyConditionRemovalResults(results);
       return results;
-    }
+    },
+    cleanupExpired: (options = {}) => conditionEngine.cleanupExpiredConditions({
+      ...options,
+      reason: options.reason ?? "manual"
+    })
   };
 }
 

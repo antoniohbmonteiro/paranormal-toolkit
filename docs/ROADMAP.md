@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.0`.
+Versão base do roadmap: `v0.17.1`.
 
 O Toolkit já tem:
 
@@ -37,7 +37,7 @@ O Toolkit já tem:
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
-- Condition Engine MVP com registry em TypeScript, condição Vulnerável e Active Effects informativos aplicados direto no Actor.
+- Condition Engine MVP com registry em TypeScript, condição Vulnerável, Active Effects informativos aplicados direto no Actor e limpeza automática de condições temporárias expiradas.
 
 ## Roadmap por prioridade
 
@@ -97,6 +97,25 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.17.1 — Limpeza de condições expiradas
+
+Objetivo: garantir que condições temporárias do Toolkit não fiquem poluindo a ficha depois que o Foundry deixa de exibir o ícone no token.
+
+Entrega feita:
+
+- Active Effects temporários criados pelo `ConditionEngine` recebem flags `deleteOnExpire` e `expiresWithCombat`;
+- `ConditionEngine.cleanupExpiredConditions()` varre apenas efeitos criados pelo Toolkit;
+- hooks de ciclo de vida limpam efeitos expirados ao avançar combate;
+- ao deletar um combate, efeitos temporários vinculados a ele são removidos;
+- `ParanormalToolkit.conditions.cleanupExpired()` fica disponível para teste manual via console/macro.
+
+Critérios de aceitação:
+
+- `Vulnerável` sem duração continua até remoção manual;
+- `Vulnerável` com `{ duration: { rounds: 1 } }` é removido ao expirar;
+- a limpeza não remove Active Effects de outros módulos ou efeitos sem flags do Toolkit;
+- o comando manual de cleanup retorna um resumo com efeitos varridos/removidos.
 
 ### Concluído em 0.17.0 — Condition Engine MVP
 

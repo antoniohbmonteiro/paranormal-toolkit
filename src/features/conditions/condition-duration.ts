@@ -6,6 +6,9 @@ export type ToolkitConditionDurationResolution = {
   duration: Record<string, unknown>;
   requestedRounds: number | null;
   combatDurationApplied: boolean;
+  combatId: string | null;
+  startRound: number | null;
+  startTurn: number | null;
   warning: string | null;
 };
 
@@ -25,6 +28,9 @@ export function resolveConditionDuration(
       duration: {},
       requestedRounds: null,
       combatDurationApplied: false,
+      combatId: null,
+      startRound: null,
+      startTurn: null,
       warning: null
     };
   }
@@ -36,19 +42,27 @@ export function resolveConditionDuration(
       duration: {},
       requestedRounds: rounds,
       combatDurationApplied: false,
+      combatId: null,
+      startRound: null,
+      startTurn: null,
       warning: `Duração de ${rounds} rodada(s) ignorada porque não há combate ativo.`
     };
   }
+
+  const startTurn = isNonNegativeInteger(combat.turn) ? combat.turn : 0;
 
   return {
     duration: {
       rounds,
       startRound: combat.round,
-      startTurn: isNonNegativeInteger(combat.turn) ? combat.turn : 0,
+      startTurn,
       combat: combat.id
     },
     requestedRounds: rounds,
     combatDurationApplied: true,
+    combatId: combat.id,
+    startRound: combat.round,
+    startTurn,
     warning: null
   };
 }

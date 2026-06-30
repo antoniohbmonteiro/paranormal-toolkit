@@ -5,6 +5,7 @@ import { SystemGuard } from "./core/system-guard";
 import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
 import { registerChatEnrichmentRenderer } from "./features/chat/chat-enrichment-renderer";
 import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
+import { registerConditionLifecycleHooks } from "./features/conditions/condition-lifecycle-hooks";
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
 import { registerItemUseSettings } from "./features/item-use/item-use-settings";
 import { registerItemUseWorkflowDiceToggle } from "./features/item-use/item-use-workflow-dice-toggle";
@@ -31,6 +32,7 @@ Hooks.once("ready", () => {
 
   services = createToolkitServices();
   services.itemUseIntegration.registerStrategies();
+  registerConditionLifecycleHooks(services.conditions);
   registerGlobalApi(services);
   registerChatTargetCapture();
   registerChatEnrichmentRenderer();
