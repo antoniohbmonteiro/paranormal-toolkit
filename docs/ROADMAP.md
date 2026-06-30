@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.16.0`.
+Versão base do roadmap: `v0.16.1`.
 
 O Toolkit já tem:
 
@@ -29,6 +29,8 @@ O Toolkit já tem:
 - metadados de ritual no cabeçalho do card usando badge de elemento/círculo e chips de custo, alvo, duração e resistência;
 - bloco de resistência com coluna reservada para o botão d20, sem a descrição invadir a área da ação;
 - card de item use com hidratação incremental separada em módulos menores por responsabilidade;
+- popup de conjuração renderizado por `RitualCastDialogModel`;
+- ritual genérico respeitando Discente/Verdadeiro marcados no item e custo extra por forma;
 - card assistido persistente, com opção de substituir visualmente o card original do sistema;
 - card simples persistente para rituais sem preset conhecido;
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
@@ -91,6 +93,28 @@ Decisão de produto:
 
 
 
+
+
+### Concluído em 0.16.1 — DialogModel do popup de conjuração
+
+Objetivo: preparar o fluxo de ritual genérico para evoluir sem duplicar lógica de UI.
+
+Entrega feita:
+
+- criação do `RitualCastDialogModel` como estado único de renderização do popup;
+- separação entre disponibilidade da forma e automação da forma;
+- rituais genéricos passam a habilitar Discente/Verdadeiro a partir de `item.system.studentForm` e `item.system.trueForm`;
+- custo final por forma passa a funcionar no genérico, incluindo base + 2 para Discente e base + 5 para Verdadeiro;
+- a pílula de PE fica ao lado do nome da forma;
+- o radio visual dos cards de forma fica escondido, mantendo o card como indicação visual de seleção.
+
+Critérios de aceitação:
+
+- Eletrocussão continua exibindo Padrão, Discente e Verdadeiro com 1 PE, 3 PE e 6 PE;
+- ritual sem preset com Discente marcado no item mostra Discente habilitado;
+- ritual sem preset com Verdadeiro marcado no item mostra Verdadeiro habilitado;
+- escolher Discente/Verdadeiro em ritual genérico gasta o custo final correto quando o gasto está marcado;
+- cards de forma não exibem mais a bolinha/radio visual.
 
 ### Concluído em 0.16.0 — Refactor interno do card de item use
 

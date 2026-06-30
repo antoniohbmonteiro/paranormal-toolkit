@@ -1,27 +1,24 @@
-import { MODULE_ID, MODULE_TITLE } from "../constants";
-import type { RitualCost } from "../core/rituals/ritual-types";
+import { MODULE_ID } from "../constants";
+import {
+  createRitualCastDialogModel,
+  type RitualCastDialogModel,
+  type RitualCastDialogModelInput,
+  type RitualCastFormModel
+} from "../features/rituals/casting/ritual-cast-dialog-model";
 import {
   isRitualCastVariant,
   type RitualCastOptions,
-  type RitualCastVariant,
-  type RitualCastVariantOption
+  type RitualCastVariant
 } from "../features/rituals/ritual-cast-options";
 
 const { ApplicationV2 } = foundry.applications.api;
 
-export type RitualCastApplicationInput = {
-  actor: Actor;
-  ritual: Item;
-  targetNames: string[];
-  cost: RitualCost | null;
-  defaultSpendResource: boolean;
-  variantOptions: RitualCastVariantOption[];
-  automationStatus?: "assisted" | "generic";
-};
+export type RitualCastApplicationInput = RitualCastDialogModelInput;
 
 type RitualCastResolution = (value: RitualCastOptions | null) => void;
 
 export class RitualCastApplication extends ApplicationV2 {
+  private readonly model: RitualCastDialogModel;
   private isResolved = false;
 
   static DEFAULT_OPTIONS = {
@@ -60,6 +57,8 @@ export class RitualCastApplication extends ApplicationV2 {
         title: `Conjurar ${input.ritual.name ?? "ritual"}`
       }
     });
+
+    this.model = createRitualCastDialogModel(input);
   }
 
   async _renderHTML(_context: object, _options: object): Promise<HTMLElement> {
@@ -79,24 +78,19 @@ export class RitualCastApplication extends ApplicationV2 {
   }
 
   private renderContent(): string {
-    const ritualName = this.input.ritual.name ?? "Ritual sem nome";
-    const targetText = this.input.targetNames.length > 0 ? this.input.targetNames.join(", ") : "Nenhum alvo selecionado";
-    const baseCost = this.input.cost ? `${this.input.cost.amount} ${this.input.cost.resource}` : "não resolvido";
-    const checked = this.input.defaultSpendResource ? "checked" : "";
-
     return `
       <header class="paranormal-toolkit-ritual-cast__header">
-        <p class="paranormal-toolkit-ritual-cast__eyebrow">${escapeHtml(MODULE_TITLE)}</p>
+        <p class="paranormal-toolkit-ritual-cast__eyebrow">${escapeHtml(this.model.header.eyebrow)}</p>
         <div>
-          <h2>${escapeHtml(ritualName)}</h2>
-          <p>${escapeHtml(createRitualSubtitle(this.input.ritual))}</p>
+          <h2>${escapeHtml(this.model.header.title)}</h2>
+          <p>${escapeHtml(this.model.header.subtitle)}</p>
         </div>
       </header>
 
       <section class="paranormal-toolkit-ritual-cast__panel">
         <h3>Forma</h3>
         <div class="paranormal-toolkit-ritual-cast__forms" role="radiogroup" aria-label="Forma do ritual">
-          ${this.input.variantOptions.map((option) => renderVariantOption(option, this.input.cost)).join("")}
+          ${this.model.forms.map(renderVariantOption).join("")}
         </div>
       </section>
 
@@ -104,20 +98,21 @@ export class RitualCastApplication extends ApplicationV2 {
         <div class="paranormal-toolkit-ritual-cast__panel-heading">
           <h3>Custo</h3>
           <label class="paranormal-toolkit-ritual-cast__spend-toggle">
-            <input type="checkbox" name="spendResource" ${checked}>
+            <input type="checkbox" name="spendResource" ${this.model.cost.spendResourceChecked ? "checked" : ""}>
             <span>Gastar ao conjurar</span>
           </label>
         </div>
         <dl class="paranormal-toolkit-ritual-cast__summary">
-          <div><dt>Custo base</dt><dd>${escapeHtml(baseCost)}</dd></div>
-          <div><dt>Conjurador</dt><dd>${escapeHtml(this.input.actor.name ?? "Ator sem nome")}</dd></div>
-          <div><dt>Alvos</dt><dd>${escapeHtml(targetText)}</dd></div>
+          <div><dt>Custo base</dt><dd>${escapeHtml(this.model.cost.baseCostText)}</dd></div>
+          <div><dt>Conjurador</dt><dd>${escapeHtml(this.model.cost.casterName)}</dd></div>
+          <div><dt>Alvos</dt><dd>${escapeHtml(this.model.cost.targetText)}</dd></div>
         </dl>
       </section>
 
-      <section class="paranormal-toolkit-ritual-cast__panel paranormal-toolkit-ritual-cast__automation paranormal-toolkit-ritual-cast__automation--${this.input.automationStatus ?? "assisted"}">
+      <section class="paranormal-toolkit-ritual-cast__panel paranormal-toolkit-ritual-cast__automation paranormal-toolkit-ritual-cast__automation--${this.model.automation.status}">
         <h3>Automação</h3>
-        ${renderAutomationSummary(this.input)}
+        <p><strong>${escapeHtml(this.model.automation.title)}</strong></p>
+        <p>${escapeHtml(this.model.automation.description)}</p>
       </section>
 
       <footer class="paranormal-toolkit-ritual-cast__footer">
@@ -153,44 +148,21 @@ export class RitualCastApplication extends ApplicationV2 {
   }
 }
 
-function renderVariantOption(option: RitualCastVariantOption, cost: RitualCost | null): string {
-  const checked = option.variant === "base" ? "checked" : "";
+function renderVariantOption(option: RitualCastFormModel): string {
+  const checked = option.checked ? "checked" : "";
   const disabled = option.enabled ? "" : "disabled";
   const disabledClass = option.enabled ? "" : " paranormal-toolkit-ritual-cast__form--disabled";
-  const finalCost = option.finalCostText ?? createFallbackFinalCostText(cost);
-  const details = [...option.details, option.enabled ? "" : option.unavailableReason ?? "não disponível neste ritual"]
-    .filter((detail) => detail.trim().length > 0)
-    .filter((detail) => !detail.toLocaleLowerCase().startsWith("custo final"))
-    .map((detail) => `<span>${escapeHtml(detail)}</span>`)
-    .join("");
+  const details = option.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("");
 
   return `
     <label class="paranormal-toolkit-ritual-cast__form${disabledClass}">
       <input type="radio" name="variant" value="${escapeHtml(option.variant)}" ${checked} ${disabled}>
       <span class="paranormal-toolkit-ritual-cast__form-main">
         <strong>${escapeHtml(option.label)}</strong>
-        <em>${escapeHtml(finalCost)}</em>
+        <em>${escapeHtml(option.costText)}</em>
       </span>
       <span class="paranormal-toolkit-ritual-cast__form-details">${details}</span>
     </label>
-  `;
-}
-
-function createFallbackFinalCostText(cost: RitualCost | null): string {
-  return cost ? `${cost.amount} ${cost.resource}` : "custo não resolvido";
-}
-
-function renderAutomationSummary(input: RitualCastApplicationInput): string {
-  if (input.automationStatus === "generic") {
-    return `
-      <p><strong>Sem automação configurada.</strong></p>
-      <p>O Toolkit vai registrar a conjuração e gastar o recurso escolhido. Rolagens, dano, resistência e efeitos continuam manuais.</p>
-    `;
-  }
-
-  return `
-    <p><strong>Automação assistida disponível.</strong></p>
-    <p>O Toolkit vai preparar custo, rolagens e ações assistidas no card persistente do chat.</p>
   `;
 }
 
@@ -212,27 +184,6 @@ function readVariant(root: HTMLElement | null): RitualCastVariant {
 function resolveActionRoot(event: Event): HTMLElement | null {
   const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   return target?.closest<HTMLElement>(".paranormal-toolkit-ritual-cast") ?? null;
-}
-
-function createRitualSubtitle(ritual: Item): string {
-  const system = ritual.system as { element?: unknown; circle?: unknown } | undefined;
-  const parts = [formatUnknownLabel(system?.element), formatCircle(system?.circle)].filter(isNonEmptyString);
-  return parts.length > 0 ? parts.join(" • ") : "Conjuração de ritual";
-}
-
-function formatCircle(value: unknown): string | null {
-  if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  return `${value}º Círculo`;
-}
-
-function formatUnknownLabel(value: unknown): string | null {
-  if (typeof value !== "string" || value.trim().length === 0) return null;
-  const trimmed = value.trim();
-  return `${trimmed.charAt(0).toLocaleUpperCase()}${trimmed.slice(1)}`;
-}
-
-function isNonEmptyString(value: string | null): value is string {
-  return typeof value === "string" && value.length > 0;
 }
 
 function escapeHtml(value: string): string {

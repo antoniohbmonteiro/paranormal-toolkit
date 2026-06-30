@@ -93,6 +93,16 @@ const BASE_RITUAL_FORM: AutomationRitualFormDefinition = {
   label: "Padrão"
 };
 
+const GENERIC_DISCENTE_FORM: AutomationRitualFormDefinition = {
+  label: "Discente",
+  extraCost: 2
+};
+
+const GENERIC_VERDADEIRO_FORM: AutomationRitualFormDefinition = {
+  label: "Verdadeiro",
+  extraCost: 5
+};
+
 export class RitualAssistedWorkflow {
   constructor(
     private readonly workflow: WorkflowEngine,
@@ -114,7 +124,8 @@ export class RitualAssistedWorkflow {
     }
 
     const cost = this.resolveCostPreview(context);
-    const variantOptions = createRitualCastVariantOptions(definition, cost);
+    const isGenericRitual = isGenericRitualDefinition(definition);
+    const variantOptions = createRitualCastVariantOptions(definition, context.item, cost, isGenericRitual);
     const options = await requestRitualCastOptions({
       actor: context.actor,
       ritual: context.item,
@@ -122,14 +133,14 @@ export class RitualAssistedWorkflow {
       cost,
       defaultSpendResource: hasRitualOrExplicitCost(definition),
       variantOptions,
-      automationStatus: isGenericRitualDefinition(definition) ? "generic" : "assisted"
+      automationStatus: isGenericRitual ? "generic" : "assisted"
     });
 
     if (!options) {
       return { status: "cancelled" };
     }
 
-    const form = resolveRitualForm(definition, options.variant);
+    const form = resolveRitualForm(definition, context.item, options.variant, isGenericRitual);
     const shouldRollCastingCheck = getRitualCastingCheckEnabled();
     let castingCheck: RitualCastingCheckSummary | null = null;
 
@@ -740,29 +751,35 @@ function getRollLabel(roll: WorkflowRollResult): string {
   }
 }
 
-function createRitualCastVariantOptions(definition: AutomationDefinition, cost: RitualCost | null): RitualCastVariantOption[] {
+function createRitualCastVariantOptions(
+  definition: AutomationDefinition,
+  ritual: Item,
+  cost: RitualCost | null,
+  isGenericRitual: boolean
+): RitualCastVariantOption[] {
   return RITUAL_CAST_VARIANTS.map((variant) => {
-    const form = resolveOptionalRitualForm(definition, variant);
-    const enabled = variant === "base" || form !== null;
-    const effectiveForm = form ?? (variant === "base" ? BASE_RITUAL_FORM : null);
+    const form = resolveOptionalRitualForm(definition, ritual, variant, isGenericRitual);
+    const enabled = form !== null;
 
     return {
       variant,
-      label: effectiveForm?.label ?? getRitualCastVariantLabel(variant),
+      label: form?.label ?? getRitualCastVariantLabel(variant),
       enabled,
-      details: effectiveForm ? createVariantDetails(effectiveForm, cost) : [],
-      finalCostText: effectiveForm ? createFinalCostText(cost, effectiveForm) : null,
+      details: form ? createVariantDetails(form, cost, isGenericRitual) : [],
+      finalCostText: form ? createFinalCostText(cost, form) : null,
       unavailableReason: enabled ? undefined : "não disponível neste ritual"
     };
   });
 }
 
-function createVariantDetails(form: AutomationRitualFormDefinition, cost: RitualCost | null): string[] {
+function createVariantDetails(form: AutomationRitualFormDefinition, cost: RitualCost | null, isGenericRitual: boolean): string[] {
   const details: string[] = [];
   const formulas = Object.values(form.rollFormulaOverrides ?? {});
 
   if (formulas.length > 0) {
     details.push(formulas.join(", "));
+  } else if (isGenericRitual) {
+    details.push("efeito manual");
   }
 
   const finalCost = calculateFinalRitualCost(cost, form);
@@ -770,7 +787,6 @@ function createVariantDetails(form: AutomationRitualFormDefinition, cost: Ritual
 
   return details;
 }
-
 
 function calculateFinalRitualCost(
   cost: RitualCost | null,
@@ -789,12 +805,7 @@ function createFinalCostText(cost: RitualCost | null, form: AutomationRitualForm
 }
 
 function isGenericRitualDefinition(definition: AutomationDefinition): boolean {
-  return (
-    !definition.ritualForms &&
-    !definition.resistance &&
-    definition.steps.length > 0 &&
-    definition.steps.every(isCostStep)
-  );
+  return !definition.resistance && definition.steps.length > 0 && definition.steps.every(isCostStep);
 }
 
 function createEmptyRitualWorkflowContext(context: ItemUseContext, options: RitualCastOptions): WorkflowContext {
@@ -816,12 +827,52 @@ function createEmptyRitualWorkflowContext(context: ItemUseContext, options: Ritu
   });
 }
 
-function resolveRitualForm(definition: AutomationDefinition, variant: RitualCastVariant): AutomationRitualFormDefinition {
-  return resolveOptionalRitualForm(definition, variant) ?? BASE_RITUAL_FORM;
+function resolveRitualForm(
+  definition: AutomationDefinition,
+  ritual: Item,
+  variant: RitualCastVariant,
+  isGenericRitual: boolean
+): AutomationRitualFormDefinition {
+  return resolveOptionalRitualForm(definition, ritual, variant, isGenericRitual) ?? BASE_RITUAL_FORM;
 }
 
-function resolveOptionalRitualForm(definition: AutomationDefinition, variant: AutomationRitualFormId): AutomationRitualFormDefinition | null {
-  return definition.ritualForms?.[variant] ?? null;
+function resolveOptionalRitualForm(
+  definition: AutomationDefinition,
+  ritual: Item,
+  variant: AutomationRitualFormId,
+  isGenericRitual: boolean
+): AutomationRitualFormDefinition | null {
+  const configured = definition.ritualForms?.[variant] ?? null;
+  if (configured) return configured;
+
+  if (!isGenericRitual) {
+    return variant === "base" ? BASE_RITUAL_FORM : null;
+  }
+
+  if (!isRitualFormAvailableInItem(ritual, variant)) return null;
+  return createGenericRitualForm(variant);
+}
+
+function createGenericRitualForm(variant: AutomationRitualFormId): AutomationRitualFormDefinition {
+  switch (variant) {
+    case "base":
+      return BASE_RITUAL_FORM;
+    case "discente":
+      return GENERIC_DISCENTE_FORM;
+    case "verdadeiro":
+      return GENERIC_VERDADEIRO_FORM;
+  }
+}
+
+function isRitualFormAvailableInItem(ritual: Item, variant: AutomationRitualFormId): boolean {
+  if (variant === "base") return true;
+
+  const path = variant === "discente" ? "system.studentForm" : "system.trueForm";
+  return isTruthyFlag(foundry.utils.getProperty(ritual, path));
+}
+
+function isTruthyFlag(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function hasRitualOrExplicitCost(definition: AutomationDefinition): boolean {

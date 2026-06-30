@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.16.0`.
+Versão experimental atual: `v0.16.1`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -73,6 +73,15 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+
+### 0.16.1 — DialogModel do popup de conjuração e UX das formas
+
+- Introduz `RitualCastDialogModel` como modelo único para renderizar o popup de conjuração.
+- Mantém o popup renderizando um estado de tela já resolvido, em vez de espalhar regra de apresentação pela `ApplicationV2`.
+- Para rituais genéricos, Discente e Verdadeiro passam a respeitar `item.system.studentForm` e `item.system.trueForm`.
+- O custo por forma passa a ser aplicado também no fluxo genérico: Padrão usa custo base, Discente usa base + 2 e Verdadeiro usa base + 5.
+- Move a pílula de PE para o lado do nome da forma e esconde o radio visual, deixando a seleção indicada pelo próprio card.
 
 ### 0.16.0 — Refactor interno do card de item use
 

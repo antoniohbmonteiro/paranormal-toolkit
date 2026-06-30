@@ -1,0 +1,46 @@
+/* 0.16.1 — DialogModel e UX dos cards de forma do ritual */
+.paranormal-toolkit-ritual-cast__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 68px;
+  padding: 10px;
+}
+
+.paranormal-toolkit-ritual-cast__form input[type="radio"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.paranormal-toolkit-ritual-cast__form-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.paranormal-toolkit-ritual-cast__form-main strong {
+  min-width: 0;
+}
+
+.paranormal-toolkit-ritual-cast__form-main em {
+  flex: 0 0 auto;
+}
+
+.paranormal-toolkit-ritual-cast__form-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-self: stretch;
+}
+
+.paranormal-toolkit-ritual-cast__form--disabled .paranormal-toolkit-ritual-cast__form-main em {
+  color: rgba(36, 27, 24, 0.46);
+}
