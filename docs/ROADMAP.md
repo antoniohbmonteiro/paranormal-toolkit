@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.16.5`.
+Versão base do roadmap: `v0.16.6`.
 
 O Toolkit já tem:
 
@@ -35,7 +35,8 @@ O Toolkit já tem:
 - card simples persistente para rituais sem preset conhecido;
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
-- teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`.
+- teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
+- falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador.
 
 ## Roadmap por prioridade
 
@@ -95,6 +96,14 @@ Decisão de produto:
 
 
 
+
+
+### Concluído em 0.16.6 — Falha de conjuração causa dano de SAN
+
+- A falha no teste de Ocultismo deixa de interromper o workflow do ritual.
+- Dano, cura, resistência e demais ações assistidas continuam aparecendo mesmo quando a conjuração falha.
+- Quando há falha, o Toolkit cria uma ação assistida de dano na SAN contra o conjurador.
+- O valor da SAN sugerida usa o custo final da forma conjurada: base, Discente ou Verdadeiro.
 
 ### Concluído em 0.16.5 — Estado explícito de conjuração
 

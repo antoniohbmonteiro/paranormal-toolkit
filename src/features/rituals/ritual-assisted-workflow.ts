@@ -167,16 +167,6 @@ export class RitualAssistedWorkflow {
         };
       }
 
-      if (!castingCheck.success) {
-        const workflowContext = createEmptyRitualWorkflowContext(context, castOptions);
-        return {
-          status: "completed-without-actions",
-          workflowContext,
-          summaryLines: createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck, {
-            effectStopped: true
-          })
-        };
-      }
     }
 
     const preparationDefinition = createPreparationDefinition(definition, castOptions, form, cost, {
@@ -185,10 +175,22 @@ export class RitualAssistedWorkflow {
 
     if (preparationDefinition.steps.length === 0) {
       const workflowContext = createEmptyRitualWorkflowContext(context, castOptions);
+      const backlashActions = createCastingFailureSanityActions(context.actor as Actor, castingCheck, form, cost);
+      const summaryLines = createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck);
+
+      if (backlashActions.length > 0) {
+        return {
+          status: "ready",
+          workflowContext,
+          actions: backlashActions,
+          summaryLines
+        };
+      }
+
       return {
         status: "completed-without-actions",
         workflowContext,
-        summaryLines: createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck)
+        summaryLines
       };
     }
 
@@ -220,6 +222,7 @@ export class RitualAssistedWorkflow {
 
     const workflowContext = runResult.value.context;
     const actionResult = createAssistedResourceActions(definition, context, workflowContext);
+    const backlashActions = createCastingFailureSanityActions(context.actor as Actor, castingCheck, form, cost);
     const summaryLines = createRitualSummaryLines(definition, castOptions, form, cost, workflowContext, castingCheck);
 
     if (!actionResult.ok) {
@@ -230,7 +233,9 @@ export class RitualAssistedWorkflow {
       };
     }
 
-    if (actionResult.actions.length === 0) {
+    const actions = [...backlashActions, ...actionResult.actions];
+
+    if (actions.length === 0) {
       return {
         status: "completed-without-actions",
         workflowContext,
@@ -241,7 +246,7 @@ export class RitualAssistedWorkflow {
     return {
       status: "ready",
       workflowContext,
-      actions: actionResult.actions,
+      actions,
       summaryLines
     };
   }
@@ -346,6 +351,35 @@ function applyFormOverridesToStep(step: RitualPreparationStep, form: AutomationR
     ...step,
     formula
   } satisfies RollFormulaStep;
+}
+
+function createCastingFailureSanityActions(
+  actor: Actor,
+  castingCheck: RitualCastingCheckSummary | null,
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null
+): AssistedResourceAction[] {
+  if (!castingCheck || castingCheck.success) return [];
+
+  const finalCost = calculateFinalRitualCost(cost, form);
+  if (!finalCost || finalCost.amount <= 0) return [];
+
+  const actorName = actor.name ?? "Ator sem nome";
+
+  return [
+    {
+      kind: "resource-operation",
+      actor,
+      actorName,
+      resource: "SAN",
+      operation: "damage",
+      amount: finalCost.amount,
+      label: `Aplicar ${finalCost.amount} SAN`,
+      executedLabel: "✓ Dano na SAN aplicado",
+      actionSectionId: "casting-backlash",
+      actionSectionTitle: "Dano na sanidade"
+    }
+  ];
 }
 
 function createAssistedResourceActions(
@@ -568,20 +602,30 @@ function createRitualSummaryLines(
   form: AutomationRitualFormDefinition,
   cost: RitualCost | null,
   context: WorkflowContext,
-  castingCheck: RitualCastingCheckSummary | null = null,
-  resultOptions: { effectStopped?: boolean } = {}
+  castingCheck: RitualCastingCheckSummary | null = null
 ): string[] {
-  const effectStopped = resultOptions.effectStopped === true;
-
   return [
     `Forma: ${getRitualCastVariantLabel(options.variant)}`,
     createCostSummaryLine(options, form, cost),
     ...createCastingCheckSummaryLines(castingCheck),
-    ...(effectStopped ? [] : Object.values(context.rolls).flatMap(createRollSummaryLines)),
-    ...(effectStopped ? [] : createResistanceSummaryLines(definition.resistance)),
-    ...createFormNoteLines(form),
-    ...(effectStopped ? ["Observação: O efeito do ritual não foi resolvido porque a conjuração falhou."] : [])
+    ...createCastingFailureSanitySummaryLines(castingCheck, form, cost),
+    ...Object.values(context.rolls).flatMap(createRollSummaryLines),
+    ...createResistanceSummaryLines(definition.resistance),
+    ...createFormNoteLines(form)
   ];
+}
+
+function createCastingFailureSanitySummaryLines(
+  castingCheck: RitualCastingCheckSummary | null,
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null
+): string[] {
+  if (!castingCheck || castingCheck.success) return [];
+
+  const finalCost = calculateFinalRitualCost(cost, form);
+  if (!finalCost || finalCost.amount <= 0) return ["Falha de conjuração: dano na SAN não resolvido."];
+
+  return [`Falha de conjuração: aplicar ${finalCost.amount} SAN no conjurador.`];
 }
 
 function createCastingCheckSummaryLines(castingCheck: RitualCastingCheckSummary | null): string[] {
