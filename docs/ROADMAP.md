@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.19.6`.
+Versão base do roadmap: `v0.19.7`.
 
 O Toolkit já tem:
 
@@ -100,6 +100,22 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.19.7 — Elemento em português no popup de conjuração
+
+Objetivo: manter a UI em português também no cabeçalho do popup de conjuração.
+
+Entrega feita:
+
+- mapeia os elementos internos do ritual (`blood`, `death`, `knowledge`, `energy`, `fear`) para labels em português;
+- corrige o subtítulo do popup, evitando `Blood • 1º Círculo`;
+- mantém os valores internos sem tradução para não afetar adapters, presets ou regras.
+
+Critérios de aceitação:
+
+- ritual de Sangue deve mostrar `Sangue • 1º Círculo` no popup;
+- demais elementos devem aparecer como Morte, Conhecimento, Energia e Medo;
+- card do chat continua usando os labels de dano em português da 0.19.6.
 
 ### Concluído em 0.19.6 — Labels de dano em português no card
 
