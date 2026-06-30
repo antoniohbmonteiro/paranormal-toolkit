@@ -9,6 +9,7 @@ import { registerConditionLifecycleHooks } from "./features/conditions/condition
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
 import { registerItemUseSettings } from "./features/item-use/item-use-settings";
 import { registerItemUseWorkflowDiceToggle } from "./features/item-use/item-use-workflow-dice-toggle";
+import { registerRitualLogActionCleanup } from "./features/item-use/chat-card/ritual-log-action-cleanup";
 import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
 import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/actor-sheet-ritual-preset-action";
 import { registerItemSheetRitualRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ritual-roll-config-block";
@@ -37,6 +38,7 @@ Hooks.once("ready", () => {
   registerGlobalApi(services);
   registerChatTargetCapture();
   registerChatEnrichmentRenderer();
+  registerRitualLogActionCleanup();
   registerActorSheetRitualPresetAction(services);
   registerItemSheetRitualRollConfigBlock();
 

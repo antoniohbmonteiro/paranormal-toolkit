@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.19.8`.
+Versão base do roadmap: `v0.19.10`.
 
 O Toolkit já tem:
 
@@ -101,6 +101,34 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.19.10 — Remove registro redundante no card de ritual
+
+Objetivo: deixar o card de ritual focado apenas em informações e ações úteis.
+
+Entrega feita:
+
+- remove a seção **Registro** do card de ritual;
+- remove o botão **Ritual conjurado**, que não executava nenhuma ação real;
+- mantém rolagem de conjuração, fórmula configurada, dano/cura/utilidade e aviso de aplicação manual;
+- preserva ações assistidas reais quando existirem alvo e operação aplicável.
+
+### Concluído em 0.19.9 — Remove registro redundante do card de ritual
+
+Objetivo: limpar o card de ritual quando não há ação assistida para executar.
+
+Entrega feita:
+
+- remove visualmente a seção **Registro** dos cards de ritual sem ações pendentes;
+- mantém as seções de conjuração e fórmula configurada;
+- mantém avisos de aplicação manual quando não há alvo selecionado;
+- evita mostrar o botão `✓ Ritual conjurado`, que não executava nenhuma regra útil.
+
+Critérios de aceitação:
+
+- conjurar ritual com fórmula e sem alvo não deve mostrar **Registro**;
+- conjurar ritual com alvo continua mostrando ações reais, como dano/cura/efeito;
+- o card não deve perder as rolagens nem os metadados do ritual.
 
 ### Concluído em 0.19.8 — Ritual assistido sem alvo selecionado
 

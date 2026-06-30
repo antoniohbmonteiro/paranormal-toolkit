@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.19.8`.
+Versão experimental atual: `v0.19.10`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -77,6 +77,18 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.19.10 — Remove ação redundante de registro no card
+
+- Remove via cleanup de DOM a seção **Registro** e o botão **Ritual conjurado** dos cards de ritual.
+- Mantém o card com conjuração, fórmula, dano/cura/utilidade e aviso de aplicação manual.
+- Preserva ações reais como aplicar dano, cura, efeito e SAN por falha de conjuração.
+
+### 0.19.9 — Remove registro redundante do ritual
+
+- Remove visualmente a seção **Registro** / `✓ Ritual conjurado` dos cards de ritual sem ação pendente.
+- Mantém o card mostrando conjuração, fórmula, dano/cura/utilidade e avisos manuais quando existirem.
+- Evita ocupar espaço com uma confirmação que não adicionava decisão de jogo.
 
 ### 0.19.8 — Rituais sem alvo selecionado
 
