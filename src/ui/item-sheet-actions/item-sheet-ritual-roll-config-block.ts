@@ -133,6 +133,21 @@ function ensureRitualRollConfigStyles(): void {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+.${MODULE_ID}-ritual-roll-config__forms-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.${MODULE_ID}-ritual-roll-config__forms-title {
+  color: rgba(24, 19, 18, 0.9);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+.${MODULE_ID}-ritual-roll-config__forms-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
 .${MODULE_ID}-ritual-roll-config__field {
   display: flex;
   flex-direction: column;
@@ -160,26 +175,14 @@ function ensureRitualRollConfigStyles(): void {
   font-size: 0.72rem;
   font-weight: 700;
 }
-.${MODULE_ID}-ritual-roll-config__summary-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.${MODULE_ID}-ritual-roll-config__form-card {
   border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 6px;
-  padding: 6px 8px;
+  border-radius: 7px;
+  padding: 7px;
   background: rgba(255, 255, 255, 0.28);
-  font-size: 0.78rem;
-  text-align: left;
 }
-.${MODULE_ID}-ritual-roll-config__summary-row span {
-  font-weight: 700;
-  opacity: 0.78;
-}
-.${MODULE_ID}-ritual-roll-config__summary-row strong {
-  font-size: 0.84rem;
-}
-.${MODULE_ID}-ritual-roll-config__note-field {
-  grid-column: 1 / -1;
+.${MODULE_ID}-ritual-roll-config__form-card:has(input:disabled) {
+  opacity: 0.72;
 }
 .${MODULE_ID}-ritual-roll-config__actions {
   display: flex;
@@ -194,7 +197,8 @@ function ensureRitualRollConfigStyles(): void {
   display: none !important;
 }
 @media (max-width: 620px) {
-  .${MODULE_ID}-ritual-roll-config__fields {
+  .${MODULE_ID}-ritual-roll-config__fields,
+  .${MODULE_ID}-ritual-roll-config__forms-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -258,7 +262,7 @@ function createRitualRollConfigBlock(
   const title = document.createElement("div");
   title.classList.add(`${MODULE_ID}-ritual-roll-config__title`);
   title.append(createElement("strong", "Paranormal Toolkit"));
-  title.append(createElement("span", "Automação do ritual"));
+  title.append(createElement("span", "Fórmula de rolagem"));
 
   const badge = document.createElement("span");
   badge.classList.add(`${MODULE_ID}-ritual-roll-config__badge`);
@@ -269,7 +273,7 @@ function createRitualRollConfigBlock(
 
   const hint = document.createElement("p");
   hint.classList.add(`${MODULE_ID}-ritual-roll-config__hint`);
-  hint.textContent = "Configure uma rolagem principal por forma. Resistência, formas, círculo, alvo e duração continuam vindo da ficha original.";
+  hint.textContent = "Configure a fórmula usada pelo Toolkit quando este ritual não tiver um preset específico. Círculo, resistência, alvo e duração continuam vindo da ficha original.";
   block.append(hint);
 
   const fields = document.createElement("div");
@@ -278,13 +282,9 @@ function createRitualRollConfigBlock(
   fields.append(createIntentField(config, editable));
   fields.append(createDamageTypeField(config, editable));
   fields.append(createUtilityLabelField(config, editable));
-  fields.append(createResistanceSummary(item));
-  fields.append(createFormField("base", "Padrão", config.forms.base.formula, true, editable));
-  fields.append(createFormField("discente", "Discente", config.forms.discente.formula, availability.discente, editable));
-  fields.append(createFormField("verdadeiro", "Verdadeiro", config.forms.verdadeiro.formula, availability.verdadeiro, editable));
-  fields.append(createNoteField(config, editable));
 
   block.append(fields);
+  block.append(createFormsSection(config, availability, editable));
   block.append(createActions(editable));
 
   const status = document.createElement("p");
@@ -354,18 +354,28 @@ function createUtilityLabelField(config: RitualRollConfig, editable: boolean): H
   return wrapper;
 }
 
-function createResistanceSummary(item: Item): HTMLElement {
-  const wrapper = document.createElement("div");
-  wrapper.classList.add(`${MODULE_ID}-ritual-roll-config__summary-row`);
+function createFormsSection(
+  config: RitualRollConfig,
+  availability: RitualFormAvailability,
+  editable: boolean,
+): HTMLElement {
+  const section = document.createElement("section");
+  section.classList.add(`${MODULE_ID}-ritual-roll-config__forms-section`);
 
-  const label = document.createElement("span");
-  label.textContent = "Resistência da ficha";
+  const title = document.createElement("strong");
+  title.classList.add(`${MODULE_ID}-ritual-roll-config__forms-title`);
+  title.textContent = "Fórmulas por forma";
+  section.append(title);
 
-  const value = document.createElement("strong");
-  value.textContent = getResistanceSummaryLabel(item);
+  const grid = document.createElement("div");
+  grid.classList.add(`${MODULE_ID}-ritual-roll-config__forms-grid`);
 
-  wrapper.append(label, value);
-  return wrapper;
+  grid.append(createFormField("base", "Padrão", config.forms.base.formula, true, editable));
+  grid.append(createFormField("discente", "Discente", config.forms.discente.formula, availability.discente, editable));
+  grid.append(createFormField("verdadeiro", "Verdadeiro", config.forms.verdadeiro.formula, availability.verdadeiro, editable));
+
+  section.append(grid);
+  return section;
 }
 
 function createFormField(
@@ -376,7 +386,7 @@ function createFormField(
   editable: boolean,
 ): HTMLElement {
   const wrapper = createFieldWrapper(labelText);
-  wrapper.classList.add(`${MODULE_ID}-ritual-roll-config__form-field`);
+  wrapper.classList.add(`${MODULE_ID}-ritual-roll-config__form-card`);
   wrapper.dataset.ritualRollForm = formId;
 
   const input = document.createElement("input");
@@ -397,28 +407,13 @@ function createFormField(
   return wrapper;
 }
 
-function createNoteField(config: RitualRollConfig, editable: boolean): HTMLElement {
-  const wrapper = createFieldWrapper("Nota");
-  wrapper.classList.add(`${MODULE_ID}-ritual-roll-config__note-field`);
-
-  const textarea = document.createElement("textarea");
-  textarea.rows = 2;
-  textarea.placeholder = "Ex.: O conjurador pode recuperar PV conforme o dano causado.";
-  textarea.value = config.note;
-  textarea.disabled = !editable;
-  textarea.setAttribute(FIELD_ATTRIBUTE, "note");
-
-  wrapper.append(textarea);
-  return wrapper;
-}
-
 function createActions(editable: boolean): HTMLElement {
   const actions = document.createElement("div");
   actions.classList.add(`${MODULE_ID}-ritual-roll-config__actions`);
 
   const save = document.createElement("button");
   save.type = "button";
-  save.textContent = "Salvar automação";
+  save.textContent = "Salvar fórmula";
   save.disabled = !editable;
   save.setAttribute(ACTION_ATTRIBUTE, "save");
 
@@ -534,7 +529,7 @@ function collectConfig(block: HTMLElement, availability: RitualFormAvailability)
     intent,
     damageType: getOptionalFieldValue(block, "damageType"),
     utilityLabel: getOptionalFieldValue(block, "utilityLabel") ?? "Resultado",
-    note: getFieldValue(block, "note"),
+    note: "",
     forms: {
       base: { formula: getFieldValue(block, "formula.base") },
       discente: { formula: getFieldValue(block, "formula.discente") },
@@ -547,7 +542,6 @@ function applyConfigToBlock(block: HTMLElement, config: RitualRollConfig): void 
   setFieldValue(block, "intent", config.intent);
   setFieldValue(block, "damageType", config.damageType ?? "");
   setFieldValue(block, "utilityLabel", config.utilityLabel ?? "Resultado");
-  setFieldValue(block, "note", config.note);
   setFieldValue(block, "formula.base", config.forms.base.formula);
   setFieldValue(block, "formula.discente", config.forms.discente.formula);
   setFieldValue(block, "formula.verdadeiro", config.forms.verdadeiro.formula);
@@ -611,58 +605,6 @@ function getRitualFormAvailability(item: Item): RitualFormAvailability {
     discente: system.studentForm === true,
     verdadeiro: system.trueForm === true,
   };
-}
-
-function getResistanceSummaryLabel(item: Item): string {
-  const system = readSystemRecord(item);
-  const skill = typeof system.skillResis === "string" ? system.skillResis : "";
-  const resistance = typeof system.resistance === "string" ? system.resistance : "";
-
-  if (!skill) return "Nenhuma";
-
-  const skillLabel = getConfigOptionLabel("dropdownSkillResis", skill) ?? getFallbackResistanceSkillLabel(skill);
-  const resistanceLabel = resistance ? getConfigOptionLabel("dropdownResistance", resistance) ?? getFallbackResistanceEffectLabel(resistance) : null;
-
-  return resistanceLabel ? `${skillLabel} / ${resistanceLabel}` : skillLabel;
-}
-
-function getConfigOptionLabel(configKey: "dropdownSkillResis" | "dropdownResistance", value: string): string | null {
-  const opConfig = (CONFIG as unknown as { op?: Record<string, unknown> }).op;
-  const options = opConfig?.[configKey];
-  if (!isRecord(options)) return null;
-
-  const localizationKey = options[value];
-  if (typeof localizationKey !== "string") return null;
-
-  return game.i18n.localize(localizationKey);
-}
-
-function getFallbackResistanceSkillLabel(value: string): string {
-  switch (value) {
-    case "resilience":
-      return "Fortitude";
-    case "reflexes":
-      return "Reflexos";
-    case "will":
-      return "Vontade";
-    default:
-      return value;
-  }
-}
-
-function getFallbackResistanceEffectLabel(value: string): string {
-  switch (value) {
-    case "reducesByHalf":
-      return "Reduz à metade";
-    case "nullifies":
-      return "Anula";
-    case "partial":
-      return "Parcial";
-    case "discredits":
-      return "Desacredita";
-    default:
-      return value;
-  }
 }
 
 function getSheetItem(sheet: ItemSheetLike): Item | null {

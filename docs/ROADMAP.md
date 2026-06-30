@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.19.1`.
+Versão base do roadmap: `v0.19.3`.
 
 O Toolkit já tem:
 
@@ -39,7 +39,7 @@ O Toolkit já tem:
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
 - Condition Engine MVP com catálogo inicial de condições em TypeScript, Active Effects informativos aplicados direto no Actor, aliases em português para macros, duração por turno do afetado usando flags próprias, limpeza automática tardia/defensiva de condições temporárias expiradas e integração assistida inicial com Eletrocussão.
 - Damage Adapter para Ordem, chamando `actor.applyDamage` do sistema e separando instâncias de dano para suportar RD por tipo.
-- bloco Paranormal Toolkit na aba Atributos do item ritual para configurar fórmula genérica por forma, tipo de rolagem, tipo de dano e nota em flags do módulo.
+- bloco Paranormal Toolkit na aba Atributos do item ritual para configurar fórmula genérica por forma, tipo de rolagem e tipo de dano em flags do módulo.
 
 ## Roadmap por prioridade
 
@@ -100,6 +100,42 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.19.3 — Copy da fórmula de rolagem
+
+Objetivo: deixar claro que o bloco da ficha configura uma fórmula genérica/fallback, não uma automação completa concorrente com presets.
+
+Entrega feita:
+
+- troca o subtítulo do bloco de **Automação do ritual** para **Fórmula de rolagem**;
+- atualiza a descrição para explicar que a fórmula será usada quando o ritual não tiver preset específico;
+- troca o botão **Salvar automação** para **Salvar fórmula**;
+- mantém o armazenamento em `flags.paranormal-toolkit.ritualRollConfig`, sem alterar `system.*`.
+
+Critérios de aceitação:
+
+- o bloco deve continuar aparecendo na aba Atributos do item ritual;
+- o bloco não deve usar o termo “automação” como título ou botão principal;
+- salvar continua gravando a mesma flag, preservando compatibilidade com a 0.19.2.
+
+### Concluído em 0.19.2 — Polimento do layout da configuração de fórmula
+
+Objetivo: reduzir ruído visual do bloco de configuração e deixar Padrão, Discente e Verdadeiro mais fáceis de comparar.
+
+Entrega feita:
+
+- remove o resumo readonly de resistência do bloco, evitando duplicar dados que já existem na ficha original;
+- remove o campo Nota, usando a aba Descrição do ritual como fonte de explicações textuais;
+- adiciona a seção **Fórmulas por forma**;
+- organiza Padrão, Discente e Verdadeiro em cards pequenos lado a lado;
+- mantém Discente e Verdadeiro desabilitados quando `system.studentForm` ou `system.trueForm` não estão marcados.
+
+Critérios de aceitação:
+
+- o bloco deve continuar aparecendo na aba Atributos abaixo de Forma Discente/Forma Verdadeira;
+- não deve haver campo duplicado de resistência dentro do bloco do Toolkit;
+- não deve haver campo Nota dentro do bloco do Toolkit;
+- Padrão, Discente e Verdadeiro devem aparecer agrupados em **Fórmulas por forma**, lado a lado quando houver largura suficiente.
 
 ### Concluído em 0.19.1 — Correção do bloco de fórmula na ficha de ritual
 

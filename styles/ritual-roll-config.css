@@ -63,6 +63,24 @@
   gap: 8px;
 }
 
+.paranormal-toolkit-ritual-roll-config__forms-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.paranormal-toolkit-ritual-roll-config__forms-title {
+  color: rgba(24, 19, 18, 0.9);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.paranormal-toolkit-ritual-roll-config__forms-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .paranormal-toolkit-ritual-roll-config__field {
   display: flex;
   flex-direction: column;
@@ -83,38 +101,21 @@
   font-weight: 500;
 }
 
-.paranormal-toolkit-ritual-roll-config__field textarea {
-  resize: vertical;
-}
-
 .paranormal-toolkit-ritual-roll-config__field small {
   color: rgba(89, 36, 42, 0.78);
   font-size: 0.72rem;
   font-weight: 700;
 }
 
-.paranormal-toolkit-ritual-roll-config__summary-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.paranormal-toolkit-ritual-roll-config__form-card {
   border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 6px;
-  padding: 6px 8px;
+  border-radius: 7px;
+  padding: 7px;
   background: rgba(255, 255, 255, 0.28);
-  font-size: 0.78rem;
 }
 
-.paranormal-toolkit-ritual-roll-config__summary-row span {
-  font-weight: 700;
-  opacity: 0.78;
-}
-
-.paranormal-toolkit-ritual-roll-config__summary-row strong {
-  font-size: 0.84rem;
-}
-
-.paranormal-toolkit-ritual-roll-config__note-field {
-  grid-column: 1 / -1;
+.paranormal-toolkit-ritual-roll-config__form-card:has(input:disabled) {
+  opacity: 0.72;
 }
 
 .paranormal-toolkit-ritual-roll-config__actions {
@@ -133,7 +134,8 @@
 }
 
 @media (max-width: 620px) {
-  .paranormal-toolkit-ritual-roll-config__fields {
+  .paranormal-toolkit-ritual-roll-config__fields,
+  .paranormal-toolkit-ritual-roll-config__forms-grid {
     grid-template-columns: 1fr;
   }
 }

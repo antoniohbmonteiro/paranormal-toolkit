@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.19.1`.
+Versão experimental atual: `v0.19.3`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -77,6 +77,21 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.19.3 — Copy da fórmula de rolagem
+
+- Renomeia o subtítulo do bloco de `Automação do ritual` para **Fórmula de rolagem**, deixando claro que o bloco configura a rolagem genérica/fallback do ritual.
+- Atualiza a descrição do bloco para explicar que a fórmula é usada quando o ritual não tiver um preset específico.
+- Troca o botão de `Salvar automação` para **Salvar fórmula**.
+- Mantém a configuração salva em `flags.paranormal-toolkit.ritualRollConfig`, sem alterar os campos do sistema.
+
+### 0.19.2 — Polimento do bloco de fórmula no item ritual
+
+- Remove o resumo de resistência do bloco do Toolkit, já que a resistência continua visível e configurável na ficha original do ritual.
+- Remove o campo Nota do bloco, mantendo textos e instruções na aba Descrição do item.
+- Reorganiza Padrão, Discente e Verdadeiro em cards pequenos lado a lado dentro da seção **Fórmulas por forma**.
+- Mantém Discente e Verdadeiro desabilitados quando as formas correspondentes não existem no ritual.
+- Reduz ruído visual do formulário e deixa o bloco focado apenas em tipo da rolagem, tipo de dano/utilidade e fórmulas.
 
 ### 0.19.1 — Correção do encaixe da configuração no item ritual
 
