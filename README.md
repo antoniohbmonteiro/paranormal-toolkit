@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.16.3`.
+Versão experimental atual: `v0.16.4`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -74,6 +74,13 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+
+### 0.16.4 — Seleção de forma preservada na conjuração
+
+- A forma selecionada no popup passa a ser guardada também no estado da aplicação, não só no radio escondido.
+- O botão Conjurar usa a forma selecionada como fallback caso o DOM do Foundry não exponha o input marcado no momento da ação.
+- Corrige Discente/Verdadeiro gastando apenas o custo base em rituais automatizados e genéricos.
 
 ### 0.16.3 — Seleção robusta de forma no popup de conjuração
 

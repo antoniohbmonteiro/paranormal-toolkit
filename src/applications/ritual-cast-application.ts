@@ -19,6 +19,7 @@ type RitualCastResolution = (value: RitualCastOptions | null) => void;
 
 export class RitualCastApplication extends ApplicationV2 {
   private readonly model: RitualCastDialogModel;
+  private selectedVariant: RitualCastVariant = "base";
   private isResolved = false;
 
   static DEFAULT_OPTIONS = {
@@ -59,6 +60,7 @@ export class RitualCastApplication extends ApplicationV2 {
     });
 
     this.model = createRitualCastDialogModel(input);
+    this.selectedVariant = this.model.forms.find((form) => form.checked && form.enabled)?.variant ?? "base";
   }
 
   async _renderHTML(_context: object, _options: object): Promise<HTMLElement> {
@@ -70,7 +72,11 @@ export class RitualCastApplication extends ApplicationV2 {
 
   _replaceHTML(result: HTMLElement, content: HTMLElement, _options: object): void {
     content.replaceChildren(result);
-    bindVariantSelection(content);
+
+    const root = content.querySelector<HTMLElement>(".paranormal-toolkit-ritual-cast") ?? content;
+    bindVariantSelection(root, (variant) => {
+      this.selectedVariant = variant;
+    });
   }
 
   async close(options?: object): Promise<this> {
@@ -130,7 +136,7 @@ export class RitualCastApplication extends ApplicationV2 {
     event.preventDefault();
 
     const root = resolveActionRoot(event);
-    const options = readOptionsFromRoot(root, this.input.defaultSpendResource);
+    const options = readOptionsFromRoot(root, this.input.defaultSpendResource, this.selectedVariant);
 
     this.settle(options);
     await this.close();
@@ -175,41 +181,66 @@ function renderVariantOption(option: RitualCastFormModel): string {
 }
 
 
-function bindVariantSelection(root: HTMLElement): void {
+function bindVariantSelection(root: HTMLElement, onVariantSelected: (variant: RitualCastVariant) => void): void {
   const formCards = Array.from(root.querySelectorAll<HTMLElement>("[data-paranormal-toolkit-ritual-cast-form]"));
 
   for (const formCard of formCards) {
-    formCard.addEventListener("click", () => selectVariantCard(root, formCard));
+    formCard.addEventListener("click", () => selectVariantCard(root, formCard, onVariantSelected));
     formCard.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
-      selectVariantCard(root, formCard);
+      selectVariantCard(root, formCard, onVariantSelected);
     });
   }
 
-  updateVariantCardState(root);
+  const selectedVariant = updateVariantCardState(root);
+  if (selectedVariant) {
+    onVariantSelected(selectedVariant);
+  }
 }
 
-function selectVariantCard(root: HTMLElement, formCard: HTMLElement): void {
+function selectVariantCard(
+  root: HTMLElement,
+  formCard: HTMLElement,
+  onVariantSelected: (variant: RitualCastVariant) => void
+): void {
   const input = formCard.querySelector<HTMLInputElement>('input[name="variant"]');
-  if (!input || input.disabled) return;
+  if (!input || input.disabled || !isRitualCastVariant(input.value)) return;
 
   input.checked = true;
+  root.dataset.paranormalToolkitSelectedVariant = input.value;
+  onVariantSelected(input.value);
   input.dispatchEvent(new Event("change", { bubbles: true }));
   updateVariantCardState(root);
 }
 
-function updateVariantCardState(root: HTMLElement): void {
+function updateVariantCardState(root: HTMLElement): RitualCastVariant | null {
   const formCards = root.querySelectorAll<HTMLElement>("[data-paranormal-toolkit-ritual-cast-form]");
+  let selectedVariant: RitualCastVariant | null = null;
 
   for (const formCard of formCards) {
     const input = formCard.querySelector<HTMLInputElement>('input[name="variant"]');
-    formCard.setAttribute("aria-checked", input?.checked ? "true" : "false");
+    const isChecked = input?.checked === true;
+    formCard.setAttribute("aria-checked", isChecked ? "true" : "false");
+
+    if (isChecked && isRitualCastVariant(input.value)) {
+      selectedVariant = input.value;
+    }
   }
+
+  if (selectedVariant) {
+    root.dataset.paranormalToolkitSelectedVariant = selectedVariant;
+  }
+
+  return selectedVariant;
 }
 
-function readOptionsFromRoot(root: HTMLElement | null, defaultSpendResource: boolean): RitualCastOptions {
-  const variant = readVariant(root);
+function readOptionsFromRoot(
+  root: HTMLElement | null,
+  defaultSpendResource: boolean,
+  fallbackVariant: RitualCastVariant
+): RitualCastOptions {
+  const variant = readVariant(root) ?? fallbackVariant;
   const spendResource = root?.querySelector<HTMLInputElement>('input[name="spendResource"]')?.checked ?? defaultSpendResource;
 
   return {
@@ -218,14 +249,23 @@ function readOptionsFromRoot(root: HTMLElement | null, defaultSpendResource: boo
   };
 }
 
-function readVariant(root: HTMLElement | null): RitualCastVariant {
-  const value = root?.querySelector<HTMLInputElement>('input[name="variant"]:checked')?.value;
-  return isRitualCastVariant(value) ? value : "base";
+function readVariant(root: HTMLElement | null): RitualCastVariant | null {
+  const checkedValue = root?.querySelector<HTMLInputElement>('input[name="variant"]:checked')?.value;
+  if (isRitualCastVariant(checkedValue)) return checkedValue;
+
+  const selectedValue = root?.dataset.paranormalToolkitSelectedVariant;
+  return isRitualCastVariant(selectedValue) ? selectedValue : null;
 }
 
 function resolveActionRoot(event: Event): HTMLElement | null {
-  const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-  return target?.closest<HTMLElement>(".paranormal-toolkit-ritual-cast") ?? null;
+  for (const entry of [event.currentTarget, event.target, ...event.composedPath()]) {
+    if (!(entry instanceof HTMLElement)) continue;
+
+    const root = entry.closest<HTMLElement>(".paranormal-toolkit-ritual-cast");
+    if (root) return root;
+  }
+
+  return null;
 }
 
 function escapeHtml(value: string): string {
