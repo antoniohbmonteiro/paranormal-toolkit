@@ -2,26 +2,48 @@ import { ModuleLogger } from "../../core/module-logger";
 import type { ConditionEngine } from "./condition-engine";
 
 let hooksRegistered = false;
+let readyCleanupScheduled = false;
+let combatDeleteCleanupScheduled = false;
+
+const READY_CLEANUP_DELAY_MS = 1_000;
+const COMBAT_DELETE_CLEANUP_DELAY_MS = 1_000;
 
 export function registerConditionLifecycleHooks(conditionEngine: ConditionEngine): void {
   if (hooksRegistered) return;
 
-  Hooks.on("updateCombat", () => {
-    void cleanupExpiredConditions(conditionEngine, "combat-updated");
-  });
-
   Hooks.on("deleteCombat", (combat: unknown) => {
-    void cleanupExpiredConditions(conditionEngine, "combat-deleted", getDocumentId(combat));
+    scheduleCombatDeleteCleanup(conditionEngine, getDocumentId(combat));
   });
 
   hooksRegistered = true;
 
-  void cleanupExpiredConditions(conditionEngine, "ready");
+  scheduleReadyCleanup(conditionEngine);
+}
+
+function scheduleReadyCleanup(conditionEngine: ConditionEngine): void {
+  if (readyCleanupScheduled) return;
+  readyCleanupScheduled = true;
+
+  globalThis.setTimeout(() => {
+    readyCleanupScheduled = false;
+    void cleanupExpiredConditions(conditionEngine, "ready");
+  }, READY_CLEANUP_DELAY_MS);
+}
+
+function scheduleCombatDeleteCleanup(conditionEngine: ConditionEngine, combatId: string | null): void {
+  if (!combatId) return;
+  if (combatDeleteCleanupScheduled) return;
+  combatDeleteCleanupScheduled = true;
+
+  globalThis.setTimeout(() => {
+    combatDeleteCleanupScheduled = false;
+    void cleanupExpiredConditions(conditionEngine, "combat-deleted", combatId);
+  }, COMBAT_DELETE_CLEANUP_DELAY_MS);
 }
 
 async function cleanupExpiredConditions(
   conditionEngine: ConditionEngine,
-  reason: "ready" | "combat-updated" | "combat-deleted",
+  reason: "ready" | "combat-deleted",
   combatId?: string | null
 ): Promise<void> {
   try {

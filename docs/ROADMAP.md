@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.1`.
+Versão base do roadmap: `v0.17.2`.
 
 O Toolkit já tem:
 
@@ -98,6 +98,25 @@ Decisão de produto:
 
 
 
+### Concluído em 0.17.2 — Cleanup defensivo de condições temporárias
+
+Objetivo: evitar corrida entre o cleanup do Toolkit e a expiração nativa de Active Effects temporários pelo Foundry durante avanço de combate.
+
+Entrega feita:
+
+- remove cleanup automático no hook `updateCombat`;
+- mantém cleanup manual via `ParanormalToolkit.conditions.cleanupExpired()`;
+- mantém cleanup tardio em `ready` e ao deletar combate;
+- revalida o Active Effect no Actor antes de deletar;
+- ignora de forma segura erros de efeito já removido pelo Foundry.
+
+Critérios de aceitação:
+
+- avançar rodada com `Vulnerável` de 1 round não deve disparar erro de `EmbeddedCollectionDelta`;
+- se o Foundry remover o efeito sozinho, o Toolkit não tenta remover de novo no mesmo ciclo;
+- cleanup manual continua funcionando para efeitos temporários que ficarem sobrando;
+- efeitos sem duração continuam intactos.
+
 ### Concluído em 0.17.1 — Limpeza de condições expiradas
 
 Objetivo: garantir que condições temporárias do Toolkit não fiquem poluindo a ficha depois que o Foundry deixa de exibir o ícone no token.
@@ -106,7 +125,7 @@ Entrega feita:
 
 - Active Effects temporários criados pelo `ConditionEngine` recebem flags `deleteOnExpire` e `expiresWithCombat`;
 - `ConditionEngine.cleanupExpiredConditions()` varre apenas efeitos criados pelo Toolkit;
-- hooks de ciclo de vida limpam efeitos expirados ao avançar combate;
+- hooks de ciclo de vida evitam o avanço de combate e deixam o Foundry conduzir a expiração nativa;
 - ao deletar um combate, efeitos temporários vinculados a ele são removidos;
 - `ParanormalToolkit.conditions.cleanupExpired()` fica disponível para teste manual via console/macro.
 

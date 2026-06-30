@@ -271,10 +271,12 @@ export class ConditionEngine {
     }
 
     const effects = findToolkitConditionEffects(actor, input.conditionId);
+    let removed = 0;
 
     try {
       for (const effect of effects) {
-        await Promise.resolve(effect.delete?.());
+        const deletion = await deleteEffectIfStillPresent(actor, effect);
+        if (deletion === "deleted") removed += 1;
       }
     } catch (cause) {
       return failure({
@@ -293,7 +295,7 @@ export class ConditionEngine {
       actorId: actor.id ?? null,
       actorName: actor.name ?? "Ator sem nome",
       conditionId: input.conditionId,
-      removed: effects.length
+      removed
     });
   }
 
@@ -313,8 +315,8 @@ export class ConditionEngine {
         const metadata = readToolkitConditionEffectMetadata(effect);
 
         try {
-          await Promise.resolve(effect.delete?.());
-          removedEffects += 1;
+          const deletion = await deleteEffectIfStillPresent(actor, effect);
+          if (deletion === "deleted") removedEffects += 1;
         } catch (cause) {
           failures.push({
             actorId: actor.id ?? null,
@@ -477,6 +479,36 @@ function findToolkitConditionEffect(actor: ActorWithEffects, conditionId: string
 
 function findToolkitConditionEffects(actor: ActorWithEffects, conditionId: string): ActiveEffectLike[] {
   return getActorEffects(actor).filter((effect) => readToolkitConditionId(effect) === conditionId);
+}
+
+type EffectDeletionResult = "deleted" | "missing";
+
+async function deleteEffectIfStillPresent(
+  actor: ActorWithEffects,
+  effect: ActiveEffectLike
+): Promise<EffectDeletionResult> {
+  const effectId = effect.id ?? null;
+  const currentEffect = effectId ? findActorEffectById(actor, effectId) : effect;
+
+  if (!currentEffect) return "missing";
+
+  try {
+    await Promise.resolve(currentEffect.delete?.());
+    return "deleted";
+  } catch (cause) {
+    if (isMissingEmbeddedEffectError(cause)) return "missing";
+    throw cause;
+  }
+}
+
+function findActorEffectById(actor: ActorWithEffects, effectId: string): ActiveEffectLike | null {
+  return getActorEffects(actor).find((effect) => effect.id === effectId) ?? null;
+}
+
+function isMissingEmbeddedEffectError(cause: unknown): boolean {
+  const message = cause instanceof Error ? cause.message : String(cause);
+  return message.includes("does not exist in the EmbeddedCollectionDelta collection") ||
+    message.includes("does not exist in the EmbeddedCollection collection");
 }
 
 function getKnownActors(): ActorWithEffects[] {
