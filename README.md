@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.17.7`.
+Versão experimental atual: `v0.17.8`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -77,7 +77,7 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
-### 0.17.7 — Duração de condição por turno do afetado
+### 0.17.8 — Duração de condição por turno do afetado
 
 - Corrige a expiração de condições de 1 rodada para não sair na simples virada da rodada.
 - O Toolkit passa a controlar a duração por flags próprias, sem depender da expiração nativa do Foundry para esse caso.

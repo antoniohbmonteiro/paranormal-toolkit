@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.7`.
+Versão base do roadmap: `v0.17.8`.
 
 O Toolkit já tem:
 
@@ -99,7 +99,7 @@ Decisão de produto:
 
 
 
-### Concluído em 0.17.7 — Duração por turno do afetado
+### Concluído em 0.17.8 — Duração por turno do afetado
 
 Objetivo: alinhar condições de 1 rodada com a expectativa prática da mesa: o efeito permanece após a virada da rodada e sai no início do próximo turno do combatente afetado.
 

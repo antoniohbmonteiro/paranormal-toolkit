@@ -130,6 +130,7 @@ type ActiveEffectLike = {
   name?: string | null;
   duration?: Record<string, unknown> | null;
   start?: Record<string, unknown> | null;
+  flags?: Record<string, unknown> | null;
   getFlag?: (scope: string, key: string) => unknown;
   update?: (data: ActiveEffectData) => Promise<unknown> | unknown;
   delete?: () => Promise<unknown> | unknown;
@@ -465,7 +466,7 @@ function shouldRemoveExpiredToolkitCondition(
 
   const combat = getActiveCombat();
 
-  if (metadata.durationMode === "combatantTurn") {
+  if (metadata.durationMode === "combatantTurn" || hasCombatantTurnDurationMetadata(metadata)) {
     return isCombatantTurnDurationExpired(metadata, combat);
   }
 
@@ -483,6 +484,15 @@ function isToolkitTemporaryCondition(metadata: ToolkitConditionEffectMetadata): 
   if (metadata.deleteOnExpire) return true;
   if (metadata.expiresWithCombat) return true;
   return metadata.combatDurationApplied && isPositiveInteger(metadata.requestedRounds);
+}
+
+function hasCombatantTurnDurationMetadata(metadata: ToolkitConditionEffectMetadata): boolean {
+  return Boolean(
+    metadata.combatDurationApplied &&
+      isPositiveInteger(metadata.requestedRounds) &&
+      isPositiveInteger(metadata.startRound) &&
+      (metadata.startCombatantId || isNonNegativeInteger(metadata.startTurn))
+  );
 }
 
 function isEffectMarkedExpiredByFoundry(effect: ActiveEffectLike): boolean {
@@ -636,33 +646,46 @@ function readToolkitConditionId(effect: ActiveEffectLike): string | null {
 }
 
 function readStringFlag(effect: ActiveEffectLike, key: string): string | null {
-  return readString(effect.getFlag?.(MODULE_ID, key));
+  return readString(readToolkitFlagValue(effect, key));
 }
 
 function readNumberFlag(effect: ActiveEffectLike, key: string): number | null {
-  return readPositiveNumber(effect.getFlag?.(MODULE_ID, key));
+  return readPositiveNumber(readToolkitFlagValue(effect, key));
 }
 
 function readNonNegativeNumberFlag(effect: ActiveEffectLike, key: string): number | null {
-  return readNonNegativeNumber(effect.getFlag?.(MODULE_ID, key));
+  return readNonNegativeNumber(readToolkitFlagValue(effect, key));
 }
 
 function readFiniteNumberFlag(effect: ActiveEffectLike, key: string): number | null {
-  return readFiniteNumber(effect.getFlag?.(MODULE_ID, key));
+  return readFiniteNumber(readToolkitFlagValue(effect, key));
 }
 
 function readExpiryEventFlag(effect: ActiveEffectLike, key: string): ToolkitConditionExpiryEvent | null {
-  return readExpiryEvent(effect.getFlag?.(MODULE_ID, key));
+  return readExpiryEvent(readToolkitFlagValue(effect, key));
 }
 
 function readDurationModeFlag(effect: ActiveEffectLike, key: string): ToolkitConditionEffectMetadata["durationMode"] {
-  const value = effect.getFlag?.(MODULE_ID, key);
+  const value = readToolkitFlagValue(effect, key);
   if (value === "combatantTurn" || value === "sourceTurn") return "combatantTurn";
   return "none";
 }
 
 function readBooleanFlag(effect: ActiveEffectLike, key: string): boolean {
-  return effect.getFlag?.(MODULE_ID, key) === true;
+  return readToolkitFlagValue(effect, key) === true;
+}
+
+function readToolkitFlagValue(effect: ActiveEffectLike, key: string): unknown {
+  const valueFromGetter = effect.getFlag?.(MODULE_ID, key);
+  if (valueFromGetter !== undefined) return valueFromGetter;
+
+  const flags = effect.flags;
+  if (!flags || typeof flags !== "object") return undefined;
+
+  const moduleFlags = flags[MODULE_ID];
+  if (!moduleFlags || typeof moduleFlags !== "object") return undefined;
+
+  return (moduleFlags as Record<string, unknown>)[key];
 }
 
 function readString(value: unknown): string | null {
