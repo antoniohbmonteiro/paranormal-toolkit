@@ -4,12 +4,18 @@ import type { ConditionEngine } from "./condition-engine";
 let hooksRegistered = false;
 let readyCleanupScheduled = false;
 let combatDeleteCleanupScheduled = false;
+let combatTurnChangeCleanupTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
 
 const READY_CLEANUP_DELAY_MS = 1_000;
+const COMBAT_TURN_CHANGE_CLEANUP_DELAY_MS = 750;
 const COMBAT_DELETE_CLEANUP_DELAY_MS = 1_000;
 
 export function registerConditionLifecycleHooks(conditionEngine: ConditionEngine): void {
   if (hooksRegistered) return;
+
+  Hooks.on("combatTurnChange", (combat: unknown) => {
+    scheduleCombatTurnChangeCleanup(conditionEngine, getDocumentId(combat));
+  });
 
   Hooks.on("deleteCombat", (combat: unknown) => {
     scheduleCombatDeleteCleanup(conditionEngine, getDocumentId(combat));
@@ -21,6 +27,7 @@ export function registerConditionLifecycleHooks(conditionEngine: ConditionEngine
 }
 
 function scheduleReadyCleanup(conditionEngine: ConditionEngine): void {
+  if (!canRunAutomaticCleanup()) return;
   if (readyCleanupScheduled) return;
   readyCleanupScheduled = true;
 
@@ -30,7 +37,22 @@ function scheduleReadyCleanup(conditionEngine: ConditionEngine): void {
   }, READY_CLEANUP_DELAY_MS);
 }
 
+function scheduleCombatTurnChangeCleanup(conditionEngine: ConditionEngine, combatId: string | null): void {
+  if (!canRunAutomaticCleanup()) return;
+  if (!combatId) return;
+
+  if (combatTurnChangeCleanupTimeout) {
+    globalThis.clearTimeout(combatTurnChangeCleanupTimeout);
+  }
+
+  combatTurnChangeCleanupTimeout = globalThis.setTimeout(() => {
+    combatTurnChangeCleanupTimeout = null;
+    void cleanupExpiredConditions(conditionEngine, "combat-turn-change", combatId);
+  }, COMBAT_TURN_CHANGE_CLEANUP_DELAY_MS);
+}
+
 function scheduleCombatDeleteCleanup(conditionEngine: ConditionEngine, combatId: string | null): void {
+  if (!canRunAutomaticCleanup()) return;
   if (!combatId) return;
   if (combatDeleteCleanupScheduled) return;
   combatDeleteCleanupScheduled = true;
@@ -43,9 +65,11 @@ function scheduleCombatDeleteCleanup(conditionEngine: ConditionEngine, combatId:
 
 async function cleanupExpiredConditions(
   conditionEngine: ConditionEngine,
-  reason: "ready" | "combat-deleted",
+  reason: "ready" | "combat-turn-change" | "combat-deleted",
   combatId?: string | null
 ): Promise<void> {
+  if (!canRunAutomaticCleanup()) return;
+
   try {
     const summary = await conditionEngine.cleanupExpiredConditions({
       reason,
@@ -65,6 +89,10 @@ async function cleanupExpiredConditions(
   } catch (cause) {
     ModuleLogger.warn("Condition Engine não conseguiu limpar condições expiradas.", cause);
   }
+}
+
+function canRunAutomaticCleanup(): boolean {
+  return (game as { user?: { isGM?: boolean } | null }).user?.isGM === true;
 }
 
 function getDocumentId(document: unknown): string | null {

@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.17.2`.
+Versão experimental atual: `v0.17.3`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -27,7 +27,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
 | Dice So Nice | Quando o módulo Dice So Nice está ativo, as rolagens do Toolkit são animadas em 3D sem criar mensagem extra no chat. | Implementado inicial |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
-| Condições e efeitos | Cria Active Effects informativos no ator alvo, com registry em TypeScript, flags próprias, duração por rodada e limpeza defensiva/manual de efeitos expirados. | MVP implementado |
+| Condições e efeitos | Cria Active Effects informativos no ator alvo, com registry em TypeScript, flags próprias, duração por rodada e limpeza automática tardia/defensiva de efeitos expirados. | MVP implementado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
 | Integração com animações | Preparará eventos para efeitos visuais, sons e animações em um módulo companion. | Planejado |
 | Macro/Script Step | Camada futura de extensão controlada para casos avançados, sem virar a base das automações. | Planejado |
@@ -75,6 +75,15 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+
+### 0.17.3 — Cleanup automático tardio de condições temporárias
+
+- Reintroduz limpeza automática usando `combatTurnChange`, que roda depois do update de combate do Foundry.
+- O cleanup é atrasado e debounced para não competir com o ciclo interno de Active Effects.
+- Só o cliente GM executa a limpeza automática; jogadores continuam podendo usar remoção manual se tiverem permissão no ator.
+- Condições temporárias expiradas do Toolkit agora saem da ficha automaticamente depois que o Foundry termina de avançar o combate.
+- A limpeza continua revalidando o Active Effect antes de deletar e tratando efeitos já removidos como sucesso defensivo.
+- O comando manual `ParanormalToolkit.conditions.cleanupExpired()` continua disponível para debug.
 
 ### 0.17.2 — Cleanup defensivo de condições temporárias
 

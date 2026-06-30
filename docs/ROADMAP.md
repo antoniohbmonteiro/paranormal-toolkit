@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.17.2`.
+Versão base do roadmap: `v0.17.3`.
 
 O Toolkit já tem:
 
@@ -37,7 +37,7 @@ O Toolkit já tem:
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
-- Condition Engine MVP com registry em TypeScript, condição Vulnerável, Active Effects informativos aplicados direto no Actor e limpeza automática de condições temporárias expiradas.
+- Condition Engine MVP com registry em TypeScript, condição Vulnerável, Active Effects informativos aplicados direto no Actor e limpeza automática tardia/defensiva de condições temporárias expiradas.
 
 ## Roadmap por prioridade
 
@@ -97,6 +97,25 @@ Decisão de produto:
 
 
 
+
+### Concluído em 0.17.3 — Cleanup automático tardio de condições temporárias
+
+Objetivo: fazer condições temporárias expiradas sumirem da ficha automaticamente sem voltar à corrida com o ciclo interno do Foundry.
+
+Entrega feita:
+
+- reintroduz cleanup automático usando `combatTurnChange`, hook pós-update do combate;
+- agenda cleanup com atraso e debounce para evitar corrida com o processamento interno de Active Effects;
+- executa o cleanup automático apenas no cliente GM conectado;
+- mantém revalidação do efeito no Actor antes da remoção;
+- mantém o comando manual `ParanormalToolkit.conditions.cleanupExpired()` como fallback/debug.
+
+Critérios de aceitação:
+
+- `Vulnerável` com `{ duration: { rounds: 1 } }` deve sair da ficha automaticamente alguns instantes depois de expirar;
+- avançar rodada não deve disparar erro de `EmbeddedCollectionDelta`;
+- efeitos sem duração continuam intactos;
+- cleanup manual continua funcionando.
 
 ### Concluído em 0.17.2 — Cleanup defensivo de condições temporárias
 
