@@ -1,0 +1,34 @@
+/* 0.15.3 — Dados da rolagem sob demanda no card de ritual */
+.paranormal-toolkit-item-use-prompt__workflow-section .paranormal-toolkit-item-use-prompt__roll-detail-toggle,
+.paranormal-toolkit-item-use-prompt__workflow-section .paranormal-toolkit-item-use-prompt__roll-detail-list {
+  display: none !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll:not(.paranormal-toolkit-item-use-prompt__workflow-roll--dice-open)
+  .paranormal-toolkit-item-use-prompt__workflow-dice-tray,
+.paranormal-toolkit-item-use-prompt__workflow-dice-tray[hidden] {
+  display: none !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll-formula--toggle {
+  width: auto;
+  margin: 0;
+  gap: 0.34rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll-formula--toggle:hover,
+.paranormal-toolkit-item-use-prompt__workflow-roll-formula--toggle:focus {
+  border-color: rgba(89, 36, 42, 0.28);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(89, 36, 42, 0.08);
+  outline: none;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-roll-formula--toggle i {
+  flex: 0 0 auto;
+  margin-left: 0.34rem;
+  font-size: 0.62rem;
+  opacity: 0.72;
+}

@@ -7,6 +7,7 @@ import { registerChatEnrichmentRenderer } from "./features/chat/chat-enrichment-
 import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
 import { registerItemUseSettings } from "./features/item-use/item-use-settings";
+import { registerItemUseWorkflowDiceToggle } from "./features/item-use/item-use-workflow-dice-toggle";
 import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
 import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/actor-sheet-ritual-preset-action";
 
@@ -16,6 +17,7 @@ Hooks.once("init", () => {
   registerDebugOutputSettings();
   registerItemUseSettings();
   registerDiceAnimationSettings();
+  registerItemUseWorkflowDiceToggle();
   ModuleLogger.info("Inicializando módulo.");
 });
 
