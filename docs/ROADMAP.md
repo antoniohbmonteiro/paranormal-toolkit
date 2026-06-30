@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão base do roadmap: `v0.16.7`.
+Versão base do roadmap: `v0.17.0`.
 
 O Toolkit já tem:
 
@@ -22,7 +22,7 @@ O Toolkit já tem:
 - modo `ask` com ações assistidas no chat;
 - conjuração geral de rituais em ApplicationV2;
 - formas estruturadas de ritual: Padrão, Discente e Verdadeiro;
-- presets iniciais para Cicatrização e Eletrocussão;
+- presets iniciais para Cicatrização e Eletrocussão, com Eletrocussão versionada em `1.2.0`;
 - custo de PE/PD por ritual;
 - rolagens próprias do Toolkit com integração opcional ao Dice So Nice;
 - card de resultado no chat com dados brutos expansíveis pela fórmula da rolagem;
@@ -36,7 +36,8 @@ O Toolkit já tem:
 - ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado.
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
-- falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador.
+- falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;
+- Condition Engine MVP com registry em TypeScript, condição Vulnerável e Active Effects informativos aplicados direto no Actor.
 
 ## Roadmap por prioridade
 
@@ -97,6 +98,34 @@ Decisão de produto:
 
 
 
+### Concluído em 0.17.0 — Condition Engine MVP
+
+Objetivo: criar o esqueleto limpo para condições antes de integrar com rituais, ataques ou regras automáticas.
+
+Entrega feita:
+
+- criação de `ConditionEngine` separado dos workflows de ritual;
+- registry de condições em TypeScript;
+- primeira condição base: `Vulnerável`;
+- aplicação de condições como `ActiveEffect` diretamente no ator alvo;
+- flags próprias do `paranormal-toolkit` para `conditionId`, origem, versão da definição, usuário e duração solicitada;
+- suporte a duração por rodada quando há combate ativo;
+- API de desenvolvimento em `ParanormalToolkit.conditions` para testar via console/macro;
+- sem integração automática com Eletrocussão ainda.
+
+Critérios de aceitação:
+
+- selecionar token e rodar `ParanormalToolkit.conditions.applyToSelectedTokens("vulnerable")` cria o efeito sem duração;
+- selecionar token em combate e rodar `ParanormalToolkit.conditions.applyToSelectedTokens("vulnerable", { duration: { rounds: 1 } })` cria/atualiza o efeito com duração de 1 rodada;
+- o ícone do Active Effect aparece no token pelo comportamento nativo do Foundry;
+- `ParanormalToolkit.conditions.removeFromSelectedTokens("vulnerable")` remove somente efeitos criados pelo Toolkit com esse `conditionId`.
+
+
+### Concluído em 0.16.8 — Corrige fórmulas da Eletrocussão
+
+- O preset de Eletrocussão foi atualizado para a versão `1.2.0`.
+- As fórmulas passam a ser Padrão `3d6`, Discente `6d6` e Verdadeiro `8d6`.
+- O diagnóstico de presets deve marcar itens com Eletrocussão `1.1.0` como desatualizados para reaplicação pelo GM.
 
 ### Concluído em 0.16.7 — Ação contextual de SAN na conjuração
 

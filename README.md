@@ -6,7 +6,7 @@ Kit de automações e qualidade de vida para mesas de Ordem Paranormal no Foundr
 
 ## Status
 
-Versão experimental atual: `v0.16.7`.
+Versão experimental atual: `v0.17.0`.
 
 O projeto ainda está em desenvolvimento ativo. A base atual já possui automações funcionais para recursos, rituais, presets e workflows, além da integração com o hook oficial de uso de item do sistema não-oficial de Ordem Paranormal e do primeiro fluxo assistido de conjuração de rituais.
 
@@ -27,7 +27,7 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 | Formas de ritual | Presets podem declarar Padrão, Discente e Verdadeiro com custo extra, fórmula própria e notas manuais no chat. | MVP implementado |
 | Dice So Nice | Quando o módulo Dice So Nice está ativo, as rolagens do Toolkit são animadas em 3D sem criar mensagem extra no chat. | Implementado inicial |
 | Bloqueio de rolagem duplicada | Evitará confusão com rolagens inline na descrição, como `[[2d8+2]]`, quando houver automação ativa. | Planejado |
-| Condições e efeitos | Aplicará condições e Active Effects quando rituais, habilidades ou regras pedirem. | Planejado |
+| Condições e efeitos | Cria Active Effects informativos no ator alvo, com registry em TypeScript, flags próprias e duração por rodada quando há combate ativo. | MVP implementado |
 | Armas e melhorias | Validará categoria, modificações, melhorias e limites por patente/categoria. | Planejado |
 | Integração com animações | Preparará eventos para efeitos visuais, sons e animações em um módulo companion. | Planejado |
 | Macro/Script Step | Camada futura de extensão controlada para casos avançados, sem virar a base das automações. | Planejado |
@@ -76,6 +76,22 @@ Por enquanto, a ação fica disponível apenas para GM e apenas em fichas de age
 
 
 
+### 0.17.0 — Condition Engine MVP
+
+- Introduz `ConditionEngine` separado do fluxo de rituais.
+- Cria registry de condições em TypeScript, começando por `Vulnerável`.
+- Aplica condições como `ActiveEffect` diretamente no ator alvo, sem criar Item.
+- Guarda flags próprias do `paranormal-toolkit` para identificar condição, origem, versão da definição e duração solicitada.
+- Expõe API de desenvolvimento em `ParanormalToolkit.conditions` para testar pelo console ou por macro.
+- Suporta aplicação sem duração e duração por rodada quando há combate ativo.
+- Integração com Eletrocussão e automação mecânica real ficam para versões futuras.
+
+
+### 0.16.8 — Corrige fórmulas da Eletrocussão
+
+- Atualiza o preset versionado de Eletrocussão para `1.2.0`.
+- Corrige as fórmulas de dano para Padrão `3d6`, Discente `6d6` e Verdadeiro `8d6`.
+- Itens que já tinham o preset antigo devem aparecer como desatualizados no diagnóstico e precisam ser reaplicados pelo GM.
 
 ### 0.16.7 — Ação contextual de SAN na conjuração
 

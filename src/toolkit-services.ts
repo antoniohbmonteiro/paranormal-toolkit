@@ -11,6 +11,8 @@ import { ResourceEngine } from "./core/resources/resource-engine";
 import { WorkflowEngine } from "./core/workflow/workflow-engine";
 import { WorkflowHookEmitter } from "./core/workflow/workflow-hook-emitter";
 import { DebugOutputService } from "./debug/output/debug-output-service";
+import { ConditionEngine } from "./features/conditions/condition-engine";
+import { createToolkitConditionRegistry, type ConditionRegistry } from "./features/conditions/condition-registry";
 import { ItemUseIntegration } from "./features/item-use/item-use-integration";
 import { createBuiltInAutomationPresets } from "./features/rituals/ritual-automation-presets";
 import { RitualPresetApplicationService } from "./features/rituals/presets/ritual-preset-application-service";
@@ -26,6 +28,8 @@ export type ToolkitServices = {
   automationRegistry: AutomationRegistry;
   automationBinder: AutomationBinder;
   itemPatches: OrdemItemPatchAdapter;
+  conditionRegistry: ConditionRegistry;
+  conditions: ConditionEngine;
   debugOutput: DebugOutputService;
   chatMessages: ChatMessageService;
   workflowHooks: WorkflowHookEmitter;
@@ -51,6 +55,8 @@ export function createToolkitServices(): ToolkitServices {
 
   const automationBinder = new AutomationBinder();
   const itemPatches = new OrdemItemPatchAdapter();
+  const conditionRegistry = createToolkitConditionRegistry();
+  const conditions = new ConditionEngine(conditionRegistry);
   const ritualPresetDiagnostic = new RitualPresetDiagnosticService(automationRegistry);
   const ritualPresetApplications = new RitualPresetApplicationService(ritualPresetDiagnostic, automationBinder, itemPatches);
   const debugOutput = new DebugOutputService();
@@ -71,6 +77,8 @@ export function createToolkitServices(): ToolkitServices {
     automationRegistry,
     automationBinder,
     itemPatches,
+    conditionRegistry,
+    conditions,
     debugOutput,
     chatMessages,
     workflowHooks,

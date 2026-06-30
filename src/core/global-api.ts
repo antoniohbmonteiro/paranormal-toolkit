@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants";
 import { createDebugApi, DebugApi } from "../debug/debug-api";
+import { createConditionApi, type ToolkitConditionApi } from "../features/conditions/condition-api";
 import type { ToolkitServices } from "../toolkit-services";
 
 export type ParanormalToolkitApi = {
@@ -12,6 +13,7 @@ export type ParanormalToolkitApi = {
   automationBinder: ToolkitServices["automationBinder"];
   workflow: ToolkitServices["workflow"];
   itemUseIntegration: ToolkitServices["itemUseIntegration"];
+  conditions: ToolkitConditionApi;
   debug: DebugApi;
 };
 
@@ -26,6 +28,7 @@ export function registerGlobalApi(services: ToolkitServices): ParanormalToolkitA
     automationBinder: services.automationBinder,
     workflow: services.workflow,
     itemUseIntegration: services.itemUseIntegration,
+    conditions: createConditionApi(services.conditions),
     debug: createDebugApi(services)
   };
 
