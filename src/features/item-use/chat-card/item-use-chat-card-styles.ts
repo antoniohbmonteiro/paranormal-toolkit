@@ -539,6 +539,28 @@ export function ensureItemUseChatCardStyles(): void {
   line-height: 1 !important;
 }
 
+/* 0.21.8 — Efeito condicionado ao resultado da resistência */
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-waiting,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted {
+  min-width: 5.15rem !important;
+  max-width: 6.75rem !important;
+  border-color: rgba(96, 75, 45, 0.28) !important;
+  background: rgba(239, 230, 216, 0.72) !important;
+  color: rgba(45, 35, 29, 0.72) !important;
+  opacity: 0.88 !important;
+  cursor: default !important;
+}
+
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted {
+  color: rgba(34, 93, 55, 0.84) !important;
+}
+
+.${PROMPT_CLASS}__button-icon--effect-resisted {
+  font-size: 0.82rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
 `;
 
   document.head.append(style);

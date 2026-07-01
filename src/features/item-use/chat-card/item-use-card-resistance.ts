@@ -18,12 +18,14 @@ const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const ACTIONS_SELECTOR = `.${PROMPT_CLASS}__actions`;
 const ACTIONS_TITLE_SELECTOR = `.${PROMPT_CLASS}__actions-title`;
 const ACTION_BUTTON_SELECTOR = `.${PROMPT_CLASS}__button`;
+const PROMPT_EXECUTED_BUTTON_CLASS = `${PROMPT_CLASS}__button--executed`;
 const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
 const DAMAGE_ACTION_SECTION_ATTRIBUTE = "data-paranormal-toolkit-action-section";
 const DAMAGE_RESOLUTION_STATE_ATTRIBUTE = "data-paranormal-toolkit-damage-resolution-state";
 const DAMAGE_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-damage-icon-enhanced";
 const EFFECT_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-effect-icon-enhanced";
 const EFFECT_ACTION_COMPACTED_ATTRIBUTE = "data-paranormal-toolkit-effect-action-compacted";
+const EFFECT_RESISTANCE_GATE_ATTRIBUTE = "data-paranormal-toolkit-effect-resistance-gate";
 const EFFECT_ACTION_WORKFLOW_CLASS = `${PROMPT_CLASS}__workflow-section--effect-action`;
 const RESISTANCE_BUTTON_BOUND_ATTRIBUTE = "data-paranormal-toolkit-resistance-damage-refresh-bound";
 const DAMAGE_WORKFLOW_SECTION_SELECTOR = `.${PROMPT_CLASS}__workflow-section--effect`;
@@ -268,6 +270,7 @@ function enhanceRollCardDamageResolution(rollCard: HTMLElement): void {
 
   enhanceEffectActionSection(effectActions);
   moveEffectActionSectionIntoRollCard(rollCard, damageSection, effectActions);
+  updateEffectActionResistanceGate(rollCard, effectActions);
 }
 
 function enhanceEffectActionsLayout(root: ParentNode): void {
@@ -371,7 +374,8 @@ function readPersistedButtonLabelForButton(button: HTMLButtonElement): string | 
 }
 
 function isResolvedEffectButton(button: HTMLButtonElement, currentLabel: string): boolean {
-  return button.disabled || currentLabel.startsWith("✓") || normalizeText(currentLabel).includes("aplicado");
+  return button.classList.contains(PROMPT_EXECUTED_BUTTON_CLASS)
+    || normalizeText(currentLabel).includes("aplicado");
 }
 
 function enhanceEffectActionButton(button: HTMLButtonElement, originalLabel: string): void {
@@ -411,6 +415,113 @@ function compactResolvedEffectActionButton(button: HTMLButtonElement): void {
   button.setAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE, "true");
   button.setAttribute("aria-label", "Efeito aplicado");
   button.replaceChildren(icon, label);
+}
+
+
+function updateEffectActionResistanceGate(rollCard: HTMLElement, actions: HTMLElement): void {
+  const button = actions.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
+  if (!button) return;
+
+  const currentLabel = button.textContent?.trim() ?? "";
+  if (isResolvedEffectButton(button, currentLabel)) {
+    compactResolvedEffectActionButton(button);
+    return;
+  }
+
+  const effectLabel = resolveEffectActionDisplayLabel(actions, button, currentLabel);
+  if (!shouldGateEffectByResistance(rollCard, effectLabel)) {
+    clearEffectResistanceGate(button);
+    return;
+  }
+
+  const difficulty = readCastingDifficulty(rollCard);
+  const resistanceTotal = readResistanceTotal(rollCard);
+
+  if (difficulty === null || resistanceTotal === null) {
+    setEffectWaitingForResistance(button);
+    return;
+  }
+
+  if (resistanceTotal >= difficulty) {
+    setEffectResisted(button);
+    return;
+  }
+
+  setEffectAvailableAfterFailedResistance(button, effectLabel);
+}
+
+function resolveEffectActionDisplayLabel(actions: HTMLElement, button: HTMLButtonElement, currentLabel: string): string {
+  const explicitLabel = actions.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-resolution-label`)?.textContent?.trim();
+  if (explicitLabel) return explicitLabel;
+
+  return resolveEffectActionOriginalLabel(button, currentLabel) ?? currentLabel;
+}
+
+function shouldGateEffectByResistance(rollCard: HTMLElement, effectLabel: string): boolean {
+  if (!rollCard.querySelector(RESISTANCE_SELECTOR)) return false;
+
+  const normalized = normalizeLookupText(effectLabel);
+  return normalized.includes("vulneravel") || normalized.includes("vulnerable");
+}
+
+function setEffectWaitingForResistance(button: HTMLButtonElement): void {
+  button.disabled = true;
+  button.removeAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE);
+  button.removeAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE);
+  button.classList.remove(
+    `${PROMPT_CLASS}__button--effect-resolution-applied`,
+    `${PROMPT_CLASS}__button--effect-resolution-resisted`
+  );
+  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-waiting`);
+  button.setAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE, "pending");
+  button.setAttribute("aria-label", "Role a resistência antes de aplicar o efeito");
+  button.replaceChildren(createButtonTextLabel("Role resistência"));
+}
+
+function setEffectResisted(button: HTMLButtonElement): void {
+  button.disabled = true;
+  button.removeAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE);
+  button.removeAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE);
+  button.classList.remove(
+    `${PROMPT_CLASS}__button--effect-resolution-applied`,
+    `${PROMPT_CLASS}__button--effect-resolution-waiting`
+  );
+  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-resisted`);
+  button.setAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE, "resisted");
+  button.setAttribute("aria-label", "O alvo resistiu ao efeito");
+  button.replaceChildren(
+    createEffectButtonIcon("✓", `${PROMPT_CLASS}__button-icon--effect-resisted`),
+    createButtonTextLabel("Resistiu")
+  );
+}
+
+function setEffectAvailableAfterFailedResistance(button: HTMLButtonElement, effectLabel: string): void {
+  clearEffectResistanceGate(button);
+  button.disabled = false;
+  enhanceEffectActionButton(button, effectLabel);
+}
+
+function clearEffectResistanceGate(button: HTMLButtonElement): void {
+  button.classList.remove(
+    `${PROMPT_CLASS}__button--effect-resolution-waiting`,
+    `${PROMPT_CLASS}__button--effect-resolution-resisted`
+  );
+  button.removeAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE);
+}
+
+function createEffectButtonIcon(text: string, extraClass: string): HTMLElement {
+  const icon = document.createElement("span");
+  icon.classList.add(`${PROMPT_CLASS}__button-icon`, extraClass);
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = text;
+  return icon;
+}
+
+function createButtonTextLabel(text: string): HTMLElement {
+  const label = document.createElement("span");
+  label.classList.add(`${PROMPT_CLASS}__button-label`);
+  label.textContent = text;
+  return label;
 }
 
 function formatEffectActionLabel(label: string): string {
@@ -692,6 +803,12 @@ function getDamageResolutionModeSafe(): "manual" | "assisted" {
 
 function normalizeText(value: string | null | undefined): string {
   return value?.trim().toLocaleLowerCase() ?? "";
+}
+
+function normalizeLookupText(value: string | null | undefined): string {
+  return normalizeText(value)
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
 }
 
 function isChatMessageFlagDocument(value: unknown): value is ChatMessageFlagDocument {
