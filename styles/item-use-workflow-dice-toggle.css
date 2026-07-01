@@ -929,6 +929,12 @@
   border-radius: 8px !important;
   padding: 0.38rem !important;
   background: rgba(255, 255, 255, 0.34) !important;
+  cursor: pointer !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-row:focus-visible {
+  outline: 2px solid rgba(143, 54, 62, 0.34) !important;
+  outline-offset: 2px !important;
 }
 
 .paranormal-toolkit-item-use-prompt__target-summary {
@@ -952,6 +958,10 @@
   align-items: center !important;
   gap: 0.34rem !important;
   min-width: 0 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-row[aria-expanded="true"] .paranormal-toolkit-item-use-prompt__target-summary-actions {
+  display: none !important;
 }
 
 .paranormal-toolkit-item-use-prompt__target-avatar {
@@ -982,7 +992,6 @@
 }
 
 .paranormal-toolkit-item-use-prompt__target-resistance-button,
-.paranormal-toolkit-item-use-prompt__target-toggle,
 .paranormal-toolkit-item-use-prompt__target-action {
   appearance: none !important;
   display: inline-flex !important;
@@ -1021,12 +1030,12 @@
   min-height: 1.82rem !important;
   border-color: rgba(123, 72, 73, 0.34) !important;
   border-radius: 7px !important;
-  padding: 0.28rem 0.42rem !important;
+  padding: 0.28rem 0.36rem !important;
   background: rgba(228, 214, 209, 0.64) !important;
   color: rgba(42, 30, 27, 0.82) !important;
   font-size: 0.72rem !important;
   font-weight: 900 !important;
-  gap: 0.26rem !important;
+  gap: 0.22rem !important;
   opacity: 0.74 !important;
   white-space: nowrap !important;
   cursor: default !important;
@@ -1050,25 +1059,20 @@
   min-width: 0 !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 .paranormal-toolkit-item-use-prompt__target-toggle {
-  width: 1.58rem !important;
-  height: 1.58rem !important;
-  border-color: transparent !important;
-  border-radius: 999px !important;
-  background: transparent !important;
-  color: rgba(36, 27, 24, 0.88) !important;
-  font-size: 1.05rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.1rem !important;
+  color: rgba(36, 27, 24, 0.78) !important;
+  font-size: 1rem !important;
   font-weight: 950 !important;
-  cursor: pointer !important;
-}
-
-.paranormal-toolkit-item-use-prompt__target-toggle:hover,
-.paranormal-toolkit-item-use-prompt__target-toggle:focus {
-  border-color: rgba(123, 72, 73, 0.2) !important;
-  background: rgba(255, 255, 255, 0.54) !important;
-  outline: none !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+  user-select: none !important;
 }
 
 .paranormal-toolkit-item-use-prompt__target-details {
@@ -1141,14 +1145,22 @@
 
 .paranormal-toolkit-item-use-prompt__target-details-actions {
   display: flex !important;
-  align-items: center !important;
-  gap: 0.34rem !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0.32rem !important;
   grid-column: 1 / -1 !important;
 }
 
 .paranormal-toolkit-item-use-prompt__target-details-actions .paranormal-toolkit-item-use-prompt__target-action {
-  flex: 1 1 0 !important;
-  min-height: 1.9rem !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-height: 2rem !important;
+  padding-inline: 0.5rem !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-details-actions .paranormal-toolkit-item-use-prompt__target-action-label {
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .paranormal-toolkit-item-use-prompt__workflow-section--effect-info {

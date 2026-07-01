@@ -31,7 +31,9 @@ type MultiTargetViewModel = {
 
 type TargetDamageViewModel = {
   normalLabel: string;
+  normalCompactLabel: string;
   halfLabel: string | null;
+  halfCompactLabel: string | null;
 };
 
 type TargetEffectViewModel = {
@@ -100,7 +102,9 @@ function createDamageViewModel(damageSection: HTMLElement | null): TargetDamageV
 
   return {
     normalLabel: total !== null ? `Normal: ${total} PV` : "Normal: —",
-    halfLabel: halfAmount !== null ? `Metade: ${halfAmount} PV` : null
+    normalCompactLabel: total !== null ? `${total} PV` : "—",
+    halfLabel: halfAmount !== null ? `Metade: ${halfAmount} PV` : null,
+    halfCompactLabel: halfAmount !== null ? `½ ${halfAmount} PV` : null
   };
 }
 
@@ -203,10 +207,26 @@ function createTargetRow(target: MultiTargetViewModel, viewModel: MultiTargetCar
   row.setAttribute(MULTI_TARGET_TARGET_ATTRIBUTE, target.id);
   row.setAttribute(MULTI_TARGET_STATE_ATTRIBUTE, target.state);
   row.setAttribute("aria-expanded", expanded ? "true" : "false");
+  row.setAttribute("role", "button");
+  row.setAttribute("tabindex", "0");
+  row.setAttribute("aria-label", `${expanded ? "Fechar" : "Abrir"} detalhes de ${target.name}`);
 
   const summary = createTargetSummary(target, viewModel, row);
   const details = createTargetDetails(target, viewModel);
   details.hidden = !expanded;
+
+  row.addEventListener("click", (event) => {
+    if (isInteractiveTarget(event.target)) return;
+    toggleTargetRow(row);
+  });
+
+  row.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (isInteractiveTarget(event.target)) return;
+
+    event.preventDefault();
+    toggleTargetRow(row);
+  });
 
   row.append(summary, details);
   return row;
@@ -226,14 +246,14 @@ function createTargetSummary(target: MultiTargetViewModel, viewModel: MultiTarge
   name.textContent = target.name;
 
   const resistance = createResistanceButton();
-  const toggle = createTargetToggle(row);
+  const toggle = createTargetToggleIndicator(row);
 
   main.append(avatar, name, resistance, toggle);
 
   const actions = document.createElement("div");
   actions.classList.add(`${PROMPT_CLASS}__target-summary-actions`);
   actions.append(
-    createTargetActionButton("⚡", viewModel.damage.normalLabel, `${PROMPT_CLASS}__target-action--damage`),
+    createTargetActionButton("⚡", viewModel.damage.normalCompactLabel, `${PROMPT_CLASS}__target-action--damage`),
     createTargetActionButton("✦", "Efeito", `${PROMPT_CLASS}__target-action--effect`)
   );
 
@@ -287,33 +307,35 @@ function createTargetActionButton(iconText: string, labelText: string, stateClas
   return button;
 }
 
-function createTargetToggle(row: HTMLElement): HTMLButtonElement {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.classList.add(`${PROMPT_CLASS}__target-toggle`);
-  button.setAttribute(MULTI_TARGET_TOGGLE_ATTRIBUTE, "true");
-  button.setAttribute("aria-label", "Abrir detalhes do alvo");
-  button.setAttribute("aria-expanded", row.getAttribute("aria-expanded") ?? "false");
-  updateToggleIcon(button);
-
-  button.addEventListener("click", () => {
-    const details = row.querySelector<HTMLElement>(`[${MULTI_TARGET_DETAILS_ATTRIBUTE}="true"]`);
-    if (!details) return;
-
-    const willExpand = details.hidden;
-    details.hidden = !willExpand;
-    row.setAttribute("aria-expanded", willExpand ? "true" : "false");
-    button.setAttribute("aria-expanded", willExpand ? "true" : "false");
-    button.setAttribute("aria-label", willExpand ? "Fechar detalhes do alvo" : "Abrir detalhes do alvo");
-    updateToggleIcon(button);
-  });
-
-  return button;
+function createTargetToggleIndicator(row: HTMLElement): HTMLElement {
+  const indicator = document.createElement("span");
+  indicator.classList.add(`${PROMPT_CLASS}__target-toggle`);
+  indicator.setAttribute(MULTI_TARGET_TOGGLE_ATTRIBUTE, "true");
+  indicator.setAttribute("aria-hidden", "true");
+  updateToggleIcon(row, indicator);
+  return indicator;
 }
 
-function updateToggleIcon(button: HTMLButtonElement): void {
-  const expanded = button.getAttribute("aria-expanded") === "true";
-  button.textContent = expanded ? "⌃" : "⌄";
+function toggleTargetRow(row: HTMLElement): void {
+  const details = row.querySelector<HTMLElement>(`[${MULTI_TARGET_DETAILS_ATTRIBUTE}="true"]`);
+  if (!details) return;
+
+  const willExpand = details.hidden;
+  details.hidden = !willExpand;
+  row.setAttribute("aria-expanded", willExpand ? "true" : "false");
+  row.setAttribute("aria-label", `${willExpand ? "Fechar" : "Abrir"} detalhes do alvo`);
+
+  const indicator = row.querySelector<HTMLElement>(`[${MULTI_TARGET_TOGGLE_ATTRIBUTE}="true"]`);
+  if (indicator) updateToggleIcon(row, indicator);
+}
+
+function updateToggleIcon(row: HTMLElement, indicator: HTMLElement): void {
+  const expanded = row.getAttribute("aria-expanded") === "true";
+  indicator.textContent = expanded ? "⌃" : "⌄";
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && Boolean(target.closest("button, a, input, select, textarea"));
 }
 
 function createTargetDetails(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): HTMLElement {
