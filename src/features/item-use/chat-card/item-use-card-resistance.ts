@@ -18,8 +18,12 @@ const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const ACTIONS_SELECTOR = `.${PROMPT_CLASS}__actions`;
 const ACTIONS_TITLE_SELECTOR = `.${PROMPT_CLASS}__actions-title`;
 const ACTION_BUTTON_SELECTOR = `.${PROMPT_CLASS}__button`;
+const EXECUTED_LABEL_ATTRIBUTE = "data-paranormal-toolkit-executed-label";
 const DAMAGE_ACTION_SECTION_ATTRIBUTE = "data-paranormal-toolkit-action-section";
 const DAMAGE_RESOLUTION_STATE_ATTRIBUTE = "data-paranormal-toolkit-damage-resolution-state";
+const DAMAGE_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-damage-icon-enhanced";
+const EFFECT_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-effect-icon-enhanced";
+const EFFECT_ACTION_COMPACTED_ATTRIBUTE = "data-paranormal-toolkit-effect-action-compacted";
 const RESISTANCE_BUTTON_BOUND_ATTRIBUTE = "data-paranormal-toolkit-resistance-damage-refresh-bound";
 const DAMAGE_WORKFLOW_SECTION_SELECTOR = `.${PROMPT_CLASS}__workflow-section--effect`;
 
@@ -51,6 +55,7 @@ type PersistedToolkitChatCard = {
 type PersistedPromptLike = {
   pendingId?: unknown;
   actorId?: unknown;
+  buttonLabel?: unknown;
   summaryLines?: unknown;
 };
 
@@ -89,8 +94,8 @@ function enhanceResistanceCard(resistance: HTMLElement): void {
   }
 
   if (result) {
-    if (result.parentElement !== content && !button.contains(result)) {
-      content.append(result);
+    if (result.parentElement !== resistance && !button.contains(result)) {
+      resistance.append(result);
     }
 
     enhanceResistanceRollResult(result);
@@ -171,7 +176,8 @@ function createResistanceRollDisplay(result: ResistanceRollDisplay): HTMLElement
 
   const formula = document.createElement("span");
   formula.classList.add(`${PROMPT_CLASS}__workflow-roll-formula`);
-  formula.textContent = `${result.skillLabel}: ${result.formula}`;
+  formula.textContent = result.formula;
+  formula.title = `${result.skillLabel}: ${result.formula}`;
 
   roll.append(formula);
 
@@ -242,44 +248,165 @@ function enhanceRollCardDamageResolution(rollCard: HTMLElement): void {
     damageSection.append(resistance);
   }
 
-  if (!damageActions) return;
+  if (damageActions) {
+    damageActions.classList.add(`${PROMPT_CLASS}__actions--embedded`, `${PROMPT_CLASS}__actions--damage-resolution`);
 
-  damageActions.classList.add(`${PROMPT_CLASS}__actions--embedded`, `${PROMPT_CLASS}__actions--damage-resolution`);
+    const title = damageActions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
+    if (title) title.textContent = "Aplicar dano";
 
-  const title = damageActions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
-  if (title) title.textContent = "Aplicar dano";
+    if (damageActions.parentElement !== damageSection) {
+      damageSection.append(damageActions);
+    }
 
-  if (damageActions.parentElement !== damageSection) {
-    damageSection.append(damageActions);
+    bindDamageResolutionRefresh(rollCard);
+    updateDamageActionButtons(rollCard, damageActions);
   }
 
-  bindDamageResolutionRefresh(rollCard);
-  updateDamageActionButtons(rollCard, damageActions);
+  const effectActions = findEffectActionSection(rollCard);
+  if (!effectActions) return;
+
+  enhanceEffectActionSection(effectActions);
+  moveEffectActionSectionIntoRollCard(rollCard, damageSection, effectActions);
 }
 
 function enhanceEffectActionsLayout(root: ParentNode): void {
   for (const actions of Array.from(root.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR))) {
-    const title = actions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
-    if (normalizeText(title?.textContent) !== "aplicar efeito") continue;
-
-    actions.classList.add(`${PROMPT_CLASS}__actions--effect-resolution`);
-    if (title) title.textContent = "Efeito";
-
-    const button = actions.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
-    if (!button) continue;
-
-    const currentLabel = button.textContent?.trim() ?? "";
-    if (!currentLabel || currentLabel.startsWith("✓") || button.dataset.paranormalToolkitEffectActionCompacted === "true") continue;
-
-    const label = document.createElement("span");
-    label.classList.add(`${PROMPT_CLASS}__effect-resolution-label`);
-    label.textContent = formatEffectActionLabel(currentLabel);
-    button.setAttribute("aria-label", `Aplicar ${currentLabel}`);
-    button.textContent = "Aplicar";
-    button.dataset.paranormalToolkitEffectActionCompacted = "true";
-
-    title?.after(label);
+    enhanceEffectActionSection(actions);
   }
+}
+
+function enhanceEffectActionSection(actions: HTMLElement): boolean {
+  const title = actions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
+  const normalizedTitle = normalizeText(title?.textContent);
+  if (normalizedTitle !== "aplicar efeito" && normalizedTitle !== "efeito") return false;
+
+  actions.classList.add(`${PROMPT_CLASS}__actions--effect-resolution`);
+  if (title) title.textContent = "Efeito";
+
+  const button = actions.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
+  if (!button) return true;
+
+  const currentLabel = button.textContent?.trim() ?? "";
+  if (!currentLabel) return true;
+
+  const originalLabel = resolveEffectActionOriginalLabel(button, currentLabel);
+  if (originalLabel) {
+    ensureEffectActionLabel(actions, title, originalLabel);
+  }
+
+  if (isResolvedEffectButton(button, currentLabel)) {
+    compactResolvedEffectActionButton(button);
+    return true;
+  }
+
+  enhanceEffectActionButton(button, originalLabel ?? currentLabel);
+  return true;
+}
+
+function findEffectActionSection(rollCard: HTMLElement): HTMLElement | null {
+  const sections = Array.from(rollCard.parentElement?.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR) ?? []);
+
+  return sections.find((section) => {
+    const title = section.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
+    const normalizedTitle = normalizeText(title?.textContent);
+    return normalizedTitle === "aplicar efeito" || normalizedTitle === "efeito";
+  }) ?? null;
+}
+
+function moveEffectActionSectionIntoRollCard(
+  rollCard: HTMLElement,
+  damageSection: HTMLElement,
+  effectActions: HTMLElement
+): void {
+  const nextSibling = damageSection.nextSibling;
+
+  if (effectActions.parentElement === rollCard && effectActions.previousElementSibling === damageSection) return;
+
+  rollCard.insertBefore(effectActions, nextSibling);
+}
+
+function ensureEffectActionLabel(actions: HTMLElement, title: HTMLElement | null, label: string): void {
+  if (actions.querySelector(`.${PROMPT_CLASS}__effect-resolution-label`)) return;
+
+  const effectLabel = document.createElement("span");
+  effectLabel.classList.add(`${PROMPT_CLASS}__effect-resolution-label`);
+  effectLabel.textContent = formatEffectActionLabel(label);
+
+  title?.after(effectLabel);
+}
+
+function resolveEffectActionOriginalLabel(button: HTMLButtonElement, currentLabel: string): string | null {
+  const ariaLabel = button.getAttribute("aria-label")?.replace(/^Aplicar\s+/iu, "").trim();
+  if (ariaLabel && normalizeText(ariaLabel) !== "efeito aplicado") return ariaLabel;
+
+  const persistedButtonLabel = readPersistedButtonLabelForButton(button);
+  if (persistedButtonLabel) return persistedButtonLabel;
+
+  const normalized = currentLabel
+    .replace(/^✓\s*/u, "")
+    .replace(/\s+aplicad[oa]$/iu, "")
+    .trim();
+
+  return normalized.length > 0 && normalizeText(normalized) !== "aplicado" ? normalized : null;
+}
+
+function readPersistedButtonLabelForButton(button: HTMLButtonElement): string | null {
+  const promptId = button.getAttribute(PROMPT_ID_ATTRIBUTE);
+  if (!promptId) return null;
+
+  const message = resolveChatMessageDocumentFromElement(button);
+  const card = readToolkitChatCard(message);
+  const prompts = Array.isArray(card?.prompts) ? card.prompts : [];
+  const prompt = prompts.find((candidate): candidate is PersistedPromptLike => {
+    if (!isRecord(candidate)) return false;
+    return candidate.pendingId === promptId;
+  });
+
+  const buttonLabel = prompt?.buttonLabel;
+  return typeof buttonLabel === "string" && buttonLabel.trim().length > 0 ? buttonLabel.trim() : null;
+}
+
+function isResolvedEffectButton(button: HTMLButtonElement, currentLabel: string): boolean {
+  return button.disabled || currentLabel.startsWith("✓") || normalizeText(currentLabel).includes("aplicado");
+}
+
+function enhanceEffectActionButton(button: HTMLButtonElement, originalLabel: string): void {
+  if (button.getAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE) === "true" && button.getAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE) === "true") return;
+
+  const icon = document.createElement("span");
+  icon.classList.add(`${PROMPT_CLASS}__button-icon`, `${PROMPT_CLASS}__button-icon--effect`);
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "✦";
+
+  const label = document.createElement("span");
+  label.classList.add(`${PROMPT_CLASS}__button-label`);
+  label.textContent = "Aplicar";
+
+  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-action`);
+  button.setAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE, "true");
+  button.setAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE, "true");
+  button.setAttribute(EXECUTED_LABEL_ATTRIBUTE, "✓ Aplicado");
+  button.setAttribute("aria-label", `Aplicar ${originalLabel}`);
+  button.replaceChildren(icon, label);
+}
+
+function compactResolvedEffectActionButton(button: HTMLButtonElement): void {
+  if (button.getAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE) === "true" && normalizeText(button.textContent) === "✓ aplicado") return;
+
+  const icon = document.createElement("span");
+  icon.classList.add(`${PROMPT_CLASS}__button-icon`, `${PROMPT_CLASS}__button-icon--effect-applied`);
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "✓";
+
+  const label = document.createElement("span");
+  label.classList.add(`${PROMPT_CLASS}__button-label`);
+  label.textContent = "Aplicado";
+
+  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-action`, `${PROMPT_CLASS}__button--effect-resolution-applied`);
+  button.setAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE, "true");
+  button.setAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE, "true");
+  button.setAttribute("aria-label", "Efeito aplicado");
+  button.replaceChildren(icon, label);
 }
 
 function formatEffectActionLabel(label: string): string {
@@ -310,6 +437,9 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
     actions.classList.add(`${PROMPT_CLASS}__actions--compact`);
     return;
   }
+
+  enhanceDamageButtonIcon(normalButton, "normal");
+  enhanceDamageButtonIcon(halfButton, "half");
 
   const mode = getDamageResolutionModeSafe();
   actions.classList.toggle(`${PROMPT_CLASS}__actions--assisted`, mode === "assisted");
@@ -354,6 +484,33 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
 function findDamageButton(buttons: HTMLButtonElement[], kind: "normal" | "half"): HTMLButtonElement | null {
   const matcher = DAMAGE_BUTTON_LABELS[kind];
   return buttons.find((button) => matcher.test(button.textContent ?? "")) ?? null;
+}
+
+function enhanceDamageButtonIcon(button: HTMLButtonElement, kind: "normal" | "half"): void {
+  if (button.getAttribute(DAMAGE_BUTTON_ICON_ATTRIBUTE) === "true") return;
+
+  const labelText = button.textContent?.trim() ?? "";
+  if (!labelText || labelText.startsWith("✓")) return;
+
+  const icon = document.createElement("i");
+  icon.classList.add(
+    "fa-solid",
+    kind === "normal" ? "fa-bolt" : "fa-shield-halved",
+    `${PROMPT_CLASS}__button-icon`
+  );
+  icon.setAttribute("aria-hidden", "true");
+
+  const label = document.createElement("span");
+  label.classList.add(`${PROMPT_CLASS}__button-label`);
+  label.textContent = labelText;
+
+  button.classList.add(
+    `${PROMPT_CLASS}__button--damage-resolution-action`,
+    `${PROMPT_CLASS}__button--damage-resolution-${kind}`
+  );
+  button.setAttribute(DAMAGE_BUTTON_ICON_ATTRIBUTE, "true");
+  button.setAttribute("aria-label", labelText);
+  button.replaceChildren(icon, label);
 }
 
 function setDamageButtonVisibility(button: HTMLButtonElement, visible: boolean): void {

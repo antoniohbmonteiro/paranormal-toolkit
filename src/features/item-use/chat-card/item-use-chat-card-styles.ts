@@ -125,10 +125,12 @@ export function ensureItemUseChatCardStyles(): void {
 .${PROMPT_CLASS}__resistance {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) 34px;
-  grid-template-areas: "content button";
-  align-items: center !important;
+  grid-template-areas:
+    "content button"
+    "result result";
+  align-items: start !important;
   column-gap: 0.62rem;
-  row-gap: 0;
+  row-gap: 0.36rem;
   padding: 0.56rem 0.58rem !important;
 }
 
@@ -163,12 +165,15 @@ export function ensureItemUseChatCardStyles(): void {
 .${PROMPT_CLASS}__resistance > .${PROMPT_CLASS}__resistance-roll-button {
   grid-area: button;
   justify-self: end;
-  align-self: center;
+  align-self: start;
 }
 
+.${PROMPT_CLASS}__resistance > .${PROMPT_CLASS}__resistance-roll-result,
 .${PROMPT_CLASS}__resistance-content .${PROMPT_CLASS}__resistance-roll-result {
+  grid-area: result;
   display: block;
   min-width: 0;
+  width: 100%;
   margin-top: 0;
 }
 
@@ -179,7 +184,6 @@ export function ensureItemUseChatCardStyles(): void {
   flex-direction: column;
   align-items: stretch;
   gap: 0.34rem;
-  padding-top: 0.1rem;
 }
 
 .${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-roll-formula {
@@ -380,8 +384,21 @@ export function ensureItemUseChatCardStyles(): void {
   font-size: 0.76rem !important;
   font-weight: 900 !important;
   line-height: 1.1 !important;
+  gap: 0.34rem !important;
   white-space: normal !important;
   aspect-ratio: auto !important;
+}
+
+.${PROMPT_CLASS}__actions--damage-resolution .${PROMPT_CLASS}__button-icon {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  line-height: 1;
+  opacity: 0.88;
+}
+
+.${PROMPT_CLASS}__actions--damage-resolution .${PROMPT_CLASS}__button-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .${PROMPT_CLASS}__actions--damage-resolution[data-paranormal-toolkit-damage-resolution-state="pending"] .${PROMPT_CLASS}__button,
@@ -456,6 +473,61 @@ export function ensureItemUseChatCardStyles(): void {
   line-height: 1.1 !important;
   white-space: nowrap !important;
   aspect-ratio: auto !important;
+}
+
+/* 0.21.4 — Card compacto de efeito e botão com brilho */
+.${PROMPT_CLASS}__actions--effect-resolution {
+  border-color: rgba(151, 111, 45, 0.26) !important;
+  border-left: 3px solid rgba(151, 111, 45, 0.66) !important;
+  background: linear-gradient(180deg, rgba(255, 251, 240, 0.82), rgba(255, 245, 219, 0.58)) !important;
+}
+
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button {
+  gap: 0.34rem !important;
+  border-color: rgba(123, 72, 73, 0.42) !important;
+  background: rgba(228, 214, 209, 0.74) !important;
+  color: rgba(42, 30, 27, 0.94) !important;
+}
+
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button:hover,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button:focus {
+  border-color: rgba(123, 72, 73, 0.62) !important;
+  background: rgba(220, 199, 194, 0.86) !important;
+  box-shadow: 0 0 0 2px rgba(151, 111, 45, 0.14) !important;
+  outline: none !important;
+}
+
+.${PROMPT_CLASS}__button-icon--effect {
+  font-size: 0.88rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  transform: translateY(-0.02rem);
+}
+
+.${PROMPT_CLASS}__button--effect-resolution-action .${PROMPT_CLASS}__button-label {
+  line-height: 1;
+}
+
+/* 0.21.5 — Efeito dentro do card principal e estado aplicado compacto */
+/* 0.21.6 — Aproxima o Efeito do bloco de Dano para manter o ritmo visual do card */
+.${PROMPT_CLASS}__roll-card > .${PROMPT_CLASS}__actions--effect-resolution {
+  margin-top: 0.34rem !important;
+}
+
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--executed,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-applied {
+  min-width: 5.15rem !important;
+  max-width: 6.25rem !important;
+  border-color: rgba(96, 75, 45, 0.32) !important;
+  background: rgba(236, 226, 210, 0.76) !important;
+  color: rgba(45, 35, 29, 0.82) !important;
+  opacity: 0.94 !important;
+}
+
+.${PROMPT_CLASS}__button-icon--effect-applied {
+  font-size: 0.82rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
 }
 
 `;

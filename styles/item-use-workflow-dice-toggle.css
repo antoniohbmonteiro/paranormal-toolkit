@@ -113,10 +113,12 @@
 .paranormal-toolkit-item-use-prompt__resistance {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) 34px;
-  grid-template-areas: "content button";
-  align-items: center !important;
+  grid-template-areas:
+    "content button"
+    "result result";
+  align-items: start !important;
   column-gap: 0.62rem;
-  row-gap: 0;
+  row-gap: 0.36rem;
   padding: 0.56rem 0.58rem !important;
 }
 
@@ -151,12 +153,15 @@
 .paranormal-toolkit-item-use-prompt__resistance > .paranormal-toolkit-item-use-prompt__resistance-roll-button {
   grid-area: button;
   justify-self: end;
-  align-self: center;
+  align-self: start;
 }
 
+.paranormal-toolkit-item-use-prompt__resistance > .paranormal-toolkit-item-use-prompt__resistance-roll-result,
 .paranormal-toolkit-item-use-prompt__resistance-content .paranormal-toolkit-item-use-prompt__resistance-roll-result {
+  grid-area: result;
   display: block;
   min-width: 0;
+  width: 100%;
   margin-top: 0;
 }
 
@@ -169,7 +174,6 @@
   flex-direction: column;
   align-items: stretch;
   gap: 0.34rem;
-  padding-top: 0.1rem;
 }
 
 .paranormal-toolkit-item-use-prompt__resistance-workflow-roll
@@ -340,6 +344,7 @@
 }
 
 /* 0.21.2 — Resolução de dano integrada no bloco de Dano */
+/* 0.21.3 — Ícones de ação e fórmula de resistência em linha própria */
 .paranormal-toolkit-item-use-prompt__workflow-section--effect .paranormal-toolkit-item-use-prompt__resistance {
   margin-top: 0.52rem !important;
   border: 1px solid rgba(127, 88, 39, 0.16) !important;
@@ -429,8 +434,21 @@
   font-size: 0.76rem !important;
   font-weight: 900 !important;
   line-height: 1.1 !important;
+  gap: 0.34rem !important;
   white-space: normal !important;
   aspect-ratio: auto !important;
+}
+
+.paranormal-toolkit-item-use-prompt__actions--damage-resolution .paranormal-toolkit-item-use-prompt__button-icon {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  line-height: 1;
+  opacity: 0.88;
+}
+
+.paranormal-toolkit-item-use-prompt__actions--damage-resolution .paranormal-toolkit-item-use-prompt__button-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .paranormal-toolkit-item-use-prompt__actions--damage-resolution[data-paranormal-toolkit-damage-resolution-state="pending"] .paranormal-toolkit-item-use-prompt__button,
@@ -507,3 +525,58 @@
   aspect-ratio: auto !important;
 }
 
+
+/* 0.21.4 — Card compacto de efeito e botão com brilho */
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution {
+  border-color: rgba(151, 111, 45, 0.26) !important;
+  border-left: 3px solid rgba(151, 111, 45, 0.66) !important;
+  background: linear-gradient(180deg, rgba(255, 251, 240, 0.82), rgba(255, 245, 219, 0.58)) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution .paranormal-toolkit-item-use-prompt__button {
+  gap: 0.34rem !important;
+  border-color: rgba(123, 72, 73, 0.42) !important;
+  background: rgba(228, 214, 209, 0.74) !important;
+  color: rgba(42, 30, 27, 0.94) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution .paranormal-toolkit-item-use-prompt__button:hover,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution .paranormal-toolkit-item-use-prompt__button:focus {
+  border-color: rgba(123, 72, 73, 0.62) !important;
+  background: rgba(220, 199, 194, 0.86) !important;
+  box-shadow: 0 0 0 2px rgba(151, 111, 45, 0.14) !important;
+  outline: none !important;
+}
+
+.paranormal-toolkit-item-use-prompt__button-icon--effect {
+  font-size: 0.88rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  transform: translateY(-0.02rem);
+}
+
+.paranormal-toolkit-item-use-prompt__button--effect-resolution-action .paranormal-toolkit-item-use-prompt__button-label {
+  line-height: 1;
+}
+
+/* 0.21.5 — Efeito dentro do card principal e estado aplicado compacto */
+/* 0.21.6 — Aproxima o Efeito do bloco de Dano para manter o ritmo visual do card */
+.paranormal-toolkit-item-use-prompt__roll-card > .paranormal-toolkit-item-use-prompt__actions--effect-resolution {
+  margin-top: 0.34rem !important;
+}
+
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution .paranormal-toolkit-item-use-prompt__button--executed,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution .paranormal-toolkit-item-use-prompt__button--effect-resolution-applied {
+  min-width: 5.15rem !important;
+  max-width: 6.25rem !important;
+  border-color: rgba(96, 75, 45, 0.32) !important;
+  background: rgba(236, 226, 210, 0.76) !important;
+  color: rgba(45, 35, 29, 0.82) !important;
+  opacity: 0.94 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__button-icon--effect-applied {
+  font-size: 0.82rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
