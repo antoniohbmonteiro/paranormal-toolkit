@@ -106,37 +106,88 @@ function normalizeRitualCardLayout(layout: RitualCardLayout): void {
 }
 
 function findDamageActionSection(rollCard: HTMLElement): HTMLElement | null {
-  return getActionSectionsForCard(rollCard).find((section) => section.getAttribute(ACTION_SECTION_ATTRIBUTE) === DAMAGE_ACTION_SECTION_ID)
-    ?? getActionSectionsForCard(rollCard).find((section) => getActionTitle(section) === "aplicar danos")
+  const sections = getActionSectionsForCard(rollCard);
+
+  return sections.find((section) => section.getAttribute(ACTION_SECTION_ATTRIBUTE) === DAMAGE_ACTION_SECTION_ID)
+    ?? sections.find((section) => getActionTitle(section) === "aplicar danos")
     ?? null;
 }
 
 function findEffectActionSource(rollCard: HTMLElement): HTMLElement | null {
-  return getActionSectionsForCard(rollCard).find((section) => {
+  const scopedSections = getPromptMatchedActionSections(rollCard);
+  const scopedEffect = findEffectActionInSections(scopedSections);
+  if (scopedEffect) return scopedEffect;
+
+  return findEffectActionInSections(getLegacyActionSectionsForCard(rollCard));
+}
+
+function findEffectActionInSections(sections: HTMLElement[]): HTMLElement | null {
+  return sections.find((section) => {
     const title = getActionTitle(section);
     return title === "aplicar efeito" || title === "efeito";
   }) ?? null;
 }
 
 function getActionSectionsForCard(rollCard: HTMLElement): HTMLElement[] {
-  const scope = rollCard.closest<HTMLElement>(`.${PROMPT_CLASS}`) ?? rollCard.parentElement;
+  const matchedSections = getPromptMatchedActionSections(rollCard);
+  return matchedSections.length > 0 ? matchedSections : getActionSectionsInPromptRoot(rollCard);
+}
+
+function getPromptMatchedActionSections(rollCard: HTMLElement): HTMLElement[] {
+  const promptId = findPromptIdInRollCard(rollCard);
+  if (!promptId) return [];
+
+  return getActionSectionsInPromptRoot(rollCard).filter((section) => sectionContainsPromptId(section, promptId));
+}
+
+function getLegacyActionSectionsForCard(rollCard: HTMLElement): HTMLElement[] {
+  const scope = getPromptRoot(rollCard);
   if (!scope) return [];
 
-  const promptId = findPromptIdInRollCard(rollCard);
-  const sections = Array.from(scope.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR));
-  if (!promptId) return sections;
+  const nextRollCard = findNextRollCard(rollCard, scope);
 
-  const matchingSections = sections.filter((section) => sectionContainsPromptId(section, promptId));
-  return matchingSections.length > 0 ? matchingSections : sections;
+  return getActionSectionsInPromptRoot(rollCard)
+    .filter((section) => !section.closest(`.${PROMPT_CLASS}__roll-card`))
+    .filter((section) => isAfter(rollCard, section))
+    .filter((section) => !nextRollCard || isBefore(section, nextRollCard));
+}
+
+function getActionSectionsInPromptRoot(rollCard: HTMLElement): HTMLElement[] {
+  const scope = getPromptRoot(rollCard);
+  if (!scope) return [];
+
+  return Array.from(scope.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR));
+}
+
+function getPromptRoot(rollCard: HTMLElement): HTMLElement | null {
+  return rollCard.closest<HTMLElement>(`.${PROMPT_CLASS}`) ?? rollCard.parentElement;
+}
+
+function findNextRollCard(rollCard: HTMLElement, scope: HTMLElement): HTMLElement | null {
+  return Array.from(scope.querySelectorAll<HTMLElement>(`.${PROMPT_CLASS}__roll-card`))
+    .find((candidate) => candidate !== rollCard && isAfter(rollCard, candidate))
+    ?? null;
 }
 
 function sectionContainsPromptId(section: HTMLElement, promptId: string): boolean {
+  if (section.getAttribute(PROMPT_ID_ATTRIBUTE) === promptId) return true;
+
   return Array.from(section.querySelectorAll<HTMLElement>(`[${PROMPT_ID_ATTRIBUTE}]`))
     .some((element) => element.getAttribute(PROMPT_ID_ATTRIBUTE) === promptId);
 }
 
 function findPromptIdInRollCard(rollCard: HTMLElement): string | null {
-  return rollCard.querySelector<HTMLElement>(`[${PROMPT_ID_ATTRIBUTE}]`)?.getAttribute(PROMPT_ID_ATTRIBUTE) ?? null;
+  return rollCard.getAttribute(PROMPT_ID_ATTRIBUTE)
+    ?? rollCard.querySelector<HTMLElement>(`[${PROMPT_ID_ATTRIBUTE}]`)?.getAttribute(PROMPT_ID_ATTRIBUTE)
+    ?? null;
+}
+
+function isAfter(reference: HTMLElement, candidate: HTMLElement): boolean {
+  return Boolean(reference.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_FOLLOWING);
+}
+
+function isBefore(reference: HTMLElement, candidate: HTMLElement): boolean {
+  return Boolean(reference.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
 
 function bindRitualCardRefresh(rollCard: HTMLElement): void {

@@ -22,3 +22,10 @@ Corrigir o caso em que a antiga action visual `Aplicar efeito` ainda aparecia no
 - Template Regions.
 - Mudanças de regra.
 - Auto-aplicar dano ou efeito.
+
+## Hotfix de resolver do efeito
+
+- Corrige o caso em que a busca por actions filtrava apenas as seções com `pendingId` e deixava a action `Aplicar efeito` fora do resultado.
+- A busca do efeito agora tenta primeiro o vínculo estrito por `pendingId` e, se não encontrar, faz fallback posicional no mesmo prompt, entre o roll card atual e o próximo roll card.
+- `sectionContainsPromptId` agora considera o próprio elemento da action, não só descendentes.
+- O card real de **Efeito** continua sendo a única UI final; a action legada é apenas fonte do botão/pendingId.
