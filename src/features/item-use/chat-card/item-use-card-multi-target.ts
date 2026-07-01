@@ -1,5 +1,12 @@
 import { getResistanceSkillLabel, rollOrdemResistance } from "../../../adapters/ordem/ordem-resistance-roll-adapter";
-import { PROMPT_CLASS, RESISTANCE_ROLL_BUTTON_SELECTOR } from "./item-use-chat-card-constants";
+import {
+  PROMPT_CLASS,
+  RESISTANCE_ROLL_BUTTON_SELECTOR,
+  WORKFLOW_DICE_TRAY_SELECTOR,
+  WORKFLOW_FORMULA_SELECTOR,
+  WORKFLOW_FORMULA_TOGGLE_CLASS,
+  WORKFLOW_ROLL_DICE_OPEN_CLASS
+} from "./item-use-chat-card-constants";
 import { findWorkflowSectionByTitle } from "./item-use-card-dom";
 import { createWorkflowRollDisplay, readWorkflowDiceBreakdown } from "./item-use-card-roll-display";
 import { readCastingDifficulty } from "./item-use-card-roll-context";
@@ -288,13 +295,45 @@ function renderDamageInfoSection(section: HTMLElement, damage: TargetDamageViewM
   section.append(createCompactWorkflowRollDisplay(damage.formula, damage.total, damage.diceBreakdown));
 }
 
-function createCompactWorkflowRollDisplay(formulaText: string, total: number | null, diceBreakdown: string | null): HTMLElement {
-  return createWorkflowRollDisplay({
+function createCompactWorkflowRollDisplay(
+  formulaText: string,
+  total: number | null,
+  diceBreakdown: string | null,
+  open = false
+): HTMLElement {
+  const roll = createWorkflowRollDisplay({
     formula: formulaText,
     total,
     diceBreakdown,
     classNames: [`${PROMPT_CLASS}__workflow-roll--compact-info`]
   });
+
+  prepareWorkflowRollToggle(roll, open);
+  return roll;
+}
+
+function prepareWorkflowRollToggle(roll: HTMLElement, open: boolean): void {
+  const diceTray = roll.querySelector<HTMLElement>(WORKFLOW_DICE_TRAY_SELECTOR);
+  const formula = roll.querySelector<HTMLElement>(WORKFLOW_FORMULA_SELECTOR);
+  if (!diceTray || !formula) return;
+
+  roll.classList.toggle(WORKFLOW_ROLL_DICE_OPEN_CLASS, open);
+  diceTray.hidden = !open;
+
+  formula.classList.add(WORKFLOW_FORMULA_TOGGLE_CLASS);
+  formula.setAttribute("role", "button");
+  formula.setAttribute("tabindex", "0");
+  formula.setAttribute("aria-expanded", open ? "true" : "false");
+  formula.title = open ? "Ocultar dados da rolagem" : "Mostrar dados da rolagem";
+  formula.setAttribute("aria-label", formula.title);
+
+  const icon = formula.querySelector("i") ?? document.createElement("i");
+  icon.classList.add("fa-solid");
+  icon.classList.toggle("fa-chevron-down", !open);
+  icon.classList.toggle("fa-chevron-up", open);
+  icon.setAttribute("aria-hidden", "true");
+
+  if (!icon.parentElement) formula.append(icon);
 }
 
 function placeDamageInfoSection(rollCard: HTMLElement, section: HTMLElement): void {
@@ -784,8 +823,12 @@ function createTargetResistanceRollDisplay(
 
   const formulaText = target.resistanceResult?.formula ?? resistance?.formula ?? "—";
   const total = target.resistanceResult?.total ?? null;
-  const roll = createCompactWorkflowRollDisplay(formulaText, total, target.resistanceResult?.diceBreakdown ?? null);
-  roll.classList.add(`${PROMPT_CLASS}__workflow-roll--dice-open`);
+  const roll = createCompactWorkflowRollDisplay(
+    formulaText,
+    total,
+    target.resistanceResult?.diceBreakdown ?? null,
+    target.resistanceResult !== null
+  );
 
   wrapper.append(roll);
   return wrapper;

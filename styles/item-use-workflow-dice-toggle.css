@@ -1270,18 +1270,15 @@
 }
 
 /* 0.24.1 — Multi-target readability polish */
-/* 0.24.3 — The Toolkit card compensates the chat/card host inset; its own content keeps padding. */
-.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
-  --paranormal-toolkit-chat-card-edge-inset: 10px;
-  margin-inline: calc(-1 * var(--paranormal-toolkit-chat-card-edge-inset)) !important;
-  padding: 10px !important;
+/* 0.24.4 — Restore the approved Toolkit card shape; edge compensation will be redesigned later. */
+.message-content.paranormal-toolkit-item-use-prompt__host--system-card-replaced,
+.message-content:has(> .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt) {
+  padding-inline: 0 !important;
 }
 
-.message-content.paranormal-toolkit-item-use-prompt__host--system-card-replaced
-  > .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt,
-.message-content
-  > .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
-  margin-inline: calc(-1 * var(--paranormal-toolkit-chat-card-edge-inset)) !important;
+.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
+  margin-inline: 0 !important;
+  padding: 10px !important;
 }
 
 .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt
@@ -1320,14 +1317,17 @@
   .paranormal-toolkit-item-use-prompt__workflow-roll-formula,
 .paranormal-toolkit-item-use-prompt__target-resistance-roll
   .paranormal-toolkit-item-use-prompt__workflow-roll-formula {
+  position: relative !important;
   display: inline-flex !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 1.82rem !important;
   align-items: center !important;
   justify-content: center !important;
   min-width: 0 !important;
   border: 1px solid rgba(66, 47, 34, 0.18) !important;
   border-radius: 6px !important;
-  padding: 0.28rem 0.46rem !important;
+  padding: 0.28rem 1.42rem 0.28rem 0.46rem !important;
   background: rgba(255, 255, 255, 0.68) !important;
   color: rgba(36, 27, 24, 0.9) !important;
   font-family: var(--font-mono, monospace) !important;
@@ -1338,6 +1338,18 @@
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
+
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  .paranormal-toolkit-item-use-prompt__workflow-roll-formula i,
+.paranormal-toolkit-item-use-prompt__target-resistance-roll
+  .paranormal-toolkit-item-use-prompt__workflow-roll-formula i {
+  position: absolute !important;
+  right: 0.46rem !important;
+  margin-left: 0 !important;
+  font-size: 0.62rem !important;
+  opacity: 0.72 !important;
+}
+
 
 .paranormal-toolkit-item-use-prompt__workflow-section--damage-info
   .paranormal-toolkit-item-use-prompt__workflow-roll-total,
