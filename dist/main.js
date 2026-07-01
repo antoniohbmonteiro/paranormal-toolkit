@@ -2502,7 +2502,16 @@ function Qa(e, t) {
   t.textContent = n ? "⌃" : "⌄";
 }
 function Or(e) {
-  return e instanceof HTMLElement && !!e.closest("button, a, input, select, textarea");
+  return e instanceof HTMLElement ? !!e.closest([
+    "button",
+    "a",
+    "input",
+    "select",
+    "textarea",
+    `.${a}__workflow-roll`,
+    `.${a}__workflow-roll-formula`,
+    `.${a}__workflow-dice-tray`
+  ].join(", ")) : !1;
 }
 function ld(e, t) {
   const n = document.createElement("div");

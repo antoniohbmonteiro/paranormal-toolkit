@@ -730,7 +730,20 @@ function updateToggleIcon(row: HTMLElement, indicator: HTMLElement): void {
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && Boolean(target.closest("button, a, input, select, textarea"));
+  if (!(target instanceof HTMLElement)) return false;
+
+  return Boolean(
+    target.closest([
+      "button",
+      "a",
+      "input",
+      "select",
+      "textarea",
+      `.${PROMPT_CLASS}__workflow-roll`,
+      `.${PROMPT_CLASS}__workflow-roll-formula`,
+      `.${PROMPT_CLASS}__workflow-dice-tray`
+    ].join(", "))
+  );
 }
 
 function createTargetDetails(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): HTMLElement {

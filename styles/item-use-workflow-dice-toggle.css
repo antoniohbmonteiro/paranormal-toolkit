@@ -1270,12 +1270,14 @@
 }
 
 /* 0.24.1 — Multi-target readability polish */
-.message-content.paranormal-toolkit-item-use-prompt__host--system-card-replaced {
+/* 0.24.2 — Keep Toolkit content padded, but let the Toolkit card reach the chat card edges. */
+.message-content.paranormal-toolkit-item-use-prompt__host--system-card-replaced,
+.message-content:has(> .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt) {
   padding-inline: 0 !important;
 }
 
 .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
-  padding-inline: 0 !important;
+  padding: 10px !important;
 }
 
 .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt
@@ -1284,7 +1286,7 @@
   > .paranormal-toolkit-item-use-prompt__details,
 .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt
   > .paranormal-toolkit-item-use-prompt__actions {
-  margin-inline: 10px !important;
+  margin-inline: 0 !important;
 }
 
 .paranormal-toolkit-item-use-prompt__workflow-section--damage-info {
