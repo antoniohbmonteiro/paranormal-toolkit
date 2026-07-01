@@ -582,6 +582,31 @@ export function ensureItemUseChatCardStyles(): void {
   color: rgba(34, 93, 55, 0.84) !important;
 }
 
+/* 0.22.0 — Card estruturado: remove moldura externa e mantém cards internos */
+.${PROMPT_CLASS}__roll-card--structured {
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__workflow-section,
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution {
+  margin-inline: 0 !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__workflow-section + .${PROMPT_CLASS}__workflow-section,
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__workflow-section + .${PROMPT_CLASS}__actions--effect-resolution,
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution + .${PROMPT_CLASS}__workflow-section {
+  margin-top: 0.52rem !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__roll-meta,
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__workflow-notes {
+  margin-inline: 0.08rem !important;
+}
+
 `;
 
   document.head.append(style);

@@ -649,3 +649,32 @@
   color: rgba(34, 93, 55, 0.84) !important;
 }
 
+
+/* 0.22.0 — Card estruturado: remove moldura externa e mantém cards internos */
+.paranormal-toolkit-item-use-prompt__roll-card--structured {
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__workflow-section,
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__actions--effect-resolution {
+  margin-inline: 0 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__workflow-section
+  + .paranormal-toolkit-item-use-prompt__workflow-section,
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__workflow-section
+  + .paranormal-toolkit-item-use-prompt__actions--effect-resolution,
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  + .paranormal-toolkit-item-use-prompt__workflow-section {
+  margin-top: 0.52rem !important;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__roll-meta,
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__workflow-notes {
+  margin-inline: 0.08rem !important;
+}
+
