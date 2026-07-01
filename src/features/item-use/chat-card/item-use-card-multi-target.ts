@@ -12,6 +12,7 @@ const RESISTANCE_SKILL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill";
 const RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill-label";
 
 const MULTI_TARGET_SECTION_ATTRIBUTE = "data-paranormal-toolkit-multi-target-section";
+const MULTI_TARGET_DAMAGE_INFO_ATTRIBUTE = "data-paranormal-toolkit-multi-target-damage-info";
 const MULTI_TARGET_EFFECT_INFO_ATTRIBUTE = "data-paranormal-toolkit-multi-target-effect-info";
 const MULTI_TARGET_TOGGLE_ATTRIBUTE = "data-paranormal-toolkit-multi-target-toggle";
 const MULTI_TARGET_DETAILS_ATTRIBUTE = "data-paranormal-toolkit-multi-target-details";
@@ -54,10 +55,19 @@ type MultiTargetViewModel = {
 };
 
 type TargetDamageViewModel = {
+  typeLabel: string | null;
+  formula: string;
+  total: number | null;
+  diceBreakdown: string | null;
   normalLabel: string;
   normalCompactLabel: string;
   halfLabel: string | null;
   halfCompactLabel: string | null;
+};
+
+type TargetRollDieViewModel = {
+  value: number;
+  active: boolean;
 };
 
 type TargetEffectViewModel = {
@@ -79,9 +89,13 @@ export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput):
   input.rollCard.classList.add(`${PROMPT_CLASS}__roll-card--multi-target`);
   hideSingleTargetSourceSections(input);
 
+  const damageInfo = getOrCreateDamageInfoSection(input.rollCard);
+  renderDamageInfoSection(damageInfo, viewModel.damage);
+  placeDamageInfoSection(input.rollCard, damageInfo);
+
   const targetSection = getOrCreateTargetSection(input.rollCard);
   renderTargetSection(targetSection, viewModel);
-  placeTargetSection(input.rollCard, targetSection);
+  placeTargetSection(input.rollCard, targetSection, damageInfo);
 
   if (viewModel.effect) {
     const effectInfo = getOrCreateEffectInfoSection(input.rollCard);
@@ -137,6 +151,10 @@ function createDamageViewModel(damageSection: HTMLElement | null): TargetDamageV
   const halfAmount = total !== null ? Math.floor(total / 2) : null;
 
   return {
+    typeLabel: readWorkflowSectionDescription(damageSection),
+    formula: readRollFormula(damageSection) ?? "—",
+    total,
+    diceBreakdown: null,
     normalLabel: total !== null ? `Normal: ${total} PV` : "Normal: —",
     normalCompactLabel: total !== null ? `${total} PV` : "—",
     halfLabel: halfAmount !== null ? `Metade: ${halfAmount} PV` : null,
@@ -219,9 +237,90 @@ function readRollTotal(section: HTMLElement | null): number | null {
   return Number.isFinite(total) ? Math.trunc(total) : null;
 }
 
+function readRollFormula(section: HTMLElement | null): string | null {
+  const formula = section?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-roll-formula`)?.textContent?.trim();
+  return formula && formula.length > 0 ? formula : null;
+}
+
+function readWorkflowSectionDescription(section: HTMLElement | null): string | null {
+  const description = section?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section-description`)?.textContent?.trim();
+  return description && description.length > 0 ? description : null;
+}
+
 function hideSingleTargetSourceSections(input: MultiTargetCardLayoutInput): void {
   input.damageSection?.classList.add(`${PROMPT_CLASS}__workflow-section--multi-target-source`);
   input.effectSection?.classList.add(`${PROMPT_CLASS}__workflow-section--multi-target-effect-source`);
+}
+
+function getOrCreateDamageInfoSection(rollCard: HTMLElement): HTMLElement {
+  const existing = findDamageInfoSection(rollCard);
+  if (existing) return existing;
+
+  const section = document.createElement("section");
+  section.classList.add(
+    `${PROMPT_CLASS}__workflow-section`,
+    `${PROMPT_CLASS}__workflow-section--effect`,
+    `${PROMPT_CLASS}__workflow-section--damage-info`
+  );
+  section.setAttribute(MULTI_TARGET_DAMAGE_INFO_ATTRIBUTE, "true");
+  return section;
+}
+
+function findDamageInfoSection(rollCard: HTMLElement): HTMLElement | null {
+  return rollCard.querySelector<HTMLElement>(`[${MULTI_TARGET_DAMAGE_INFO_ATTRIBUTE}="true"]`);
+}
+
+function renderDamageInfoSection(section: HTMLElement, damage: TargetDamageViewModel): void {
+  section.replaceChildren();
+
+  const header = document.createElement("div");
+  header.classList.add(`${PROMPT_CLASS}__workflow-section-header`);
+
+  const title = document.createElement("strong");
+  title.textContent = "Dano";
+  header.append(title);
+  section.append(header);
+
+  if (damage.typeLabel) {
+    const description = document.createElement("span");
+    description.classList.add(`${PROMPT_CLASS}__workflow-section-description`);
+    description.textContent = damage.typeLabel;
+    section.append(description);
+  }
+
+  section.append(createCompactWorkflowRollDisplay(damage.formula, damage.total, damage.diceBreakdown));
+}
+
+function createCompactWorkflowRollDisplay(formulaText: string, total: number | null, diceBreakdown: string | null): HTMLElement {
+  const roll = document.createElement("div");
+  roll.classList.add(`${PROMPT_CLASS}__workflow-roll`, `${PROMPT_CLASS}__workflow-roll--compact-info`);
+
+  const formula = document.createElement("span");
+  formula.classList.add(`${PROMPT_CLASS}__workflow-roll-formula`);
+  formula.textContent = formulaText;
+
+  const totalElement = document.createElement("strong");
+  totalElement.classList.add(`${PROMPT_CLASS}__workflow-roll-total`);
+  totalElement.textContent = total === null ? "—" : String(total);
+
+  roll.append(formula, totalElement);
+
+  const dice = createDiceTray(formulaText, diceBreakdown);
+  if (dice) roll.append(dice);
+
+  return roll;
+}
+
+function placeDamageInfoSection(rollCard: HTMLElement, section: HTMLElement): void {
+  const castingSection = findWorkflowSectionByTitle(rollCard, "Conjuração");
+
+  if (!castingSection) {
+    rollCard.prepend(section);
+    return;
+  }
+
+  if (section.parentElement === rollCard && section.previousElementSibling === castingSection) return;
+  rollCard.insertBefore(section, castingSection.nextElementSibling);
 }
 
 function getOrCreateTargetSection(rollCard: HTMLElement): HTMLElement {
@@ -525,12 +624,18 @@ function refreshTargetSection(row: HTMLElement): void {
 
   const viewModel = createMultiTargetCardViewModel({
     rollCard,
-    damageSection: findWorkflowSectionByTitle(rollCard, "Dano"),
+    damageSection: findMultiTargetDamageSourceSection(rollCard) ?? findWorkflowSectionByTitle(rollCard, "Dano"),
     effectSection: findMultiTargetEffectSourceSection(rollCard)
   });
 
   if (!viewModel) return;
   renderTargetSection(targetSection, viewModel);
+}
+
+function findMultiTargetDamageSourceSection(rollCard: HTMLElement): HTMLElement | null {
+  return Array.from(rollCard.querySelectorAll<HTMLElement>(`.${PROMPT_CLASS}__workflow-section--multi-target-source`))
+    .find((section) => section.getAttribute(MULTI_TARGET_DAMAGE_INFO_ATTRIBUTE) !== "true")
+    ?? null;
 }
 
 function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement | null {
@@ -546,7 +651,7 @@ function createTargetDamageActionButton(
   const label = shouldUseHalfDamage
     ? density === "full" ? viewModel.damage.halfLabel ?? "Metade: —" : viewModel.damage.halfCompactLabel ?? "½ —"
     : density === "full" ? viewModel.damage.normalLabel : viewModel.damage.normalCompactLabel;
-  const icon = shouldUseHalfDamage ? "🛡" : "⚡";
+  const icon = shouldUseHalfDamage ? "🛡️" : "⚡";
   const stateClass = shouldUseHalfDamage ? `${PROMPT_CLASS}__target-action--half-damage` : `${PROMPT_CLASS}__target-action--normal-damage`;
 
   return createTargetActionButton(icon, label, `${PROMPT_CLASS}__target-action--damage`, stateClass);
@@ -647,10 +752,10 @@ function createTargetDetails(target: MultiTargetViewModel, viewModel: MultiTarge
   const outcome = createTargetOutcomeLine(target, viewModel.resistance);
   if (outcome) resistance.append(outcome);
 
-  const formula = createTargetFormula(createTargetFormulaText(target, viewModel.resistance));
+  const roll = createTargetResistanceRollDisplay(target, viewModel.resistance);
   const actions = createTargetDetailsActions(target, viewModel);
 
-  details.append(resistance, formula, actions);
+  details.append(resistance, roll, actions);
   details.setAttribute("aria-label", `Detalhes de ${target.name}`);
   return details;
 }
@@ -671,29 +776,78 @@ function createTargetOutcomeLine(target: MultiTargetViewModel, resistance: Targe
   return line;
 }
 
-function createTargetFormulaText(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): string {
-  if (target.resistanceResult) {
-    const diceBreakdown = target.resistanceResult.diceBreakdown ? ` ${target.resistanceResult.diceBreakdown}` : "";
-    return `${target.resistanceResult.formula}${diceBreakdown} = ${target.resistanceResult.total}`;
-  }
+function createTargetResistanceRollDisplay(
+  target: MultiTargetViewModel,
+  resistance: TargetResistanceViewModel | null
+): HTMLElement {
+  const wrapper = document.createElement("div");
+  wrapper.classList.add(`${PROMPT_CLASS}__target-resistance-roll`);
 
-  if (resistance?.skillLabel) return `Clique no d20 para rolar ${resistance.skillLabel}`;
-  return resistance?.formula ?? "—";
+  const formulaText = target.resistanceResult?.formula ?? resistance?.formula ?? "—";
+  const total = target.resistanceResult?.total ?? null;
+  const roll = createCompactWorkflowRollDisplay(formulaText, total, target.resistanceResult?.diceBreakdown ?? null);
+  roll.classList.add(`${PROMPT_CLASS}__workflow-roll--dice-open`);
+
+  wrapper.append(roll);
+  return wrapper;
 }
 
-function createTargetFormula(formulaText: string): HTMLElement {
-  const formula = document.createElement("div");
-  formula.classList.add(`${PROMPT_CLASS}__target-formula`);
+function createDiceTray(formula: string, diceBreakdown: string | null): HTMLElement | null {
+  const dice = parseDiceValues(diceBreakdown);
+  if (dice.length === 0) return null;
 
-  const text = document.createElement("span");
-  text.textContent = formulaText;
+  const tray = document.createElement("div");
+  tray.classList.add(`${PROMPT_CLASS}__workflow-dice-tray`);
 
-  const icon = document.createElement("i");
-  icon.classList.add("fa-solid", "fa-dice-d20");
-  icon.setAttribute("aria-hidden", "true");
+  for (const die of markActiveDice(dice, formula)) {
+    const chip = document.createElement("span");
+    chip.classList.add(`${PROMPT_CLASS}__workflow-die`);
+    if (!die.active) chip.classList.add(`${PROMPT_CLASS}__workflow-die--inactive`);
+    chip.textContent = String(die.value);
+    tray.append(chip);
+  }
 
-  formula.append(text, icon);
-  return formula;
+  return tray;
+}
+
+function parseDiceValues(diceBreakdown: string | null): number[] {
+  if (!diceBreakdown) return [];
+
+  const firstGroup = /\(([^)]+)\)/u.exec(diceBreakdown);
+  const source = firstGroup?.[1] ?? diceBreakdown;
+
+  return source
+    .split(",")
+    .map((part) => Number(part.trim()))
+    .filter((value) => Number.isFinite(value))
+    .map((value) => Math.trunc(value));
+}
+
+function markActiveDice(values: number[], formula: string): TargetRollDieViewModel[] {
+  if (values.length <= 1) return values.map((value) => ({ value, active: true }));
+
+  const normalizedFormula = formula.toLowerCase();
+
+  if (normalizedFormula.includes("kh")) {
+    return markExtremeDie(values, "highest");
+  }
+
+  if (normalizedFormula.includes("kl")) {
+    return markExtremeDie(values, "lowest");
+  }
+
+  return values.map((value) => ({ value, active: true }));
+}
+
+function markExtremeDie(values: number[], mode: "highest" | "lowest"): TargetRollDieViewModel[] {
+  const extreme = mode === "highest" ? Math.max(...values) : Math.min(...values);
+  let selected = false;
+
+  return values.map((value) => {
+    const active = !selected && value === extreme;
+    if (active) selected = true;
+    return { value, active };
+  });
 }
 
 function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): HTMLElement {
@@ -706,15 +860,18 @@ function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: Mul
   return actions;
 }
 
-function placeTargetSection(rollCard: HTMLElement, section: HTMLElement): void {
-  const castingSection = findWorkflowSectionByTitle(rollCard, "Conjuração");
-  if (!castingSection) {
+function placeTargetSection(rollCard: HTMLElement, section: HTMLElement, damageInfoSection: HTMLElement): void {
+  const anchor = damageInfoSection.parentElement === rollCard
+    ? damageInfoSection
+    : findWorkflowSectionByTitle(rollCard, "Conjuração");
+
+  if (!anchor) {
     rollCard.prepend(section);
     return;
   }
 
-  if (section.parentElement === rollCard && section.previousElementSibling === castingSection) return;
-  rollCard.insertBefore(section, castingSection.nextElementSibling);
+  if (section.parentElement === rollCard && section.previousElementSibling === anchor) return;
+  rollCard.insertBefore(section, anchor.nextElementSibling);
 }
 
 function getOrCreateEffectInfoSection(rollCard: HTMLElement): HTMLElement {

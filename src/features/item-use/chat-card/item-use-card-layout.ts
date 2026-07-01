@@ -21,6 +21,7 @@ const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const LAYOUT_NORMALIZED_ATTRIBUTE = "data-paranormal-toolkit-card-layout-normalized";
 const REFRESH_BOUND_ATTRIBUTE = "data-paranormal-toolkit-card-layout-refresh-bound";
 const DAMAGE_ACTION_SECTION_ID = "apply-damage";
+const MULTI_TARGET_DAMAGE_INFO_ATTRIBUTE = "data-paranormal-toolkit-multi-target-damage-info";
 const LAYOUT_REFRESH_DELAYS_MS = [0, 80, 180, 400, 900, 1_600, 3_000] as const;
 
 const scheduledLayoutRoots = new WeakSet<ParentNode>();
@@ -59,7 +60,7 @@ function scheduleRitualCardLayoutRefresh(root: ParentNode): void {
 function resolveRitualCardLayout(rollCard: HTMLElement): RitualCardLayout {
   return {
     rollCard,
-    damageSection: findWorkflowSectionByTitle(rollCard, "Dano"),
+    damageSection: findDamageWorkflowSection(rollCard),
     resistance: rollCard.querySelector<HTMLElement>(RESISTANCE_SELECTOR),
     damageActions: findDamageActionSection(rollCard),
     effectActionSource: findEffectActionSource(rollCard),
@@ -111,6 +112,17 @@ function normalizeRitualCardLayout(layout: RitualCardLayout): void {
   });
 
   bindRitualCardRefresh(rollCard);
+}
+
+function findDamageWorkflowSection(rollCard: HTMLElement): HTMLElement | null {
+  return Array.from(rollCard.querySelectorAll<HTMLElement>(`.${PROMPT_CLASS}__workflow-section`))
+    .find((section) => {
+      if (section.getAttribute(MULTI_TARGET_DAMAGE_INFO_ATTRIBUTE) === "true") return false;
+
+      const title = section.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section-header strong`)?.textContent;
+      return title?.trim().toLocaleLowerCase() === "dano";
+    })
+    ?? null;
 }
 
 function findDamageActionSection(rollCard: HTMLElement): HTMLElement | null {

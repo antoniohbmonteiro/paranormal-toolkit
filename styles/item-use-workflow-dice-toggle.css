@@ -1268,3 +1268,151 @@
 .paranormal-toolkit-item-use-prompt__target-resistance-outcome {
   font-weight: 850 !important;
 }
+
+/* 0.24.1 — Multi-target readability polish */
+.message-content.paranormal-toolkit-item-use-prompt__host--system-card-replaced {
+  padding-inline: 0 !important;
+}
+
+.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
+  padding-inline: 0 !important;
+}
+
+.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt
+  > .paranormal-toolkit-item-use-prompt__header,
+.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt
+  > .paranormal-toolkit-item-use-prompt__details,
+.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt
+  > .paranormal-toolkit-item-use-prompt__actions {
+  margin-inline: 10px !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info {
+  border-color: rgba(143, 54, 62, 0.2) !important;
+  border-left: 3px solid rgba(133, 49, 59, 0.62) !important;
+  background: linear-gradient(180deg, rgba(255, 249, 247, 0.82), rgba(250, 239, 235, 0.5)) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  > .paranormal-toolkit-item-use-prompt__workflow-section-header strong {
+  color: rgba(117, 48, 58, 0.94) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  > .paranormal-toolkit-item-use-prompt__workflow-roll--compact-info,
+.paranormal-toolkit-item-use-prompt__target-resistance-roll
+  > .paranormal-toolkit-item-use-prompt__workflow-roll--compact-info {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 0.34rem !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  .paranormal-toolkit-item-use-prompt__workflow-roll-formula,
+.paranormal-toolkit-item-use-prompt__target-resistance-roll
+  .paranormal-toolkit-item-use-prompt__workflow-roll-formula {
+  display: inline-flex !important;
+  min-height: 1.82rem !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(66, 47, 34, 0.18) !important;
+  border-radius: 6px !important;
+  padding: 0.28rem 0.46rem !important;
+  background: rgba(255, 255, 255, 0.68) !important;
+  color: rgba(36, 27, 24, 0.9) !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  .paranormal-toolkit-item-use-prompt__workflow-roll-total,
+.paranormal-toolkit-item-use-prompt__target-resistance-roll
+  .paranormal-toolkit-item-use-prompt__workflow-roll-total {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 2.32rem !important;
+  min-height: 1.82rem !important;
+  border: 1px solid rgba(66, 47, 34, 0.14) !important;
+  border-radius: 6px !important;
+  padding: 0 0.44rem !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: rgba(24, 19, 18, 0.96) !important;
+  font-size: 1.16rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-roll {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  min-width: 0 !important;
+  flex-direction: column !important;
+  gap: 0.34rem !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-roll
+  .paranormal-toolkit-item-use-prompt__workflow-dice-tray {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.25rem !important;
+  width: 100% !important;
+  border-top: 1px solid rgba(79, 55, 42, 0.12) !important;
+  padding-top: 0.34rem !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-roll
+  .paranormal-toolkit-item-use-prompt__workflow-die {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 1.22rem !important;
+  min-height: 1.22rem !important;
+  border: 1px solid rgba(82, 57, 25, 0.18) !important;
+  border-radius: 999px !important;
+  padding: 0 0.27rem !important;
+  background: rgba(255, 255, 255, 0.64) !important;
+  color: rgba(36, 27, 24, 0.9) !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-roll
+  .paranormal-toolkit-item-use-prompt__workflow-die--inactive {
+  background: rgba(255, 255, 255, 0.3) !important;
+  color: rgba(36, 27, 24, 0.46) !important;
+  opacity: 0.58 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-button.paranormal-toolkit-item-use-prompt__target-resistance-button--success,
+.paranormal-toolkit-item-use-prompt__target-resistance-button.paranormal-toolkit-item-use-prompt__target-resistance-button--failure,
+.paranormal-toolkit-item-use-prompt__target-resistance-button.paranormal-toolkit-item-use-prompt__target-resistance-button--rolled {
+  width: auto !important;
+  min-width: 2.62rem !important;
+  padding-inline: 0.38rem !important;
+  gap: 0.16rem !important;
+  white-space: nowrap !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-button.paranormal-toolkit-item-use-prompt__target-resistance-button--success
+  .paranormal-toolkit-item-use-prompt__target-resistance-total,
+.paranormal-toolkit-item-use-prompt__target-resistance-button.paranormal-toolkit-item-use-prompt__target-resistance-button--failure
+  .paranormal-toolkit-item-use-prompt__target-resistance-total,
+.paranormal-toolkit-item-use-prompt__target-resistance-button.paranormal-toolkit-item-use-prompt__target-resistance-button--rolled
+  .paranormal-toolkit-item-use-prompt__target-resistance-total {
+  white-space: nowrap !important;
+}
+
