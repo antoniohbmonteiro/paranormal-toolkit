@@ -3253,7 +3253,7 @@ function Po(e, t) {
     id: e.id,
     formula: e.formula,
     intent: n,
-    damageType: e.damageType,
+    damageType: e.damageType ?? void 0,
     sourceStepIndex: t
   };
 }
@@ -5258,9 +5258,8 @@ class ke extends Fm {
       window: {
         title: `Conjurar ${t.ritual.name ?? "ritual"}`
       }
-    }), this.input = t, this.resolveRequest = n, this.model = _m(t), this.selectedVariant = this.model.forms.find((r) => r.checked && r.enabled)?.variant ?? "base", this.spendResource = this.model.cost.spendResourceChecked;
+    }), this.resolveRequest = n, this.model = _m(t), this.selectedVariant = this.model.forms.find((r) => r.checked && r.enabled)?.variant ?? "base", this.spendResource = this.model.cost.spendResourceChecked;
   }
-  input;
   resolveRequest;
   model;
   selectedVariant = "base";
