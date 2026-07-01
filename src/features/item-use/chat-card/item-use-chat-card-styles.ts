@@ -599,7 +599,7 @@ export function ensureItemUseChatCardStyles(): void {
 .${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__workflow-section + .${PROMPT_CLASS}__workflow-section,
 .${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__workflow-section + .${PROMPT_CLASS}__actions--effect-resolution,
 .${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution + .${PROMPT_CLASS}__workflow-section {
-  margin-top: 0.52rem !important;
+  margin-top: 0.28rem !important;
 }
 
 .${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__roll-meta,

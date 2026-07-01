@@ -3011,7 +3011,7 @@ function fu() {
 .${i}__roll-card--structured > .${i}__workflow-section + .${i}__workflow-section,
 .${i}__roll-card--structured > .${i}__workflow-section + .${i}__actions--effect-resolution,
 .${i}__roll-card--structured > .${i}__actions--effect-resolution + .${i}__workflow-section {
-  margin-top: 0.52rem !important;
+  margin-top: 0.28rem !important;
 }
 
 .${i}__roll-card--structured > .${i}__roll-meta,
