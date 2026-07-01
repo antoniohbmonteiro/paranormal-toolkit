@@ -29,3 +29,10 @@ Corrigir o caso em que a antiga action visual `Aplicar efeito` ainda aparecia no
 - A busca do efeito agora tenta primeiro o vínculo estrito por `pendingId` e, se não encontrar, faz fallback posicional no mesmo prompt, entre o roll card atual e o próximo roll card.
 - `sectionContainsPromptId` agora considera o próprio elemento da action, não só descendentes.
 - O card real de **Efeito** continua sendo a única UI final; a action legada é apenas fonte do botão/pendingId.
+
+## Hotfix de ordenação da seção de Efeito
+
+- Garante a ordem final `Conjuração → Dano → Efeito`.
+- A seção real de **Efeito** agora é ancorada depois de **Dano** quando ele existe.
+- Se **Dano** ainda não estiver disponível em uma passada de normalização, o fallback é inserir depois de **Conjuração**.
+- Se nenhuma âncora existir, o efeito vai para o final do roll card, nunca para o topo.

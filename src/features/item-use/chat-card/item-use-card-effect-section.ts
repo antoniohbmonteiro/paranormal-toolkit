@@ -25,6 +25,7 @@ type EffectActionSectionInput = {
   existingSection: HTMLElement | null;
   sourceActions: HTMLElement | null;
   after: HTMLElement | null;
+  fallbackAfter: HTMLElement | null;
 };
 
 export function findEffectActionSection(rollCard: HTMLElement): HTMLElement | null {
@@ -40,7 +41,7 @@ export function mountEffectActionSection(input: EffectActionSectionInput): HTMLE
   if (effectLabel) section.setAttribute(EFFECT_LABEL_ATTRIBUTE, effectLabel);
 
   ensureEffectSectionStructure(section, button, effectLabel);
-  placeEffectSection(input.rollCard, section, input.after);
+  placeEffectSection(input.rollCard, section, input.after ?? input.fallbackAfter);
   removeConsumedLegacyActionSource(input.sourceActions, section);
 
   return section;
@@ -171,11 +172,15 @@ function getOrCreateEffectActionContainer(body: HTMLElement): HTMLElement {
 }
 
 function placeEffectSection(rollCard: HTMLElement, section: HTMLElement, after: HTMLElement | null): void {
-  const expectedPreviousSibling = after ?? null;
-  if (section.parentElement === rollCard && section.previousElementSibling === expectedPreviousSibling) return;
+  if (!after) {
+    if (section.parentElement === rollCard && section.nextElementSibling === null) return;
+    rollCard.append(section);
+    return;
+  }
 
-  const insertionReference = after?.nextElementSibling ?? rollCard.firstElementChild;
-  rollCard.insertBefore(section, insertionReference);
+  if (section.parentElement === rollCard && section.previousElementSibling === after) return;
+
+  rollCard.insertBefore(section, after.nextElementSibling);
 }
 
 function removeConsumedLegacyActionSource(sourceActions: HTMLElement | null, section: HTMLElement): void {

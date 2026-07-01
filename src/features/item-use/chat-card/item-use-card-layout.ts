@@ -95,7 +95,8 @@ function normalizeRitualCardLayout(layout: RitualCardLayout): void {
     rollCard,
     existingSection: effectSection,
     sourceActions: effectActionSource,
-    after: damageSection
+    after: damageSection,
+    fallbackAfter: findWorkflowSectionByTitle(rollCard, "Conjuração")
   });
 
   if (mountedEffectSection) {
