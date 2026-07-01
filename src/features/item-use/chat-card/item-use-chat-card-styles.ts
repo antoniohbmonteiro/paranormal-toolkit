@@ -793,6 +793,286 @@ export function ensureItemUseChatCardStyles(): void {
   color: rgba(34, 93, 55, 0.84) !important;
 }
 
+/* 0.23.0 — Multi-target ritual card visual model */
+.${PROMPT_CLASS}__roll-card--multi-target
+  > .${PROMPT_CLASS}__workflow-section--multi-target-source,
+.${PROMPT_CLASS}__roll-card--multi-target
+  > .${PROMPT_CLASS}__workflow-section--multi-target-effect-source {
+  display: none !important;
+}
+
+.${PROMPT_CLASS}__workflow-section--targets {
+  border-color: rgba(143, 54, 62, 0.24) !important;
+  border-left: 3px solid rgba(133, 49, 59, 0.68) !important;
+  background: linear-gradient(180deg, rgba(255, 248, 245, 0.84), rgba(250, 239, 235, 0.52)) !important;
+}
+
+.${PROMPT_CLASS}__targets-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.5rem !important;
+}
+
+.${PROMPT_CLASS}__workflow-section--targets
+  .${PROMPT_CLASS}__workflow-section-header strong {
+  color: rgba(117, 48, 58, 0.94) !important;
+}
+
+.${PROMPT_CLASS}__targets-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(120, 61, 50, 0.14) !important;
+  border-radius: 999px !important;
+  padding: 0.14rem 0.48rem !important;
+  background: rgba(255, 255, 255, 0.44) !important;
+  color: rgba(36, 27, 24, 0.82) !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.${PROMPT_CLASS}__targets-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.3rem !important;
+  margin-top: 0.42rem !important;
+}
+
+.${PROMPT_CLASS}__target-row {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.34rem !important;
+  border: 1px solid rgba(143, 54, 62, 0.16) !important;
+  border-radius: 8px !important;
+  padding: 0.34rem !important;
+  background: rgba(255, 255, 255, 0.34) !important;
+}
+
+.${PROMPT_CLASS}__target-summary {
+  display: grid !important;
+  grid-template-columns: minmax(3.6rem, 1fr) auto minmax(4.6rem, auto) minmax(3.55rem, auto) auto !important;
+  align-items: center !important;
+  gap: 0.28rem !important;
+  min-width: 0 !important;
+}
+
+.${PROMPT_CLASS}__target-name {
+  min-width: 0 !important;
+  color: rgba(36, 27, 24, 0.94) !important;
+  font-size: 0.86rem !important;
+  font-weight: 950 !important;
+  line-height: 1.12 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.${PROMPT_CLASS}__target-resistance-button,
+.${PROMPT_CLASS}__target-toggle,
+.${PROMPT_CLASS}__target-action {
+  appearance: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+  font-family: inherit !important;
+  line-height: 1 !important;
+}
+
+.${PROMPT_CLASS}__target-resistance-button {
+  width: 2.08rem !important;
+  height: 1.82rem !important;
+  border-color: rgba(123, 72, 73, 0.38) !important;
+  border-radius: 7px !important;
+  background: rgba(255, 252, 247, 0.74) !important;
+  color: rgba(58, 45, 39, 0.84) !important;
+  font-size: 0.76rem !important;
+  font-weight: 950 !important;
+  cursor: default !important;
+}
+
+.${PROMPT_CLASS}__target-resistance-button i {
+  font-size: 0.88rem !important;
+}
+
+.${PROMPT_CLASS}__target-resistance-fallback {
+  display: none !important;
+}
+
+.${PROMPT_CLASS}__target-action {
+  min-height: 1.82rem !important;
+  border-color: rgba(123, 72, 73, 0.34) !important;
+  border-radius: 7px !important;
+  padding: 0.28rem 0.42rem !important;
+  background: rgba(228, 214, 209, 0.64) !important;
+  color: rgba(42, 30, 27, 0.82) !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  gap: 0.26rem !important;
+  opacity: 0.74 !important;
+  white-space: nowrap !important;
+  cursor: default !important;
+}
+
+.${PROMPT_CLASS}__target-action:disabled {
+  opacity: 0.74 !important;
+}
+
+.${PROMPT_CLASS}__target-action-icon {
+  font-size: 0.82rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.${PROMPT_CLASS}__target-action-label {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.${PROMPT_CLASS}__target-toggle {
+  width: 1.58rem !important;
+  height: 1.58rem !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: rgba(36, 27, 24, 0.88) !important;
+  font-size: 1.05rem !important;
+  font-weight: 950 !important;
+  cursor: pointer !important;
+}
+
+.${PROMPT_CLASS}__target-toggle:hover,
+.${PROMPT_CLASS}__target-toggle:focus {
+  border-color: rgba(123, 72, 73, 0.2) !important;
+  background: rgba(255, 255, 255, 0.54) !important;
+  outline: none !important;
+}
+
+.${PROMPT_CLASS}__target-details {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 0.36rem !important;
+  border: 1px solid rgba(151, 111, 45, 0.22) !important;
+  border-radius: 8px !important;
+  padding: 0.48rem !important;
+  background: linear-gradient(180deg, rgba(255, 251, 240, 0.76), rgba(255, 245, 219, 0.42)) !important;
+}
+
+.${PROMPT_CLASS}__target-details[hidden] {
+  display: none !important;
+}
+
+.${PROMPT_CLASS}__target-resistance-details {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.12rem !important;
+  min-width: 0 !important;
+}
+
+.${PROMPT_CLASS}__target-resistance-details strong {
+  color: rgba(107, 78, 35, 0.96) !important;
+  font-size: 0.74rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.075em !important;
+  line-height: 1.08 !important;
+  text-transform: uppercase !important;
+}
+
+.${PROMPT_CLASS}__target-resistance-details span {
+  color: rgba(36, 27, 24, 0.84) !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  line-height: 1.22 !important;
+}
+
+.${PROMPT_CLASS}__target-formula {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: 1.82rem !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(66, 47, 34, 0.18) !important;
+  border-radius: 6px !important;
+  padding: 0.28rem 0.46rem !important;
+  background: rgba(255, 255, 255, 0.62) !important;
+  color: rgba(36, 27, 24, 0.9) !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  gap: 0.46rem !important;
+}
+
+.${PROMPT_CLASS}__target-formula span {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.${PROMPT_CLASS}__target-formula i {
+  flex: 0 0 auto !important;
+  font-size: 0.62rem !important;
+  opacity: 0.68 !important;
+}
+
+.${PROMPT_CLASS}__target-details-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.34rem !important;
+  grid-column: 1 / -1 !important;
+}
+
+.${PROMPT_CLASS}__target-details-actions .${PROMPT_CLASS}__target-action {
+  flex: 1 1 0 !important;
+  min-height: 1.9rem !important;
+}
+
+.${PROMPT_CLASS}__workflow-section--effect-info {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 0.14rem 0.5rem !important;
+  border-color: rgba(151, 111, 45, 0.26) !important;
+  border-left: 3px solid rgba(151, 111, 45, 0.66) !important;
+  background: linear-gradient(180deg, rgba(255, 251, 240, 0.82), rgba(255, 245, 219, 0.58)) !important;
+}
+
+.${PROMPT_CLASS}__workflow-section--effect-info
+  > .${PROMPT_CLASS}__workflow-section-header strong {
+  color: rgba(107, 78, 35, 0.95) !important;
+}
+
+.${PROMPT_CLASS}__effect-info-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.12rem !important;
+  min-width: 0 !important;
+}
+
+.${PROMPT_CLASS}__effect-info-label {
+  color: rgba(36, 27, 24, 0.9) !important;
+  font-size: 0.81rem !important;
+  font-weight: 850 !important;
+  line-height: 1.18 !important;
+  overflow-wrap: anywhere !important;
+}
+
+.${PROMPT_CLASS}__effect-info-hint {
+  color: rgba(36, 27, 24, 0.68) !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
+
 `;
 
   document.head.append(style);

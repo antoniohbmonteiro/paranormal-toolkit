@@ -15,6 +15,7 @@ import {
   mountEffectActionSection,
   updateEffectActionResistanceGate
 } from "./item-use-card-effect-section";
+import { enhanceMultiTargetCardLayout } from "./item-use-card-multi-target";
 
 const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const LAYOUT_NORMALIZED_ATTRIBUTE = "data-paranormal-toolkit-card-layout-normalized";
@@ -102,6 +103,12 @@ function normalizeRitualCardLayout(layout: RitualCardLayout): void {
   if (mountedEffectSection) {
     updateEffectActionResistanceGate(rollCard, mountedEffectSection);
   }
+
+  enhanceMultiTargetCardLayout({
+    rollCard,
+    damageSection,
+    effectSection: mountedEffectSection ?? effectSection
+  });
 
   bindRitualCardRefresh(rollCard);
 }
