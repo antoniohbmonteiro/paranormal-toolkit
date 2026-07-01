@@ -847,22 +847,53 @@ export function ensureItemUseChatCardStyles(): void {
   gap: 0.34rem !important;
   border: 1px solid rgba(143, 54, 62, 0.16) !important;
   border-radius: 8px !important;
-  padding: 0.34rem !important;
+  padding: 0.38rem !important;
   background: rgba(255, 255, 255, 0.34) !important;
 }
 
 .${PROMPT_CLASS}__target-summary {
-  display: grid !important;
-  grid-template-columns: minmax(3.6rem, 1fr) auto minmax(4.6rem, auto) minmax(3.55rem, auto) auto !important;
-  align-items: center !important;
-  gap: 0.28rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.32rem !important;
   min-width: 0 !important;
+}
+
+.${PROMPT_CLASS}__target-summary-main {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto auto !important;
+  align-items: center !important;
+  gap: 0.34rem !important;
+  min-width: 0 !important;
+}
+
+.${PROMPT_CLASS}__target-summary-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 0.34rem !important;
+  min-width: 0 !important;
+}
+
+.${PROMPT_CLASS}__target-avatar {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.62rem !important;
+  height: 1.62rem !important;
+  border: 1px solid rgba(139, 95, 48, 0.28) !important;
+  border-radius: 999px !important;
+  background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.92), rgba(231, 213, 194, 0.78)) !important;
+  color: rgba(88, 56, 42, 0.8) !important;
+  flex: 0 0 auto !important;
+  font-size: 0.72rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
 }
 
 .${PROMPT_CLASS}__target-name {
   min-width: 0 !important;
   color: rgba(36, 27, 24, 0.94) !important;
-  font-size: 0.86rem !important;
+  font-size: 0.88rem !important;
   font-weight: 950 !important;
   line-height: 1.12 !important;
   overflow: hidden !important;
@@ -923,6 +954,10 @@ export function ensureItemUseChatCardStyles(): void {
 
 .${PROMPT_CLASS}__target-action:disabled {
   opacity: 0.74 !important;
+}
+
+.${PROMPT_CLASS}__target-summary-actions .${PROMPT_CLASS}__target-action {
+  width: 100% !important;
 }
 
 .${PROMPT_CLASS}__target-action-icon {

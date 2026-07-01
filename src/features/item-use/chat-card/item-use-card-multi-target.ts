@@ -216,17 +216,37 @@ function createTargetSummary(target: MultiTargetViewModel, viewModel: MultiTarge
   const summary = document.createElement("div");
   summary.classList.add(`${PROMPT_CLASS}__target-summary`);
 
+  const main = document.createElement("div");
+  main.classList.add(`${PROMPT_CLASS}__target-summary-main`);
+
+  const avatar = createTargetAvatar(target);
+
   const name = document.createElement("strong");
   name.classList.add(`${PROMPT_CLASS}__target-name`);
   name.textContent = target.name;
 
   const resistance = createResistanceButton();
-  const damage = createTargetActionButton("⚡", viewModel.damage.normalLabel, `${PROMPT_CLASS}__target-action--damage`);
-  const effect = createTargetActionButton("✦", "Efeito", `${PROMPT_CLASS}__target-action--effect`);
   const toggle = createTargetToggle(row);
 
-  summary.append(name, resistance, damage, effect, toggle);
+  main.append(avatar, name, resistance, toggle);
+
+  const actions = document.createElement("div");
+  actions.classList.add(`${PROMPT_CLASS}__target-summary-actions`);
+  actions.append(
+    createTargetActionButton("⚡", viewModel.damage.normalLabel, `${PROMPT_CLASS}__target-action--damage`),
+    createTargetActionButton("✦", "Efeito", `${PROMPT_CLASS}__target-action--effect`)
+  );
+
+  summary.append(main, actions);
   return summary;
+}
+
+function createTargetAvatar(target: MultiTargetViewModel): HTMLElement {
+  const avatar = document.createElement("span");
+  avatar.classList.add(`${PROMPT_CLASS}__target-avatar`);
+  avatar.setAttribute("aria-hidden", "true");
+  avatar.textContent = target.name.trim().charAt(0).toLocaleUpperCase() || "?";
+  return avatar;
 }
 
 function createResistanceButton(): HTMLButtonElement {
