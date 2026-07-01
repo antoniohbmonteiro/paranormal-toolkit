@@ -1270,14 +1270,18 @@
 }
 
 /* 0.24.1 — Multi-target readability polish */
-/* 0.24.2 — Keep Toolkit content padded, but let the Toolkit card reach the chat card edges. */
-.message-content.paranormal-toolkit-item-use-prompt__host--system-card-replaced,
-.message-content:has(> .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt) {
-  padding-inline: 0 !important;
+/* 0.24.3 — The Toolkit card compensates the chat/card host inset; its own content keeps padding. */
+.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
+  --paranormal-toolkit-chat-card-edge-inset: 10px;
+  margin-inline: calc(-1 * var(--paranormal-toolkit-chat-card-edge-inset)) !important;
+  padding: 10px !important;
 }
 
-.paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
-  padding: 10px !important;
+.message-content.paranormal-toolkit-item-use-prompt__host--system-card-replaced
+  > .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt,
+.message-content
+  > .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt {
+  margin-inline: calc(-1 * var(--paranormal-toolkit-chat-card-edge-inset)) !important;
 }
 
 .paranormal-toolkit-chat-enrichment.paranormal-toolkit-item-use-prompt
@@ -1362,6 +1366,8 @@
   gap: 0.34rem !important;
 }
 
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  .paranormal-toolkit-item-use-prompt__workflow-dice-tray,
 .paranormal-toolkit-item-use-prompt__target-resistance-roll
   .paranormal-toolkit-item-use-prompt__workflow-dice-tray {
   grid-column: 1 / -1 !important;
@@ -1373,6 +1379,8 @@
   padding-top: 0.34rem !important;
 }
 
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  .paranormal-toolkit-item-use-prompt__workflow-die,
 .paranormal-toolkit-item-use-prompt__target-resistance-roll
   .paranormal-toolkit-item-use-prompt__workflow-die {
   display: inline-flex !important;
@@ -1392,6 +1400,8 @@
   box-sizing: border-box !important;
 }
 
+.paranormal-toolkit-item-use-prompt__workflow-section--damage-info
+  .paranormal-toolkit-item-use-prompt__workflow-die--inactive,
 .paranormal-toolkit-item-use-prompt__target-resistance-roll
   .paranormal-toolkit-item-use-prompt__workflow-die--inactive {
   background: rgba(255, 255, 255, 0.3) !important;

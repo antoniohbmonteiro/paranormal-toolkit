@@ -1,6 +1,7 @@
 import { getResistanceSkillLabel, rollOrdemResistance } from "../../../adapters/ordem/ordem-resistance-roll-adapter";
 import { PROMPT_CLASS, RESISTANCE_ROLL_BUTTON_SELECTOR } from "./item-use-chat-card-constants";
 import { findWorkflowSectionByTitle } from "./item-use-card-dom";
+import { createWorkflowRollDisplay, readWorkflowDiceBreakdown } from "./item-use-card-roll-display";
 import { readCastingDifficulty } from "./item-use-card-roll-context";
 import {
   persistMultiTargetResistanceResult,
@@ -65,10 +66,6 @@ type TargetDamageViewModel = {
   halfCompactLabel: string | null;
 };
 
-type TargetRollDieViewModel = {
-  value: number;
-  active: boolean;
-};
 
 type TargetEffectViewModel = {
   label: string;
@@ -154,7 +151,7 @@ function createDamageViewModel(damageSection: HTMLElement | null): TargetDamageV
     typeLabel: readWorkflowSectionDescription(damageSection),
     formula: readRollFormula(damageSection) ?? "—",
     total,
-    diceBreakdown: null,
+    diceBreakdown: readWorkflowDiceBreakdown(damageSection),
     normalLabel: total !== null ? `Normal: ${total} PV` : "Normal: —",
     normalCompactLabel: total !== null ? `${total} PV` : "—",
     halfLabel: halfAmount !== null ? `Metade: ${halfAmount} PV` : null,
@@ -292,23 +289,12 @@ function renderDamageInfoSection(section: HTMLElement, damage: TargetDamageViewM
 }
 
 function createCompactWorkflowRollDisplay(formulaText: string, total: number | null, diceBreakdown: string | null): HTMLElement {
-  const roll = document.createElement("div");
-  roll.classList.add(`${PROMPT_CLASS}__workflow-roll`, `${PROMPT_CLASS}__workflow-roll--compact-info`);
-
-  const formula = document.createElement("span");
-  formula.classList.add(`${PROMPT_CLASS}__workflow-roll-formula`);
-  formula.textContent = formulaText;
-
-  const totalElement = document.createElement("strong");
-  totalElement.classList.add(`${PROMPT_CLASS}__workflow-roll-total`);
-  totalElement.textContent = total === null ? "—" : String(total);
-
-  roll.append(formula, totalElement);
-
-  const dice = createDiceTray(formulaText, diceBreakdown);
-  if (dice) roll.append(dice);
-
-  return roll;
+  return createWorkflowRollDisplay({
+    formula: formulaText,
+    total,
+    diceBreakdown,
+    classNames: [`${PROMPT_CLASS}__workflow-roll--compact-info`]
+  });
 }
 
 function placeDamageInfoSection(rollCard: HTMLElement, section: HTMLElement): void {
@@ -803,64 +789,6 @@ function createTargetResistanceRollDisplay(
 
   wrapper.append(roll);
   return wrapper;
-}
-
-function createDiceTray(formula: string, diceBreakdown: string | null): HTMLElement | null {
-  const dice = parseDiceValues(diceBreakdown);
-  if (dice.length === 0) return null;
-
-  const tray = document.createElement("div");
-  tray.classList.add(`${PROMPT_CLASS}__workflow-dice-tray`);
-
-  for (const die of markActiveDice(dice, formula)) {
-    const chip = document.createElement("span");
-    chip.classList.add(`${PROMPT_CLASS}__workflow-die`);
-    if (!die.active) chip.classList.add(`${PROMPT_CLASS}__workflow-die--inactive`);
-    chip.textContent = String(die.value);
-    tray.append(chip);
-  }
-
-  return tray;
-}
-
-function parseDiceValues(diceBreakdown: string | null): number[] {
-  if (!diceBreakdown) return [];
-
-  const firstGroup = /\(([^)]+)\)/u.exec(diceBreakdown);
-  const source = firstGroup?.[1] ?? diceBreakdown;
-
-  return source
-    .split(",")
-    .map((part) => Number(part.trim()))
-    .filter((value) => Number.isFinite(value))
-    .map((value) => Math.trunc(value));
-}
-
-function markActiveDice(values: number[], formula: string): TargetRollDieViewModel[] {
-  if (values.length <= 1) return values.map((value) => ({ value, active: true }));
-
-  const normalizedFormula = formula.toLowerCase();
-
-  if (normalizedFormula.includes("kh")) {
-    return markExtremeDie(values, "highest");
-  }
-
-  if (normalizedFormula.includes("kl")) {
-    return markExtremeDie(values, "lowest");
-  }
-
-  return values.map((value) => ({ value, active: true }));
-}
-
-function markExtremeDie(values: number[], mode: "highest" | "lowest"): TargetRollDieViewModel[] {
-  const extreme = mode === "highest" ? Math.max(...values) : Math.min(...values);
-  let selected = false;
-
-  return values.map((value) => {
-    const active = !selected && value === extreme;
-    if (active) selected = true;
-    return { value, active };
-  });
 }
 
 function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): HTMLElement {
