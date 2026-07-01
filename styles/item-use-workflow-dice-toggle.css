@@ -1200,3 +1200,71 @@
   line-height: 1.1 !important;
 }
 
+
+
+/* 0.24.0 — Multi-target resistance rolls */
+.paranormal-toolkit-item-use-prompt__target-row--success {
+  border-color: rgba(44, 121, 74, 0.28) !important;
+  background: linear-gradient(180deg, rgba(247, 255, 249, 0.62), rgba(236, 249, 240, 0.42)) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-row--failure {
+  border-color: rgba(143, 54, 62, 0.28) !important;
+  background: linear-gradient(180deg, rgba(255, 247, 247, 0.66), rgba(250, 235, 235, 0.42)) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-button:not(:disabled) {
+  cursor: pointer !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-button:not(:disabled):hover,
+.paranormal-toolkit-item-use-prompt__target-resistance-button:not(:disabled):focus-visible {
+  border-color: rgba(123, 72, 73, 0.58) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-button--rolling {
+  opacity: 0.72 !important;
+  cursor: progress !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-button--success {
+  border-color: rgba(44, 121, 74, 0.38) !important;
+  background: rgba(236, 249, 240, 0.84) !important;
+  color: rgba(34, 93, 55, 0.92) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-button--failure {
+  border-color: rgba(143, 54, 62, 0.42) !important;
+  background: rgba(255, 239, 239, 0.84) !important;
+  color: rgba(112, 40, 48, 0.94) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-total,
+.paranormal-toolkit-item-use-prompt__target-resistance-mark {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-mark {
+  margin-left: 0.12rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 950 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-action--half-damage {
+  border-color: rgba(44, 121, 74, 0.26) !important;
+  background: rgba(236, 249, 240, 0.62) !important;
+  color: rgba(34, 93, 55, 0.86) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-action--resisted {
+  border-color: rgba(44, 121, 74, 0.24) !important;
+  background: rgba(239, 246, 239, 0.72) !important;
+  color: rgba(34, 93, 55, 0.84) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__target-resistance-outcome {
+  font-weight: 850 !important;
+}

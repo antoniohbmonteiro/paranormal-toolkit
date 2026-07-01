@@ -1,5 +1,15 @@
-import { PROMPT_CLASS } from "./item-use-chat-card-constants";
+import { getResistanceSkillLabel, rollOrdemResistance } from "../../../adapters/ordem/ordem-resistance-roll-adapter";
+import { PROMPT_CLASS, RESISTANCE_ROLL_BUTTON_SELECTOR } from "./item-use-chat-card-constants";
 import { findWorkflowSectionByTitle } from "./item-use-card-dom";
+import { readCastingDifficulty } from "./item-use-card-roll-context";
+import {
+  persistMultiTargetResistanceResult,
+  readPersistedMultiTargetResistanceResults,
+  type MultiTargetResistanceResult
+} from "./item-use-card-multi-target-state";
+
+const RESISTANCE_SKILL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill";
+const RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill-label";
 
 const MULTI_TARGET_SECTION_ATTRIBUTE = "data-paranormal-toolkit-multi-target-section";
 const MULTI_TARGET_EFFECT_INFO_ATTRIBUTE = "data-paranormal-toolkit-multi-target-effect-info";
@@ -7,8 +17,20 @@ const MULTI_TARGET_TOGGLE_ATTRIBUTE = "data-paranormal-toolkit-multi-target-togg
 const MULTI_TARGET_DETAILS_ATTRIBUTE = "data-paranormal-toolkit-multi-target-details";
 const MULTI_TARGET_TARGET_ATTRIBUTE = "data-paranormal-toolkit-multi-target-target";
 const MULTI_TARGET_STATE_ATTRIBUTE = "data-paranormal-toolkit-multi-target-state";
+const MULTI_TARGET_ROLL_TOTAL_ATTRIBUTE = "data-paranormal-toolkit-multi-target-roll-total";
+const MULTI_TARGET_ROLL_FORMULA_ATTRIBUTE = "data-paranormal-toolkit-multi-target-roll-formula";
+const MULTI_TARGET_ROLL_DICE_ATTRIBUTE = "data-paranormal-toolkit-multi-target-roll-dice";
+const MULTI_TARGET_ROLL_SKILL_ATTRIBUTE = "data-paranormal-toolkit-multi-target-roll-skill";
+const MULTI_TARGET_ROLL_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-multi-target-roll-skill-label";
+const MULTI_TARGET_ROLL_TARGET_NAME_ATTRIBUTE = "data-paranormal-toolkit-multi-target-roll-target-name";
+const MULTI_TARGET_ROLL_ROLLED_AT_ATTRIBUTE = "data-paranormal-toolkit-multi-target-roll-rolled-at";
 
 const PENDING_STATE = "pending";
+const SUCCESS_STATE = "success";
+const FAILURE_STATE = "failure";
+const ROLLED_STATE = "rolled";
+
+type MultiTargetState = typeof PENDING_STATE | typeof SUCCESS_STATE | typeof FAILURE_STATE | typeof ROLLED_STATE;
 
 export type MultiTargetCardLayoutInput = {
   rollCard: HTMLElement;
@@ -17,6 +39,7 @@ export type MultiTargetCardLayoutInput = {
 };
 
 type MultiTargetCardViewModel = {
+  rollCard: HTMLElement;
   targets: MultiTargetViewModel[];
   damage: TargetDamageViewModel;
   effect: TargetEffectViewModel | null;
@@ -26,7 +49,8 @@ type MultiTargetCardViewModel = {
 type MultiTargetViewModel = {
   id: string;
   name: string;
-  state: typeof PENDING_STATE;
+  state: MultiTargetState;
+  resistanceResult: MultiTargetResistanceResult | null;
 };
 
 type TargetDamageViewModel = {
@@ -43,6 +67,9 @@ type TargetEffectViewModel = {
 type TargetResistanceViewModel = {
   description: string;
   formula: string | null;
+  skill: string | null;
+  skillLabel: string | null;
+  difficulty: number | null;
 };
 
 export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput): boolean {
@@ -68,19 +95,28 @@ export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput):
 }
 
 function createMultiTargetCardViewModel(input: MultiTargetCardLayoutInput): MultiTargetCardViewModel | null {
-  const targets: MultiTargetViewModel[] = readTargetNames(input.rollCard).map((name, index) => ({
-    id: createTargetId(name, index),
-    name,
-    state: PENDING_STATE
-  }));
+  const resistance = createResistanceViewModel(input.rollCard, input.damageSection);
+  const resistanceResults = readMultiTargetResistanceResults(input.rollCard);
+  const targets: MultiTargetViewModel[] = readTargetNames(input.rollCard).map((name, index) => {
+    const id = createTargetId(name, index);
+    const resistanceResult = resistanceResults.get(id) ?? null;
+
+    return {
+      id,
+      name,
+      state: resolveTargetState(resistanceResult, resistance?.difficulty ?? null),
+      resistanceResult
+    };
+  });
 
   if (targets.length <= 1 || !input.damageSection) return null;
 
   return {
+    rollCard: input.rollCard,
     targets,
     damage: createDamageViewModel(input.damageSection),
     effect: createEffectViewModel(input.effectSection),
-    resistance: createResistanceViewModel(input.damageSection)
+    resistance
   };
 }
 
@@ -113,14 +149,66 @@ function createEffectViewModel(effectSection: HTMLElement | null): TargetEffectV
   return label && label.length > 0 ? { label } : null;
 }
 
-function createResistanceViewModel(damageSection: HTMLElement | null): TargetResistanceViewModel | null {
+function createResistanceViewModel(rollCard: HTMLElement, damageSection: HTMLElement | null): TargetResistanceViewModel | null {
   const description = damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance-description`)?.textContent?.trim();
-  if (!description) return null;
+  const sourceButton = damageSection?.querySelector<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR) ?? null;
+  const skill = sourceButton?.getAttribute(RESISTANCE_SKILL_ATTRIBUTE) ?? null;
+  const skillLabel = sourceButton?.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : null);
+
+  if (!description && !skill) return null;
 
   return {
-    description,
-    formula: damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance .${PROMPT_CLASS}__workflow-roll-formula`)?.textContent?.trim() ?? null
+    description: description ?? "Resistência do alvo.",
+    formula: damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance .${PROMPT_CLASS}__workflow-roll-formula`)?.textContent?.trim() ?? null,
+    skill,
+    skillLabel,
+    difficulty: readCastingDifficulty(rollCard)
   };
+}
+
+function readMultiTargetResistanceResults(rollCard: HTMLElement): Map<string, MultiTargetResistanceResult> {
+  const results = readPersistedMultiTargetResistanceResults(rollCard);
+
+  for (const [targetId, result] of readRenderedMultiTargetResistanceResults(rollCard)) {
+    results.set(targetId, result);
+  }
+
+  return results;
+}
+
+function readRenderedMultiTargetResistanceResults(rollCard: HTMLElement): Map<string, MultiTargetResistanceResult> {
+  const results = new Map<string, MultiTargetResistanceResult>();
+
+  for (const row of rollCard.querySelectorAll<HTMLElement>(`[${MULTI_TARGET_TARGET_ATTRIBUTE}]`)) {
+    const targetId = row.getAttribute(MULTI_TARGET_TARGET_ATTRIBUTE);
+    const total = parseInteger(row.getAttribute(MULTI_TARGET_ROLL_TOTAL_ATTRIBUTE));
+    const formula = row.getAttribute(MULTI_TARGET_ROLL_FORMULA_ATTRIBUTE);
+    const skill = row.getAttribute(MULTI_TARGET_ROLL_SKILL_ATTRIBUTE);
+    const skillLabel = row.getAttribute(MULTI_TARGET_ROLL_SKILL_LABEL_ATTRIBUTE);
+    const targetName = row.getAttribute(MULTI_TARGET_ROLL_TARGET_NAME_ATTRIBUTE);
+    const rolledAt = row.getAttribute(MULTI_TARGET_ROLL_ROLLED_AT_ATTRIBUTE);
+
+    if (!targetId || total === null || !formula || !skill || !skillLabel || !targetName || !rolledAt) continue;
+
+    results.set(targetId, {
+      targetId,
+      targetName,
+      skill,
+      skillLabel,
+      formula,
+      total,
+      diceBreakdown: row.getAttribute(MULTI_TARGET_ROLL_DICE_ATTRIBUTE),
+      rolledAt
+    });
+  }
+
+  return results;
+}
+
+function resolveTargetState(result: MultiTargetResistanceResult | null, difficulty: number | null): MultiTargetState {
+  if (!result) return PENDING_STATE;
+  if (difficulty === null) return ROLLED_STATE;
+  return result.total >= difficulty ? SUCCESS_STATE : FAILURE_STATE;
 }
 
 function readRollTotal(section: HTMLElement | null): number | null {
@@ -180,12 +268,16 @@ function createTargetSectionHeader(viewModel: MultiTargetCardViewModel): HTMLEle
 
 function createTargetStatusLabel(targets: MultiTargetViewModel[]): string {
   const total = targets.length;
+  const failures = targets.filter((target) => target.state === FAILURE_STATE).length;
+  const successes = targets.filter((target) => target.state === SUCCESS_STATE).length;
   const pending = targets.filter((target) => target.state === PENDING_STATE).length;
+  const rolled = targets.filter((target) => target.state === ROLLED_STATE).length;
   const parts = [`${total} ${total === 1 ? "alvo" : "alvos"}`];
 
-  if (pending > 0) {
-    parts.push(`${pending} ${pending === 1 ? "pendente" : "pendentes"}`);
-  }
+  if (failures > 0) parts.push(`${failures} ${failures === 1 ? "falha" : "falhas"}`);
+  if (successes > 0) parts.push(`${successes} ${successes === 1 ? "sucesso" : "sucessos"}`);
+  if (pending > 0) parts.push(`${pending} ${pending === 1 ? "pendente" : "pendentes"}`);
+  if (rolled > 0) parts.push(`${rolled} ${rolled === 1 ? "rolado" : "rolados"}`);
 
   return parts.join(" • ");
 }
@@ -203,13 +295,14 @@ function createTargetList(viewModel: MultiTargetCardViewModel, expandedTargets: 
 
 function createTargetRow(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel, expanded: boolean): HTMLElement {
   const row = document.createElement("article");
-  row.classList.add(`${PROMPT_CLASS}__target-row`, `${PROMPT_CLASS}__target-row--pending`);
+  row.classList.add(`${PROMPT_CLASS}__target-row`, `${PROMPT_CLASS}__target-row--${target.state}`);
   row.setAttribute(MULTI_TARGET_TARGET_ATTRIBUTE, target.id);
   row.setAttribute(MULTI_TARGET_STATE_ATTRIBUTE, target.state);
   row.setAttribute("aria-expanded", expanded ? "true" : "false");
   row.setAttribute("role", "button");
   row.setAttribute("tabindex", "0");
   row.setAttribute("aria-label", `${expanded ? "Fechar" : "Abrir"} detalhes de ${target.name}`);
+  setTargetResistanceResultAttributes(row, target.resistanceResult);
 
   const summary = createTargetSummary(target, viewModel, row);
   const details = createTargetDetails(target, viewModel);
@@ -232,6 +325,32 @@ function createTargetRow(target: MultiTargetViewModel, viewModel: MultiTargetCar
   return row;
 }
 
+function setTargetResistanceResultAttributes(row: HTMLElement, result: MultiTargetResistanceResult | null): void {
+  if (!result) {
+    row.removeAttribute(MULTI_TARGET_ROLL_TOTAL_ATTRIBUTE);
+    row.removeAttribute(MULTI_TARGET_ROLL_FORMULA_ATTRIBUTE);
+    row.removeAttribute(MULTI_TARGET_ROLL_DICE_ATTRIBUTE);
+    row.removeAttribute(MULTI_TARGET_ROLL_SKILL_ATTRIBUTE);
+    row.removeAttribute(MULTI_TARGET_ROLL_SKILL_LABEL_ATTRIBUTE);
+    row.removeAttribute(MULTI_TARGET_ROLL_TARGET_NAME_ATTRIBUTE);
+    row.removeAttribute(MULTI_TARGET_ROLL_ROLLED_AT_ATTRIBUTE);
+    return;
+  }
+
+  row.setAttribute(MULTI_TARGET_ROLL_TOTAL_ATTRIBUTE, String(result.total));
+  row.setAttribute(MULTI_TARGET_ROLL_FORMULA_ATTRIBUTE, result.formula);
+  row.setAttribute(MULTI_TARGET_ROLL_SKILL_ATTRIBUTE, result.skill);
+  row.setAttribute(MULTI_TARGET_ROLL_SKILL_LABEL_ATTRIBUTE, result.skillLabel);
+  row.setAttribute(MULTI_TARGET_ROLL_TARGET_NAME_ATTRIBUTE, result.targetName);
+  row.setAttribute(MULTI_TARGET_ROLL_ROLLED_AT_ATTRIBUTE, result.rolledAt);
+
+  if (result.diceBreakdown) {
+    row.setAttribute(MULTI_TARGET_ROLL_DICE_ATTRIBUTE, result.diceBreakdown);
+  } else {
+    row.removeAttribute(MULTI_TARGET_ROLL_DICE_ATTRIBUTE);
+  }
+}
+
 function createTargetSummary(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel, row: HTMLElement): HTMLElement {
   const summary = document.createElement("div");
   summary.classList.add(`${PROMPT_CLASS}__target-summary`);
@@ -245,7 +364,8 @@ function createTargetSummary(target: MultiTargetViewModel, viewModel: MultiTarge
   name.classList.add(`${PROMPT_CLASS}__target-name`);
   name.textContent = target.name;
 
-  const resistance = createResistanceButton();
+  const resistance = createResistanceButton(target, viewModel.resistance);
+  bindTargetResistanceButton(resistance, row, target, viewModel);
   const toggle = createTargetToggleIndicator(row);
 
   main.append(avatar, name, resistance, toggle);
@@ -253,8 +373,8 @@ function createTargetSummary(target: MultiTargetViewModel, viewModel: MultiTarge
   const actions = document.createElement("div");
   actions.classList.add(`${PROMPT_CLASS}__target-summary-actions`);
   actions.append(
-    createTargetActionButton("⚡", viewModel.damage.normalCompactLabel, `${PROMPT_CLASS}__target-action--damage`),
-    createTargetActionButton("✦", "Efeito", `${PROMPT_CLASS}__target-action--effect`)
+    createTargetDamageActionButton(target, viewModel, "compact"),
+    createTargetEffectActionButton(target, viewModel, "compact")
   );
 
   summary.append(main, actions);
@@ -269,29 +389,199 @@ function createTargetAvatar(target: MultiTargetViewModel): HTMLElement {
   return avatar;
 }
 
-function createResistanceButton(): HTMLButtonElement {
+function createResistanceButton(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
-  button.classList.add(`${PROMPT_CLASS}__target-resistance-button`, `${PROMPT_CLASS}__target-resistance-button--pending`);
-  button.setAttribute("aria-label", "Rolar resistência do alvo");
-  button.setAttribute("aria-disabled", "true");
+  button.classList.add(`${PROMPT_CLASS}__target-resistance-button`, `${PROMPT_CLASS}__target-resistance-button--${target.state}`);
+  button.setAttribute("aria-label", createResistanceButtonAriaLabel(target, resistance));
 
-  const icon = document.createElement("i");
-  icon.classList.add("fa-solid", "fa-dice-d20");
-  icon.setAttribute("aria-hidden", "true");
+  if (resistance?.skill) {
+    button.setAttribute(RESISTANCE_SKILL_ATTRIBUTE, resistance.skill);
+    button.setAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE, resistance.skillLabel ?? getResistanceSkillLabel(resistance.skill));
+  }
 
-  const fallback = document.createElement("span");
-  fallback.classList.add(`${PROMPT_CLASS}__target-resistance-fallback`);
-  fallback.textContent = "d20";
+  if (!resistance?.skill) {
+    button.disabled = true;
+    button.title = "Resistência não configurada";
+    button.textContent = "—";
+    return button;
+  }
 
-  button.append(icon, fallback);
+  button.title = target.resistanceResult
+    ? `Rolar ${resistance.skillLabel ?? resistance.skill} novamente`
+    : `Rolar ${resistance.skillLabel ?? resistance.skill} de ${target.name}`;
+
+  if (!target.resistanceResult) {
+    const icon = document.createElement("i");
+    icon.classList.add("fa-solid", "fa-dice-d20");
+    icon.setAttribute("aria-hidden", "true");
+
+    const fallback = document.createElement("span");
+    fallback.classList.add(`${PROMPT_CLASS}__target-resistance-fallback`);
+    fallback.textContent = "d20";
+
+    button.append(icon, fallback);
+    return button;
+  }
+
+  const total = document.createElement("span");
+  total.classList.add(`${PROMPT_CLASS}__target-resistance-total`);
+  total.textContent = String(target.resistanceResult.total);
+
+  const mark = document.createElement("span");
+  mark.classList.add(`${PROMPT_CLASS}__target-resistance-mark`);
+  mark.setAttribute("aria-hidden", "true");
+  mark.textContent = target.state === SUCCESS_STATE ? "✓" : target.state === FAILURE_STATE ? "✕" : "";
+
+  button.append(total, mark);
   return button;
 }
 
-function createTargetActionButton(iconText: string, labelText: string, stateClass: string): HTMLButtonElement {
+function createResistanceButtonAriaLabel(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): string {
+  const skillLabel = resistance?.skillLabel ?? resistance?.skill ?? "resistência";
+
+  if (!target.resistanceResult) return `Rolar ${skillLabel} de ${target.name}`;
+
+  const outcome = target.state === SUCCESS_STATE ? "sucesso" : target.state === FAILURE_STATE ? "falha" : "resultado";
+  return `${skillLabel} de ${target.name}: ${target.resistanceResult.total}, ${outcome}. Rolar novamente`;
+}
+
+function bindTargetResistanceButton(
+  button: HTMLButtonElement,
+  row: HTMLElement,
+  target: MultiTargetViewModel,
+  viewModel: MultiTargetCardViewModel
+): void {
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    void handleTargetResistanceRoll(row, button, target, viewModel);
+  });
+}
+
+async function handleTargetResistanceRoll(
+  row: HTMLElement,
+  button: HTMLButtonElement,
+  target: MultiTargetViewModel,
+  viewModel: MultiTargetCardViewModel
+): Promise<void> {
+  const resistance = viewModel.resistance;
+  const skill = resistance?.skill;
+  const skillLabel = resistance?.skillLabel ?? (skill ? getResistanceSkillLabel(skill) : "Resistência");
+
+  if (!skill) {
+    ui.notifications?.warn?.("Paranormal Toolkit: este card não tem perícia de resistência configurada.");
+    return;
+  }
+
+  const actor = resolveTargetActorByName(target.name);
+  if (!actor) {
+    ui.notifications?.warn?.(`Paranormal Toolkit: não consegui encontrar o alvo ${target.name} para rolar resistência.`);
+    return;
+  }
+
+  button.disabled = true;
+  button.classList.add(`${PROMPT_CLASS}__target-resistance-button--rolling`);
+  const originalContent = button.innerHTML;
+  button.textContent = "...";
+
+  try {
+    const resistanceRoll = await rollOrdemResistance(actor, skill);
+    await showDiceAnimationIfAvailable(resistanceRoll.roll);
+
+    const result: MultiTargetResistanceResult = {
+      targetId: target.id,
+      targetName: actor.name ?? target.name,
+      skill,
+      skillLabel,
+      formula: resistanceRoll.formula,
+      total: resistanceRoll.total,
+      diceBreakdown: resistanceRoll.diceBreakdown,
+      rolledAt: new Date().toISOString()
+    };
+
+    setTargetResistanceResultAttributes(row, result);
+
+    try {
+      await persistMultiTargetResistanceResult(viewModel.rollCard, result);
+    } catch (cause) {
+      console.warn("Paranormal Toolkit: não foi possível persistir resistência multi-target.", cause);
+    }
+
+    refreshTargetSection(row);
+  } catch (cause) {
+    console.warn("Paranormal Toolkit: não foi possível rolar resistência multi-target.", cause);
+    ui.notifications?.warn?.(`Paranormal Toolkit: não foi possível rolar ${skillLabel} de ${target.name}.`);
+    button.innerHTML = originalContent;
+  } finally {
+    button.disabled = false;
+    button.classList.remove(`${PROMPT_CLASS}__target-resistance-button--rolling`);
+  }
+}
+
+function refreshTargetSection(row: HTMLElement): void {
+  const targetSection = row.closest<HTMLElement>(`[${MULTI_TARGET_SECTION_ATTRIBUTE}="true"]`);
+  const rollCard = row.closest<HTMLElement>(`.${PROMPT_CLASS}__roll-card`);
+  if (!targetSection || !rollCard) return;
+
+  const viewModel = createMultiTargetCardViewModel({
+    rollCard,
+    damageSection: findWorkflowSectionByTitle(rollCard, "Dano"),
+    effectSection: findMultiTargetEffectSourceSection(rollCard)
+  });
+
+  if (!viewModel) return;
+  renderTargetSection(targetSection, viewModel);
+}
+
+function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement | null {
+  return rollCard.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section--multi-target-effect-source`);
+}
+
+function createTargetDamageActionButton(
+  target: MultiTargetViewModel,
+  viewModel: MultiTargetCardViewModel,
+  density: "compact" | "full"
+): HTMLButtonElement {
+  const shouldUseHalfDamage = target.state === SUCCESS_STATE && viewModel.damage.halfLabel && viewModel.damage.halfCompactLabel;
+  const label = shouldUseHalfDamage
+    ? density === "full" ? viewModel.damage.halfLabel ?? "Metade: —" : viewModel.damage.halfCompactLabel ?? "½ —"
+    : density === "full" ? viewModel.damage.normalLabel : viewModel.damage.normalCompactLabel;
+  const icon = shouldUseHalfDamage ? "🛡" : "⚡";
+  const stateClass = shouldUseHalfDamage ? `${PROMPT_CLASS}__target-action--half-damage` : `${PROMPT_CLASS}__target-action--normal-damage`;
+
+  return createTargetActionButton(icon, label, `${PROMPT_CLASS}__target-action--damage`, stateClass);
+}
+
+function createTargetEffectActionButton(
+  target: MultiTargetViewModel,
+  viewModel: MultiTargetCardViewModel,
+  density: "compact" | "full"
+): HTMLButtonElement {
+  if (!viewModel.effect) {
+    return createTargetActionButton("✦", "Sem efeito", `${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--disabled`);
+  }
+
+  if (target.state === SUCCESS_STATE) {
+    return createTargetActionButton(
+      "✓",
+      density === "full" ? "Resistiu ao efeito" : "Resistiu",
+      `${PROMPT_CLASS}__target-action--effect`,
+      `${PROMPT_CLASS}__target-action--resisted`
+    );
+  }
+
+  return createTargetActionButton(
+    "✦",
+    density === "full" ? "Aplicar efeito" : "Efeito",
+    `${PROMPT_CLASS}__target-action--effect`,
+    `${PROMPT_CLASS}__target-action--pending-effect`
+  );
+}
+
+function createTargetActionButton(iconText: string, labelText: string, ...stateClasses: string[]): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
-  button.classList.add(`${PROMPT_CLASS}__target-action`, stateClass, `${PROMPT_CLASS}__target-action--pending`);
+  button.classList.add(`${PROMPT_CLASS}__target-action`, `${PROMPT_CLASS}__target-action--pending`, ...stateClasses);
   button.disabled = true;
 
   const icon = document.createElement("span");
@@ -354,12 +644,41 @@ function createTargetDetails(target: MultiTargetViewModel, viewModel: MultiTarge
 
   resistance.append(title, description);
 
-  const formula = createTargetFormula(viewModel.resistance?.formula ?? "—");
-  const actions = createTargetDetailsActions(viewModel);
+  const outcome = createTargetOutcomeLine(target, viewModel.resistance);
+  if (outcome) resistance.append(outcome);
+
+  const formula = createTargetFormula(createTargetFormulaText(target, viewModel.resistance));
+  const actions = createTargetDetailsActions(target, viewModel);
 
   details.append(resistance, formula, actions);
   details.setAttribute("aria-label", `Detalhes de ${target.name}`);
   return details;
+}
+
+function createTargetOutcomeLine(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLElement | null {
+  if (!target.resistanceResult) return null;
+
+  const line = document.createElement("span");
+  line.classList.add(`${PROMPT_CLASS}__target-resistance-outcome`);
+
+  if (resistance?.difficulty === null || resistance?.difficulty === undefined) {
+    line.textContent = `${target.resistanceResult.skillLabel}: ${target.resistanceResult.total}`;
+    return line;
+  }
+
+  const status = target.state === SUCCESS_STATE ? "sucesso" : "falha";
+  line.textContent = `${target.resistanceResult.skillLabel}: ${target.resistanceResult.total} vs DT ${resistance.difficulty} — ${status}`;
+  return line;
+}
+
+function createTargetFormulaText(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): string {
+  if (target.resistanceResult) {
+    const diceBreakdown = target.resistanceResult.diceBreakdown ? ` ${target.resistanceResult.diceBreakdown}` : "";
+    return `${target.resistanceResult.formula}${diceBreakdown} = ${target.resistanceResult.total}`;
+  }
+
+  if (resistance?.skillLabel) return `Clique no d20 para rolar ${resistance.skillLabel}`;
+  return resistance?.formula ?? "—";
 }
 
 function createTargetFormula(formulaText: string): HTMLElement {
@@ -370,19 +689,19 @@ function createTargetFormula(formulaText: string): HTMLElement {
   text.textContent = formulaText;
 
   const icon = document.createElement("i");
-  icon.classList.add("fa-solid", "fa-chevron-down");
+  icon.classList.add("fa-solid", "fa-dice-d20");
   icon.setAttribute("aria-hidden", "true");
 
   formula.append(text, icon);
   return formula;
 }
 
-function createTargetDetailsActions(viewModel: MultiTargetCardViewModel): HTMLElement {
+function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): HTMLElement {
   const actions = document.createElement("div");
   actions.classList.add(`${PROMPT_CLASS}__target-details-actions`);
   actions.append(
-    createTargetActionButton("⚡", viewModel.damage.normalLabel, `${PROMPT_CLASS}__target-action--damage`),
-    createTargetActionButton("✦", "Aplicar efeito", `${PROMPT_CLASS}__target-action--effect`)
+    createTargetDamageActionButton(target, viewModel, "full"),
+    createTargetEffectActionButton(target, viewModel, "full")
   );
   return actions;
 }
@@ -446,6 +765,69 @@ function placeEffectInfoSection(rollCard: HTMLElement, section: HTMLElement, tar
   rollCard.insertBefore(section, targetSection.nextElementSibling);
 }
 
+function resolveTargetActorByName(targetName: string): Actor | null {
+  const normalizedTargetName = normalizeLookupName(targetName);
+  if (!normalizedTargetName) return null;
+
+  const tokenActor = getCanvasTokens()
+    .filter((token) => normalizeLookupName(getTokenName(token)) === normalizedTargetName)
+    .map((token) => resolveTokenActor(token))
+    .find(isActorLike) ?? null;
+
+  if (tokenActor) return tokenActor;
+
+  const actors = game.actors as { find?: (predicate: (actor: unknown) => boolean) => unknown } | undefined;
+  const actor = actors?.find?.((candidate) => isActorLike(candidate) && normalizeLookupName(candidate.name) === normalizedTargetName);
+
+  return isActorLike(actor) ? actor : null;
+}
+
+function getCanvasTokens(): unknown[] {
+  const foundryCanvas = (globalThis as { canvas?: { tokens?: { placeables?: unknown[] } } }).canvas;
+  const placeables = foundryCanvas?.tokens?.placeables;
+  return Array.isArray(placeables) ? placeables : [];
+}
+
+function getTokenName(token: unknown): string | null {
+  if (!token || typeof token !== "object") return null;
+
+  const directName = (token as { name?: unknown }).name;
+  if (typeof directName === "string") return directName;
+
+  const documentName = (token as { document?: { name?: unknown } }).document?.name;
+  if (typeof documentName === "string") return documentName;
+
+  const actor = resolveTokenActor(token);
+  return actor?.name ?? null;
+}
+
+function resolveTokenActor(value: unknown): Actor | null {
+  if (!value || typeof value !== "object") return null;
+
+  const actor = (value as { actor?: unknown }).actor;
+  if (isActorLike(actor)) return actor;
+
+  const documentActor = (value as { document?: { actor?: unknown } }).document?.actor;
+  return isActorLike(documentActor) ? documentActor : null;
+}
+
+function isActorLike(value: unknown): value is Actor {
+  return Boolean(value && typeof value === "object" && "system" in value);
+}
+
+function normalizeLookupName(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toLocaleLowerCase();
+  return normalized && normalized.length > 0 ? normalized : null;
+}
+
+async function showDiceAnimationIfAvailable(roll: Roll): Promise<void> {
+  const dice3d = (game as { dice3d?: { showForRoll?: (roll: Roll, user: unknown, synchronize?: boolean) => unknown } }).dice3d;
+
+  if (typeof dice3d?.showForRoll !== "function") return;
+
+  await Promise.resolve(dice3d.showForRoll(roll, game.user, true));
+}
+
 function createTargetId(name: string, index: number): string {
   return `${index}-${normalizeText(name).replace(/[^a-z0-9]+/gu, "-")}`;
 }
@@ -456,4 +838,10 @@ function normalizeText(value: string | null | undefined): string {
 
 function isNonEmptyString(value: string | null): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+function parseInteger(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
