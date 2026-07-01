@@ -56,19 +56,19 @@ export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput):
   renderTargetSection(targetSection, viewModel);
   placeTargetSection(input.rollCard, targetSection);
 
-  const effectInfo = viewModel.effect ? getOrCreateEffectInfoSection(input.rollCard) : findEffectInfoSection(input.rollCard);
   if (viewModel.effect) {
+    const effectInfo = getOrCreateEffectInfoSection(input.rollCard);
     renderEffectInfoSection(effectInfo, viewModel.effect);
     placeEffectInfoSection(input.rollCard, effectInfo, targetSection);
   } else {
-    effectInfo?.remove();
+    findEffectInfoSection(input.rollCard)?.remove();
   }
 
   return true;
 }
 
 function createMultiTargetCardViewModel(input: MultiTargetCardLayoutInput): MultiTargetCardViewModel | null {
-  const targets = readTargetNames(input.rollCard).map((name, index) => ({
+  const targets: MultiTargetViewModel[] = readTargetNames(input.rollCard).map((name, index) => ({
     id: createTargetId(name, index),
     name,
     state: PENDING_STATE

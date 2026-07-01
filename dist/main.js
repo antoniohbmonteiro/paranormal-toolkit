@@ -2034,9 +2034,12 @@ function jl(e) {
   if (!t) return !1;
   e.rollCard.classList.add(`${a}__roll-card--multi-target`), Ql(e);
   const n = Zl(e.rollCard);
-  Xl(n, t), du(e.rollCard, n);
-  const r = t.effect ? mu(e.rollCard) : $a(e.rollCard);
-  return t.effect ? (fu(r, t.effect), pu(e.rollCard, r, n)) : r?.remove(), !0;
+  if (Xl(n, t), du(e.rollCard, n), t.effect) {
+    const r = mu(e.rollCard);
+    fu(r, t.effect), pu(e.rollCard, r, n);
+  } else
+    $a(e.rollCard)?.remove();
+  return !0;
 }
 function Vl(e) {
   const t = Hl(e.rollCard).map((n, r) => ({
