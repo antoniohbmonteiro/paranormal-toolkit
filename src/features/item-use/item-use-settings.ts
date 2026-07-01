@@ -9,12 +9,17 @@ import {
 export const ITEM_USE_SYSTEM_CARD_MODES = ["keep", "replace"] as const;
 export type ItemUseSystemCardMode = (typeof ITEM_USE_SYSTEM_CARD_MODES)[number];
 
+export const ITEM_USE_DAMAGE_RESOLUTION_MODES = ["manual", "assisted"] as const;
+export type ItemUseDamageResolutionMode = (typeof ITEM_USE_DAMAGE_RESOLUTION_MODES)[number];
+
 const DEFAULT_ITEM_USE_SYSTEM_CARD_MODE: ItemUseSystemCardMode = "keep";
+const DEFAULT_ITEM_USE_DAMAGE_RESOLUTION_MODE: ItemUseDamageResolutionMode = "assisted";
 const DEFAULT_RITUAL_CASTING_CHECK_ENABLED = true;
 
 export const ITEM_USE_SETTING_KEYS = {
   executionMode: "itemUse.executionMode",
   systemCardMode: "itemUse.systemCardMode",
+  damageResolutionMode: "itemUse.damageResolutionMode",
   autoRun: "itemUse.autoRun.enabled",
   ritualCastingCheckEnabled: "ritual.castingCheck.enabled"
 } as const;
@@ -22,6 +27,7 @@ export const ITEM_USE_SETTING_KEYS = {
 export type ItemUseSettingsSnapshot = {
   executionMode: AutomationExecutionMode;
   systemCardMode: ItemUseSystemCardMode;
+  damageResolutionMode: ItemUseDamageResolutionMode;
   ritualCastingCheckEnabled: boolean;
 };
 
@@ -53,6 +59,19 @@ export function registerItemUseSettings(): void {
     default: DEFAULT_ITEM_USE_SYSTEM_CARD_MODE
   });
 
+  game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode, {
+    name: "Resolução de dano com resistência",
+    hint: "Controla se o card mantém botões manuais de dano ou se usa a resistência rolada para sugerir um único botão de aplicação.",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      assisted: "Assistida",
+      manual: "Manual"
+    } satisfies Record<ItemUseDamageResolutionMode, string>,
+    default: DEFAULT_ITEM_USE_DAMAGE_RESOLUTION_MODE
+  });
+
   game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled, {
     name: "Rolar Ocultismo ao conjurar ritual",
     hint: "Quando ativo, rituais conjurados pelo Toolkit rolam Ocultismo contra a DT de ritual do conjurador antes de resolver dano, cura ou efeitos.",
@@ -76,16 +95,22 @@ export function registerItemUseSettings(): void {
 export function getItemUseSettings(): ItemUseSettingsSnapshot {
   const executionMode = coerceAutomationExecutionMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.executionMode));
   const systemCardMode = coerceItemUseSystemCardMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.systemCardMode));
+  const damageResolutionMode = coerceItemUseDamageResolutionMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode));
 
   return {
     executionMode,
     systemCardMode,
+    damageResolutionMode,
     ritualCastingCheckEnabled: getRitualCastingCheckEnabled()
   };
 }
 
 export function getItemUseSystemCardMode(): ItemUseSystemCardMode {
   return coerceItemUseSystemCardMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.systemCardMode));
+}
+
+export function getItemUseDamageResolutionMode(): ItemUseDamageResolutionMode {
+  return coerceItemUseDamageResolutionMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode));
 }
 
 export function getRitualCastingCheckEnabled(): boolean {
@@ -100,6 +125,10 @@ export async function setItemUseSystemCardMode(mode: ItemUseSystemCardMode): Pro
   await game.settings.set(MODULE_ID, ITEM_USE_SETTING_KEYS.systemCardMode, mode);
 }
 
+export async function setItemUseDamageResolutionMode(mode: ItemUseDamageResolutionMode): Promise<void> {
+  await game.settings.set(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode, mode);
+}
+
 /**
  * @deprecated Use setItemUseExecutionMode. Mantido apenas para scripts antigos da 0.8.x.
  */
@@ -111,6 +140,12 @@ function coerceItemUseSystemCardMode(value: unknown): ItemUseSystemCardMode {
   return ITEM_USE_SYSTEM_CARD_MODES.includes(value as ItemUseSystemCardMode)
     ? (value as ItemUseSystemCardMode)
     : DEFAULT_ITEM_USE_SYSTEM_CARD_MODE;
+}
+
+function coerceItemUseDamageResolutionMode(value: unknown): ItemUseDamageResolutionMode {
+  return ITEM_USE_DAMAGE_RESOLUTION_MODES.includes(value as ItemUseDamageResolutionMode)
+    ? (value as ItemUseDamageResolutionMode)
+    : DEFAULT_ITEM_USE_DAMAGE_RESOLUTION_MODE;
 }
 
 export { AUTOMATION_EXECUTION_MODES };

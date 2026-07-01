@@ -1,4 +1,6 @@
+import { MODULE_ID } from "../../../constants";
 import {
+  CHAT_CARD_FLAG_KEY,
   PROMPT_CLASS,
   RESISTANCE_CONTENT_CLASS,
   RESISTANCE_DESCRIPTION_SELECTOR,
@@ -7,9 +9,28 @@ import {
   RESISTANCE_ROLL_RESULT_SELECTOR,
   RESISTANCE_SELECTOR
 } from "./item-use-chat-card-constants";
+import { getItemUseDamageResolutionMode } from "../item-use-settings";
 
 const RESISTANCE_ROLL_RESULT_ENHANCED_ATTRIBUTE =
   "data-paranormal-toolkit-resistance-roll-result-enhanced";
+
+const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
+const ACTIONS_SELECTOR = `.${PROMPT_CLASS}__actions`;
+const ACTIONS_TITLE_SELECTOR = `.${PROMPT_CLASS}__actions-title`;
+const ACTION_BUTTON_SELECTOR = `.${PROMPT_CLASS}__button`;
+const DAMAGE_ACTION_SECTION_ATTRIBUTE = "data-paranormal-toolkit-action-section";
+const DAMAGE_RESOLUTION_STATE_ATTRIBUTE = "data-paranormal-toolkit-damage-resolution-state";
+const RESISTANCE_BUTTON_BOUND_ATTRIBUTE = "data-paranormal-toolkit-resistance-damage-refresh-bound";
+const DAMAGE_WORKFLOW_SECTION_SELECTOR = `.${PROMPT_CLASS}__workflow-section--effect`;
+
+const DAMAGE_RESOLUTION_REFRESH_DELAYS_MS = [0, 80, 180, 400, 900, 1_600] as const;
+
+const SUMMARY_KEY_CASTING_DIFFICULTY = "Conjuração DT";
+
+const DAMAGE_BUTTON_LABELS = {
+  normal: /\bnormal\b|\bcheio\b/iu,
+  half: /\bmetade\b|\bmeio\b|1\/2/iu
+} as const;
 
 type ResistanceRollDisplay = {
   skillLabel: string;
@@ -23,10 +44,30 @@ type RollDieViewModel = {
   active: boolean;
 };
 
+type PersistedToolkitChatCard = {
+  prompts?: unknown[];
+};
+
+type PersistedPromptLike = {
+  pendingId?: unknown;
+  actorId?: unknown;
+  summaryLines?: unknown;
+};
+
+type ChatMessageFlagDocument = {
+  id?: unknown;
+  getFlag?: (scope: string, key: string) => unknown;
+};
+
+type DamageResolutionState = "manual" | "pending" | "resisted" | "failed";
+
 export function enhanceResistanceLayout(root: ParentNode): void {
   for (const resistance of Array.from(root.querySelectorAll<HTMLElement>(RESISTANCE_SELECTOR))) {
     enhanceResistanceCard(resistance);
   }
+
+  enhanceDamageResolutionLayout(root);
+  enhanceEffectActionsLayout(root);
 }
 
 function enhanceResistanceCard(resistance: HTMLElement): void {
@@ -182,4 +223,320 @@ function markExtremeDie(values: number[], mode: "highest" | "lowest"): RollDieVi
     if (active) selected = true;
     return { value, active };
   });
+}
+
+function enhanceDamageResolutionLayout(root: ParentNode): void {
+  for (const rollCard of Array.from(root.querySelectorAll<HTMLElement>(`.${PROMPT_CLASS}__roll-card`))) {
+    enhanceRollCardDamageResolution(rollCard);
+  }
+}
+
+function enhanceRollCardDamageResolution(rollCard: HTMLElement): void {
+  const damageSection = findDamageWorkflowSection(rollCard);
+  if (!damageSection) return;
+
+  const damageActions = findDamageActionSection(rollCard);
+  const resistance = rollCard.querySelector<HTMLElement>(RESISTANCE_SELECTOR);
+
+  if (resistance && resistance.parentElement !== damageSection) {
+    damageSection.append(resistance);
+  }
+
+  if (!damageActions) return;
+
+  damageActions.classList.add(`${PROMPT_CLASS}__actions--embedded`, `${PROMPT_CLASS}__actions--damage-resolution`);
+
+  const title = damageActions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
+  if (title) title.textContent = "Aplicar dano";
+
+  if (damageActions.parentElement !== damageSection) {
+    damageSection.append(damageActions);
+  }
+
+  bindDamageResolutionRefresh(rollCard);
+  updateDamageActionButtons(rollCard, damageActions);
+}
+
+function enhanceEffectActionsLayout(root: ParentNode): void {
+  for (const actions of Array.from(root.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR))) {
+    const title = actions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
+    if (normalizeText(title?.textContent) !== "aplicar efeito") continue;
+
+    actions.classList.add(`${PROMPT_CLASS}__actions--effect-resolution`);
+    if (title) title.textContent = "Efeito";
+
+    const button = actions.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
+    if (!button) continue;
+
+    const currentLabel = button.textContent?.trim() ?? "";
+    if (!currentLabel || currentLabel.startsWith("✓") || button.dataset.paranormalToolkitEffectActionCompacted === "true") continue;
+
+    const label = document.createElement("span");
+    label.classList.add(`${PROMPT_CLASS}__effect-resolution-label`);
+    label.textContent = formatEffectActionLabel(currentLabel);
+    button.setAttribute("aria-label", `Aplicar ${currentLabel}`);
+    button.textContent = "Aplicar";
+    button.dataset.paranormalToolkitEffectActionCompacted = "true";
+
+    title?.after(label);
+  }
+}
+
+function formatEffectActionLabel(label: string): string {
+  return label.replace(/\s*:\s*/u, " · ");
+}
+
+function findDamageWorkflowSection(rollCard: HTMLElement): HTMLElement | null {
+  return Array.from(rollCard.querySelectorAll<HTMLElement>(DAMAGE_WORKFLOW_SECTION_SELECTOR)).find((section) => {
+    const title = section.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section-header strong`)?.textContent?.trim();
+    return normalizeText(title) === "dano";
+  }) ?? null;
+}
+
+function findDamageActionSection(rollCard: HTMLElement): HTMLElement | null {
+  const sections = Array.from(rollCard.parentElement?.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR) ?? []);
+
+  return sections.find((section) => section.getAttribute(DAMAGE_ACTION_SECTION_ATTRIBUTE) === "apply-damage")
+    ?? sections.find((section) => normalizeText(section.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR)?.textContent) === "aplicar danos")
+    ?? null;
+}
+
+function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement): void {
+  const buttons = Array.from(actions.querySelectorAll<HTMLButtonElement>(ACTION_BUTTON_SELECTOR));
+  const normalButton = findDamageButton(buttons, "normal");
+  const halfButton = findDamageButton(buttons, "half");
+
+  if (!normalButton || !halfButton) {
+    actions.classList.add(`${PROMPT_CLASS}__actions--compact`);
+    return;
+  }
+
+  const mode = getDamageResolutionModeSafe();
+  actions.classList.toggle(`${PROMPT_CLASS}__actions--assisted`, mode === "assisted");
+  actions.classList.toggle(`${PROMPT_CLASS}__actions--manual`, mode !== "assisted");
+
+  if (mode !== "assisted") {
+    setDamageButtonVisibility(normalButton, true);
+    setDamageButtonVisibility(halfButton, true);
+    updateDamageResolutionSummary(actions, "manual", null);
+    return;
+  }
+
+  const resistanceTotal = readResistanceTotal(rollCard);
+  const difficulty = readCastingDifficulty(rollCard);
+
+  if (difficulty === null) {
+    setDamageButtonVisibility(normalButton, true);
+    setDamageButtonVisibility(halfButton, true);
+    updateDamageResolutionSummary(actions, "manual", "Sem DT confiável: escolha manualmente.");
+    return;
+  }
+
+  if (resistanceTotal === null) {
+    setDamageButtonVisibility(normalButton, true);
+    setDamageButtonVisibility(halfButton, false);
+    updateDamageResolutionSummary(actions, "pending", null);
+    return;
+  }
+
+  const resisted = resistanceTotal >= difficulty;
+  setDamageButtonVisibility(normalButton, !resisted);
+  setDamageButtonVisibility(halfButton, resisted);
+  updateDamageResolutionSummary(
+    actions,
+    resisted ? "resisted" : "failed",
+    resisted
+      ? `Resistiu: ${resistanceTotal} vs DT ${difficulty}.`
+      : `Falhou: ${resistanceTotal} vs DT ${difficulty}.`
+  );
+}
+
+function findDamageButton(buttons: HTMLButtonElement[], kind: "normal" | "half"): HTMLButtonElement | null {
+  const matcher = DAMAGE_BUTTON_LABELS[kind];
+  return buttons.find((button) => matcher.test(button.textContent ?? "")) ?? null;
+}
+
+function setDamageButtonVisibility(button: HTMLButtonElement, visible: boolean): void {
+  button.hidden = !visible;
+  button.classList.toggle(`${PROMPT_CLASS}__button--damage-resolution-selected`, visible);
+}
+
+function updateDamageResolutionSummary(actions: HTMLElement, state: DamageResolutionState, message: string | null): void {
+  actions.setAttribute(DAMAGE_RESOLUTION_STATE_ATTRIBUTE, state);
+
+  const existing = actions.querySelector<HTMLElement>(`.${PROMPT_CLASS}__damage-resolution-summary`);
+
+  if (!message) {
+    existing?.remove();
+    return;
+  }
+
+  const summary = existing ?? document.createElement("span");
+  summary.classList.add(`${PROMPT_CLASS}__damage-resolution-summary`);
+  summary.textContent = message;
+
+  if (!existing) {
+    const title = actions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
+    title?.after(summary);
+  }
+}
+
+function bindDamageResolutionRefresh(rollCard: HTMLElement): void {
+  const resistanceButton = rollCard.querySelector<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR);
+  if (!resistanceButton) return;
+  if (resistanceButton.getAttribute(RESISTANCE_BUTTON_BOUND_ATTRIBUTE) === "true") return;
+
+  resistanceButton.setAttribute(RESISTANCE_BUTTON_BOUND_ATTRIBUTE, "true");
+  resistanceButton.addEventListener("click", () => {
+    for (const delayMs of DAMAGE_RESOLUTION_REFRESH_DELAYS_MS) {
+      globalThis.setTimeout(() => {
+        enhanceRollCardDamageResolution(rollCard);
+      }, delayMs);
+    }
+  });
+}
+
+function readResistanceTotal(rollCard: HTMLElement): number | null {
+  const buttonTotal = rollCard.querySelector<HTMLElement>(RESISTANCE_ROLL_BUTTON_SELECTOR)?.getAttribute("data-paranormal-toolkit-resistance-roll-result");
+  const parsedButtonTotal = parseInteger(buttonTotal);
+  if (parsedButtonTotal !== null) return parsedButtonTotal;
+
+  const resultText = rollCard.querySelector<HTMLElement>(RESISTANCE_ROLL_RESULT_SELECTOR)?.textContent ?? null;
+  const match = resultText ? /=\s*(-?\d+)\s*$/u.exec(resultText) : null;
+  return parseInteger(match?.[1] ?? null);
+}
+
+function readCastingDifficulty(rollCard: HTMLElement): number | null {
+  const prompt = readPersistedPromptForRollCard(rollCard);
+  const persistedDifficulty = readDifficultyFromPersistedPrompt(prompt);
+  if (persistedDifficulty !== null) return persistedDifficulty;
+
+  const actorDifficulty = readDifficultyFromPromptActor(prompt);
+  if (actorDifficulty !== null) return actorDifficulty;
+
+  return readLegacyDifficultyFromRenderedCard(rollCard);
+}
+
+function readDifficultyFromPersistedPrompt(prompt: PersistedPromptLike | null): number | null {
+  const summaryLines = getPromptSummaryLines(prompt);
+  if (summaryLines.length === 0) return null;
+
+  return parseInteger(findSummaryValue(summaryLines, SUMMARY_KEY_CASTING_DIFFICULTY));
+}
+
+function readDifficultyFromPromptActor(prompt: PersistedPromptLike | null): number | null {
+  const actorId = typeof prompt?.actorId === "string" ? prompt.actorId : null;
+  if (!actorId) return null;
+
+  const actors = game.actors as { get?: (id: string) => unknown } | undefined;
+  const actor = actors?.get?.(actorId);
+  if (!actor || typeof actor !== "object") return null;
+
+  return readNestedInteger(actor, ["system", "ritual", "DT"])
+    ?? readNestedInteger(actor, ["system", "ritual", "dt"]);
+}
+
+function readLegacyDifficultyFromRenderedCard(rollCard: HTMLElement): number | null {
+  const castingDescription = Array.from(rollCard.querySelectorAll<HTMLElement>(`.${PROMPT_CLASS}__workflow-section--casting .${PROMPT_CLASS}__workflow-section-description`))
+    .map((element) => element.textContent)
+    .find((text) => typeof text === "string" && text.includes("DT"));
+
+  if (!castingDescription) return null;
+
+  const match = /\bDT\s*(-?\d+)\b/iu.exec(castingDescription);
+  return parseInteger(match?.[1] ?? null);
+}
+
+function readPersistedPromptForRollCard(rollCard: HTMLElement): PersistedPromptLike | null {
+  const promptId = findPromptId(rollCard);
+  if (!promptId) return null;
+
+  const message = resolveChatMessageDocumentFromElement(rollCard);
+  const card = readToolkitChatCard(message);
+  const prompts = Array.isArray(card?.prompts) ? card.prompts : [];
+
+  return prompts.find((prompt): prompt is PersistedPromptLike => {
+    if (!isRecord(prompt)) return false;
+    return prompt.pendingId === promptId;
+  }) ?? null;
+}
+
+function findPromptId(rollCard: HTMLElement): string | null {
+  const promptElement = rollCard.closest<HTMLElement>(`[${PROMPT_ID_ATTRIBUTE}]`)
+    ?? rollCard.querySelector<HTMLElement>(`[${PROMPT_ID_ATTRIBUTE}]`)
+    ?? rollCard.parentElement?.querySelector<HTMLElement>(`[${PROMPT_ID_ATTRIBUTE}]`)
+    ?? null;
+
+  return promptElement?.getAttribute(PROMPT_ID_ATTRIBUTE) ?? null;
+}
+
+function resolveChatMessageDocumentFromElement(element: HTMLElement): ChatMessageFlagDocument | null {
+  const messageElement = element.closest<HTMLElement>("[data-message-id]");
+  const messageId = messageElement?.dataset.messageId ?? null;
+  if (!messageId) return null;
+
+  const messages = game.messages as { get?: (messageId: string) => unknown } | undefined;
+  const message = messages?.get?.(messageId);
+  return isChatMessageFlagDocument(message) ? message : null;
+}
+
+function readToolkitChatCard(message: ChatMessageFlagDocument | null): PersistedToolkitChatCard | null {
+  const value = message?.getFlag?.(MODULE_ID, CHAT_CARD_FLAG_KEY);
+  return isRecord(value) ? (value as PersistedToolkitChatCard) : null;
+}
+
+function getPromptSummaryLines(prompt: PersistedPromptLike | null): string[] {
+  if (!Array.isArray(prompt?.summaryLines)) return [];
+
+  return prompt.summaryLines.filter((line): line is string => typeof line === "string");
+}
+
+function findSummaryValue(summaryLines: string[], key: string): string | null {
+  const prefix = `${key}:`;
+
+  for (const line of summaryLines) {
+    if (!line.startsWith(prefix)) continue;
+
+    const value = line.slice(prefix.length).trim();
+    if (value.length > 0) return value;
+  }
+
+  return null;
+}
+
+function readNestedInteger(source: unknown, path: string[]): number | null {
+  let current = source;
+
+  for (const segment of path) {
+    if (!isRecord(current)) return null;
+    current = current[segment];
+  }
+
+  return typeof current === "number" ? Math.trunc(current) : parseInteger(typeof current === "string" ? current : null);
+}
+
+function parseInteger(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
+}
+
+function getDamageResolutionModeSafe(): "manual" | "assisted" {
+  try {
+    return getItemUseDamageResolutionMode();
+  } catch {
+    return "assisted";
+  }
+}
+
+function normalizeText(value: string | null | undefined): string {
+  return value?.trim().toLocaleLowerCase() ?? "";
+}
+
+function isChatMessageFlagDocument(value: unknown): value is ChatMessageFlagDocument {
+  return Boolean(value && typeof value === "object" && typeof (value as ChatMessageFlagDocument).getFlag === "function");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object");
 }

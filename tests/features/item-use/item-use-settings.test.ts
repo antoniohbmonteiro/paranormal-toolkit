@@ -9,6 +9,7 @@ import {
   getItemUseSettings,
   registerItemUseSettings,
   setItemUseAutoRunEnabled,
+  setItemUseDamageResolutionMode,
   setItemUseExecutionMode
 } from "../../../src/features/item-use/item-use-settings";
 
@@ -65,6 +66,16 @@ describe("AutomationExecutionMode", () => {
     );
     expect(game.settings.register).toHaveBeenCalledWith(
       MODULE_ID,
+      ITEM_USE_SETTING_KEYS.damageResolutionMode,
+      expect.objectContaining({
+        scope: "world",
+        config: true,
+        type: String,
+        default: "assisted"
+      })
+    );
+    expect(game.settings.register).toHaveBeenCalledWith(
+      MODULE_ID,
       ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled,
       expect.objectContaining({
         scope: "world",
@@ -92,16 +103,19 @@ describe("AutomationExecutionMode", () => {
     expect(getItemUseSettings()).toEqual({
       executionMode: "automatic",
       systemCardMode: "keep",
+      damageResolutionMode: "assisted",
       ritualCastingCheckEnabled: true
     });
 
     settingsStore.set(ITEM_USE_SETTING_KEYS.executionMode, "ask");
     settingsStore.set(ITEM_USE_SETTING_KEYS.systemCardMode, "replace");
+    settingsStore.set(ITEM_USE_SETTING_KEYS.damageResolutionMode, "manual");
     settingsStore.set(ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled, false);
 
     expect(getItemUseSettings()).toEqual({
       executionMode: "ask",
       systemCardMode: "replace",
+      damageResolutionMode: "manual",
       ritualCastingCheckEnabled: false
     });
   });
@@ -111,6 +125,13 @@ describe("AutomationExecutionMode", () => {
 
     expect(game.settings.set).toHaveBeenCalledWith(MODULE_ID, ITEM_USE_SETTING_KEYS.executionMode, "automatic");
     expect(settingsStore.get(ITEM_USE_SETTING_KEYS.executionMode)).toBe("automatic");
+  });
+
+  it("permite setar resolução de dano explicitamente", async () => {
+    await setItemUseDamageResolutionMode("manual");
+
+    expect(game.settings.set).toHaveBeenCalledWith(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode, "manual");
+    expect(settingsStore.get(ITEM_USE_SETTING_KEYS.damageResolutionMode)).toBe("manual");
   });
 
   it("mantém enable/disable legado mapeando para automatic/disabled", async () => {
