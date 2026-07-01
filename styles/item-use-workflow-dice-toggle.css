@@ -728,3 +728,149 @@
   align-self: center !important;
 }
 
+
+/* 0.22.3 — Efeito como workflow-section real, sem card legado de actions */
+.paranormal-toolkit-item-use-prompt__roll-card--structured {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.18rem !important;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__workflow-section,
+.paranormal-toolkit-item-use-prompt__roll-card--structured > .paranormal-toolkit-item-use-prompt__workflow-section--effect-action {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "header button"
+    "label button";
+  align-items: center !important;
+  gap: 0.14rem 0.5rem !important;
+  border-color: rgba(151, 111, 45, 0.26) !important;
+  border-left: 3px solid rgba(151, 111, 45, 0.66) !important;
+  background: linear-gradient(180deg, rgba(255, 251, 240, 0.82), rgba(255, 245, 219, 0.58)) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action
+  > .paranormal-toolkit-item-use-prompt__workflow-section-header {
+  grid-area: header;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action
+  > .paranormal-toolkit-item-use-prompt__workflow-section-header strong {
+  color: rgba(107, 78, 35, 0.95) !important;
+  font-family: inherit !important;
+  font-size: 0.74rem !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.075em !important;
+  line-height: 1.08 !important;
+  text-transform: uppercase !important;
+}
+
+.paranormal-toolkit-item-use-prompt__effect-section-body {
+  display: contents !important;
+}
+
+.paranormal-toolkit-item-use-prompt__effect-section-label {
+  grid-area: label;
+  min-width: 0;
+  color: rgba(36, 27, 24, 0.9);
+  font-family: inherit !important;
+  font-size: 0.81rem !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  font-weight: 800 !important;
+  line-height: 1.18 !important;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-item-use-prompt__effect-section-action {
+  grid-area: button;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  justify-self: end !important;
+  align-self: center !important;
+  min-width: 0;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  min-width: 5rem !important;
+  max-width: 7rem !important;
+  min-height: 1.9rem !important;
+  margin: 0 !important;
+  border-radius: 7px !important;
+  padding: 0.34rem 0.62rem !important;
+  border-color: rgba(123, 72, 73, 0.42) !important;
+  background: rgba(228, 214, 209, 0.74) !important;
+  color: rgba(42, 30, 27, 0.94) !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  line-height: 1.1 !important;
+  gap: 0.34rem !important;
+  white-space: nowrap !important;
+  aspect-ratio: auto !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button:hover,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button:focus {
+  border-color: rgba(123, 72, 73, 0.62) !important;
+  background: rgba(220, 199, 194, 0.86) !important;
+  box-shadow: 0 0 0 2px rgba(151, 111, 45, 0.14) !important;
+  outline: none !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--executed,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-applied {
+  min-width: 5.15rem !important;
+  max-width: 6.25rem !important;
+  border-color: rgba(96, 75, 45, 0.32) !important;
+  background: rgba(236, 226, 210, 0.76) !important;
+  color: rgba(45, 35, 29, 0.82) !important;
+  opacity: 0.94 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted {
+  min-width: 5.15rem !important;
+  max-width: 6.75rem !important;
+  border-color: rgba(96, 75, 45, 0.28) !important;
+  background: rgba(239, 230, 216, 0.72) !important;
+  color: rgba(45, 35, 29, 0.72) !important;
+  opacity: 0.88 !important;
+  cursor: default !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:hover,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:focus,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:disabled,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:hover,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:focus,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:disabled {
+  border-color: rgba(96, 75, 45, 0.28) !important;
+  background: rgba(239, 230, 216, 0.72) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+  cursor: default !important;
+}
+
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:hover,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:focus,
+.paranormal-toolkit-item-use-prompt__workflow-section--effect-action .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:disabled {
+  color: rgba(34, 93, 55, 0.84) !important;
+}
+

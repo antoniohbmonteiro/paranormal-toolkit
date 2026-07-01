@@ -8,57 +8,46 @@ import {
 } from "./item-use-card-roll-context";
 import {
   ACTION_BUTTON_SELECTOR,
-  ACTIONS_TITLE_SELECTOR,
   createButtonIcon,
   createButtonLabel,
   EXECUTED_LABEL_ATTRIBUTE,
-  PROMPT_EXECUTED_BUTTON_CLASS,
-  setActionTitle
+  PROMPT_EXECUTED_BUTTON_CLASS
 } from "./item-use-card-dom";
 
 const EFFECT_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-effect-icon-enhanced";
 const EFFECT_ACTION_COMPACTED_ATTRIBUTE = "data-paranormal-toolkit-effect-action-compacted";
 const EFFECT_RESISTANCE_GATE_ATTRIBUTE = "data-paranormal-toolkit-effect-resistance-gate";
-const EFFECT_ACTION_WORKFLOW_CLASS = `${PROMPT_CLASS}__workflow-section--effect-action`;
+const EFFECT_SECTION_ATTRIBUTE = "data-paranormal-toolkit-effect-section";
+const EFFECT_LABEL_ATTRIBUTE = "data-paranormal-toolkit-effect-label";
 
-export function enhanceEffectActionSection(actions: HTMLElement): boolean {
-  const title = actions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
-  const normalizedTitle = normalizeText(title?.textContent);
-  if (normalizedTitle !== "aplicar efeito" && normalizedTitle !== "efeito") return false;
+type EffectActionSectionInput = {
+  rollCard: HTMLElement;
+  existingSection: HTMLElement | null;
+  sourceActions: HTMLElement | null;
+  after: HTMLElement | null;
+};
 
-  actions.classList.add(
-    `${PROMPT_CLASS}__actions--effect-resolution`,
-    `${PROMPT_CLASS}__workflow-section`,
-    EFFECT_ACTION_WORKFLOW_CLASS
-  );
-  setActionTitle(actions, "Efeito");
-
-  const button = actions.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
-  if (!button) return true;
-
-  const currentLabel = button.textContent?.trim() ?? "";
-  if (!currentLabel) return true;
-
-  const originalLabel = resolveEffectActionOriginalLabel(button, currentLabel);
-  if (originalLabel) {
-    ensureEffectActionLabel(actions, title, originalLabel);
-  }
-
-  if (isResolvedEffectButton(button, currentLabel)) {
-    compactResolvedEffectActionButton(button);
-    return true;
-  }
-
-  if (isResistanceGatedEffectButton(button, currentLabel)) {
-    return true;
-  }
-
-  enhanceEffectActionButton(button, originalLabel ?? currentLabel);
-  return true;
+export function findEffectActionSection(rollCard: HTMLElement): HTMLElement | null {
+  return rollCard.querySelector<HTMLElement>(`[${EFFECT_SECTION_ATTRIBUTE}="true"]`);
 }
 
-export function updateEffectActionResistanceGate(rollCard: HTMLElement, actions: HTMLElement): void {
-  const button = actions.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
+export function mountEffectActionSection(input: EffectActionSectionInput): HTMLElement | null {
+  const button = resolveEffectButton(input);
+  if (!button) return input.existingSection;
+
+  const section = input.existingSection ?? createEffectSection();
+  const effectLabel = resolveEffectLabel(section, input.sourceActions, button);
+  if (effectLabel) section.setAttribute(EFFECT_LABEL_ATTRIBUTE, effectLabel);
+
+  ensureEffectSectionStructure(section, button, effectLabel);
+  placeEffectSection(input.rollCard, section, input.after);
+  removeConsumedLegacyActionSource(input.sourceActions, section);
+
+  return section;
+}
+
+export function updateEffectActionResistanceGate(rollCard: HTMLElement, section: HTMLElement): void {
+  const button = section.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
   if (!button) return;
 
   const currentLabel = button.textContent?.trim() ?? "";
@@ -67,7 +56,7 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, actions:
     return;
   }
 
-  const effectLabel = resolveEffectActionDisplayLabel(actions, button, currentLabel);
+  const effectLabel = resolveEffectActionDisplayLabel(section, button, currentLabel);
   if (!shouldGateEffectByResistance(rollCard, effectLabel)) {
     clearEffectResistanceGate(button);
     return;
@@ -89,14 +78,119 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, actions:
   setEffectAvailableAfterFailedResistance(button, effectLabel);
 }
 
-function ensureEffectActionLabel(actions: HTMLElement, title: HTMLElement | null, label: string): void {
-  if (actions.querySelector(`.${PROMPT_CLASS}__effect-resolution-label`)) return;
+function resolveEffectButton(input: EffectActionSectionInput): HTMLButtonElement | null {
+  return input.sourceActions?.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR)
+    ?? input.existingSection?.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR)
+    ?? null;
+}
 
-  const effectLabel = document.createElement("span");
-  effectLabel.classList.add(`${PROMPT_CLASS}__effect-resolution-label`);
-  effectLabel.textContent = formatEffectActionLabel(label);
+function createEffectSection(): HTMLElement {
+  const section = document.createElement("section");
+  section.classList.add(
+    `${PROMPT_CLASS}__workflow-section`,
+    `${PROMPT_CLASS}__workflow-section--effect-action`
+  );
+  section.setAttribute(EFFECT_SECTION_ATTRIBUTE, "true");
+  return section;
+}
 
-  title?.after(effectLabel);
+function ensureEffectSectionStructure(section: HTMLElement, button: HTMLButtonElement, effectLabel: string | null): void {
+  section.setAttribute(EFFECT_SECTION_ATTRIBUTE, "true");
+  section.classList.add(
+    `${PROMPT_CLASS}__workflow-section`,
+    `${PROMPT_CLASS}__workflow-section--effect-action`
+  );
+  section.classList.remove(`${PROMPT_CLASS}__actions`, `${PROMPT_CLASS}__actions--effect-resolution`);
+
+  const header = getOrCreateEffectHeader(section);
+  const title = getOrCreateEffectTitle(header);
+  title.textContent = "Efeito";
+
+  const body = getOrCreateEffectBody(section, header);
+  const label = getOrCreateEffectLabel(body);
+  label.textContent = formatEffectActionLabel(effectLabel ?? resolveEffectActionDisplayLabel(section, button, button.textContent?.trim() ?? ""));
+
+  const action = getOrCreateEffectActionContainer(body);
+  if (button.parentElement !== action) {
+    action.append(button);
+  }
+
+  const currentLabel = button.textContent?.trim() ?? "";
+  if (!isResolvedEffectButton(button, currentLabel) && !isResistanceGatedEffectButton(button, currentLabel)) {
+    enhanceEffectActionButton(button, effectLabel ?? currentLabel);
+  }
+}
+
+function getOrCreateEffectHeader(section: HTMLElement): HTMLElement {
+  const existing = section.querySelector<HTMLElement>(`:scope > .${PROMPT_CLASS}__workflow-section-header`);
+  if (existing) return existing;
+
+  const header = document.createElement("div");
+  header.classList.add(`${PROMPT_CLASS}__workflow-section-header`);
+  section.prepend(header);
+  return header;
+}
+
+function getOrCreateEffectTitle(header: HTMLElement): HTMLElement {
+  const existing = header.querySelector<HTMLElement>("strong");
+  if (existing) return existing;
+
+  const title = document.createElement("strong");
+  header.append(title);
+  return title;
+}
+
+function getOrCreateEffectBody(section: HTMLElement, header: HTMLElement): HTMLElement {
+  const existing = section.querySelector<HTMLElement>(`:scope > .${PROMPT_CLASS}__effect-section-body`);
+  if (existing) return existing;
+
+  const body = document.createElement("div");
+  body.classList.add(`${PROMPT_CLASS}__effect-section-body`);
+  header.after(body);
+  return body;
+}
+
+function getOrCreateEffectLabel(body: HTMLElement): HTMLElement {
+  const existing = body.querySelector<HTMLElement>(`:scope > .${PROMPT_CLASS}__effect-section-label`);
+  if (existing) return existing;
+
+  const label = document.createElement("span");
+  label.classList.add(`${PROMPT_CLASS}__effect-section-label`);
+  body.prepend(label);
+  return label;
+}
+
+function getOrCreateEffectActionContainer(body: HTMLElement): HTMLElement {
+  const existing = body.querySelector<HTMLElement>(`:scope > .${PROMPT_CLASS}__effect-section-action`);
+  if (existing) return existing;
+
+  const action = document.createElement("div");
+  action.classList.add(`${PROMPT_CLASS}__effect-section-action`);
+  body.append(action);
+  return action;
+}
+
+function placeEffectSection(rollCard: HTMLElement, section: HTMLElement, after: HTMLElement | null): void {
+  const expectedPreviousSibling = after ?? null;
+  if (section.parentElement === rollCard && section.previousElementSibling === expectedPreviousSibling) return;
+
+  const insertionReference = after?.nextElementSibling ?? rollCard.firstElementChild;
+  rollCard.insertBefore(section, insertionReference);
+}
+
+function removeConsumedLegacyActionSource(sourceActions: HTMLElement | null, section: HTMLElement): void {
+  if (!sourceActions || sourceActions === section) return;
+  sourceActions.remove();
+}
+
+function resolveEffectLabel(section: HTMLElement, sourceActions: HTMLElement | null, button: HTMLButtonElement): string | null {
+  const existingLabel = section.getAttribute(EFFECT_LABEL_ATTRIBUTE);
+  if (existingLabel && existingLabel.trim().length > 0) return existingLabel.trim();
+
+  const sourceLabel = sourceActions?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-resolution-label`)?.textContent?.trim();
+  if (sourceLabel) return sourceLabel;
+
+  return resolveEffectActionOriginalLabel(button, button.textContent?.trim() ?? "");
 }
 
 function resolveEffectActionOriginalLabel(button: HTMLButtonElement, currentLabel: string): string | null {
@@ -130,7 +224,13 @@ function isResistanceGatedEffectButton(button: HTMLButtonElement, currentLabel: 
 function enhanceEffectActionButton(button: HTMLButtonElement, originalLabel: string): void {
   if (button.getAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE) === "true" && button.getAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE) === "true") return;
 
+  button.disabled = false;
   button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-action`);
+  button.classList.remove(
+    `${PROMPT_CLASS}__button--effect-resolution-applied`,
+    `${PROMPT_CLASS}__button--effect-resolution-waiting`,
+    `${PROMPT_CLASS}__button--effect-resolution-resisted`
+  );
   button.setAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE, "true");
   button.setAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE, "true");
   button.setAttribute(EXECUTED_LABEL_ATTRIBUTE, "✓ Aplicado");
@@ -145,6 +245,10 @@ function compactResolvedEffectActionButton(button: HTMLButtonElement): void {
   if (button.getAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE) === "true" && normalizeText(button.textContent) === "✓ aplicado") return;
 
   button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-action`, `${PROMPT_CLASS}__button--effect-resolution-applied`);
+  button.classList.remove(
+    `${PROMPT_CLASS}__button--effect-resolution-waiting`,
+    `${PROMPT_CLASS}__button--effect-resolution-resisted`
+  );
   button.setAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE, "true");
   button.setAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE, "true");
   button.setAttribute("aria-label", "Efeito aplicado");
@@ -154,9 +258,11 @@ function compactResolvedEffectActionButton(button: HTMLButtonElement): void {
   );
 }
 
-function resolveEffectActionDisplayLabel(actions: HTMLElement, button: HTMLButtonElement, currentLabel: string): string {
-  const explicitLabel = actions.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-resolution-label`)?.textContent?.trim();
-  if (explicitLabel) return explicitLabel;
+function resolveEffectActionDisplayLabel(section: HTMLElement, button: HTMLButtonElement, currentLabel: string): string {
+  const explicitLabel = section.getAttribute(EFFECT_LABEL_ATTRIBUTE)
+    ?? section.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-section-label`)?.textContent?.trim();
+
+  if (explicitLabel && explicitLabel.trim().length > 0) return explicitLabel.trim();
 
   return resolveEffectActionOriginalLabel(button, currentLabel) ?? currentLabel;
 }
@@ -176,7 +282,7 @@ function setEffectWaitingForResistance(button: HTMLButtonElement): void {
     `${PROMPT_CLASS}__button--effect-resolution-applied`,
     `${PROMPT_CLASS}__button--effect-resolution-resisted`
   );
-  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-waiting`);
+  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-action`, `${PROMPT_CLASS}__button--effect-resolution-waiting`);
   button.setAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE, "pending");
   button.setAttribute("aria-label", "Role a resistência antes de aplicar o efeito");
   button.replaceChildren(createButtonLabel("Role resistência"));
@@ -190,7 +296,7 @@ function setEffectResisted(button: HTMLButtonElement): void {
     `${PROMPT_CLASS}__button--effect-resolution-applied`,
     `${PROMPT_CLASS}__button--effect-resolution-waiting`
   );
-  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-resisted`);
+  button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-action`, `${PROMPT_CLASS}__button--effect-resolution-resisted`);
   button.setAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE, "resisted");
   button.setAttribute("aria-label", "O alvo resistiu ao efeito");
   button.replaceChildren(
@@ -201,7 +307,6 @@ function setEffectResisted(button: HTMLButtonElement): void {
 
 function setEffectAvailableAfterFailedResistance(button: HTMLButtonElement, effectLabel: string): void {
   clearEffectResistanceGate(button);
-  button.disabled = false;
   enhanceEffectActionButton(button, effectLabel);
 }
 

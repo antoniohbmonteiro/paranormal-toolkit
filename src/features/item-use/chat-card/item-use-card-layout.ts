@@ -10,28 +10,49 @@ import {
   findWorkflowSectionByTitle
 } from "./item-use-card-dom";
 import { enhanceDamageResolutionSection } from "./item-use-card-damage-resolution";
-import { enhanceEffectActionSection, updateEffectActionResistanceGate } from "./item-use-card-effect-section";
+import {
+  findEffectActionSection,
+  mountEffectActionSection,
+  updateEffectActionResistanceGate
+} from "./item-use-card-effect-section";
 
 const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const LAYOUT_NORMALIZED_ATTRIBUTE = "data-paranormal-toolkit-card-layout-normalized";
 const REFRESH_BOUND_ATTRIBUTE = "data-paranormal-toolkit-card-layout-refresh-bound";
 const DAMAGE_ACTION_SECTION_ID = "apply-damage";
-const LAYOUT_REFRESH_DELAYS_MS = [0, 80, 180, 400, 900, 1_600] as const;
+const LAYOUT_REFRESH_DELAYS_MS = [0, 80, 180, 400, 900, 1_600, 3_000] as const;
+
+const scheduledLayoutRoots = new WeakSet<ParentNode>();
 
 type RitualCardLayout = {
   rollCard: HTMLElement;
   damageSection: HTMLElement | null;
   resistance: HTMLElement | null;
   damageActions: HTMLElement | null;
-  effectActions: HTMLElement | null;
+  effectActionSource: HTMLElement | null;
+  effectSection: HTMLElement | null;
 };
 
 export function enhanceRitualCardLayout(root: ParentNode): void {
+  normalizeRitualCards(root);
+  scheduleRitualCardLayoutRefresh(root);
+}
+
+function normalizeRitualCards(root: ParentNode): void {
   for (const rollCard of Array.from(root.querySelectorAll<HTMLElement>(`.${PROMPT_CLASS}__roll-card`))) {
     normalizeRitualCardLayout(resolveRitualCardLayout(rollCard));
   }
+}
 
-  enhanceLooseEffectActions(root);
+function scheduleRitualCardLayoutRefresh(root: ParentNode): void {
+  if (scheduledLayoutRoots.has(root)) return;
+  scheduledLayoutRoots.add(root);
+
+  for (const delayMs of LAYOUT_REFRESH_DELAYS_MS) {
+    globalThis.setTimeout(() => {
+      normalizeRitualCards(root);
+    }, delayMs);
+  }
 }
 
 function resolveRitualCardLayout(rollCard: HTMLElement): RitualCardLayout {
@@ -40,12 +61,20 @@ function resolveRitualCardLayout(rollCard: HTMLElement): RitualCardLayout {
     damageSection: findWorkflowSectionByTitle(rollCard, "Dano"),
     resistance: rollCard.querySelector<HTMLElement>(RESISTANCE_SELECTOR),
     damageActions: findDamageActionSection(rollCard),
-    effectActions: findEffectActionSection(rollCard)
+    effectActionSource: findEffectActionSource(rollCard),
+    effectSection: findEffectActionSection(rollCard)
   };
 }
 
 function normalizeRitualCardLayout(layout: RitualCardLayout): void {
-  const { rollCard, damageSection, resistance, damageActions, effectActions } = layout;
+  const {
+    rollCard,
+    damageSection,
+    resistance,
+    damageActions,
+    effectActionSource,
+    effectSection
+  } = layout;
 
   rollCard.setAttribute(LAYOUT_NORMALIZED_ATTRIBUTE, "true");
   rollCard.classList.add(`${PROMPT_CLASS}__roll-card--structured`);
@@ -62,10 +91,15 @@ function normalizeRitualCardLayout(layout: RitualCardLayout): void {
     enhanceDamageResolutionSection(rollCard, damageActions);
   }
 
-  if (effectActions) {
-    enhanceEffectActionSection(effectActions);
-    moveEffectSectionIntoCard(rollCard, damageSection, effectActions);
-    updateEffectActionResistanceGate(rollCard, effectActions);
+  const mountedEffectSection = mountEffectActionSection({
+    rollCard,
+    existingSection: effectSection,
+    sourceActions: effectActionSource,
+    after: damageSection
+  });
+
+  if (mountedEffectSection) {
+    updateEffectActionResistanceGate(rollCard, mountedEffectSection);
   }
 
   bindRitualCardRefresh(rollCard);
@@ -77,7 +111,7 @@ function findDamageActionSection(rollCard: HTMLElement): HTMLElement | null {
     ?? null;
 }
 
-function findEffectActionSection(rollCard: HTMLElement): HTMLElement | null {
+function findEffectActionSource(rollCard: HTMLElement): HTMLElement | null {
   return getActionSectionsForCard(rollCard).find((section) => {
     const title = getActionTitle(section);
     return title === "aplicar efeito" || title === "efeito";
@@ -92,7 +126,8 @@ function getActionSectionsForCard(rollCard: HTMLElement): HTMLElement[] {
   const sections = Array.from(scope.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR));
   if (!promptId) return sections;
 
-  return sections.filter((section) => sectionContainsPromptId(section, promptId));
+  const matchingSections = sections.filter((section) => sectionContainsPromptId(section, promptId));
+  return matchingSections.length > 0 ? matchingSections : sections;
 }
 
 function sectionContainsPromptId(section: HTMLElement, promptId: string): boolean {
@@ -102,29 +137,6 @@ function sectionContainsPromptId(section: HTMLElement, promptId: string): boolea
 
 function findPromptIdInRollCard(rollCard: HTMLElement): string | null {
   return rollCard.querySelector<HTMLElement>(`[${PROMPT_ID_ATTRIBUTE}]`)?.getAttribute(PROMPT_ID_ATTRIBUTE) ?? null;
-}
-
-function moveEffectSectionIntoCard(
-  rollCard: HTMLElement,
-  damageSection: HTMLElement | null,
-  effectActions: HTMLElement
-): void {
-  if (effectActions.parentElement === rollCard && isEffectSectionInExpectedPosition(effectActions, damageSection)) return;
-
-  const insertionReference = damageSection?.nextElementSibling ?? null;
-  rollCard.insertBefore(effectActions, insertionReference);
-}
-
-function isEffectSectionInExpectedPosition(effectActions: HTMLElement, damageSection: HTMLElement | null): boolean {
-  if (!damageSection) return effectActions.parentElement?.firstElementChild === effectActions;
-  return effectActions.previousElementSibling === damageSection;
-}
-
-function enhanceLooseEffectActions(root: ParentNode): void {
-  for (const actions of Array.from(root.querySelectorAll<HTMLElement>(ACTIONS_SELECTOR))) {
-    if (actions.closest(`.${PROMPT_CLASS}__roll-card`)) continue;
-    enhanceEffectActionSection(actions);
-  }
 }
 
 function bindRitualCardRefresh(rollCard: HTMLElement): void {
