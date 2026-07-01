@@ -561,6 +561,27 @@ export function ensureItemUseChatCardStyles(): void {
   line-height: 1 !important;
 }
 
+/* 0.21.9 — Estados bloqueados de efeito não devem parecer clicáveis */
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-waiting:hover,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-waiting:focus,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted:hover,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted:focus,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-waiting:disabled,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted:disabled {
+  border-color: rgba(96, 75, 45, 0.28) !important;
+  background: rgba(239, 230, 216, 0.72) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+  cursor: default !important;
+}
+
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted:hover,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted:focus,
+.${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--effect-resolution-resisted:disabled {
+  color: rgba(34, 93, 55, 0.84) !important;
+}
+
 `;
 
   document.head.append(style);

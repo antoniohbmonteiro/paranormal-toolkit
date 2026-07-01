@@ -618,3 +618,34 @@
   line-height: 1 !important;
 }
 
+
+/* 0.21.9 — Estados bloqueados de efeito não devem parecer clicáveis */
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:hover,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:focus,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:hover,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:focus,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:disabled,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:disabled {
+  border-color: rgba(96, 75, 45, 0.28) !important;
+  background: rgba(239, 230, 216, 0.72) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+  cursor: default !important;
+}
+
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:hover,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:focus,
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution
+  .paranormal-toolkit-item-use-prompt__button--effect-resolution-resisted:disabled {
+  color: rgba(34, 93, 55, 0.84) !important;
+}
+

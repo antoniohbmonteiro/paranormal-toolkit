@@ -307,6 +307,10 @@ function enhanceEffectActionSection(actions: HTMLElement): boolean {
     return true;
   }
 
+  if (isResistanceGatedEffectButton(button, currentLabel)) {
+    return true;
+  }
+
   enhanceEffectActionButton(button, originalLabel ?? currentLabel);
   return true;
 }
@@ -376,6 +380,14 @@ function readPersistedButtonLabelForButton(button: HTMLButtonElement): string | 
 function isResolvedEffectButton(button: HTMLButtonElement, currentLabel: string): boolean {
   return button.classList.contains(PROMPT_EXECUTED_BUTTON_CLASS)
     || normalizeText(currentLabel).includes("aplicado");
+}
+
+function isResistanceGatedEffectButton(button: HTMLButtonElement, currentLabel: string): boolean {
+  const gate = button.getAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE);
+  if (gate === "pending" || gate === "resisted") return true;
+
+  const normalizedLabel = normalizeLookupText(currentLabel);
+  return normalizedLabel.includes("resistiu") || normalizedLabel.includes("role resistencia");
 }
 
 function enhanceEffectActionButton(button: HTMLButtonElement, originalLabel: string): void {
