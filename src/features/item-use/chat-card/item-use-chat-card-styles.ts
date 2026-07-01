@@ -510,8 +510,17 @@ export function ensureItemUseChatCardStyles(): void {
 
 /* 0.21.5 — Efeito dentro do card principal e estado aplicado compacto */
 /* 0.21.6 — Aproxima o Efeito do bloco de Dano para manter o ritmo visual do card */
+/* 0.21.7 — Normaliza Efeito como seção irmã de Dano, sem margem herdada de actions */
 .${PROMPT_CLASS}__roll-card > .${PROMPT_CLASS}__actions--effect-resolution {
-  margin-top: 0.34rem !important;
+  margin: 0 !important;
+}
+
+.${PROMPT_CLASS}__roll-card > .${PROMPT_CLASS}__workflow-section--effect + .${PROMPT_CLASS}__actions--effect-resolution {
+  margin-top: 0 !important;
+}
+
+.${PROMPT_CLASS}__actions--effect-resolution.${PROMPT_CLASS}__workflow-section {
+  align-items: center !important;
 }
 
 .${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button--executed,

@@ -561,8 +561,19 @@
 
 /* 0.21.5 — Efeito dentro do card principal e estado aplicado compacto */
 /* 0.21.6 — Aproxima o Efeito do bloco de Dano para manter o ritmo visual do card */
+/* 0.21.7 — Normaliza Efeito como seção irmã de Dano, sem margem herdada de actions */
 .paranormal-toolkit-item-use-prompt__roll-card > .paranormal-toolkit-item-use-prompt__actions--effect-resolution {
-  margin-top: 0.34rem !important;
+  margin: 0 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-card
+  > .paranormal-toolkit-item-use-prompt__workflow-section--effect
+  + .paranormal-toolkit-item-use-prompt__actions--effect-resolution {
+  margin-top: 0 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__actions--effect-resolution.paranormal-toolkit-item-use-prompt__workflow-section {
+  align-items: center !important;
 }
 
 .paranormal-toolkit-item-use-prompt__actions--effect-resolution .paranormal-toolkit-item-use-prompt__button--executed,

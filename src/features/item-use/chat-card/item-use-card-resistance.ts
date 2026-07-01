@@ -24,6 +24,7 @@ const DAMAGE_RESOLUTION_STATE_ATTRIBUTE = "data-paranormal-toolkit-damage-resolu
 const DAMAGE_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-damage-icon-enhanced";
 const EFFECT_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-effect-icon-enhanced";
 const EFFECT_ACTION_COMPACTED_ATTRIBUTE = "data-paranormal-toolkit-effect-action-compacted";
+const EFFECT_ACTION_WORKFLOW_CLASS = `${PROMPT_CLASS}__workflow-section--effect-action`;
 const RESISTANCE_BUTTON_BOUND_ATTRIBUTE = "data-paranormal-toolkit-resistance-damage-refresh-bound";
 const DAMAGE_WORKFLOW_SECTION_SELECTOR = `.${PROMPT_CLASS}__workflow-section--effect`;
 
@@ -280,7 +281,11 @@ function enhanceEffectActionSection(actions: HTMLElement): boolean {
   const normalizedTitle = normalizeText(title?.textContent);
   if (normalizedTitle !== "aplicar efeito" && normalizedTitle !== "efeito") return false;
 
-  actions.classList.add(`${PROMPT_CLASS}__actions--effect-resolution`);
+  actions.classList.add(
+    `${PROMPT_CLASS}__actions--effect-resolution`,
+    `${PROMPT_CLASS}__workflow-section`,
+    EFFECT_ACTION_WORKFLOW_CLASS
+  );
   if (title) title.textContent = "Efeito";
 
   const button = actions.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR);
@@ -318,11 +323,10 @@ function moveEffectActionSectionIntoRollCard(
   damageSection: HTMLElement,
   effectActions: HTMLElement
 ): void {
-  const nextSibling = damageSection.nextSibling;
-
   if (effectActions.parentElement === rollCard && effectActions.previousElementSibling === damageSection) return;
 
-  rollCard.insertBefore(effectActions, nextSibling);
+  const insertionReference = damageSection.nextElementSibling;
+  rollCard.insertBefore(effectActions, insertionReference);
 }
 
 function ensureEffectActionLabel(actions: HTMLElement, title: HTMLElement | null, label: string): void {
