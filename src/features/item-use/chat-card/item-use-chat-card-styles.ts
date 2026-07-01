@@ -607,6 +607,49 @@ export function ensureItemUseChatCardStyles(): void {
   margin-inline: 0.08rem !important;
 }
 
+/* 0.22.2 — Unifica ritmo e tipografia do card de Efeito com Conjuração/Dano */
+.${PROMPT_CLASS}__roll-card--structured {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.18rem !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__workflow-section,
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution {
+  gap: 0.14rem 0.5rem !important;
+  padding: 0.54rem 0.58rem !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__actions-title {
+  display: block !important;
+  font-family: inherit !important;
+  font-size: 0.74rem !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.075em !important;
+  line-height: 1.08 !important;
+  text-transform: uppercase !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__effect-resolution-label {
+  font-family: inherit !important;
+  font-size: 0.81rem !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  font-weight: 800 !important;
+  line-height: 1.18 !important;
+}
+
+.${PROMPT_CLASS}__roll-card--structured > .${PROMPT_CLASS}__actions--effect-resolution .${PROMPT_CLASS}__button {
+  align-self: center !important;
+}
+
 `;
 
   document.head.append(style);
