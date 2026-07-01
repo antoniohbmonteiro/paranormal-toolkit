@@ -7,8 +7,12 @@ type Dice3DApi = {
   showForRoll?: (roll: Roll, user?: unknown, synchronize?: boolean, whisper?: unknown, blind?: boolean) => Promise<unknown> | unknown;
 };
 
+type GameModuleCollectionLike = {
+  get?: (id: string) => { active?: boolean } | undefined;
+};
+
 export async function animateRollWithDiceSoNice(roll: Roll): Promise<void> {
-  if (!getDiceAnimationSettings().enabled) return;
+  if (!areDiceAnimationsEnabled()) return;
   if (!isDiceSoNiceActive()) return;
 
   const dice3d = getDice3DApi();
@@ -22,8 +26,17 @@ export async function animateRollWithDiceSoNice(roll: Roll): Promise<void> {
   }
 }
 
+function areDiceAnimationsEnabled(): boolean {
+  try {
+    return getDiceAnimationSettings().enabled;
+  } catch {
+    return false;
+  }
+}
+
 function isDiceSoNiceActive(): boolean {
-  return game.modules.get(DICE_SO_NICE_MODULE_ID)?.active === true;
+  const modules = (game as typeof game & { modules?: GameModuleCollectionLike }).modules;
+  return modules?.get?.(DICE_SO_NICE_MODULE_ID)?.active === true;
 }
 
 function getDice3DApi(): Dice3DApi | null {

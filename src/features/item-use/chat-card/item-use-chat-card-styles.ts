@@ -167,7 +167,67 @@ export function ensureItemUseChatCardStyles(): void {
 }
 
 .${PROMPT_CLASS}__resistance-content .${PROMPT_CLASS}__resistance-roll-result {
+  display: block;
+  min-width: 0;
   margin-top: 0;
+}
+
+.${PROMPT_CLASS}__resistance-workflow-roll {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.34rem;
+  padding-top: 0.1rem;
+}
+
+.${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-roll-formula {
+  display: inline-flex;
+  width: 100%;
+  max-width: 100%;
+  min-height: 1.78rem;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
+.${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-roll-formula i {
+  margin-left: auto;
+}
+
+.${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-dice-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  width: 100%;
+  border-top: 1px solid rgba(79, 55, 42, 0.12);
+  padding-top: 0.34rem;
+}
+
+.${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.22rem;
+  min-height: 1.22rem;
+  border: 1px solid rgba(82, 57, 25, 0.18);
+  border-radius: 999px;
+  padding: 0 0.27rem;
+  background: rgba(255, 255, 255, 0.64);
+  color: rgba(36, 27, 24, 0.9);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-die--inactive {
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(36, 27, 24, 0.46);
+  opacity: 0.58;
 }
 .${PROMPT_CLASS}__workflow-section--casting .${PROMPT_CLASS}__workflow-section-header--casting-backlash {
   grid-template-columns: minmax(0, 1fr) 34px;

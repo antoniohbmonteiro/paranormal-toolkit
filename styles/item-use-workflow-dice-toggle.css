@@ -155,7 +155,74 @@
 }
 
 .paranormal-toolkit-item-use-prompt__resistance-content .paranormal-toolkit-item-use-prompt__resistance-roll-result {
+  display: block;
+  min-width: 0;
   margin-top: 0;
+}
+
+/* 0.20.0 — Resultado de resistência usa o mesmo padrão compacto/expansível das rolagens do card */
+/* 0.20.1 — Alinha largura da fórmula e chips da resistência ao padrão de Dano/Conjuração */
+.paranormal-toolkit-item-use-prompt__resistance-workflow-roll {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.34rem;
+  padding-top: 0.1rem;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-workflow-roll
+  .paranormal-toolkit-item-use-prompt__workflow-roll-formula {
+  display: inline-flex;
+  width: 100%;
+  max-width: 100%;
+  min-height: 1.78rem;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-workflow-roll
+  .paranormal-toolkit-item-use-prompt__workflow-roll-formula i {
+  margin-left: auto;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-workflow-roll
+  .paranormal-toolkit-item-use-prompt__workflow-dice-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  width: 100%;
+  border-top: 1px solid rgba(79, 55, 42, 0.12);
+  padding-top: 0.34rem;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-workflow-roll
+  .paranormal-toolkit-item-use-prompt__workflow-die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.22rem;
+  min-height: 1.22rem;
+  border: 1px solid rgba(82, 57, 25, 0.18);
+  border-radius: 999px;
+  padding: 0 0.27rem;
+  background: rgba(255, 255, 255, 0.64);
+  color: rgba(36, 27, 24, 0.9);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-workflow-roll
+  .paranormal-toolkit-item-use-prompt__workflow-die--inactive {
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(36, 27, 24, 0.46);
+  opacity: 0.58;
 }
 
 

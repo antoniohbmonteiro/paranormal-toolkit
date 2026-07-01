@@ -49,10 +49,7 @@ export class RitualCastApplication extends ApplicationV2 {
     });
   }
 
-  constructor(
-    private readonly input: RitualCastApplicationInput,
-    private readonly resolveRequest: RitualCastResolution
-  ) {
+  constructor(input: RitualCastApplicationInput, private readonly resolveRequest: RitualCastResolution) {
     super({
       id: `${MODULE_ID}-ritual-cast-${input.actor.id ?? foundry.utils.randomID()}-${input.ritual.id ?? foundry.utils.randomID()}`,
       window: {
@@ -84,7 +81,7 @@ export class RitualCastApplication extends ApplicationV2 {
     });
   }
 
-  async close(options?: object): Promise<this> {
+  async close(options?: Record<string, unknown>): Promise<this> {
     this.settle(null);
     return super.close(options) as Promise<this>;
   }
@@ -184,7 +181,6 @@ function renderVariantOption(option: RitualCastFormModel): string {
     </label>
   `;
 }
-
 
 function bindVariantSelection(root: HTMLElement, onVariantSelected: (variant: RitualCastVariant) => void): void {
   const formCards = Array.from(root.querySelectorAll<HTMLElement>("[data-paranormal-toolkit-ritual-cast-form]"));

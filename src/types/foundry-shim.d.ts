@@ -21,6 +21,10 @@ type TokenLike = {
   name?: string;
   actor?: Actor | null;
   scene?: SceneLike | null;
+  document?: {
+    actor?: Actor | null;
+    name?: string | null;
+  } | null;
 };
 
 type ItemCollectionLike = Iterable<Item> | { contents?: unknown } | Item[];
@@ -45,20 +49,37 @@ type StringGameSettingRegistrationData = GameSettingBaseRegistrationData & {
 
 type GameSettingRegistrationData = BooleanGameSettingRegistrationData | StringGameSettingRegistrationData;
 
+type FoundryUserLike = {
+  id?: string;
+  isGM?: boolean;
+  active?: boolean;
+  character?: Actor | null;
+  targets?: Set<TokenLike>;
+};
+
+type FoundryCollectionLike<T = unknown> = {
+  contents?: T[];
+  get?: (id: string) => T | undefined;
+  find?: (predicate: (value: T) => boolean) => T | undefined;
+  filter?: (predicate: (value: T) => boolean) => T[];
+  forEach?: (callback: (value: T) => void) => void;
+  values?: () => Iterable<T>;
+  [Symbol.iterator]?: () => IterableIterator<T>;
+};
+
+type FoundryModuleLike = {
+  active?: boolean;
+};
+
 declare const game: {
   system: {
     id: string;
   };
-  user?: {
-    id?: string;
-    character?: Actor | null;
-    targets?: Set<TokenLike>;
-  } | null;
-  users?: Array<{
-    id?: string;
-    isGM?: boolean;
-    active?: boolean;
-  }>;
+  user?: FoundryUserLike | null;
+  users: FoundryUserLike[];
+  actors: FoundryCollectionLike<Actor>;
+  messages: FoundryCollectionLike<ChatMessageDocumentLike>;
+  modules: Map<string, FoundryModuleLike>;
   settings: {
     register(namespace: string, key: string, data: GameSettingRegistrationData): void;
     get(namespace: string, key: string): unknown;
@@ -70,6 +91,7 @@ declare const canvas:
   | {
       tokens?: {
         controlled?: TokenLike[];
+        placeables?: TokenLike[];
       };
     }
   | undefined;
@@ -83,8 +105,8 @@ declare const ui: {
 };
 
 declare const Hooks: {
-  once(hook: string, callback: (...args: unknown[]) => void): void;
-  on(hook: string, callback: (...args: unknown[]) => void): void;
+  once(hook: string, callback: (...args: any[]) => void): void;
+  on(hook: string, callback: (...args: any[]) => void): void;
   callAll(hook: string, ...args: unknown[]): void;
 };
 
@@ -96,14 +118,37 @@ declare const CONFIG: {
   };
 };
 
+type ChatMessageDocumentLike = {
+  id?: string | null;
+  content?: string;
+  timestamp?: number;
+  speaker?: { actor?: unknown };
+  _stats?: { modifiedTime?: unknown };
+  getFlag?: (scope: string, key: string) => unknown;
+  setFlag?: (scope: string, key: string, value: unknown) => Promise<unknown> | unknown;
+};
+
 declare const ChatMessage: {
   create(data: ChatMessageCreateData): Promise<unknown>;
   getSpeaker(options: { actor?: Actor | null }): ChatSpeakerData;
 };
 
+declare class ApplicationV2 {
+  static DEFAULT_OPTIONS: Record<string, unknown>;
+  constructor(options?: Record<string, unknown>);
+  render(options?: Record<string, unknown>): Promise<this> | this;
+  close(options?: Record<string, unknown>): Promise<this> | this;
+}
+
 declare const foundry: {
+  applications: {
+    api: {
+      ApplicationV2: typeof ApplicationV2;
+    };
+  };
   utils: {
     getProperty(object: unknown, path: string): unknown;
+    randomID(): string;
   };
 };
 
@@ -118,6 +163,7 @@ declare class Roll {
 
 declare class Actor {
   id: string | null;
+  uuid?: string | null;
   name: string;
   type: string;
   system: Record<string, unknown>;
@@ -125,6 +171,7 @@ declare class Actor {
   token?: TokenLike | null;
   getActiveTokens?(): TokenLike[];
   update(data: Record<string, unknown>): Promise<this>;
+  createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[]): Promise<Array<{ id?: string | null }>>;
 }
 
 declare class Item {
@@ -132,11 +179,13 @@ declare class Item {
   name: string;
   type: string;
   uuid: string;
+  system: Record<string, unknown>;
   parent: Actor | null;
   actor?: Actor | null;
   getFlag(scope: string, key: string): unknown;
   setFlag(scope: string, key: string, value: unknown): Promise<this>;
   unsetFlag(scope: string, key: string): Promise<this>;
+  update(data: Record<string, unknown>): Promise<this>;
 }
 
 declare global {

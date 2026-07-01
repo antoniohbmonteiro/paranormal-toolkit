@@ -32,13 +32,15 @@ beforeEach(() => {
 });
 
 describe("AutomationExecutionMode", () => {
-  it("usa buttons como modo padrão", () => {
-    expect(DEFAULT_AUTOMATION_EXECUTION_MODE).toBe("buttons");
-    expect(coerceAutomationExecutionMode(undefined)).toBe("buttons");
-    expect(coerceAutomationExecutionMode("modo-quebrado")).toBe("buttons");
+  it("usa ask como modo padrão", () => {
+    expect(DEFAULT_AUTOMATION_EXECUTION_MODE).toBe("ask");
+    expect(coerceAutomationExecutionMode(undefined)).toBe("ask");
+    expect(coerceAutomationExecutionMode("modo-quebrado")).toBe("ask");
+    expect(coerceAutomationExecutionMode("buttons")).toBe("ask");
+    expect(coerceAutomationExecutionMode("confirm")).toBe("ask");
   });
 
-  it("registra o setting de modo de execução e mantém autoRun legado escondido", () => {
+  it("registra os settings de uso de item e mantém autoRun legado escondido", () => {
     registerItemUseSettings();
 
     expect(game.settings.register).toHaveBeenCalledWith(
@@ -48,7 +50,27 @@ describe("AutomationExecutionMode", () => {
         scope: "world",
         config: true,
         type: String,
-        default: "buttons"
+        default: "ask"
+      })
+    );
+    expect(game.settings.register).toHaveBeenCalledWith(
+      MODULE_ID,
+      ITEM_USE_SETTING_KEYS.systemCardMode,
+      expect.objectContaining({
+        scope: "world",
+        config: true,
+        type: String,
+        default: "keep"
+      })
+    );
+    expect(game.settings.register).toHaveBeenCalledWith(
+      MODULE_ID,
+      ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled,
+      expect.objectContaining({
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true
       })
     );
     expect(game.settings.register).toHaveBeenCalledWith(
@@ -63,27 +85,32 @@ describe("AutomationExecutionMode", () => {
     );
   });
 
-  it("lê executionMode e deriva autoRun apenas do modo automático", () => {
+  it("lê executionMode e settings relacionados", () => {
+    registerItemUseSettings();
     settingsStore.set(ITEM_USE_SETTING_KEYS.executionMode, "automatic");
 
     expect(getItemUseSettings()).toEqual({
       executionMode: "automatic",
-      autoRun: true
+      systemCardMode: "keep",
+      ritualCastingCheckEnabled: true
     });
 
-    settingsStore.set(ITEM_USE_SETTING_KEYS.executionMode, "buttons");
+    settingsStore.set(ITEM_USE_SETTING_KEYS.executionMode, "ask");
+    settingsStore.set(ITEM_USE_SETTING_KEYS.systemCardMode, "replace");
+    settingsStore.set(ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled, false);
 
     expect(getItemUseSettings()).toEqual({
-      executionMode: "buttons",
-      autoRun: false
+      executionMode: "ask",
+      systemCardMode: "replace",
+      ritualCastingCheckEnabled: false
     });
   });
 
   it("permite setar o modo explicitamente", async () => {
-    await setItemUseExecutionMode("confirm");
+    await setItemUseExecutionMode("automatic");
 
-    expect(game.settings.set).toHaveBeenCalledWith(MODULE_ID, ITEM_USE_SETTING_KEYS.executionMode, "confirm");
-    expect(settingsStore.get(ITEM_USE_SETTING_KEYS.executionMode)).toBe("confirm");
+    expect(game.settings.set).toHaveBeenCalledWith(MODULE_ID, ITEM_USE_SETTING_KEYS.executionMode, "automatic");
+    expect(settingsStore.get(ITEM_USE_SETTING_KEYS.executionMode)).toBe("automatic");
   });
 
   it("mantém enable/disable legado mapeando para automatic/disabled", async () => {

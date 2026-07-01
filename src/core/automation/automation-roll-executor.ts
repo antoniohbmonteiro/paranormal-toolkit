@@ -66,7 +66,7 @@ export function createAutomationRollRequest(step: RollFormulaStep, stepIndex: nu
     id: step.id,
     formula: step.formula,
     intent,
-    damageType: step.damageType,
+    damageType: step.damageType ?? undefined,
     sourceStepIndex: stepIndex
   };
 }
