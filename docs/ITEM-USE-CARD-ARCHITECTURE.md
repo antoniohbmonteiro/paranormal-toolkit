@@ -24,3 +24,13 @@ Single-target e multi-target devem usar a mesma política. O visual pode variar,
 - Extrair use cases para resistência, dano e efeito.
 - Criar UiState compartilhado para action buttons.
 - Separar renderer de single-target e multi-target.
+
+## Use cases
+
+A partir da 0.28.3, ações específicas do card devem sair gradualmente dos arquivos de renderização:
+
+- `RollTargetResistanceUseCase`
+- `ApplyTargetDamageUseCase`
+- `ApplyTargetEffectUseCase`
+
+Os cards continuam responsáveis por DOM e refresh visual, mas devem delegar execução para use cases. Os use cases validam política de resistência e chamam engines.

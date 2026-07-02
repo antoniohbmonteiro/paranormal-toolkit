@@ -11,7 +11,11 @@ import { getItemUseResistanceGateMode } from "../item-use-settings";
 import {
   shouldBlockPendingResistanceAction,
   type ItemUseResistanceGateMode,
+  type ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
+import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
+import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
+import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
 import {
   PROMPT_CLASS,
   RESISTANCE_ROLL_BUTTON_SELECTOR,
@@ -71,6 +75,9 @@ const MULTI_TARGET_EFFECT_APPLIED_AT_ATTRIBUTE = "data-paranormal-toolkit-multi-
 const conditionEngine = new ConditionEngine(createToolkitConditionRegistry());
 const damageEngine = new DamageEngine(new OrdemDamageAdapter());
 const resistanceEngine = new ResistanceEngine(new OrdemResistanceAdapter());
+const rollTargetResistanceUseCase = new RollTargetResistanceUseCase(resistanceEngine);
+const applyTargetDamageUseCase = new ApplyTargetDamageUseCase(damageEngine);
+const applyTargetEffectUseCase = new ApplyTargetEffectUseCase(conditionEngine);
 
 const PENDING_STATE = "pending";
 const SUCCESS_STATE = "success";
@@ -937,7 +944,7 @@ async function handleTargetResistanceRoll(
   button.textContent = "...";
 
   try {
-    const resistanceRoll = await resistanceEngine.rollResistance({ actor, skill, skillLabel });
+    const resistanceRoll = await rollTargetResistanceUseCase.execute({ actor, skill, skillLabel });
     await showDiceAnimationIfAvailable(resistanceRoll.roll);
 
     const result: MultiTargetResistanceResult = {
@@ -996,12 +1003,30 @@ function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement 
 }
 
 function shouldBlockTargetActionsByResistance(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): boolean {
-  if (!viewModel.resistance || target.state !== PENDING_STATE) return false;
+  return shouldBlockPendingResistanceAction(
+    getResistanceGateModeSafe(),
+    createTargetResistanceState(target, viewModel)
+  );
+}
 
-  return shouldBlockPendingResistanceAction(getResistanceGateModeSafe(), {
-    kind: "pending",
-    difficulty: viewModel.resistance.difficulty ?? 0
-  });
+function createTargetResistanceState(
+  target: MultiTargetViewModel,
+  viewModel: MultiTargetCardViewModel
+): ResistanceResolutionState {
+  if (!viewModel.resistance) return { kind: "none" };
+
+  const difficulty = viewModel.resistance.difficulty ?? 0;
+  const total = target.resistanceResult?.total ?? 0;
+
+  if (target.state === SUCCESS_STATE) {
+    return { kind: "succeeded", difficulty, total };
+  }
+
+  if (target.state === FAILURE_STATE) {
+    return { kind: "failed", difficulty, total };
+  }
+
+  return { kind: "pending", difficulty };
 }
 
 function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
@@ -1123,20 +1148,16 @@ async function handleTargetDamageApplication(
   button.textContent = "Aplicando...";
 
   try {
-    const result = await damageEngine.applyDamage({
+    const result = await applyTargetDamageUseCase.execute({
       actor,
-      instances: [
-        {
-          id: `multi-target:${target.id}:${mode}`,
-          amount,
-          damageType: viewModel.damage.typeLabel,
-          label: mode === "half" ? "Metade" : "Dano normal",
-          sourceRollId: "damage",
-          ignoreResistance: false
-        }
-      ],
+      amount,
+      damageType: viewModel.damage.typeLabel,
+      label: mode === "half" ? "Metade" : "Dano normal",
+      sourceRollId: "damage",
       source: "item-use.multi-target-damage",
-      originUuid: null
+      originUuid: null,
+      resistanceGateMode: getResistanceGateModeSafe(),
+      resistanceState: createTargetResistanceState(target, viewModel)
     });
 
     if (!result.ok) {
@@ -1273,12 +1294,14 @@ async function handleTargetEffectApplication(
   button.textContent = "Aplicando...";
 
   try {
-    const result = await conditionEngine.applyCondition({
+    const result = await applyTargetEffectUseCase.execute({
       actor,
       conditionId: effect.conditionId,
       duration: effect.duration,
       originUuid: effect.originUuid,
-      source: effect.source
+      source: effect.source,
+      resistanceGateMode: getResistanceGateModeSafe(),
+      resistanceState: createTargetResistanceState(target, viewModel)
     });
 
     if (!result.ok) {
