@@ -3,6 +3,7 @@ import { CHAT_CARD_FLAG_KEY } from "./item-use-chat-card-constants";
 
 const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const MULTI_TARGET_RESISTANCE_RESULTS_KEY = "multiTargetResistanceResults";
+const MULTI_TARGET_DAMAGE_APPLICATIONS_KEY = "multiTargetDamageApplications";
 
 export type MultiTargetResistanceResult = {
   targetId: string;
@@ -13,6 +14,18 @@ export type MultiTargetResistanceResult = {
   total: number;
   diceBreakdown: string | null;
   rolledAt: string;
+};
+
+export type MultiTargetDamageMode = "normal" | "half";
+
+export type MultiTargetDamageApplication = {
+  targetId: string;
+  targetName: string;
+  mode: MultiTargetDamageMode;
+  inputAmount: number;
+  finalDamage: number;
+  blocked: number;
+  appliedAt: string;
 };
 
 type ChatMessageFlagDocument = {
@@ -28,6 +41,7 @@ type PersistedToolkitChatCard = Record<string, unknown> & {
 type PersistedPromptLike = Record<string, unknown> & {
   pendingId?: unknown;
   multiTargetResistanceResults?: unknown;
+  multiTargetDamageApplications?: unknown;
 };
 
 export function readPersistedMultiTargetResistanceResults(rollCard: HTMLElement): Map<string, MultiTargetResistanceResult> {
@@ -50,6 +64,43 @@ export async function persistMultiTargetResistanceResult(
   rollCard: HTMLElement,
   result: MultiTargetResistanceResult
 ): Promise<void> {
+  await persistMultiTargetPromptEntry(rollCard, MULTI_TARGET_RESISTANCE_RESULTS_KEY, result.targetId, result);
+}
+
+export function readPersistedMultiTargetDamageApplications(rollCard: HTMLElement): Map<string, MultiTargetDamageApplication> {
+  const applications = new Map<string, MultiTargetDamageApplication>();
+  const prompt = readPersistedPromptForRollCard(rollCard);
+  const source = prompt?.[MULTI_TARGET_DAMAGE_APPLICATIONS_KEY];
+
+  if (!isRecord(source)) return applications;
+
+  for (const [targetId, value] of Object.entries(source)) {
+    if (isMultiTargetDamageApplication(value) && value.targetId === targetId) {
+      applications.set(targetId, value);
+    }
+  }
+
+  return applications;
+}
+
+export async function persistMultiTargetDamageApplication(
+  rollCard: HTMLElement,
+  application: MultiTargetDamageApplication
+): Promise<void> {
+  await persistMultiTargetPromptEntry(
+    rollCard,
+    MULTI_TARGET_DAMAGE_APPLICATIONS_KEY,
+    application.targetId,
+    application
+  );
+}
+
+async function persistMultiTargetPromptEntry(
+  rollCard: HTMLElement,
+  key: typeof MULTI_TARGET_RESISTANCE_RESULTS_KEY | typeof MULTI_TARGET_DAMAGE_APPLICATIONS_KEY,
+  targetId: string,
+  value: MultiTargetResistanceResult | MultiTargetDamageApplication
+): Promise<void> {
   const promptId = findPromptId(rollCard);
   if (!promptId) return;
 
@@ -61,16 +112,16 @@ export async function persistMultiTargetResistanceResult(
   const prompts = card.prompts.map((prompt) => {
     if (!isRecord(prompt) || prompt.pendingId !== promptId) return prompt;
 
-    const existingResults = isRecord(prompt[MULTI_TARGET_RESISTANCE_RESULTS_KEY])
-      ? prompt[MULTI_TARGET_RESISTANCE_RESULTS_KEY]
+    const existingEntries = isRecord(prompt[key])
+      ? prompt[key]
       : {};
 
     changed = true;
     return {
       ...prompt,
-      [MULTI_TARGET_RESISTANCE_RESULTS_KEY]: {
-        ...existingResults,
-        [result.targetId]: result
+      [key]: {
+        ...existingEntries,
+        [targetId]: value
       }
     } satisfies PersistedPromptLike;
   });
@@ -133,6 +184,25 @@ function isMultiTargetResistanceResult(value: unknown): value is MultiTargetResi
     && Number.isFinite(value.total)
     && (typeof value.diceBreakdown === "string" || value.diceBreakdown === null)
     && typeof value.rolledAt === "string";
+}
+
+function isMultiTargetDamageApplication(value: unknown): value is MultiTargetDamageApplication {
+  if (!isRecord(value)) return false;
+
+  return typeof value.targetId === "string"
+    && typeof value.targetName === "string"
+    && isDamageMode(value.mode)
+    && typeof value.inputAmount === "number"
+    && Number.isFinite(value.inputAmount)
+    && typeof value.finalDamage === "number"
+    && Number.isFinite(value.finalDamage)
+    && typeof value.blocked === "number"
+    && Number.isFinite(value.blocked)
+    && typeof value.appliedAt === "string";
+}
+
+function isDamageMode(value: unknown): value is MultiTargetDamageMode {
+  return value === "normal" || value === "half";
 }
 
 function isChatMessageFlagDocument(value: unknown): value is ChatMessageFlagDocument {
