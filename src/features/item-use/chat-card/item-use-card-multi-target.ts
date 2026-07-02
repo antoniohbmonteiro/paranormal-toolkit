@@ -1,8 +1,10 @@
 import { OrdemDamageAdapter } from "../../../adapters/ordem/ordem-damage-adapter";
 import { getResistanceSkillLabel, rollOrdemResistance } from "../../../adapters/ordem/ordem-resistance-roll-adapter";
+import type { AutomationConditionApplicationDefinition } from "../../../core/automation/automation-definition";
 import type { ToolkitConditionDurationInput } from "../../conditions/condition-duration";
 import { ConditionEngine } from "../../conditions/condition-engine";
 import { createToolkitConditionRegistry } from "../../conditions/condition-registry";
+import { readAutomationDefinition } from "../../automation/automation-flag-reader";
 import {
   PROMPT_CLASS,
   RESISTANCE_ROLL_BUTTON_SELECTOR,
@@ -20,6 +22,7 @@ import {
   persistMultiTargetResistanceResult,
   readPersistedMultiTargetDamageApplications,
   readPersistedMultiTargetEffectApplications,
+  readPersistedMultiTargetPromptContext,
   readPersistedMultiTargetResistanceResults,
   type MultiTargetDamageApplication,
   type MultiTargetDamageMode,
@@ -58,8 +61,7 @@ const MULTI_TARGET_EFFECT_REFRESHED_ATTRIBUTE = "data-paranormal-toolkit-multi-t
 const MULTI_TARGET_EFFECT_TARGET_NAME_ATTRIBUTE = "data-paranormal-toolkit-multi-target-effect-target-name";
 const MULTI_TARGET_EFFECT_APPLIED_AT_ATTRIBUTE = "data-paranormal-toolkit-multi-target-effect-applied-at";
 
-const conditionRegistry = createToolkitConditionRegistry();
-const conditionEngine = new ConditionEngine(conditionRegistry);
+const conditionEngine = new ConditionEngine(createToolkitConditionRegistry());
 const damageAdapter = new OrdemDamageAdapter();
 
 const PENDING_STATE = "pending";
@@ -108,8 +110,8 @@ type TargetDamageViewModel = {
 
 type TargetEffectViewModel = {
   label: string;
-  conditionId: string | null;
-  conditionLabel: string | null;
+  conditionId: string;
+  conditionLabel: string;
   duration: ToolkitConditionDurationInput | null;
   source: string | null;
   originUuid: string | null;
@@ -174,7 +176,7 @@ function createMultiTargetCardViewModel(input: MultiTargetCardLayoutInput): Mult
     rollCard: input.rollCard,
     targets,
     damage: createDamageViewModel(input.damageSection),
-    effect: createEffectViewModel(input.effectSection),
+    effect: createEffectViewModel(input.rollCard, input.effectSection),
     resistance
   };
 }
@@ -209,63 +211,132 @@ function createDamageViewModel(damageSection: HTMLElement | null): TargetDamageV
   };
 }
 
-function createEffectViewModel(effectSection: HTMLElement | null): TargetEffectViewModel | null {
-  const label = effectSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-section-label`)?.textContent?.trim();
-  if (!label || label.length === 0) return null;
+function createEffectViewModel(rollCard: HTMLElement, effectSection: HTMLElement | null): TargetEffectViewModel | null {
+  const displayLabel = effectSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-section-label`)?.textContent?.trim();
+  const application = resolveTargetConditionApplication(rollCard, displayLabel ?? null);
+  if (!application) return null;
 
-  const condition = resolveEffectCondition(label);
   return {
-    label,
-    conditionId: condition?.id ?? null,
-    conditionLabel: condition?.label ?? null,
-    duration: parseEffectDuration(label),
-    source: "item-use.multi-target-effect",
-    originUuid: null
+    label: displayLabel && displayLabel.length > 0 ? displayLabel : application.conditionLabel,
+    conditionId: application.conditionId,
+    conditionLabel: application.conditionLabel,
+    duration: normalizeConditionDuration(application.duration),
+    source: application.source,
+    originUuid: application.originUuid
   };
 }
 
-type ResolvedEffectCondition = {
-  id: string;
-  label: string;
+type TargetConditionApplication = {
+  conditionId: string;
+  conditionLabel: string;
+  duration: AutomationConditionApplicationDefinition["duration"] | null;
+  source: string | null;
+  originUuid: string | null;
 };
 
-function resolveEffectCondition(label: string): ResolvedEffectCondition | null {
-  for (const candidate of createEffectConditionCandidates(label)) {
-    const result = conditionRegistry.get(candidate);
-    if (result.ok) {
-      return {
-        id: result.value.id,
-        label: result.value.label
-      };
-    }
+function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: string | null): TargetConditionApplication | null {
+  const context = readPersistedMultiTargetPromptContext(rollCard);
+  const sourceItem = resolveSourceItem(context);
+  if (!sourceItem) return null;
+
+  const definition = readAutomationDefinition(sourceItem);
+  if (!definition.ok) return null;
+
+  const targetApplications = (definition.value.conditionApplications ?? [])
+    .filter((application) => application.actor === "target");
+
+  if (targetApplications.length === 0) return null;
+
+  const application = selectTargetConditionApplication(targetApplications, displayLabel);
+  if (!application) return null;
+
+  return {
+    conditionId: application.conditionId,
+    conditionLabel: application.label ?? application.conditionId,
+    duration: application.duration ?? null,
+    source: application.source ?? "item-use.condition-action",
+    originUuid: sourceItem.uuid ?? null
+  };
+}
+
+function selectTargetConditionApplication(
+  applications: AutomationConditionApplicationDefinition[],
+  displayLabel: string | null
+): AutomationConditionApplicationDefinition | null {
+  if (applications.length === 1) return applications[0] ?? null;
+  if (!displayLabel) return null;
+
+  const normalizedDisplayLabel = normalizeLookupName(displayLabel);
+  if (!normalizedDisplayLabel) return null;
+
+  return applications.find((application) => {
+    return [
+      application.label,
+      application.conditionId
+    ].some((candidate) => normalizeLookupName(candidate) === normalizedDisplayLabel);
+  }) ?? null;
+}
+
+function normalizeConditionDuration(
+  duration: AutomationConditionApplicationDefinition["duration"] | null
+): ToolkitConditionDurationInput | null {
+  if (!duration) return null;
+
+  return {
+    rounds: duration.rounds ?? null,
+    expiry: duration.expiry ?? null
+  };
+}
+
+function resolveSourceItem(context: ReturnType<typeof readPersistedMultiTargetPromptContext>): Item | null {
+  if (!context) return null;
+
+  const sourceActor = context.actorId ? resolveActorById(context.actorId) : null;
+  const actorItem = sourceActor ? resolveEmbeddedItem(sourceActor, context.itemId, context.itemName) : null;
+  if (actorItem) return actorItem;
+
+  const worldItem = resolveWorldItem(context.itemId, context.itemName);
+  return worldItem;
+}
+
+function resolveEmbeddedItem(actor: Actor, itemId: string | null, itemName: string | null): Item | null {
+  const items = actor.items as {
+    get?: (id: string) => unknown;
+    find?: (predicate: (item: unknown) => boolean) => unknown;
+  } | undefined;
+
+  if (itemId) {
+    const item = items?.get?.(itemId);
+    if (isItemLike(item)) return item;
+  }
+
+  const normalizedName = normalizeLookupName(itemName);
+  if (normalizedName) {
+    const item = items?.find?.((candidate) => isItemLike(candidate) && normalizeLookupName(candidate.name) === normalizedName);
+    if (isItemLike(item)) return item;
   }
 
   return null;
 }
 
-function createEffectConditionCandidates(label: string): string[] {
-  const normalized = label.trim();
-  const candidates = [
-    normalized,
-    normalized.replace(/^aplicar\s+/iu, "").trim(),
-    normalized.split(/[:•·|–—-]/u)[0]?.trim() ?? "",
-    normalized.replace(/\b\d+\s+rodadas?\b/iu, "").replace(/[:•·|–—-]/gu, " ").trim()
-  ];
+function resolveWorldItem(itemId: string | null, itemName: string | null): Item | null {
+  const items = game.items as {
+    get?: (id: string) => unknown;
+    find?: (predicate: (item: unknown) => boolean) => unknown;
+  } | undefined;
 
-  return Array.from(new Set(candidates.filter((candidate) => candidate.length > 0)));
-}
+  if (itemId) {
+    const item = items?.get?.(itemId);
+    if (isItemLike(item)) return item;
+  }
 
-function parseEffectDuration(label: string): ToolkitConditionDurationInput | null {
-  const roundsMatch = label.match(/\b(\d+)\s+rodadas?\b/iu);
-  if (!roundsMatch) return null;
+  const normalizedName = normalizeLookupName(itemName);
+  if (normalizedName) {
+    const item = items?.find?.((candidate) => isItemLike(candidate) && normalizeLookupName(candidate.name) === normalizedName);
+    if (isItemLike(item)) return item;
+  }
 
-  const rounds = Number.parseInt(roundsMatch[1] ?? "", 10);
-  if (!Number.isInteger(rounds) || rounds <= 0) return null;
-
-  return {
-    rounds,
-    expiry: "turnStart"
-  };
+  return null;
 }
 
 function createResistanceViewModel(rollCard: HTMLElement, damageSection: HTMLElement | null): TargetResistanceViewModel | null {
@@ -1114,23 +1185,14 @@ function createTargetEffectActionButton(
     );
   }
 
-  if (!viewModel.effect.conditionId) {
-    return createTargetActionButton(
-      "✦",
-      density === "full" ? "Efeito não resolvido" : "Efeito —",
-      [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--disabled`],
-      true
-    );
-  }
-
   const button = createTargetActionButton(
     "✦",
-    density === "full" ? `Aplicar ${viewModel.effect.conditionLabel ?? "efeito"}` : "Efeito",
+    density === "full" ? `Aplicar ${viewModel.effect.conditionLabel}` : "Efeito",
     [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--pending-effect`],
     false
   );
 
-  button.title = `Aplicar ${viewModel.effect.conditionLabel ?? viewModel.effect.label} em ${target.name}`;
+  button.title = `Aplicar ${viewModel.effect.conditionLabel} em ${target.name}`;
   button.setAttribute("aria-label", button.title);
   button.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1163,8 +1225,8 @@ async function handleTargetEffectApplication(
   }
 
   const effect = viewModel.effect;
-  if (!effect?.conditionId) {
-    ui.notifications?.warn?.("Paranormal Toolkit: não consegui resolver a condição deste efeito.");
+  if (!effect) {
+    ui.notifications?.warn?.("Paranormal Toolkit: este card não possui efeito estruturado para aplicar.");
     return;
   }
 

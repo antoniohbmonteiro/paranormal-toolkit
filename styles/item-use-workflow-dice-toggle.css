@@ -1477,7 +1477,7 @@
   box-shadow: inset 0 0 0 1px rgba(44, 121, 74, 0.08) !important;
 }
 
-/* 0.26.0 — Multi-target effect application */
+/* 0.26.1 — Structured multi-target effect application */
 .paranormal-toolkit-item-use-prompt__target-action--effect:not(:disabled) {
   opacity: 1 !important;
   cursor: pointer !important;

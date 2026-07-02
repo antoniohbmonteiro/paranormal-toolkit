@@ -40,6 +40,12 @@ export type MultiTargetEffectApplication = {
   appliedAt: string;
 };
 
+export type MultiTargetPromptContext = {
+  actorId: string | null;
+  itemId: string | null;
+  itemName: string | null;
+};
+
 type ChatMessageFlagDocument = {
   id?: unknown;
   getFlag?: (scope: string, key: string) => unknown;
@@ -52,6 +58,9 @@ type PersistedToolkitChatCard = Record<string, unknown> & {
 
 type PersistedPromptLike = Record<string, unknown> & {
   pendingId?: unknown;
+  actorId?: unknown;
+  itemId?: unknown;
+  itemName?: unknown;
   multiTargetResistanceResults?: unknown;
   multiTargetDamageApplications?: unknown;
   multiTargetEffectApplications?: unknown;
@@ -134,6 +143,17 @@ export async function persistMultiTargetEffectApplication(
     application.targetId,
     application
   );
+}
+
+export function readPersistedMultiTargetPromptContext(rollCard: HTMLElement): MultiTargetPromptContext | null {
+  const prompt = readPersistedPromptForRollCard(rollCard);
+  if (!prompt) return null;
+
+  return {
+    actorId: readNullableString(prompt.actorId),
+    itemId: readNullableString(prompt.itemId),
+    itemName: readNullableString(prompt.itemName)
+  };
 }
 
 async function persistMultiTargetPromptEntry(
@@ -260,6 +280,10 @@ function isMultiTargetEffectApplication(value: unknown): value is MultiTargetEff
     && typeof value.created === "boolean"
     && typeof value.refreshed === "boolean"
     && typeof value.appliedAt === "string";
+}
+
+function readNullableString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
 }
 
 function isChatMessageFlagDocument(value: unknown): value is ChatMessageFlagDocument {
