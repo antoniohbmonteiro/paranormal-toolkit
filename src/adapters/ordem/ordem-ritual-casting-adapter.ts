@@ -1,14 +1,12 @@
 import { animateRollWithDiceSoNice } from "../../features/dice/dice-animation-service";
+import type {
+  RitualCastingAdapter,
+  RitualCastingCheckResult,
+} from "../../core/rituals/ritual-casting-adapter";
 
-export type OrdemRitualCastingCheckResult = {
+export type OrdemRitualCastingCheckResult = RitualCastingCheckResult & {
   skill: "occultism";
   skillLabel: "Ocultismo";
-  roll: Roll;
-  formula: string;
-  total: number;
-  difficulty: number;
-  success: boolean;
-  diceBreakdown: string | null;
 };
 
 type SkillRollerActor = Actor & {
@@ -35,38 +33,48 @@ type RollLike = Roll & {
 
 const OCCULTISM_SKILL = "occultism";
 
+export class OrdemRitualCastingAdapter implements RitualCastingAdapter {
+  getDifficulty(actor: Actor): number | null {
+    return getOrdemRitualDifficulty(actor);
+  }
+
+  async rollCastingCheck(actor: Actor): Promise<OrdemRitualCastingCheckResult> {
+    const difficulty = this.getDifficulty(actor);
+
+    if (difficulty === null) {
+      throw new Error("Não foi possível ler a DT de ritual do conjurador.");
+    }
+
+    const roll = await rollNativeSkill(actor, OCCULTISM_SKILL);
+
+    if (!roll) {
+      throw new Error("Não foi possível rolar Ocultismo pelo sistema Ordem.");
+    }
+
+    await animateRollWithDiceSoNice(roll);
+
+    const total = getRollTotal(roll);
+
+    return {
+      skill: OCCULTISM_SKILL,
+      skillLabel: "Ocultismo",
+      roll,
+      formula: getRollFormula(roll),
+      total,
+      difficulty,
+      success: total >= difficulty,
+      diceBreakdown: describeD20Results(roll)
+    };
+  }
+}
+
 export function getOrdemRitualDifficulty(actor: Actor): number | null {
   const difficulty = (actor as ActorWithRitualDifficulty).system?.ritual?.DT;
   return typeof difficulty === "number" && Number.isFinite(difficulty) ? Math.trunc(difficulty) : null;
 }
 
 export async function rollOrdemRitualCastingCheck(actor: Actor): Promise<OrdemRitualCastingCheckResult> {
-  const difficulty = getOrdemRitualDifficulty(actor);
-
-  if (difficulty === null) {
-    throw new Error("Não foi possível ler a DT de ritual do conjurador.");
-  }
-
-  const roll = await rollNativeSkill(actor, OCCULTISM_SKILL);
-
-  if (!roll) {
-    throw new Error("Não foi possível rolar Ocultismo pelo sistema Ordem.");
-  }
-
-  await animateRollWithDiceSoNice(roll);
-
-  const total = getRollTotal(roll);
-
-  return {
-    skill: OCCULTISM_SKILL,
-    skillLabel: "Ocultismo",
-    roll,
-    formula: getRollFormula(roll),
-    total,
-    difficulty,
-    success: total >= difficulty,
-    diceBreakdown: describeD20Results(roll)
-  };
+  return new OrdemRitualCastingAdapter().rollCastingCheck(actor);
 }
 
 async function rollNativeSkill(actor: Actor, skill: string): Promise<Roll | null> {

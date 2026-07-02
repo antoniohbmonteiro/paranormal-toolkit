@@ -1,6 +1,8 @@
 import { OrdemDamageAdapter } from "./adapters/ordem/ordem-damage-adapter";
 import { OrdemResourceAdapter } from "./adapters/ordem/ordem-resource-adapter";
+import { OrdemResistanceAdapter } from "./adapters/ordem/ordem-resistance-roll-adapter";
 import { OrdemRitualAdapter } from "./adapters/ordem/ordem-ritual-adapter";
+import { OrdemRitualCastingAdapter } from "./adapters/ordem/ordem-ritual-casting-adapter";
 import { OrdemRitualCostProvider } from "./adapters/ordem/ordem-ritual-cost-provider";
 import { OrdemItemUsedHookStrategy } from "./adapters/ordem/item-use/ordem-item-used-hook-strategy";
 import { OrdemItemPatchAdapter } from "./adapters/ordem/ordem-item-patch-adapter";
@@ -8,7 +10,10 @@ import { OrdemSystemAdapter } from "./adapters/ordem/ordem-system-adapter";
 import { AutomationBinder } from "./core/automation/automation-binder";
 import { AutomationRegistry } from "./core/automation/automation-registry";
 import { AutomationRunner } from "./core/automation/automation-runner";
+import { DamageEngine } from "./core/damage/damage-engine";
+import { ResistanceEngine } from "./core/resistance/resistance-engine";
 import { ResourceEngine } from "./core/resources/resource-engine";
+import { RitualCastingEngine } from "./core/rituals/ritual-casting-engine";
 import { WorkflowEngine } from "./core/workflow/workflow-engine";
 import { WorkflowHookEmitter } from "./core/workflow/workflow-hook-emitter";
 import { DebugOutputService } from "./debug/output/debug-output-service";
@@ -29,7 +34,9 @@ export type ToolkitServices = {
   ritualAdapter: OrdemRitualAdapter;
   ritualCosts: OrdemRitualCostProvider;
   resources: ResourceEngine;
-  damage: OrdemDamageAdapter;
+  damage: DamageEngine;
+  resistance: ResistanceEngine;
+  ritualCasting: RitualCastingEngine;
   automationRegistry: AutomationRegistry;
   automationBinder: AutomationBinder;
   itemPatches: OrdemItemPatchAdapter;
@@ -48,7 +55,9 @@ export type ToolkitServices = {
 export function createToolkitServices(): ToolkitServices {
   const resourceAdapter = new OrdemResourceAdapter();
   const resources = new ResourceEngine(resourceAdapter);
-  const damage = new OrdemDamageAdapter();
+  const damage = new DamageEngine(new OrdemDamageAdapter());
+  const resistance = new ResistanceEngine(new OrdemResistanceAdapter());
+  const ritualCasting = new RitualCastingEngine(new OrdemRitualCastingAdapter());
   const ritualAdapter = new OrdemRitualAdapter();
   const ritualCosts = new OrdemRitualCostProvider(ritualAdapter);
   const ordem = new OrdemSystemAdapter(resourceAdapter);
@@ -105,6 +114,8 @@ export function createToolkitServices(): ToolkitServices {
     ritualCosts,
     resources,
     damage,
+    resistance,
+    ritualCasting,
     automationRegistry,
     automationBinder,
     itemPatches,

@@ -1,9 +1,10 @@
-export type OrdemResistanceRollResult = {
-  roll: Roll;
-  formula: string;
-  total: number;
-  diceBreakdown: string | null;
-};
+import type {
+  ResistanceRollAdapter,
+  ResistanceRollInput,
+  ResistanceRollResult,
+} from "../../core/resistance/resistance-roll-adapter";
+
+export type OrdemResistanceRollResult = ResistanceRollResult;
 
 type SkillRollerActor = Actor & {
   rollSkill?: (
@@ -19,19 +20,31 @@ type RollLike = Roll & {
   total?: number | null;
 };
 
-export async function rollOrdemResistance(actor: Actor, skill: string): Promise<OrdemResistanceRollResult> {
-  const roll = await rollNativeSkill(actor, skill);
+export class OrdemResistanceAdapter implements ResistanceRollAdapter {
+  async rollResistance(input: ResistanceRollInput): Promise<OrdemResistanceRollResult> {
+    const roll = await rollNativeSkill(input.actor, input.skill);
 
-  if (!roll) {
-    throw new Error(`Não foi possível rolar a resistência ${skill} pelo sistema Ordem.`);
+    if (!roll) {
+      throw new Error(`Não foi possível rolar a resistência ${input.skill} pelo sistema Ordem.`);
+    }
+
+    return {
+      skill: input.skill,
+      skillLabel: input.skillLabel ?? getResistanceSkillLabel(input.skill),
+      roll,
+      formula: getRollFormula(roll),
+      total: getRollTotal(roll),
+      diceBreakdown: describeD20Results(roll)
+    };
   }
 
-  return {
-    roll,
-    formula: getRollFormula(roll),
-    total: getRollTotal(roll),
-    diceBreakdown: describeD20Results(roll)
-  };
+  getSkillLabel(skill: string): string {
+    return getResistanceSkillLabel(skill);
+  }
+}
+
+export async function rollOrdemResistance(actor: Actor, skill: string): Promise<OrdemResistanceRollResult> {
+  return new OrdemResistanceAdapter().rollResistance({ actor, skill });
 }
 
 export function getResistanceSkillLabel(skill: string): string {

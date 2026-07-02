@@ -1,6 +1,6 @@
 {
   "name": "paranormal-toolkit",
-  "version": "0.26.1",
+  "version": "0.27.1",
   "private": true,
   "type": "module",
   "description": "Kit de automações e qualidade de vida para mesas paranormais no Foundry VTT v14+.",
@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "check": "npm run typecheck && npm run test && npm run build",
+    "check:unused": "node scripts/find-unused-source-files.mjs",
+    "check:unused:strict": "node scripts/find-unused-source-files.mjs --strict"
   },
   "devDependencies": {
     "@types/node": "latest",

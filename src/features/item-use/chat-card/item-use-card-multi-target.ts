@@ -1,5 +1,7 @@
 import { OrdemDamageAdapter } from "../../../adapters/ordem/ordem-damage-adapter";
-import { getResistanceSkillLabel, rollOrdemResistance } from "../../../adapters/ordem/ordem-resistance-roll-adapter";
+import { getResistanceSkillLabel, OrdemResistanceAdapter } from "../../../adapters/ordem/ordem-resistance-roll-adapter";
+import { DamageEngine } from "../../../core/damage/damage-engine";
+import { ResistanceEngine } from "../../../core/resistance/resistance-engine";
 import type { AutomationConditionApplicationDefinition } from "../../../core/automation/automation-definition";
 import type { ToolkitConditionDurationInput } from "../../conditions/condition-duration";
 import { ConditionEngine } from "../../conditions/condition-engine";
@@ -62,7 +64,8 @@ const MULTI_TARGET_EFFECT_TARGET_NAME_ATTRIBUTE = "data-paranormal-toolkit-multi
 const MULTI_TARGET_EFFECT_APPLIED_AT_ATTRIBUTE = "data-paranormal-toolkit-multi-target-effect-applied-at";
 
 const conditionEngine = new ConditionEngine(createToolkitConditionRegistry());
-const damageAdapter = new OrdemDamageAdapter();
+const damageEngine = new DamageEngine(new OrdemDamageAdapter());
+const resistanceEngine = new ResistanceEngine(new OrdemResistanceAdapter());
 
 const PENDING_STATE = "pending";
 const SUCCESS_STATE = "success";
@@ -312,7 +315,10 @@ function resolveEmbeddedItem(actor: Actor, itemId: string | null, itemName: stri
 
   const normalizedName = normalizeLookupName(itemName);
   if (normalizedName) {
-    const item = items?.find?.((candidate) => isItemLike(candidate) && normalizeLookupName(candidate.name) === normalizedName);
+    const item = items?.find?.((candidate) => {
+      if (!isItemLike(candidate)) return false;
+      return normalizeLookupName(candidate.name) === normalizedName;
+    });
     if (isItemLike(item)) return item;
   }
 
@@ -320,10 +326,10 @@ function resolveEmbeddedItem(actor: Actor, itemId: string | null, itemName: stri
 }
 
 function resolveWorldItem(itemId: string | null, itemName: string | null): Item | null {
-  const items = game.items as {
+  const items = (game as { items?: {
     get?: (id: string) => unknown;
     find?: (predicate: (item: unknown) => boolean) => unknown;
-  } | undefined;
+  } }).items;
 
   if (itemId) {
     const item = items?.get?.(itemId);
@@ -332,7 +338,10 @@ function resolveWorldItem(itemId: string | null, itemName: string | null): Item 
 
   const normalizedName = normalizeLookupName(itemName);
   if (normalizedName) {
-    const item = items?.find?.((candidate) => isItemLike(candidate) && normalizeLookupName(candidate.name) === normalizedName);
+    const item = items?.find?.((candidate) => {
+      if (!isItemLike(candidate)) return false;
+      return normalizeLookupName(candidate.name) === normalizedName;
+    });
     if (isItemLike(item)) return item;
   }
 
@@ -923,7 +932,7 @@ async function handleTargetResistanceRoll(
   button.textContent = "...";
 
   try {
-    const resistanceRoll = await rollOrdemResistance(actor, skill);
+    const resistanceRoll = await resistanceEngine.rollResistance({ actor, skill, skillLabel });
     await showDiceAnimationIfAvailable(resistanceRoll.roll);
 
     const result: MultiTargetResistanceResult = {
@@ -1092,7 +1101,7 @@ async function handleTargetDamageApplication(
   button.textContent = "Aplicando...";
 
   try {
-    const result = await damageAdapter.applyDamage({
+    const result = await damageEngine.applyDamage({
       actor,
       instances: [
         {
@@ -1542,6 +1551,20 @@ function resolveTokenActor(value: unknown): Actor | null {
 
 function isActorLike(value: unknown): value is Actor {
   return Boolean(value && typeof value === "object" && "system" in value);
+}
+
+function resolveActorById(actorId: string): Actor | null {
+  const actor = game.actors.get(actorId);
+  return isActorLike(actor) ? actor : null;
+}
+
+function isItemLike(value: unknown): value is Item {
+  return Boolean(
+    value
+      && typeof value === "object"
+      && "getFlag" in value
+      && typeof (value as { name?: unknown }).name === "string"
+  );
 }
 
 function normalizeLookupName(value: string | null | undefined): string | null {
