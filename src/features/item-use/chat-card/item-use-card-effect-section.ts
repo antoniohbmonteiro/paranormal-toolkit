@@ -1,4 +1,11 @@
 import { PROMPT_CLASS, RESISTANCE_SELECTOR } from "./item-use-chat-card-constants";
+import { getItemUseResistanceGateMode } from "../item-use-settings";
+import {
+  resolveResistanceResolutionState,
+  shouldBlockPendingResistanceAction,
+  type ItemUseResistanceGateMode,
+  type ResistanceResolutionState,
+} from "../config/item-use-resistance-gate-policy";
 import {
   normalizeLookupText,
   normalizeText,
@@ -58,20 +65,25 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, section:
   }
 
   const effectLabel = resolveEffectActionDisplayLabel(section, button, currentLabel);
-  if (!shouldGateEffectByResistance(rollCard, effectLabel)) {
+  const resistanceState = resolveEffectResistanceState(rollCard);
+
+  if (resistanceState.kind === "none") {
     clearEffectResistanceGate(button);
+    enhanceEffectActionButton(button, effectLabel);
     return;
   }
 
-  const difficulty = readCastingDifficulty(rollCard);
-  const resistanceTotal = readResistanceTotal(rollCard);
+  if (resistanceState.kind === "pending") {
+    if (shouldBlockPendingResistanceAction(getResistanceGateModeSafe(), resistanceState)) {
+      setEffectWaitingForResistance(button);
+      return;
+    }
 
-  if (difficulty === null || resistanceTotal === null) {
-    setEffectWaitingForResistance(button);
+    setEffectAvailableBeforeResistance(button, effectLabel);
     return;
   }
 
-  if (resistanceTotal >= difficulty) {
+  if (resistanceState.kind === "succeeded") {
     setEffectResisted(button);
     return;
   }
@@ -272,15 +284,17 @@ function resolveEffectActionDisplayLabel(section: HTMLElement, button: HTMLButto
   return resolveEffectActionOriginalLabel(button, currentLabel) ?? currentLabel;
 }
 
-function shouldGateEffectByResistance(rollCard: HTMLElement, effectLabel: string): boolean {
-  if (!rollCard.querySelector(RESISTANCE_SELECTOR)) return false;
-
-  const normalized = normalizeLookupText(effectLabel);
-  return normalized.includes("vulneravel") || normalized.includes("vulnerable");
+function resolveEffectResistanceState(rollCard: HTMLElement): ResistanceResolutionState {
+  return resolveResistanceResolutionState({
+    hasResistance: Boolean(rollCard.querySelector(RESISTANCE_SELECTOR)),
+    difficulty: readCastingDifficulty(rollCard),
+    resistanceTotal: readResistanceTotal(rollCard),
+  });
 }
 
 function setEffectWaitingForResistance(button: HTMLButtonElement): void {
   button.disabled = true;
+  button.setAttribute("aria-disabled", "true");
   button.removeAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE);
   button.removeAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE);
   button.classList.remove(
@@ -310,6 +324,11 @@ function setEffectResisted(button: HTMLButtonElement): void {
   );
 }
 
+function setEffectAvailableBeforeResistance(button: HTMLButtonElement, effectLabel: string): void {
+  clearEffectResistanceGate(button);
+  enhanceEffectActionButton(button, effectLabel);
+}
+
 function setEffectAvailableAfterFailedResistance(button: HTMLButtonElement, effectLabel: string): void {
   clearEffectResistanceGate(button);
   enhanceEffectActionButton(button, effectLabel);
@@ -321,6 +340,15 @@ function clearEffectResistanceGate(button: HTMLButtonElement): void {
     `${PROMPT_CLASS}__button--effect-resolution-resisted`
   );
   button.removeAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE);
+  button.removeAttribute("aria-disabled");
+}
+
+function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
+  try {
+    return getItemUseResistanceGateMode();
+  } catch {
+    return "strict";
+  }
 }
 
 function formatEffectActionLabel(label: string): string {

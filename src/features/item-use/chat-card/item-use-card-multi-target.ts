@@ -7,6 +7,11 @@ import type { ToolkitConditionDurationInput } from "../../conditions/condition-d
 import { ConditionEngine } from "../../conditions/condition-engine";
 import { createToolkitConditionRegistry } from "../../conditions/condition-registry";
 import { readAutomationDefinition } from "../../automation/automation-flag-reader";
+import { getItemUseResistanceGateMode } from "../item-use-settings";
+import {
+  shouldBlockPendingResistanceAction,
+  type ItemUseResistanceGateMode,
+} from "../config/item-use-resistance-gate-policy";
 import {
   PROMPT_CLASS,
   RESISTANCE_ROLL_BUTTON_SELECTOR,
@@ -990,6 +995,23 @@ function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement 
   return rollCard.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section--multi-target-effect-source`);
 }
 
+function shouldBlockTargetActionsByResistance(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): boolean {
+  if (!viewModel.resistance || target.state !== PENDING_STATE) return false;
+
+  return shouldBlockPendingResistanceAction(getResistanceGateModeSafe(), {
+    kind: "pending",
+    difficulty: viewModel.resistance.difficulty ?? 0
+  });
+}
+
+function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
+  try {
+    return getItemUseResistanceGateMode();
+  } catch {
+    return "strict";
+  }
+}
+
 function createTargetDamageActionButton(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel,
@@ -1004,7 +1026,7 @@ function createTargetDamageActionButton(
     );
   }
 
-  if (target.state === PENDING_STATE) {
+  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
     return createTargetActionButton(
       "◇",
       density === "full" ? "Role resistência primeiro" : "Role res.",
@@ -1076,7 +1098,7 @@ async function handleTargetDamageApplication(
 ): Promise<void> {
   if (target.damageApplication) return;
 
-  if (target.state === PENDING_STATE) {
+  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar dano.");
     return;
   }
@@ -1176,7 +1198,7 @@ function createTargetEffectActionButton(
     );
   }
 
-  if (target.state === PENDING_STATE) {
+  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
     return createTargetActionButton(
       "◇",
       density === "full" ? "Role resistência primeiro" : "Role res.",
@@ -1223,7 +1245,7 @@ async function handleTargetEffectApplication(
 ): Promise<void> {
   if (target.effectApplication) return;
 
-  if (target.state === PENDING_STATE) {
+  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar efeito.");
     return;
   }

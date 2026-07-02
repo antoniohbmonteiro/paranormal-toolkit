@@ -1,5 +1,11 @@
 import { MODULE_ID } from "../../constants";
 import {
+  ITEM_USE_RESISTANCE_GATE_MODES,
+  DEFAULT_ITEM_USE_RESISTANCE_GATE_MODE,
+  coerceItemUseResistanceGateMode,
+  type ItemUseResistanceGateMode,
+} from "./config/item-use-resistance-gate-policy";
+import {
   AUTOMATION_EXECUTION_MODES,
   DEFAULT_AUTOMATION_EXECUTION_MODE,
   coerceAutomationExecutionMode,
@@ -20,6 +26,7 @@ export const ITEM_USE_SETTING_KEYS = {
   executionMode: "itemUse.executionMode",
   systemCardMode: "itemUse.systemCardMode",
   damageResolutionMode: "itemUse.damageResolutionMode",
+  resistanceGateMode: "itemUse.resistanceGateMode",
   autoRun: "itemUse.autoRun.enabled",
   ritualCastingCheckEnabled: "ritual.castingCheck.enabled"
 } as const;
@@ -28,6 +35,7 @@ export type ItemUseSettingsSnapshot = {
   executionMode: AutomationExecutionMode;
   systemCardMode: ItemUseSystemCardMode;
   damageResolutionMode: ItemUseDamageResolutionMode;
+  resistanceGateMode: ItemUseResistanceGateMode;
   ritualCastingCheckEnabled: boolean;
 };
 
@@ -72,6 +80,19 @@ export function registerItemUseSettings(): void {
     default: DEFAULT_ITEM_USE_DAMAGE_RESOLUTION_MODE
   });
 
+  game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.resistanceGateMode, {
+    name: "Aplicação antes da resistência",
+    hint: "Controla se ações de dano e efeito ficam bloqueadas até a resistência ser rolada ou se o mestre pode aplicar manualmente antes disso.",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      strict: "Bloquear até rolar resistência",
+      open: "Permitir aplicação manual sem resistência"
+    } satisfies Record<ItemUseResistanceGateMode, string>,
+    default: DEFAULT_ITEM_USE_RESISTANCE_GATE_MODE
+  });
+
   game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.ritualCastingCheckEnabled, {
     name: "Rolar Ocultismo ao conjurar ritual",
     hint: "Quando ativo, rituais conjurados pelo Toolkit rolam Ocultismo contra a DT de ritual do conjurador antes de resolver dano, cura ou efeitos.",
@@ -96,11 +117,13 @@ export function getItemUseSettings(): ItemUseSettingsSnapshot {
   const executionMode = coerceAutomationExecutionMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.executionMode));
   const systemCardMode = coerceItemUseSystemCardMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.systemCardMode));
   const damageResolutionMode = coerceItemUseDamageResolutionMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode));
+  const resistanceGateMode = getItemUseResistanceGateMode();
 
   return {
     executionMode,
     systemCardMode,
     damageResolutionMode,
+    resistanceGateMode,
     ritualCastingCheckEnabled: getRitualCastingCheckEnabled()
   };
 }
@@ -111,6 +134,10 @@ export function getItemUseSystemCardMode(): ItemUseSystemCardMode {
 
 export function getItemUseDamageResolutionMode(): ItemUseDamageResolutionMode {
   return coerceItemUseDamageResolutionMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode));
+}
+
+export function getItemUseResistanceGateMode(): ItemUseResistanceGateMode {
+  return coerceItemUseResistanceGateMode(game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.resistanceGateMode));
 }
 
 export function getRitualCastingCheckEnabled(): boolean {
@@ -127,6 +154,10 @@ export async function setItemUseSystemCardMode(mode: ItemUseSystemCardMode): Pro
 
 export async function setItemUseDamageResolutionMode(mode: ItemUseDamageResolutionMode): Promise<void> {
   await game.settings.set(MODULE_ID, ITEM_USE_SETTING_KEYS.damageResolutionMode, mode);
+}
+
+export async function setItemUseResistanceGateMode(mode: ItemUseResistanceGateMode): Promise<void> {
+  await game.settings.set(MODULE_ID, ITEM_USE_SETTING_KEYS.resistanceGateMode, mode);
 }
 
 /**
@@ -148,5 +179,5 @@ function coerceItemUseDamageResolutionMode(value: unknown): ItemUseDamageResolut
     : DEFAULT_ITEM_USE_DAMAGE_RESOLUTION_MODE;
 }
 
-export { AUTOMATION_EXECUTION_MODES };
-export type { AutomationExecutionMode };
+export { AUTOMATION_EXECUTION_MODES, ITEM_USE_RESISTANCE_GATE_MODES };
+export type { AutomationExecutionMode, ItemUseResistanceGateMode };

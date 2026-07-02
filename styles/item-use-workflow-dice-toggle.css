@@ -1507,3 +1507,33 @@
 .paranormal-toolkit-item-use-prompt__target-row--effect-applied {
   box-shadow: inset 0 0 0 1px rgba(44, 121, 74, 0.08) !important;
 }
+
+/* 0.28.2 — Estado pendente de resistência deve parecer bloqueado no single-target */
+.paranormal-toolkit-item-use-prompt__button--damage-resolution-waiting,
+.paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting {
+  border-color: rgba(95, 75, 59, 0.18) !important;
+  background: rgba(248, 243, 233, 0.58) !important;
+  color: rgba(64, 52, 44, 0.52) !important;
+  box-shadow: none !important;
+  opacity: 0.72;
+  cursor: not-allowed !important;
+  filter: saturate(0.55);
+}
+
+.paranormal-toolkit-item-use-prompt__button--damage-resolution-waiting:hover,
+.paranormal-toolkit-item-use-prompt__button--damage-resolution-waiting:focus,
+.paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:hover,
+.paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting:focus {
+  border-color: rgba(95, 75, 59, 0.18) !important;
+  background: rgba(248, 243, 233, 0.58) !important;
+  color: rgba(64, 52, 44, 0.52) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  cursor: not-allowed !important;
+}
+
+.paranormal-toolkit-item-use-prompt__button--damage-resolution-waiting .paranormal-toolkit-item-use-prompt__button-label,
+.paranormal-toolkit-item-use-prompt__button--effect-resolution-waiting .paranormal-toolkit-item-use-prompt__button-label {
+  color: inherit !important;
+  font-weight: 800;
+}
