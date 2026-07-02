@@ -1554,7 +1554,8 @@ function isActorLike(value: unknown): value is Actor {
 }
 
 function resolveActorById(actorId: string): Actor | null {
-  const actor = game.actors.get(actorId);
+  const actors = game.actors as { get?: (id: string) => unknown } | undefined;
+  const actor = actors?.get?.(actorId);
   return isActorLike(actor) ? actor : null;
 }
 

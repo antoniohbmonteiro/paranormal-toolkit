@@ -4074,8 +4074,8 @@ function ht(t) {
   return !!(t && typeof t == "object" && "system" in t);
 }
 function rp(t) {
-  const e = game.actors.get(t);
-  return ht(e) ? e : null;
+  const n = game.actors?.get?.(t);
+  return ht(n) ? n : null;
 }
 function _t(t) {
   return !!(t && typeof t == "object" && "getFlag" in t && typeof t.name == "string");
