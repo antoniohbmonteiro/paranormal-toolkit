@@ -57,3 +57,11 @@ A partir da 0.28.5, estados compartilhados de resistência e tipos base de UiSta
 - `item-use-card-ui-state.ts`
 
 A intenção é que single-target e multi-target usem a mesma representação de resistência antes de criarem seus ViewModels específicos.
+
+## Multi-target ViewModel
+
+A partir da 0.28.6, a criação do ViewModel multi-target fica em:
+
+- `chat-card/multi-target/multi-target-card-view-model.ts`
+
+O arquivo de card ainda mantém DOM, listeners e refresh visual. A separação do renderer fica para uma versão posterior.

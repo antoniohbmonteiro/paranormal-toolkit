@@ -3,7 +3,6 @@ import { getResistanceSkillLabel, OrdemResistanceAdapter } from "../../../adapte
 import { DamageEngine } from "../../../core/damage/damage-engine";
 import { ResistanceEngine } from "../../../core/resistance/resistance-engine";
 import type { AutomationConditionApplicationDefinition } from "../../../core/automation/automation-definition";
-import type { ToolkitConditionDurationInput } from "../../conditions/condition-duration";
 import { ConditionEngine } from "../../conditions/condition-engine";
 import { createToolkitConditionRegistry } from "../../conditions/condition-registry";
 import { readAutomationDefinition } from "../../automation/automation-flag-reader";
@@ -22,20 +21,32 @@ import {
   createTargetResistanceUiState,
   type TargetResistanceStatus,
 } from "./item-use-card-resistance-state";
+import {
+  createMultiTargetCardViewModel,
+  MULTI_TARGET_FAILURE_STATE,
+  MULTI_TARGET_PENDING_STATE,
+  MULTI_TARGET_ROLLED_STATE,
+  MULTI_TARGET_SUCCESS_STATE,
+  type MultiTargetCardLayoutInput,
+  type MultiTargetCardViewModel,
+  type MultiTargetViewModel,
+  type TargetConditionApplication,
+  type TargetDamageViewModel,
+  type TargetEffectViewModel,
+  type TargetResistanceViewModel,
+} from "./multi-target/multi-target-card-view-model";
 import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
 import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
 import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
 import {
   PROMPT_CLASS,
-  RESISTANCE_ROLL_BUTTON_SELECTOR,
   WORKFLOW_DICE_TRAY_SELECTOR,
   WORKFLOW_FORMULA_SELECTOR,
   WORKFLOW_FORMULA_TOGGLE_CLASS,
   WORKFLOW_ROLL_DICE_OPEN_CLASS
 } from "./item-use-chat-card-constants";
 import { findWorkflowSectionByTitle } from "./item-use-card-dom";
-import { createWorkflowRollDisplay, readWorkflowDiceBreakdown } from "./item-use-card-roll-display";
-import { readCastingDifficulty } from "./item-use-card-roll-context";
+import { createWorkflowRollDisplay } from "./item-use-card-roll-display";
 import {
   persistMultiTargetDamageApplication,
   persistMultiTargetEffectApplication,
@@ -88,69 +99,13 @@ const rollTargetResistanceUseCase = new RollTargetResistanceUseCase(resistanceEn
 const applyTargetDamageUseCase = new ApplyTargetDamageUseCase(damageEngine);
 const applyTargetEffectUseCase = new ApplyTargetEffectUseCase(conditionEngine);
 
-const PENDING_STATE = "pending";
-const SUCCESS_STATE = "success";
-const FAILURE_STATE = "failure";
-const ROLLED_STATE = "rolled";
-
-type MultiTargetState = typeof PENDING_STATE | typeof SUCCESS_STATE | typeof FAILURE_STATE | typeof ROLLED_STATE;
-
-export type MultiTargetCardLayoutInput = {
-  rollCard: HTMLElement;
-  damageSection: HTMLElement | null;
-  effectSection: HTMLElement | null;
-};
-
-type MultiTargetCardViewModel = {
-  rollCard: HTMLElement;
-  targets: MultiTargetViewModel[];
-  damage: TargetDamageViewModel;
-  effect: TargetEffectViewModel | null;
-  resistance: TargetResistanceViewModel | null;
-};
-
-type MultiTargetViewModel = {
-  id: string;
-  name: string;
-  state: MultiTargetState;
-  resistanceResult: MultiTargetResistanceResult | null;
-  damageApplication: MultiTargetDamageApplication | null;
-  effectApplication: MultiTargetEffectApplication | null;
-};
-
-type TargetDamageViewModel = {
-  typeLabel: string | null;
-  formula: string;
-  total: number | null;
-  diceBreakdown: string | null;
-  normalAmount: number | null;
-  halfAmount: number | null;
-  normalLabel: string;
-  normalCompactLabel: string;
-  halfLabel: string | null;
-  halfCompactLabel: string | null;
-};
-
-
-type TargetEffectViewModel = {
-  label: string;
-  conditionId: string;
-  conditionLabel: string;
-  duration: ToolkitConditionDurationInput | null;
-  source: string | null;
-  originUuid: string | null;
-};
-
-type TargetResistanceViewModel = {
-  description: string;
-  formula: string | null;
-  skill: string | null;
-  skillLabel: string | null;
-  difficulty: number | null;
-};
+const PENDING_STATE = MULTI_TARGET_PENDING_STATE;
+const SUCCESS_STATE = MULTI_TARGET_SUCCESS_STATE;
+const FAILURE_STATE = MULTI_TARGET_FAILURE_STATE;
+const ROLLED_STATE = MULTI_TARGET_ROLLED_STATE;
 
 export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput): boolean {
-  const viewModel = createMultiTargetCardViewModel(input);
+  const viewModel = createMultiTargetCardViewModelFromLayout(input);
   if (!viewModel) return false;
 
   input.rollCard.classList.add(`${PROMPT_CLASS}__roll-card--multi-target`);
@@ -175,88 +130,15 @@ export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput):
   return true;
 }
 
-function createMultiTargetCardViewModel(input: MultiTargetCardLayoutInput): MultiTargetCardViewModel | null {
-  const resistance = createResistanceViewModel(input.rollCard, input.damageSection);
-  const resistanceResults = readMultiTargetResistanceResults(input.rollCard);
-  const damageApplications = readMultiTargetDamageApplications(input.rollCard);
-  const effectApplications = readMultiTargetEffectApplications(input.rollCard);
-  const targets: MultiTargetViewModel[] = readTargetNames(input.rollCard).map((name, index) => {
-    const id = createTargetId(name, index);
-    const resistanceResult = resistanceResults.get(id) ?? null;
-
-    return {
-      id,
-      name,
-      state: resolveTargetState(resistanceResult, resistance?.difficulty ?? null),
-      resistanceResult,
-      damageApplication: damageApplications.get(id) ?? null,
-      effectApplication: effectApplications.get(id) ?? null
-    };
+function createMultiTargetCardViewModelFromLayout(input: MultiTargetCardLayoutInput): MultiTargetCardViewModel | null {
+  return createMultiTargetCardViewModel({
+    ...input,
+    resistanceResults: readMultiTargetResistanceResults(input.rollCard),
+    damageApplications: readMultiTargetDamageApplications(input.rollCard),
+    effectApplications: readMultiTargetEffectApplications(input.rollCard),
+    resolveTargetConditionApplication
   });
-
-  if (targets.length <= 1 || !input.damageSection) return null;
-
-  return {
-    rollCard: input.rollCard,
-    targets,
-    damage: createDamageViewModel(input.damageSection),
-    effect: createEffectViewModel(input.rollCard, input.effectSection),
-    resistance
-  };
 }
-
-function readTargetNames(rollCard: HTMLElement): string[] {
-  const prompt = rollCard.closest<HTMLElement>(`.${PROMPT_CLASS}`);
-  const summary = prompt?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__summary`)?.textContent ?? "";
-  const [, targetText] = summary.split("→");
-  if (!targetText) return [];
-
-  return targetText
-    .split(",")
-    .map((target) => target.trim())
-    .filter((target) => target.length > 0 && normalizeText(target) !== "nenhum alvo");
-}
-
-function createDamageViewModel(damageSection: HTMLElement | null): TargetDamageViewModel {
-  const total = readRollTotal(damageSection);
-  const halfAmount = total !== null ? Math.floor(total / 2) : null;
-
-  return {
-    typeLabel: readWorkflowSectionDescription(damageSection),
-    formula: readRollFormula(damageSection) ?? "—",
-    total,
-    diceBreakdown: readWorkflowDiceBreakdown(damageSection),
-    normalAmount: total,
-    halfAmount,
-    normalLabel: total !== null ? `Normal: ${total} PV` : "Normal: —",
-    normalCompactLabel: total !== null ? `${total} PV` : "—",
-    halfLabel: halfAmount !== null ? `Metade: ${halfAmount} PV` : null,
-    halfCompactLabel: halfAmount !== null ? `½ ${halfAmount} PV` : null
-  };
-}
-
-function createEffectViewModel(rollCard: HTMLElement, effectSection: HTMLElement | null): TargetEffectViewModel | null {
-  const displayLabel = effectSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-section-label`)?.textContent?.trim();
-  const application = resolveTargetConditionApplication(rollCard, displayLabel ?? null);
-  if (!application) return null;
-
-  return {
-    label: displayLabel && displayLabel.length > 0 ? displayLabel : application.conditionLabel,
-    conditionId: application.conditionId,
-    conditionLabel: application.conditionLabel,
-    duration: normalizeConditionDuration(application.duration),
-    source: application.source,
-    originUuid: application.originUuid
-  };
-}
-
-type TargetConditionApplication = {
-  conditionId: string;
-  conditionLabel: string;
-  duration: AutomationConditionApplicationDefinition["duration"] | null;
-  source: string | null;
-  originUuid: string | null;
-};
 
 function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: string | null): TargetConditionApplication | null {
   const context = readPersistedMultiTargetPromptContext(rollCard);
@@ -299,17 +181,6 @@ function selectTargetConditionApplication(
       application.conditionId
     ].some((candidate) => normalizeLookupName(candidate) === normalizedDisplayLabel);
   }) ?? null;
-}
-
-function normalizeConditionDuration(
-  duration: AutomationConditionApplicationDefinition["duration"] | null
-): ToolkitConditionDurationInput | null {
-  if (!duration) return null;
-
-  return {
-    rounds: duration.rounds ?? null,
-    expiry: duration.expiry ?? null
-  };
 }
 
 function resolveSourceItem(context: ReturnType<typeof readPersistedMultiTargetPromptContext>): Item | null {
@@ -367,23 +238,6 @@ function resolveWorldItem(itemId: string | null, itemName: string | null): Item 
   }
 
   return null;
-}
-
-function createResistanceViewModel(rollCard: HTMLElement, damageSection: HTMLElement | null): TargetResistanceViewModel | null {
-  const description = damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance-description`)?.textContent?.trim();
-  const sourceButton = damageSection?.querySelector<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR) ?? null;
-  const skill = sourceButton?.getAttribute(RESISTANCE_SKILL_ATTRIBUTE) ?? null;
-  const skillLabel = sourceButton?.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : null);
-
-  if (!description && !skill) return null;
-
-  return {
-    description: description ?? "Resistência do alvo.",
-    formula: damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance .${PROMPT_CLASS}__workflow-roll-formula`)?.textContent?.trim() ?? null,
-    skill,
-    skillLabel,
-    difficulty: readCastingDifficulty(rollCard)
-  };
 }
 
 function readMultiTargetResistanceResults(rollCard: HTMLElement): Map<string, MultiTargetResistanceResult> {
@@ -521,30 +375,6 @@ function readRenderedMultiTargetResistanceResults(rollCard: HTMLElement): Map<st
   }
 
   return results;
-}
-
-function resolveTargetState(result: MultiTargetResistanceResult | null, difficulty: number | null): MultiTargetState {
-  if (!result) return PENDING_STATE;
-  if (difficulty === null) return ROLLED_STATE;
-  return result.total >= difficulty ? SUCCESS_STATE : FAILURE_STATE;
-}
-
-function readRollTotal(section: HTMLElement | null): number | null {
-  const totalText = section?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-roll-total`)?.textContent?.trim();
-  if (!totalText) return null;
-
-  const total = Number(totalText.replace(/[^\d-]/gu, ""));
-  return Number.isFinite(total) ? Math.trunc(total) : null;
-}
-
-function readRollFormula(section: HTMLElement | null): string | null {
-  const formula = section?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-roll-formula`)?.textContent?.trim();
-  return formula && formula.length > 0 ? formula : null;
-}
-
-function readWorkflowSectionDescription(section: HTMLElement | null): string | null {
-  const description = section?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section-description`)?.textContent?.trim();
-  return description && description.length > 0 ? description : null;
 }
 
 function hideSingleTargetSourceSections(input: MultiTargetCardLayoutInput): void {
@@ -991,7 +821,7 @@ function refreshTargetSection(row: HTMLElement): void {
   const rollCard = row.closest<HTMLElement>(`.${PROMPT_CLASS}__roll-card`);
   if (!targetSection || !rollCard) return;
 
-  const viewModel = createMultiTargetCardViewModel({
+  const viewModel = createMultiTargetCardViewModelFromLayout({
     rollCard,
     damageSection: findMultiTargetDamageSourceSection(rollCard) ?? findWorkflowSectionByTitle(rollCard, "Dano"),
     effectSection: findMultiTargetEffectSourceSection(rollCard)
