@@ -2,10 +2,14 @@ import { PROMPT_CLASS, RESISTANCE_SELECTOR } from "./item-use-chat-card-constant
 import { getItemUseResistanceGateMode } from "../item-use-settings";
 import {
   resolveResistanceResolutionState,
-  shouldBlockPendingResistanceAction,
   type ItemUseResistanceGateMode,
   type ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
+import {
+  isActionResisted,
+  isActionWaitingForResistance,
+  resolveEffectActionState,
+} from "./item-use-card-action-state";
 import {
   normalizeLookupText,
   normalizeText,
@@ -67,28 +71,23 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, section:
   const effectLabel = resolveEffectActionDisplayLabel(section, button, currentLabel);
   const resistanceState = resolveEffectResistanceState(rollCard);
 
-  if (resistanceState.kind === "none") {
-    clearEffectResistanceGate(button);
-    enhanceEffectActionButton(button, effectLabel);
+  const effectActionState = resolveEffectActionState({
+    resistanceGateMode: getResistanceGateModeSafe(),
+    resistanceState,
+  });
+
+  if (isActionWaitingForResistance(effectActionState)) {
+    setEffectWaitingForResistance(button, effectActionState.label);
     return;
   }
 
-  if (resistanceState.kind === "pending") {
-    if (shouldBlockPendingResistanceAction(getResistanceGateModeSafe(), resistanceState)) {
-      setEffectWaitingForResistance(button);
-      return;
-    }
-
-    setEffectAvailableBeforeResistance(button, effectLabel);
+  if (isActionResisted(effectActionState)) {
+    setEffectResisted(button, effectActionState.compactLabel);
     return;
   }
 
-  if (resistanceState.kind === "succeeded") {
-    setEffectResisted(button);
-    return;
-  }
-
-  setEffectAvailableAfterFailedResistance(button, effectLabel);
+  clearEffectResistanceGate(button);
+  enhanceEffectActionButton(button, effectLabel);
 }
 
 function resolveEffectButton(input: EffectActionSectionInput): HTMLButtonElement | null {
@@ -292,7 +291,7 @@ function resolveEffectResistanceState(rollCard: HTMLElement): ResistanceResoluti
   });
 }
 
-function setEffectWaitingForResistance(button: HTMLButtonElement): void {
+function setEffectWaitingForResistance(button: HTMLButtonElement, label = "Role resistência"): void {
   button.disabled = true;
   button.setAttribute("aria-disabled", "true");
   button.removeAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE);
@@ -304,10 +303,10 @@ function setEffectWaitingForResistance(button: HTMLButtonElement): void {
   button.classList.add(`${PROMPT_CLASS}__button--effect-resolution-action`, `${PROMPT_CLASS}__button--effect-resolution-waiting`);
   button.setAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE, "pending");
   button.setAttribute("aria-label", "Role a resistência antes de aplicar o efeito");
-  button.replaceChildren(createButtonLabel("Role resistência"));
+  button.replaceChildren(createButtonLabel(label));
 }
 
-function setEffectResisted(button: HTMLButtonElement): void {
+function setEffectResisted(button: HTMLButtonElement, label = "Resistiu"): void {
   button.disabled = true;
   button.removeAttribute(EFFECT_ACTION_COMPACTED_ATTRIBUTE);
   button.removeAttribute(EFFECT_BUTTON_ICON_ATTRIBUTE);
@@ -320,18 +319,8 @@ function setEffectResisted(button: HTMLButtonElement): void {
   button.setAttribute("aria-label", "O alvo resistiu ao efeito");
   button.replaceChildren(
     createButtonIcon("✓", `${PROMPT_CLASS}__button-icon--effect-resisted`),
-    createButtonLabel("Resistiu")
+    createButtonLabel(label)
   );
-}
-
-function setEffectAvailableBeforeResistance(button: HTMLButtonElement, effectLabel: string): void {
-  clearEffectResistanceGate(button);
-  enhanceEffectActionButton(button, effectLabel);
-}
-
-function setEffectAvailableAfterFailedResistance(button: HTMLButtonElement, effectLabel: string): void {
-  clearEffectResistanceGate(button);
-  enhanceEffectActionButton(button, effectLabel);
 }
 
 function clearEffectResistanceGate(button: HTMLButtonElement): void {

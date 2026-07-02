@@ -9,10 +9,15 @@ import { createToolkitConditionRegistry } from "../../conditions/condition-regis
 import { readAutomationDefinition } from "../../automation/automation-flag-reader";
 import { getItemUseResistanceGateMode } from "../item-use-settings";
 import {
-  shouldBlockPendingResistanceAction,
   type ItemUseResistanceGateMode,
   type ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
+import {
+  isActionResisted,
+  isActionWaitingForResistance,
+  resolveDamageActionState,
+  resolveEffectActionState,
+} from "./item-use-card-action-state";
 import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
 import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
 import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
@@ -1003,10 +1008,25 @@ function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement 
 }
 
 function shouldBlockTargetActionsByResistance(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): boolean {
-  return shouldBlockPendingResistanceAction(
-    getResistanceGateModeSafe(),
-    createTargetResistanceState(target, viewModel)
-  );
+  return isActionWaitingForResistance(resolveTargetDamageActionState(target, viewModel));
+}
+
+function resolveTargetDamageActionState(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel) {
+  return resolveDamageActionState({
+    resistanceGateMode: getResistanceGateModeSafe(),
+    resistanceState: createTargetResistanceState(target, viewModel),
+    alreadyApplied: Boolean(target.damageApplication),
+    unavailable: !viewModel.damage,
+  });
+}
+
+function resolveTargetEffectActionState(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel) {
+  return resolveEffectActionState({
+    resistanceGateMode: getResistanceGateModeSafe(),
+    resistanceState: createTargetResistanceState(target, viewModel),
+    alreadyApplied: Boolean(target.effectApplication),
+    unavailable: !viewModel.effect,
+  });
 }
 
 function createTargetResistanceState(
@@ -1051,10 +1071,12 @@ function createTargetDamageActionButton(
     );
   }
 
-  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
+  const actionState = resolveTargetDamageActionState(target, viewModel);
+
+  if (isActionWaitingForResistance(actionState)) {
     return createTargetActionButton(
       "◇",
-      density === "full" ? "Role resistência primeiro" : "Role res.",
+      density === "full" ? actionState.label : actionState.compactLabel,
       [`${PROMPT_CLASS}__target-action--damage`, `${PROMPT_CLASS}__target-action--waiting-damage`],
       true
     );
@@ -1201,10 +1223,12 @@ function createTargetEffectActionButton(
   viewModel: MultiTargetCardViewModel,
   density: "compact" | "full"
 ): HTMLButtonElement {
+  const actionState = resolveTargetEffectActionState(target, viewModel);
+
   if (!viewModel.effect) {
     return createTargetActionButton(
       "✦",
-      "Sem efeito",
+      density === "full" ? actionState.label : actionState.compactLabel,
       [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--disabled`],
       true
     );
@@ -1213,25 +1237,25 @@ function createTargetEffectActionButton(
   if (target.effectApplication) {
     return createTargetActionButton(
       "✓",
-      density === "full" ? `${target.effectApplication.conditionLabel} aplicado` : "Aplicado",
+      density === "full" ? `${target.effectApplication.conditionLabel} aplicado` : actionState.compactLabel,
       [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--effect-applied`],
       true
     );
   }
 
-  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
+  if (isActionWaitingForResistance(actionState)) {
     return createTargetActionButton(
       "◇",
-      density === "full" ? "Role resistência primeiro" : "Role res.",
+      density === "full" ? actionState.label : actionState.compactLabel,
       [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--waiting-effect`],
       true
     );
   }
 
-  if (target.state === SUCCESS_STATE) {
+  if (isActionResisted(actionState)) {
     return createTargetActionButton(
       "✓",
-      density === "full" ? "Resistiu ao efeito" : "Resistiu",
+      density === "full" ? actionState.label : actionState.compactLabel,
       [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--resisted`],
       true
     );

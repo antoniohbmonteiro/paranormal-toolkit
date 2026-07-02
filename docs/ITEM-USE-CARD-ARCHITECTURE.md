@@ -34,3 +34,17 @@ A partir da 0.28.3, ações específicas do card devem sair gradualmente dos arq
 - `ApplyTargetEffectUseCase`
 
 Os cards continuam responsáveis por DOM e refresh visual, mas devem delegar execução para use cases. Os use cases validam política de resistência e chamam engines.
+
+## Action state helpers
+
+A partir da 0.28.4, estados visuais comuns de ação ficam em `item-use-card-action-state.ts`.
+
+Esse helper não executa ação. Ele só responde como uma ação deve aparecer para o usuário:
+
+- habilitada;
+- aguardando resistência;
+- resistida;
+- aplicada;
+- indisponível.
+
+Single-target e multi-target devem consultar esse helper antes de decidir labels e estado disabled.

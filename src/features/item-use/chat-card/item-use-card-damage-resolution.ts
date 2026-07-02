@@ -2,10 +2,13 @@ import { PROMPT_CLASS, RESISTANCE_SELECTOR } from "./item-use-chat-card-constant
 import { getItemUseDamageResolutionMode, getItemUseResistanceGateMode } from "../item-use-settings";
 import {
   resolveResistanceResolutionState,
-  shouldBlockPendingResistanceAction,
   type ItemUseResistanceGateMode,
   type ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
+import {
+  isActionWaitingForResistance,
+  resolveDamageActionState,
+} from "./item-use-card-action-state";
 import { readCastingDifficulty, readResistanceTotal } from "./item-use-card-roll-context";
 import {
   ACTION_BUTTON_SELECTOR,
@@ -47,7 +50,11 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
   const mode = getDamageResolutionModeSafe();
   const gateMode = getResistanceGateModeSafe();
   const resistanceState = resolveDamageResistanceState(rollCard);
-  const blockPending = shouldBlockPendingResistanceAction(gateMode, resistanceState);
+  const damageActionState = resolveDamageActionState({
+    resistanceGateMode: gateMode,
+    resistanceState,
+  });
+  const blockPending = isActionWaitingForResistance(damageActionState);
 
   actions.classList.toggle(`${PROMPT_CLASS}__actions--assisted`, mode === "assisted");
   actions.classList.toggle(`${PROMPT_CLASS}__actions--manual`, mode !== "assisted");
@@ -55,12 +62,12 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
   if (mode !== "assisted") {
     setDamageButtonVisibility(normalButton, true);
     setDamageButtonVisibility(halfButton, true);
-    setDamageButtonEnabled(normalButton, !blockPending, "normal");
-    setDamageButtonEnabled(halfButton, !blockPending, "half");
+    setDamageButtonEnabled(normalButton, !blockPending, "normal", damageActionState.label);
+    setDamageButtonEnabled(halfButton, !blockPending, "half", damageActionState.label);
     updateDamageResolutionSummary(
       actions,
       blockPending ? "pending" : "manual",
-      blockPending ? "Role resistência para aplicar dano." : null
+      blockPending ? damageActionState.reason ?? "Role resistência para aplicar dano." : null
     );
     return;
   }
@@ -77,11 +84,11 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
   if (resistanceState.kind === "pending") {
     setDamageButtonVisibility(normalButton, true);
     setDamageButtonVisibility(halfButton, false);
-    setDamageButtonEnabled(normalButton, !blockPending, "normal");
+    setDamageButtonEnabled(normalButton, !blockPending, "normal", damageActionState.label);
     updateDamageResolutionSummary(
       actions,
       "pending",
-      blockPending ? "Role resistência para aplicar dano." : null
+      blockPending ? damageActionState.reason ?? "Role resistência para aplicar dano." : null
     );
     return;
   }
@@ -142,7 +149,12 @@ function setDamageButtonVisibility(button: HTMLButtonElement, visible: boolean):
   button.classList.toggle(`${PROMPT_CLASS}__button--damage-resolution-selected`, visible);
 }
 
-function setDamageButtonEnabled(button: HTMLButtonElement, enabled: boolean, kind: "normal" | "half"): void {
+function setDamageButtonEnabled(
+  button: HTMLButtonElement,
+  enabled: boolean,
+  kind: "normal" | "half",
+  waitingLabel = "Role resistência"
+): void {
   if (button.textContent?.trim().startsWith("✓")) return;
 
   button.disabled = !enabled;
@@ -150,8 +162,8 @@ function setDamageButtonEnabled(button: HTMLButtonElement, enabled: boolean, kin
 
   if (!enabled) {
     button.setAttribute("aria-disabled", "true");
-    button.setAttribute("aria-label", "Role resistência para aplicar dano");
-    button.replaceChildren(createButtonLabel("Role resistência"));
+    button.setAttribute("aria-label", waitingLabel);
+    button.replaceChildren(createButtonLabel(waitingLabel));
     return;
   }
 
