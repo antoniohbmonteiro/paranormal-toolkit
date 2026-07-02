@@ -35,6 +35,8 @@ import {
   type TargetEffectViewModel,
   type TargetResistanceViewModel,
 } from "./multi-target/multi-target-card-view-model";
+import { resolveMultiTargetSourceItem } from "./multi-target/multi-target-source-item-resolver";
+import { resolveMultiTargetActorByName } from "./multi-target/multi-target-target-resolver";
 import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
 import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
 import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
@@ -142,7 +144,7 @@ function createMultiTargetCardViewModelFromLayout(input: MultiTargetCardLayoutIn
 
 function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: string | null): TargetConditionApplication | null {
   const context = readPersistedMultiTargetPromptContext(rollCard);
-  const sourceItem = resolveSourceItem(context);
+  const sourceItem = resolveMultiTargetSourceItem(context);
   if (!sourceItem) return null;
 
   const definition = readAutomationDefinition(sourceItem);
@@ -181,63 +183,6 @@ function selectTargetConditionApplication(
       application.conditionId
     ].some((candidate) => normalizeLookupName(candidate) === normalizedDisplayLabel);
   }) ?? null;
-}
-
-function resolveSourceItem(context: ReturnType<typeof readPersistedMultiTargetPromptContext>): Item | null {
-  if (!context) return null;
-
-  const sourceActor = context.actorId ? resolveActorById(context.actorId) : null;
-  const actorItem = sourceActor ? resolveEmbeddedItem(sourceActor, context.itemId, context.itemName) : null;
-  if (actorItem) return actorItem;
-
-  const worldItem = resolveWorldItem(context.itemId, context.itemName);
-  return worldItem;
-}
-
-function resolveEmbeddedItem(actor: Actor, itemId: string | null, itemName: string | null): Item | null {
-  const items = actor.items as {
-    get?: (id: string) => unknown;
-    find?: (predicate: (item: unknown) => boolean) => unknown;
-  } | undefined;
-
-  if (itemId) {
-    const item = items?.get?.(itemId);
-    if (isItemLike(item)) return item;
-  }
-
-  const normalizedName = normalizeLookupName(itemName);
-  if (normalizedName) {
-    const item = items?.find?.((candidate) => {
-      if (!isItemLike(candidate)) return false;
-      return normalizeLookupName(candidate.name) === normalizedName;
-    });
-    if (isItemLike(item)) return item;
-  }
-
-  return null;
-}
-
-function resolveWorldItem(itemId: string | null, itemName: string | null): Item | null {
-  const items = (game as { items?: {
-    get?: (id: string) => unknown;
-    find?: (predicate: (item: unknown) => boolean) => unknown;
-  } }).items;
-
-  if (itemId) {
-    const item = items?.get?.(itemId);
-    if (isItemLike(item)) return item;
-  }
-
-  const normalizedName = normalizeLookupName(itemName);
-  if (normalizedName) {
-    const item = items?.find?.((candidate) => {
-      if (!isItemLike(candidate)) return false;
-      return normalizeLookupName(candidate.name) === normalizedName;
-    });
-    if (isItemLike(item)) return item;
-  }
-
-  return null;
 }
 
 function readMultiTargetResistanceResults(rollCard: HTMLElement): Map<string, MultiTargetResistanceResult> {
@@ -771,7 +716,7 @@ async function handleTargetResistanceRoll(
     return;
   }
 
-  const actor = resolveTargetActorByName(target.name);
+  const actor = resolveMultiTargetActorByName(target.name);
   if (!actor) {
     ui.notifications?.warn?.(`Paranormal Toolkit: não consegui encontrar o alvo ${target.name} para rolar resistência.`);
     return;
@@ -990,7 +935,7 @@ async function handleTargetDamageApplication(
     return;
   }
 
-  const actor = resolveTargetActorByName(target.name);
+  const actor = resolveMultiTargetActorByName(target.name);
   if (!actor) {
     ui.notifications?.warn?.(`Paranormal Toolkit: não consegui encontrar o alvo ${target.name} para aplicar dano.`);
     return;
@@ -1138,7 +1083,7 @@ async function handleTargetEffectApplication(
     return;
   }
 
-  const actor = resolveTargetActorByName(target.name);
+  const actor = resolveMultiTargetActorByName(target.name);
   if (!actor) {
     ui.notifications?.warn?.(`Paranormal Toolkit: não consegui encontrar o alvo ${target.name} para aplicar efeito.`);
     return;
@@ -1402,71 +1347,6 @@ function renderEffectInfoSection(section: HTMLElement, effect: TargetEffectViewM
 function placeEffectInfoSection(rollCard: HTMLElement, section: HTMLElement, targetSection: HTMLElement): void {
   if (section.parentElement === rollCard && section.previousElementSibling === targetSection) return;
   rollCard.insertBefore(section, targetSection.nextElementSibling);
-}
-
-function resolveTargetActorByName(targetName: string): Actor | null {
-  const normalizedTargetName = normalizeLookupName(targetName);
-  if (!normalizedTargetName) return null;
-
-  const tokenActor = getCanvasTokens()
-    .filter((token) => normalizeLookupName(getTokenName(token)) === normalizedTargetName)
-    .map((token) => resolveTokenActor(token))
-    .find(isActorLike) ?? null;
-
-  if (tokenActor) return tokenActor;
-
-  const actors = game.actors as { find?: (predicate: (actor: unknown) => boolean) => unknown } | undefined;
-  const actor = actors?.find?.((candidate) => isActorLike(candidate) && normalizeLookupName(candidate.name) === normalizedTargetName);
-
-  return isActorLike(actor) ? actor : null;
-}
-
-function getCanvasTokens(): unknown[] {
-  const foundryCanvas = (globalThis as { canvas?: { tokens?: { placeables?: unknown[] } } }).canvas;
-  const placeables = foundryCanvas?.tokens?.placeables;
-  return Array.isArray(placeables) ? placeables : [];
-}
-
-function getTokenName(token: unknown): string | null {
-  if (!token || typeof token !== "object") return null;
-
-  const directName = (token as { name?: unknown }).name;
-  if (typeof directName === "string") return directName;
-
-  const documentName = (token as { document?: { name?: unknown } }).document?.name;
-  if (typeof documentName === "string") return documentName;
-
-  const actor = resolveTokenActor(token);
-  return actor?.name ?? null;
-}
-
-function resolveTokenActor(value: unknown): Actor | null {
-  if (!value || typeof value !== "object") return null;
-
-  const actor = (value as { actor?: unknown }).actor;
-  if (isActorLike(actor)) return actor;
-
-  const documentActor = (value as { document?: { actor?: unknown } }).document?.actor;
-  return isActorLike(documentActor) ? documentActor : null;
-}
-
-function isActorLike(value: unknown): value is Actor {
-  return Boolean(value && typeof value === "object" && "system" in value);
-}
-
-function resolveActorById(actorId: string): Actor | null {
-  const actors = game.actors as { get?: (id: string) => unknown } | undefined;
-  const actor = actors?.get?.(actorId);
-  return isActorLike(actor) ? actor : null;
-}
-
-function isItemLike(value: unknown): value is Item {
-  return Boolean(
-    value
-      && typeof value === "object"
-      && "getFlag" in value
-      && typeof (value as { name?: unknown }).name === "string"
-  );
 }
 
 function normalizeLookupName(value: string | null | undefined): string | null {

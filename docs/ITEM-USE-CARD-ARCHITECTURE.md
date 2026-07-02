@@ -65,3 +65,12 @@ A partir da 0.28.6, a criação do ViewModel multi-target fica em:
 - `chat-card/multi-target/multi-target-card-view-model.ts`
 
 O arquivo de card ainda mantém DOM, listeners e refresh visual. A separação do renderer fica para uma versão posterior.
+
+## Multi-target resolvers
+
+A partir da 0.28.8, resolução de atores e item de origem do card multi-target fica em:
+
+- `chat-card/multi-target/multi-target-target-resolver.ts`
+- `chat-card/multi-target/multi-target-source-item-resolver.ts`
+
+O card principal não deve conhecer detalhes de `canvas.tokens`, `game.actors`, `actor.items` ou `game.items` além de chamar esses resolvers.
