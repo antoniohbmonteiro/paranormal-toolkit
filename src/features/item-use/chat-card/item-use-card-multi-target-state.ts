@@ -4,6 +4,7 @@ import { CHAT_CARD_FLAG_KEY } from "./item-use-chat-card-constants";
 const PROMPT_ID_ATTRIBUTE = "data-paranormal-toolkit-prompt-id";
 const MULTI_TARGET_RESISTANCE_RESULTS_KEY = "multiTargetResistanceResults";
 const MULTI_TARGET_DAMAGE_APPLICATIONS_KEY = "multiTargetDamageApplications";
+const MULTI_TARGET_EFFECT_APPLICATIONS_KEY = "multiTargetEffectApplications";
 
 export type MultiTargetResistanceResult = {
   targetId: string;
@@ -28,6 +29,17 @@ export type MultiTargetDamageApplication = {
   appliedAt: string;
 };
 
+export type MultiTargetEffectApplication = {
+  targetId: string;
+  targetName: string;
+  conditionId: string;
+  conditionLabel: string;
+  effectId: string | null;
+  created: boolean;
+  refreshed: boolean;
+  appliedAt: string;
+};
+
 type ChatMessageFlagDocument = {
   id?: unknown;
   getFlag?: (scope: string, key: string) => unknown;
@@ -42,6 +54,7 @@ type PersistedPromptLike = Record<string, unknown> & {
   pendingId?: unknown;
   multiTargetResistanceResults?: unknown;
   multiTargetDamageApplications?: unknown;
+  multiTargetEffectApplications?: unknown;
 };
 
 export function readPersistedMultiTargetResistanceResults(rollCard: HTMLElement): Map<string, MultiTargetResistanceResult> {
@@ -95,11 +108,42 @@ export async function persistMultiTargetDamageApplication(
   );
 }
 
+export function readPersistedMultiTargetEffectApplications(rollCard: HTMLElement): Map<string, MultiTargetEffectApplication> {
+  const applications = new Map<string, MultiTargetEffectApplication>();
+  const prompt = readPersistedPromptForRollCard(rollCard);
+  const source = prompt?.[MULTI_TARGET_EFFECT_APPLICATIONS_KEY];
+
+  if (!isRecord(source)) return applications;
+
+  for (const [targetId, value] of Object.entries(source)) {
+    if (isMultiTargetEffectApplication(value) && value.targetId === targetId) {
+      applications.set(targetId, value);
+    }
+  }
+
+  return applications;
+}
+
+export async function persistMultiTargetEffectApplication(
+  rollCard: HTMLElement,
+  application: MultiTargetEffectApplication
+): Promise<void> {
+  await persistMultiTargetPromptEntry(
+    rollCard,
+    MULTI_TARGET_EFFECT_APPLICATIONS_KEY,
+    application.targetId,
+    application
+  );
+}
+
 async function persistMultiTargetPromptEntry(
   rollCard: HTMLElement,
-  key: typeof MULTI_TARGET_RESISTANCE_RESULTS_KEY | typeof MULTI_TARGET_DAMAGE_APPLICATIONS_KEY,
+  key:
+    | typeof MULTI_TARGET_RESISTANCE_RESULTS_KEY
+    | typeof MULTI_TARGET_DAMAGE_APPLICATIONS_KEY
+    | typeof MULTI_TARGET_EFFECT_APPLICATIONS_KEY,
   targetId: string,
-  value: MultiTargetResistanceResult | MultiTargetDamageApplication
+  value: MultiTargetResistanceResult | MultiTargetDamageApplication | MultiTargetEffectApplication
 ): Promise<void> {
   const promptId = findPromptId(rollCard);
   if (!promptId) return;
@@ -203,6 +247,19 @@ function isMultiTargetDamageApplication(value: unknown): value is MultiTargetDam
 
 function isDamageMode(value: unknown): value is MultiTargetDamageMode {
   return value === "normal" || value === "half";
+}
+
+function isMultiTargetEffectApplication(value: unknown): value is MultiTargetEffectApplication {
+  if (!isRecord(value)) return false;
+
+  return typeof value.targetId === "string"
+    && typeof value.targetName === "string"
+    && typeof value.conditionId === "string"
+    && typeof value.conditionLabel === "string"
+    && (typeof value.effectId === "string" || value.effectId === null)
+    && typeof value.created === "boolean"
+    && typeof value.refreshed === "boolean"
+    && typeof value.appliedAt === "string";
 }
 
 function isChatMessageFlagDocument(value: unknown): value is ChatMessageFlagDocument {
