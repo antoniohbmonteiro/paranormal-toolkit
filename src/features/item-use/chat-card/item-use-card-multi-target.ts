@@ -8,9 +8,9 @@ import { ConditionEngine } from "../../conditions/condition-engine";
 import { createToolkitConditionRegistry } from "../../conditions/condition-registry";
 import { readAutomationDefinition } from "../../automation/automation-flag-reader";
 import { getItemUseResistanceGateMode } from "../item-use-settings";
-import {
-  type ItemUseResistanceGateMode,
-  type ResistanceResolutionState,
+import type {
+  ItemUseResistanceGateMode,
+  ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
 import {
   isActionResisted,
@@ -18,6 +18,10 @@ import {
   resolveDamageActionState,
   resolveEffectActionState,
 } from "./item-use-card-action-state";
+import {
+  createTargetResistanceUiState,
+  type TargetResistanceStatus,
+} from "./item-use-card-resistance-state";
 import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
 import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
 import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
@@ -1033,20 +1037,18 @@ function createTargetResistanceState(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel
 ): ResistanceResolutionState {
-  if (!viewModel.resistance) return { kind: "none" };
+  return createTargetResistanceUiState({
+    hasResistance: Boolean(viewModel.resistance),
+    difficulty: viewModel.resistance?.difficulty ?? null,
+    total: target.resistanceResult?.total ?? null,
+    status: getTargetResistanceStatus(target),
+  }).state;
+}
 
-  const difficulty = viewModel.resistance.difficulty ?? 0;
-  const total = target.resistanceResult?.total ?? 0;
-
-  if (target.state === SUCCESS_STATE) {
-    return { kind: "succeeded", difficulty, total };
-  }
-
-  if (target.state === FAILURE_STATE) {
-    return { kind: "failed", difficulty, total };
-  }
-
-  return { kind: "pending", difficulty };
+function getTargetResistanceStatus(target: MultiTargetViewModel): TargetResistanceStatus {
+  if (target.state === SUCCESS_STATE) return "succeeded";
+  if (target.state === FAILURE_STATE) return "failed";
+  return "pending";
 }
 
 function getResistanceGateModeSafe(): ItemUseResistanceGateMode {

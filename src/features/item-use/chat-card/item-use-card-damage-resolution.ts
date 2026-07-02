@@ -1,15 +1,14 @@
-import { PROMPT_CLASS, RESISTANCE_SELECTOR } from "./item-use-chat-card-constants";
+import { PROMPT_CLASS } from "./item-use-chat-card-constants";
 import { getItemUseDamageResolutionMode, getItemUseResistanceGateMode } from "../item-use-settings";
-import {
-  resolveResistanceResolutionState,
-  type ItemUseResistanceGateMode,
-  type ResistanceResolutionState,
+import type {
+  ItemUseResistanceGateMode,
+  ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
 import {
   isActionWaitingForResistance,
   resolveDamageActionState,
 } from "./item-use-card-action-state";
-import { readCastingDifficulty, readResistanceTotal } from "./item-use-card-roll-context";
+import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
 import {
   ACTION_BUTTON_SELECTOR,
   ACTIONS_TITLE_SELECTOR,
@@ -108,11 +107,7 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
 }
 
 function resolveDamageResistanceState(rollCard: HTMLElement): ResistanceResolutionState {
-  return resolveResistanceResolutionState({
-    hasResistance: Boolean(rollCard.querySelector(RESISTANCE_SELECTOR)),
-    difficulty: readCastingDifficulty(rollCard),
-    resistanceTotal: readResistanceTotal(rollCard),
-  });
+  return createSingleTargetResistanceUiState(rollCard).state;
 }
 
 function findDamageButton(buttons: HTMLButtonElement[], kind: "normal" | "half"): HTMLButtonElement | null {

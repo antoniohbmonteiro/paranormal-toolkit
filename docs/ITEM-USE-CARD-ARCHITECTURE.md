@@ -48,3 +48,12 @@ Esse helper não executa ação. Ele só responde como uma ação deve aparecer 
 - indisponível.
 
 Single-target e multi-target devem consultar esse helper antes de decidir labels e estado disabled.
+
+## UiState foundation
+
+A partir da 0.28.5, estados compartilhados de resistência e tipos base de UiState ficam em:
+
+- `item-use-card-resistance-state.ts`
+- `item-use-card-ui-state.ts`
+
+A intenção é que single-target e multi-target usem a mesma representação de resistência antes de criarem seus ViewModels específicos.
