@@ -10,6 +10,7 @@ import {
   type ItemUseResistanceGateMode,
   type ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
+import { canCurrentUserApplyAssistedActions } from "../assisted-actions/assisted-action-policy";
 
 export type ApplyTargetEffectUseCaseInput = {
   actor: Actor;
@@ -19,6 +20,7 @@ export type ApplyTargetEffectUseCaseInput = {
   source?: string | null;
   resistanceGateMode: ItemUseResistanceGateMode;
   resistanceState: ResistanceResolutionState;
+  isGM?: boolean;
 };
 
 export type ApplyTargetEffectBlockedFailure = {
@@ -26,7 +28,7 @@ export type ApplyTargetEffectBlockedFailure = {
   actorId: string | null;
   actorName: string;
   conditionId: string;
-  reason: "resistance-pending" | "resistance-succeeded";
+  reason: "resistance-pending" | "resistance-succeeded" | "permission-denied";
   message: string;
 };
 
@@ -43,6 +45,10 @@ export class ApplyTargetEffectUseCase {
   constructor(private readonly conditions: ConditionEngine) {}
 
   async execute(input: ApplyTargetEffectUseCaseInput): Promise<ApplyTargetEffectUseCaseResult> {
+    if ((input.isGM ?? canCurrentUserApplyAssistedActions()) !== true) {
+      return this.block(input, "permission-denied", "Apenas o Mestre pode aplicar efeito assistido.");
+    }
+
     if (shouldBlockPendingResistanceAction(input.resistanceGateMode, input.resistanceState)) {
       return this.block(input, "resistance-pending", "Role a resistência do alvo antes de aplicar efeito.");
     }

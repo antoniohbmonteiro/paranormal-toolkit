@@ -3,6 +3,7 @@ import { getResistanceSkillLabel, rollOrdemResistance } from "../../adapters/ord
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import { getItemUseSystemCardMode } from "./item-use-settings";
 import type { ItemUseContext } from "./item-use-context";
+import { canCurrentUserApplyAssistedActions } from "./assisted-actions/assisted-action-policy";
 
 const LEGACY_PROMPT_FLAG_KEY = "itemUsePrompts";
 const CHAT_CARD_FLAG_KEY = "chatCard";
@@ -485,8 +486,25 @@ function appendPromptToRoot(root: HTMLElement, prompt: RenderableItemUseAutomati
   const section = getOrCreateToolkitSection(root, prompt);
   appendPromptContent(section, prompt);
 
-  const actions = getOrCreateActionsContainer(section, createActionSection(prompt));
-  actions.append(createPromptButton(prompt));
+  const actionSection = createActionSection(prompt);
+  const actions = getOrCreateActionsContainer(section, actionSection);
+  if (!shouldHideAssistedApplyPrompt(actionSection)) {
+    actions.append(createPromptButton(prompt));
+  }
+}
+
+function shouldHideAssistedApplyPrompt(actionSection: PromptActionSection): boolean {
+  return isAssistedApplyActionSection(actionSection.id) && !canCurrentUserApplyAssistedActions();
+}
+
+function shouldHideAssistedApplyButton(button: HTMLButtonElement): boolean {
+  const actions = button.closest<HTMLElement>(`[${ACTION_SECTION_ATTRIBUTE}]`);
+  const actionSectionId = actions?.getAttribute(ACTION_SECTION_ATTRIBUTE) ?? null;
+  return isAssistedApplyActionSection(actionSectionId) && !canCurrentUserApplyAssistedActions();
+}
+
+function isAssistedApplyActionSection(actionSectionId: string | null): boolean {
+  return actionSectionId === "apply-damage" || actionSectionId === "apply-effects";
 }
 
 function getOrCreateToolkitSection(root: HTMLElement, prompt: RenderableItemUseAutomationPrompt): HTMLElement {
@@ -1028,6 +1046,11 @@ function bindPromptButtons(html: unknown, handler: ItemUseAutomationPromptHandle
   const buttons = root.querySelectorAll<HTMLButtonElement>(BUTTON_SELECTOR);
 
   for (const button of buttons) {
+    if (shouldHideAssistedApplyButton(button)) {
+      button.remove();
+      continue;
+    }
+
     if (button.dataset.paranormalToolkitBound === "true") continue;
 
     button.dataset.paranormalToolkitBound = "true";
@@ -1334,6 +1357,12 @@ function resolveChatMessageDocumentFromRoot(root: HTMLElement): ChatMessageFlagD
 }
 
 async function handleButtonClick(button: HTMLButtonElement, handler: ItemUseAutomationPromptHandler): Promise<void> {
+  if (shouldHideAssistedApplyButton(button)) {
+    button.remove();
+    ui.notifications?.warn("Paranormal Toolkit: apenas o Mestre pode aplicar ações assistidas.");
+    return;
+  }
+
   const pendingId = button.getAttribute(PENDING_ID_ATTRIBUTE);
 
   if (!pendingId) return;
