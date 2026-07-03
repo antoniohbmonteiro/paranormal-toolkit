@@ -37,6 +37,7 @@ import {
 } from "./multi-target/multi-target-card-view-model";
 import { resolveMultiTargetSourceItem } from "./multi-target/multi-target-source-item-resolver";
 import { resolveMultiTargetActorByName } from "./multi-target/multi-target-target-resolver";
+import { createMultiTargetDamageFeedbackMessage } from "./multi-target/multi-target-damage-feedback-service";
 import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
 import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
 import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
@@ -983,7 +984,17 @@ async function handleTargetDamageApplication(
       console.warn("Paranormal Toolkit: não foi possível persistir dano multi-target.", cause);
     }
 
-    ui.notifications?.info?.(`Paranormal Toolkit: ${application.finalDamage} PV aplicado em ${application.targetName}.`);
+    try {
+      await createMultiTargetDamageFeedbackMessage({
+        actor: result.value.actor,
+        finalDamage: result.value.totalFinalDamage,
+        blocked: result.value.totalBlocked,
+        targetName: application.targetName
+      });
+    } catch (cause) {
+      console.warn("Paranormal Toolkit: não foi possível criar mensagem privada de dano multi-target.", cause);
+    }
+
     refreshTargetSection(row);
   } catch (cause) {
     console.warn("Paranormal Toolkit: não foi possível aplicar dano multi-target.", cause);
@@ -1134,7 +1145,6 @@ async function handleTargetEffectApplication(
       ui.notifications?.warn?.(`Paranormal Toolkit: ${result.value.warning}`);
     }
 
-    ui.notifications?.info?.(`Paranormal Toolkit: ${application.conditionLabel} aplicado em ${application.targetName}.`);
     refreshTargetSection(row);
   } catch (cause) {
     console.warn("Paranormal Toolkit: não foi possível aplicar efeito multi-target.", cause);

@@ -74,3 +74,9 @@ A partir da 0.28.8, resolução de atores e item de origem do card multi-target 
 - `chat-card/multi-target/multi-target-source-item-resolver.ts`
 
 O card principal não deve conhecer detalhes de `canvas.tokens`, `game.actors`, `actor.items` ou `game.items` além de chamar esses resolvers.
+
+## Multi-target damage feedback
+
+A partir da 0.29.0, dano multi-target mantém a aplicação pelo adapter de Ordem (`actor.applyDamage`) e cria feedback privado de chat com `multi-target-damage-feedback-service.ts`.
+
+O serviço usa as chaves de i18n do sistema e whisper para GMs/donos do alvo, evitando `ui.notifications.info` de sucesso.
