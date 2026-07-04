@@ -32,8 +32,12 @@ export type AssistedTargetActionPolicy = {
   blocksPendingResistance: boolean;
 };
 
-export function canCurrentUserApplyAssistedActions(): boolean {
+export function canCurrentUserControlAssistedActions(): boolean {
   return game.user?.isGM === true;
+}
+
+export function canCurrentUserApplyAssistedActions(): boolean {
+  return canCurrentUserControlAssistedActions();
 }
 
 export function resolveAssistedTargetActionPolicy(input: AssistedTargetActionPolicyInput): AssistedTargetActionPolicy {

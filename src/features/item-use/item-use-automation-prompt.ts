@@ -3,7 +3,7 @@ import { getResistanceSkillLabel, rollOrdemResistance } from "../../adapters/ord
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import { getItemUseSystemCardMode } from "./item-use-settings";
 import type { ItemUseContext } from "./item-use-context";
-import { canCurrentUserApplyAssistedActions } from "./assisted-actions/assisted-action-policy";
+import { canCurrentUserApplyAssistedActions, canCurrentUserControlAssistedActions } from "./assisted-actions/assisted-action-policy";
 
 const LEGACY_PROMPT_FLAG_KEY = "itemUsePrompts";
 const CHAT_CARD_FLAG_KEY = "chatCard";
@@ -813,7 +813,7 @@ function createResistanceRollButton(
   rollCard: ParsedRollCard,
   prompt: RenderableItemUseAutomationPrompt
 ): HTMLButtonElement | null {
-  if (!rollCard.resistanceSkill) return null;
+  if (!rollCard.resistanceSkill || !canCurrentUserControlAssistedActions()) return null;
 
   const button = document.createElement("button");
   button.type = "button";
@@ -1083,6 +1083,11 @@ function bindResistanceRollButtons(html: unknown): void {
   const buttons = root.querySelectorAll<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR);
 
   for (const button of buttons) {
+    if (!canCurrentUserControlAssistedActions()) {
+      button.remove();
+      continue;
+    }
+
     if (button.dataset.paranormalToolkitResistanceRollBound === "true") continue;
 
     button.dataset.paranormalToolkitResistanceRollBound = "true";
@@ -1106,6 +1111,12 @@ function toggleRollDetails(root: HTMLElement, toggle: HTMLButtonElement): void {
 }
 
 async function handleResistanceRollClick(root: HTMLElement, button: HTMLButtonElement): Promise<void> {
+  if (!canCurrentUserControlAssistedActions()) {
+    button.remove();
+    ui.notifications?.warn("Paranormal Toolkit: apenas o Mestre pode rolar resistência assistida.");
+    return;
+  }
+
   const promptId = button.getAttribute(PROMPT_ID_ATTRIBUTE);
   const skill = button.getAttribute(RESISTANCE_SKILL_ATTRIBUTE);
   const skillLabel = button.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : "Resistência");

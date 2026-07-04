@@ -33,6 +33,7 @@ import { resolveMultiTargetSourceItem } from "./multi-target/multi-target-source
 import { resolveMultiTargetActorByName } from "./multi-target/multi-target-target-resolver";
 import { createMultiTargetDamageFeedbackMessage } from "./multi-target/multi-target-damage-feedback-service";
 import { createPublicDamageAppliedLabel, createPublicDamageActionLabel } from "../assisted-actions/assisted-action-labels";
+import { canCurrentUserControlAssistedActions } from "../assisted-actions/assisted-action-policy";
 import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
 import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
 import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
@@ -623,7 +624,11 @@ function createTargetAvatar(target: MultiTargetViewModel): HTMLElement {
   return avatar;
 }
 
-function createResistanceButton(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLButtonElement {
+function createResistanceButton(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLElement {
+  if (!canCurrentUserControlAssistedActions()) {
+    return createResistanceStatusDisplay(target, resistance);
+  }
+
   const button = document.createElement("button");
   button.type = "button";
   button.classList.add(`${PROMPT_CLASS}__target-resistance-button`, `${PROMPT_CLASS}__target-resistance-button--${target.state}`);
@@ -671,6 +676,38 @@ function createResistanceButton(target: MultiTargetViewModel, resistance: Target
   return button;
 }
 
+function createResistanceStatusDisplay(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLElement {
+  const status = document.createElement("span");
+  status.classList.add(`${PROMPT_CLASS}__target-resistance-button`, `${PROMPT_CLASS}__target-resistance-button--${target.state}`);
+  status.setAttribute("aria-label", createResistanceStatusAriaLabel(target, resistance));
+
+  if (!target.resistanceResult) {
+    status.textContent = "—";
+    return status;
+  }
+
+  const total = document.createElement("span");
+  total.classList.add(`${PROMPT_CLASS}__target-resistance-total`);
+  total.textContent = String(target.resistanceResult.total);
+
+  const mark = document.createElement("span");
+  mark.classList.add(`${PROMPT_CLASS}__target-resistance-mark`);
+  mark.setAttribute("aria-hidden", "true");
+  mark.textContent = target.state === SUCCESS_STATE ? "✓" : target.state === FAILURE_STATE ? "✕" : "";
+
+  status.append(total, mark);
+  return status;
+}
+
+function createResistanceStatusAriaLabel(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): string {
+  const skillLabel = resistance?.skillLabel ?? resistance?.skill ?? "resistência";
+
+  if (!target.resistanceResult) return `${skillLabel} de ${target.name}: pendente.`;
+
+  const outcome = target.state === SUCCESS_STATE ? "sucesso" : target.state === FAILURE_STATE ? "falha" : "resultado";
+  return `${skillLabel} de ${target.name}: ${target.resistanceResult.total}, ${outcome}.`;
+}
+
 function createResistanceButtonAriaLabel(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): string {
   const skillLabel = resistance?.skillLabel ?? resistance?.skill ?? "resistência";
 
@@ -681,11 +718,13 @@ function createResistanceButtonAriaLabel(target: MultiTargetViewModel, resistanc
 }
 
 function bindTargetResistanceButton(
-  button: HTMLButtonElement,
+  button: HTMLElement,
   row: HTMLElement,
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel
 ): void {
+  if (!(button instanceof HTMLButtonElement) || !canCurrentUserControlAssistedActions()) return;
+
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     void handleTargetResistanceRoll(row, button, target, viewModel);
@@ -698,6 +737,11 @@ async function handleTargetResistanceRoll(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel
 ): Promise<void> {
+  if (!canCurrentUserControlAssistedActions()) {
+    ui.notifications?.warn?.("Paranormal Toolkit: apenas o Mestre pode rolar resistência assistida.");
+    return;
+  }
+
   const resistance = viewModel.resistance;
   const skill = resistance?.skill;
   const skillLabel = resistance?.skillLabel ?? (skill ? getResistanceSkillLabel(skill) : "Resistência");
