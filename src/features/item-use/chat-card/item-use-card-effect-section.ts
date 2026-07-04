@@ -7,7 +7,6 @@ import type {
 import {
   isActionResisted,
   isActionWaitingForResistance,
-  resolveEffectActionState,
 } from "./item-use-card-action-state";
 import {
   normalizeLookupText,
@@ -15,6 +14,7 @@ import {
   readPersistedButtonLabelForButton
 } from "./item-use-card-roll-context";
 import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
+import { createAssistedTargetActionViewModel } from "../assisted-actions/assisted-action-view-model";
 import {
   ACTION_BUTTON_SELECTOR,
   createButtonIcon,
@@ -69,10 +69,26 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, section:
   const effectLabel = resolveEffectActionDisplayLabel(section, button, currentLabel);
   const resistanceState = resolveEffectResistanceState(rollCard);
 
-  const effectActionState = resolveEffectActionState({
+  const effectActionState = createAssistedTargetActionViewModel({
+    targetId: "single-target",
+    targetName: "Alvo",
     resistanceGateMode: getResistanceGateModeSafe(),
     resistanceState,
-  });
+    damage: null,
+    effect: { conditionLabel: effectLabel },
+  }).policy.effectActionState;
+
+  if (!createAssistedTargetActionViewModel({
+    targetId: "single-target",
+    targetName: "Alvo",
+    resistanceGateMode: getResistanceGateModeSafe(),
+    resistanceState,
+    damage: null,
+    effect: { conditionLabel: effectLabel },
+  }).policy.canShowApplyEffect) {
+    hideUnresolvedEffectButton(button);
+    return;
+  }
 
   if (isActionWaitingForResistance(effectActionState)) {
     setEffectWaitingForResistance(button, effectActionState.label);
@@ -283,6 +299,11 @@ function resolveEffectActionDisplayLabel(section: HTMLElement, button: HTMLButto
 
 function resolveEffectResistanceState(rollCard: HTMLElement): ResistanceResolutionState {
   return createSingleTargetResistanceUiState(rollCard).state;
+}
+
+function hideUnresolvedEffectButton(button: HTMLButtonElement): void {
+  if (isResolvedEffectButton(button, button.textContent?.trim() ?? "")) return;
+  button.remove();
 }
 
 function setEffectWaitingForResistance(button: HTMLButtonElement, label = "Role resistência"): void {

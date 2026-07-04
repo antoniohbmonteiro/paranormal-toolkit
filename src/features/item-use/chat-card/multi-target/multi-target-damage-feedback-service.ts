@@ -53,7 +53,9 @@ function toDamageApplicationResult(
   };
 }
 
-function isDamageApplicationResult(input: DamageApplicationResult | LegacyMultiTargetDamageFeedbackInput): input is DamageApplicationResult {
+function isDamageApplicationResult(
+  input: DamageApplicationResult | LegacyMultiTargetDamageFeedbackInput,
+): input is DamageApplicationResult {
   return "instances" in input
     && Array.isArray(input.instances)
     && "totalFinalDamage" in input

@@ -10,6 +10,7 @@ import {
   type ItemUseResistanceGateMode,
   type ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
+import { canCurrentUserApplyAssistedActions } from "../assisted-actions/assisted-action-policy";
 
 export type ApplyTargetDamageUseCaseInput = {
   actor: Actor;
@@ -21,13 +22,14 @@ export type ApplyTargetDamageUseCaseInput = {
   originUuid?: string | null;
   resistanceGateMode: ItemUseResistanceGateMode;
   resistanceState: ResistanceResolutionState;
+  isGM?: boolean;
 };
 
 export type ApplyTargetDamageBlockedFailure = {
   actor: Actor;
   actorId: string | null;
   actorName: string;
-  reason: "resistance-pending";
+  reason: "resistance-pending" | "permission-denied";
   message: string;
 };
 
@@ -44,6 +46,19 @@ export class ApplyTargetDamageUseCase {
   constructor(private readonly damage: DamageEngine) {}
 
   async execute(input: ApplyTargetDamageUseCaseInput): Promise<ApplyTargetDamageUseCaseResult> {
+    if ((input.isGM ?? canCurrentUserApplyAssistedActions()) !== true) {
+      return {
+        ok: false,
+        error: {
+          actor: input.actor,
+          actorId: input.actor.id ?? null,
+          actorName: input.actor.name ?? "Ator sem nome",
+          reason: "permission-denied",
+          message: "Apenas o Mestre pode aplicar dano assistido.",
+        },
+      };
+    }
+
     if (shouldBlockPendingResistanceAction(input.resistanceGateMode, input.resistanceState)) {
       return {
         ok: false,

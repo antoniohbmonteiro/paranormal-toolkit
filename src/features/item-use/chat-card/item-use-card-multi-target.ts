@@ -14,13 +14,7 @@ import type {
 import {
   isActionResisted,
   isActionWaitingForResistance,
-  resolveDamageActionState,
-  resolveEffectActionState,
 } from "./item-use-card-action-state";
-import {
-  createTargetResistanceUiState,
-  type TargetResistanceStatus,
-} from "./item-use-card-resistance-state";
 import {
   createMultiTargetCardViewModel,
   MULTI_TARGET_FAILURE_STATE,
@@ -38,6 +32,8 @@ import {
 import { resolveMultiTargetSourceItem } from "./multi-target/multi-target-source-item-resolver";
 import { resolveMultiTargetActorByName } from "./multi-target/multi-target-target-resolver";
 import { createMultiTargetDamageFeedbackMessage } from "./multi-target/multi-target-damage-feedback-service";
+import { createPublicDamageAppliedLabel, createPublicDamageActionLabel } from "../assisted-actions/assisted-action-labels";
+import { canCurrentUserControlAssistedActions } from "../assisted-actions/assisted-action-policy";
 import { ApplyTargetDamageUseCase } from "../use-cases/apply-target-damage-use-case";
 import { ApplyTargetEffectUseCase } from "../use-cases/apply-target-effect-use-case";
 import { RollTargetResistanceUseCase } from "../use-cases/roll-target-resistance-use-case";
@@ -139,7 +135,8 @@ function createMultiTargetCardViewModelFromLayout(input: MultiTargetCardLayoutIn
     resistanceResults: readMultiTargetResistanceResults(input.rollCard),
     damageApplications: readMultiTargetDamageApplications(input.rollCard),
     effectApplications: readMultiTargetEffectApplications(input.rollCard),
-    resolveTargetConditionApplication
+    resolveTargetConditionApplication,
+    resistanceGateMode: getResistanceGateModeSafe()
   });
 }
 
@@ -263,8 +260,6 @@ function readRenderedMultiTargetDamageApplications(rollCard: HTMLElement): Map<s
     const targetId = row.getAttribute(MULTI_TARGET_TARGET_ATTRIBUTE);
     const mode = row.getAttribute(MULTI_TARGET_DAMAGE_MODE_ATTRIBUTE);
     const inputAmount = parseInteger(row.getAttribute(MULTI_TARGET_DAMAGE_INPUT_AMOUNT_ATTRIBUTE));
-    const finalDamage = parseInteger(row.getAttribute(MULTI_TARGET_DAMAGE_FINAL_AMOUNT_ATTRIBUTE));
-    const blocked = parseInteger(row.getAttribute(MULTI_TARGET_DAMAGE_BLOCKED_ATTRIBUTE));
     const targetName = row.getAttribute(MULTI_TARGET_DAMAGE_TARGET_NAME_ATTRIBUTE);
     const appliedAt = row.getAttribute(MULTI_TARGET_DAMAGE_APPLIED_AT_ATTRIBUTE);
 
@@ -272,8 +267,6 @@ function readRenderedMultiTargetDamageApplications(rollCard: HTMLElement): Map<s
       !targetId
       || !isDamageMode(mode)
       || inputAmount === null
-      || finalDamage === null
-      || blocked === null
       || !targetName
       || !appliedAt
     ) {
@@ -285,8 +278,6 @@ function readRenderedMultiTargetDamageApplications(rollCard: HTMLElement): Map<s
       targetName,
       mode,
       inputAmount,
-      finalDamage,
-      blocked,
       appliedAt
     });
   }
@@ -568,8 +559,8 @@ function setTargetDamageApplicationAttributes(row: HTMLElement, application: Mul
 
   row.setAttribute(MULTI_TARGET_DAMAGE_MODE_ATTRIBUTE, application.mode);
   row.setAttribute(MULTI_TARGET_DAMAGE_INPUT_AMOUNT_ATTRIBUTE, String(application.inputAmount));
-  row.setAttribute(MULTI_TARGET_DAMAGE_FINAL_AMOUNT_ATTRIBUTE, String(application.finalDamage));
-  row.setAttribute(MULTI_TARGET_DAMAGE_BLOCKED_ATTRIBUTE, String(application.blocked));
+  row.removeAttribute(MULTI_TARGET_DAMAGE_FINAL_AMOUNT_ATTRIBUTE);
+  row.removeAttribute(MULTI_TARGET_DAMAGE_BLOCKED_ATTRIBUTE);
   row.setAttribute(MULTI_TARGET_DAMAGE_TARGET_NAME_ATTRIBUTE, application.targetName);
   row.setAttribute(MULTI_TARGET_DAMAGE_APPLIED_AT_ATTRIBUTE, application.appliedAt);
 }
@@ -616,10 +607,10 @@ function createTargetSummary(target: MultiTargetViewModel, viewModel: MultiTarge
 
   const actions = document.createElement("div");
   actions.classList.add(`${PROMPT_CLASS}__target-summary-actions`);
-  actions.append(
+  appendVisibleTargetActions(actions, [
     createTargetDamageActionButton(target, viewModel, "compact"),
     createTargetEffectActionButton(target, viewModel, "compact")
-  );
+  ]);
 
   summary.append(main, actions);
   return summary;
@@ -633,7 +624,11 @@ function createTargetAvatar(target: MultiTargetViewModel): HTMLElement {
   return avatar;
 }
 
-function createResistanceButton(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLButtonElement {
+function createResistanceButton(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLElement {
+  if (!canCurrentUserControlAssistedActions()) {
+    return createResistanceStatusDisplay(target, resistance);
+  }
+
   const button = document.createElement("button");
   button.type = "button";
   button.classList.add(`${PROMPT_CLASS}__target-resistance-button`, `${PROMPT_CLASS}__target-resistance-button--${target.state}`);
@@ -681,6 +676,38 @@ function createResistanceButton(target: MultiTargetViewModel, resistance: Target
   return button;
 }
 
+function createResistanceStatusDisplay(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): HTMLElement {
+  const status = document.createElement("span");
+  status.classList.add(`${PROMPT_CLASS}__target-resistance-button`, `${PROMPT_CLASS}__target-resistance-button--${target.state}`);
+  status.setAttribute("aria-label", createResistanceStatusAriaLabel(target, resistance));
+
+  if (!target.resistanceResult) {
+    status.textContent = "—";
+    return status;
+  }
+
+  const total = document.createElement("span");
+  total.classList.add(`${PROMPT_CLASS}__target-resistance-total`);
+  total.textContent = String(target.resistanceResult.total);
+
+  const mark = document.createElement("span");
+  mark.classList.add(`${PROMPT_CLASS}__target-resistance-mark`);
+  mark.setAttribute("aria-hidden", "true");
+  mark.textContent = target.state === SUCCESS_STATE ? "✓" : target.state === FAILURE_STATE ? "✕" : "";
+
+  status.append(total, mark);
+  return status;
+}
+
+function createResistanceStatusAriaLabel(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): string {
+  const skillLabel = resistance?.skillLabel ?? resistance?.skill ?? "resistência";
+
+  if (!target.resistanceResult) return `${skillLabel} de ${target.name}: pendente.`;
+
+  const outcome = target.state === SUCCESS_STATE ? "sucesso" : target.state === FAILURE_STATE ? "falha" : "resultado";
+  return `${skillLabel} de ${target.name}: ${target.resistanceResult.total}, ${outcome}.`;
+}
+
 function createResistanceButtonAriaLabel(target: MultiTargetViewModel, resistance: TargetResistanceViewModel | null): string {
   const skillLabel = resistance?.skillLabel ?? resistance?.skill ?? "resistência";
 
@@ -691,11 +718,13 @@ function createResistanceButtonAriaLabel(target: MultiTargetViewModel, resistanc
 }
 
 function bindTargetResistanceButton(
-  button: HTMLButtonElement,
+  button: HTMLElement,
   row: HTMLElement,
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel
 ): void {
+  if (!(button instanceof HTMLButtonElement) || !canCurrentUserControlAssistedActions()) return;
+
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     void handleTargetResistanceRoll(row, button, target, viewModel);
@@ -708,6 +737,11 @@ async function handleTargetResistanceRoll(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel
 ): Promise<void> {
+  if (!canCurrentUserControlAssistedActions()) {
+    ui.notifications?.warn?.("Paranormal Toolkit: apenas o Mestre pode rolar resistência assistida.");
+    return;
+  }
+
   const resistance = viewModel.resistance;
   const skill = resistance?.skill;
   const skillLabel = resistance?.skillLabel ?? (skill ? getResistanceSkillLabel(skill) : "Resistência");
@@ -788,43 +822,8 @@ function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement 
 }
 
 function shouldBlockTargetActionsByResistance(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): boolean {
-  return isActionWaitingForResistance(resolveTargetDamageActionState(target, viewModel));
-}
-
-function resolveTargetDamageActionState(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel) {
-  return resolveDamageActionState({
-    resistanceGateMode: getResistanceGateModeSafe(),
-    resistanceState: createTargetResistanceState(target, viewModel),
-    alreadyApplied: Boolean(target.damageApplication),
-    unavailable: !viewModel.damage,
-  });
-}
-
-function resolveTargetEffectActionState(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel) {
-  return resolveEffectActionState({
-    resistanceGateMode: getResistanceGateModeSafe(),
-    resistanceState: createTargetResistanceState(target, viewModel),
-    alreadyApplied: Boolean(target.effectApplication),
-    unavailable: !viewModel.effect,
-  });
-}
-
-function createTargetResistanceState(
-  target: MultiTargetViewModel,
-  viewModel: MultiTargetCardViewModel
-): ResistanceResolutionState {
-  return createTargetResistanceUiState({
-    hasResistance: Boolean(viewModel.resistance),
-    difficulty: viewModel.resistance?.difficulty ?? null,
-    total: target.resistanceResult?.total ?? null,
-    status: getTargetResistanceStatus(target),
-  }).state;
-}
-
-function getTargetResistanceStatus(target: MultiTargetViewModel): TargetResistanceStatus {
-  if (target.state === SUCCESS_STATE) return "succeeded";
-  if (target.state === FAILURE_STATE) return "failed";
-  return "pending";
+  void viewModel;
+  return isActionWaitingForResistance(target.assistedActions.policy.damageActionState);
 }
 
 function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
@@ -839,17 +838,21 @@ function createTargetDamageActionButton(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel,
   density: "compact" | "full"
-): HTMLButtonElement {
+): HTMLElement | null {
   if (target.damageApplication) {
     return createTargetActionButton(
       "✓",
-      createAppliedDamageLabel(target.damageApplication, density),
+      createPublicDamageAppliedLabel({ inputAmount: target.damageApplication.inputAmount, mode: target.damageApplication.mode }),
       [`${PROMPT_CLASS}__target-action--damage`, `${PROMPT_CLASS}__target-action--applied`],
       true
     );
   }
 
-  const actionState = resolveTargetDamageActionState(target, viewModel);
+  const actionState = target.assistedActions.policy.damageActionState;
+
+  if (!target.assistedActions.policy.canShowApplyDamage) {
+    return null;
+  }
 
   if (isActionWaitingForResistance(actionState)) {
     return createTargetActionButton(
@@ -860,7 +863,7 @@ function createTargetDamageActionButton(
     );
   }
 
-  const mode = getTargetDamageMode(target);
+  const mode = target.assistedActions.policy.damageMode ?? "normal";
   const amount = getTargetDamageAmount(mode, viewModel.damage);
   if (amount === null) {
     return createTargetActionButton(
@@ -871,9 +874,7 @@ function createTargetDamageActionButton(
     );
   }
 
-  const label = mode === "half"
-    ? density === "full" ? viewModel.damage.halfLabel ?? `Metade: ${amount} PV` : viewModel.damage.halfCompactLabel ?? `½ ${amount} PV`
-    : density === "full" ? viewModel.damage.normalLabel : viewModel.damage.normalCompactLabel;
+  const label = createPublicDamageActionLabel({ inputAmount: amount, mode, compact: density === "compact" });
   const icon = mode === "half" ? "🛡️" : "⚡";
   const stateClass = mode === "half" ? `${PROMPT_CLASS}__target-action--half-damage` : `${PROMPT_CLASS}__target-action--normal-damage`;
   const button = createTargetActionButton(
@@ -897,20 +898,6 @@ function createTargetDamageActionButton(
   return button;
 }
 
-function createAppliedDamageLabel(application: MultiTargetDamageApplication, density: "compact" | "full"): string {
-  const blocked = application.blocked > 0 ? ` (RD ${application.blocked})` : "";
-
-  if (density === "compact") {
-    return `${application.finalDamage} PV`;
-  }
-
-  return `Dano aplicado: ${application.finalDamage} PV${blocked}`;
-}
-
-function getTargetDamageMode(target: MultiTargetViewModel): MultiTargetDamageMode {
-  return target.state === SUCCESS_STATE ? "half" : "normal";
-}
-
 function getTargetDamageAmount(mode: MultiTargetDamageMode, damage: TargetDamageViewModel): number | null {
   return mode === "half" ? damage.halfAmount : damage.normalAmount;
 }
@@ -928,7 +915,7 @@ async function handleTargetDamageApplication(
     return;
   }
 
-  const mode = getTargetDamageMode(target);
+  const mode = target.assistedActions.policy.damageMode ?? "normal";
   const amount = getTargetDamageAmount(mode, viewModel.damage);
 
   if (amount === null) {
@@ -957,7 +944,7 @@ async function handleTargetDamageApplication(
       source: "item-use.multi-target-damage",
       originUuid: null,
       resistanceGateMode: getResistanceGateModeSafe(),
-      resistanceState: createTargetResistanceState(target, viewModel)
+      resistanceState: target.assistedActions.resistanceState
     });
 
     if (!result.ok) {
@@ -971,8 +958,6 @@ async function handleTargetDamageApplication(
       targetName: actor.name ?? target.name,
       mode,
       inputAmount: amount,
-      finalDamage: result.value.totalFinalDamage,
-      blocked: result.value.totalBlocked,
       appliedAt: new Date().toISOString()
     };
 
@@ -985,12 +970,7 @@ async function handleTargetDamageApplication(
     }
 
     try {
-      await createMultiTargetDamageFeedbackMessage({
-        actor: result.value.actor,
-        finalDamage: result.value.totalFinalDamage,
-        blocked: result.value.totalBlocked,
-        targetName: application.targetName
-      });
+      await createMultiTargetDamageFeedbackMessage(result.value);
     } catch (cause) {
       console.warn("Paranormal Toolkit: não foi possível criar mensagem privada de dano multi-target.", cause);
     }
@@ -1010,8 +990,8 @@ function createTargetEffectActionButton(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel,
   density: "compact" | "full"
-): HTMLButtonElement {
-  const actionState = resolveTargetEffectActionState(target, viewModel);
+): HTMLElement | null {
+  const actionState = target.assistedActions.policy.effectActionState;
 
   if (!viewModel.effect) {
     return createTargetActionButton(
@@ -1049,6 +1029,10 @@ function createTargetEffectActionButton(
     );
   }
 
+  if (!target.assistedActions.policy.canShowApplyEffect) {
+    return null;
+  }
+
   const button = createTargetActionButton(
     "✦",
     density === "full" ? `Aplicar ${viewModel.effect.conditionLabel}` : "Efeito",
@@ -1083,7 +1067,7 @@ async function handleTargetEffectApplication(
     return;
   }
 
-  if (target.state === SUCCESS_STATE) {
+  if (target.assistedActions.policy.effectMode === "resisted") {
     ui.notifications?.warn?.("Paranormal Toolkit: este alvo resistiu ao efeito.");
     return;
   }
@@ -1113,7 +1097,7 @@ async function handleTargetEffectApplication(
       originUuid: effect.originUuid,
       source: effect.source,
       resistanceGateMode: getResistanceGateModeSafe(),
-      resistanceState: createTargetResistanceState(target, viewModel)
+      resistanceState: target.assistedActions.resistanceState
     });
 
     if (!result.ok) {
@@ -1153,6 +1137,12 @@ async function handleTargetEffectApplication(
   } finally {
     button.disabled = false;
     button.classList.remove(`${PROMPT_CLASS}__target-action--applying`);
+  }
+}
+
+function appendVisibleTargetActions(container: HTMLElement, actions: Array<HTMLElement | null>): void {
+  for (const action of actions) {
+    if (action) container.append(action);
   }
 }
 
@@ -1290,10 +1280,10 @@ function createTargetResistanceRollDisplay(
 function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): HTMLElement {
   const actions = document.createElement("div");
   actions.classList.add(`${PROMPT_CLASS}__target-details-actions`);
-  actions.append(
+  appendVisibleTargetActions(actions, [
     createTargetDamageActionButton(target, viewModel, "full"),
     createTargetEffectActionButton(target, viewModel, "full")
-  );
+  ]);
   return actions;
 }
 

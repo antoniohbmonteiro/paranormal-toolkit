@@ -4,11 +4,9 @@ import type {
   ItemUseResistanceGateMode,
   ResistanceResolutionState,
 } from "../config/item-use-resistance-gate-policy";
-import {
-  isActionWaitingForResistance,
-  resolveDamageActionState,
-} from "./item-use-card-action-state";
+import { isActionWaitingForResistance } from "./item-use-card-action-state";
 import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
+import { createAssistedTargetActionViewModel } from "../assisted-actions/assisted-action-view-model";
 import {
   ACTION_BUTTON_SELECTOR,
   ACTIONS_TITLE_SELECTOR,
@@ -49,11 +47,23 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
   const mode = getDamageResolutionModeSafe();
   const gateMode = getResistanceGateModeSafe();
   const resistanceState = resolveDamageResistanceState(rollCard);
-  const damageActionState = resolveDamageActionState({
+  const assistedTarget = createAssistedTargetActionViewModel({
+    targetId: "single-target",
+    targetName: "Alvo",
     resistanceGateMode: gateMode,
     resistanceState,
+    damage: { normalAmount: null, halfAmount: null },
+    effect: null,
   });
+  const damageActionState = assistedTarget.policy.damageActionState;
   const blockPending = isActionWaitingForResistance(damageActionState);
+
+  if (!assistedTarget.policy.canShowApplyDamage) {
+    hideUnresolvedDamageButton(normalButton);
+    hideUnresolvedDamageButton(halfButton);
+    updateDamageResolutionSummary(actions, blockPending ? "pending" : "manual", blockPending ? damageActionState.reason : null);
+    return;
+  }
 
   actions.classList.toggle(`${PROMPT_CLASS}__actions--assisted`, mode === "assisted");
   actions.classList.toggle(`${PROMPT_CLASS}__actions--manual`, mode !== "assisted");
@@ -137,6 +147,11 @@ function enhanceDamageButtonIcon(button: HTMLButtonElement, kind: "normal" | "ha
   button.setAttribute(DAMAGE_BUTTON_ORIGINAL_LABEL_ATTRIBUTE, labelText);
   button.setAttribute("aria-label", labelText);
   button.replaceChildren(icon, createButtonLabel(labelText));
+}
+
+function hideUnresolvedDamageButton(button: HTMLButtonElement): void {
+  if (button.textContent?.trim().startsWith("✓")) return;
+  button.remove();
 }
 
 function setDamageButtonVisibility(button: HTMLButtonElement, visible: boolean): void {

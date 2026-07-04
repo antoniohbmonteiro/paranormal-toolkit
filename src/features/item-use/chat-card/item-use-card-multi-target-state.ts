@@ -24,8 +24,6 @@ export type MultiTargetDamageApplication = {
   targetName: string;
   mode: MultiTargetDamageMode;
   inputAmount: number;
-  finalDamage: number;
-  blocked: number;
   appliedAt: string;
 };
 
@@ -258,10 +256,6 @@ function isMultiTargetDamageApplication(value: unknown): value is MultiTargetDam
     && isDamageMode(value.mode)
     && typeof value.inputAmount === "number"
     && Number.isFinite(value.inputAmount)
-    && typeof value.finalDamage === "number"
-    && Number.isFinite(value.finalDamage)
-    && typeof value.blocked === "number"
-    && Number.isFinite(value.blocked)
     && typeof value.appliedAt === "string";
 }
 
