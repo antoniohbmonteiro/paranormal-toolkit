@@ -1,73 +1,61 @@
-type DamageFeedbackInput = {
+import type { DamageApplicationResult } from "../../../../core/damage/damage-application";
+import { whisperDamageApplicationResultToGms } from "../../assisted-actions/assisted-damage-feedback-service";
+
+type LegacyMultiTargetDamageFeedbackInput = {
   actor: Actor;
+  targetName: string;
   finalDamage: number;
   blocked: number;
-  targetName: string;
 };
 
-type UserLike = {
-  id?: string | null;
-  isGM?: boolean;
-};
-
-type ActorPermissionLike = Actor & {
-  testUserPermission?: (user: unknown, permission: string) => boolean;
-};
-
-export async function createMultiTargetDamageFeedbackMessage(input: DamageFeedbackInput): Promise<void> {
-  const recipients = resolveDamageRecipients(input.actor);
-  const blockedText = input.blocked > 0
-    ? ` (${game.i18n.format("op.damageBlocked", { blocked: input.blocked })})`
-    : "";
-
-  await ChatMessage.create({
-    content: game.i18n.format("op.applyDamageResult", {
-      amount: input.finalDamage,
-      target: input.targetName,
-      blocked: blockedText,
-    }),
-    whisper: recipients,
-  });
+/**
+ * Compatibility wrapper kept for existing multi-target imports.
+ * New code should call the shared assisted damage feedback service directly.
+ */
+export async function createMultiTargetDamageFeedbackMessage(
+  input: DamageApplicationResult | LegacyMultiTargetDamageFeedbackInput,
+): Promise<void> {
+  await whisperDamageApplicationResultToGms(toDamageApplicationResult(input));
 }
 
-function resolveDamageRecipients(targetActor: Actor): string[] {
-  const ids = new Set<string>();
+function toDamageApplicationResult(
+  input: DamageApplicationResult | LegacyMultiTargetDamageFeedbackInput,
+): DamageApplicationResult {
+  if (isDamageApplicationResult(input)) return input;
 
-  for (const user of getGameUsers()) {
-    const id = typeof user.id === "string" && user.id.length > 0 ? user.id : null;
-    if (!id) continue;
+  const inputAmount = input.finalDamage + input.blocked;
 
-    if (user.isGM === true) {
-      ids.add(id);
-      continue;
-    }
-
-    if (canUserOwnActor(targetActor, user)) {
-      ids.add(id);
-    }
-  }
-
-  return Array.from(ids);
+  return {
+    actor: input.actor,
+    actorId: input.actor.id ?? null,
+    actorName: input.targetName,
+    totalRawDamage: inputAmount,
+    totalFinalDamage: input.finalDamage,
+    totalBlocked: input.blocked,
+    newPV: null,
+    conditions: [],
+    instances: [
+      {
+        id: "multi-target-damage",
+        label: "Dano",
+        sourceRollId: null,
+        inputAmount,
+        finalDamage: input.finalDamage,
+        blocked: input.blocked,
+        damageType: null,
+        systemDamageType: null,
+        ignoreResistance: false,
+        nonLethal: false,
+      },
+    ],
+    source: "item-use.multi-target-damage",
+    originUuid: null,
+  };
 }
 
-function getGameUsers(): UserLike[] {
-  const users = (game as { users?: Iterable<unknown> }).users;
-  if (!users) return [];
-
-  return Array.from(users).filter(isUserLike);
-}
-
-function isUserLike(value: unknown): value is UserLike {
-  return Boolean(value && typeof value === "object" && "id" in value);
-}
-
-function canUserOwnActor(actor: Actor, user: UserLike): boolean {
-  const permissionActor = actor as ActorPermissionLike;
-  if (typeof permissionActor.testUserPermission !== "function") return false;
-
-  try {
-    return permissionActor.testUserPermission(user, "OWNER") === true;
-  } catch {
-    return false;
-  }
+function isDamageApplicationResult(input: DamageApplicationResult | LegacyMultiTargetDamageFeedbackInput): input is DamageApplicationResult {
+  return "instances" in input
+    && Array.isArray(input.instances)
+    && "totalFinalDamage" in input
+    && "totalBlocked" in input;
 }

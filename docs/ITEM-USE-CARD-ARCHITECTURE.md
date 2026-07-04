@@ -80,3 +80,48 @@ O card principal não deve conhecer detalhes de `canvas.tokens`, `game.actors`, 
 A partir da 0.29.0, dano multi-target mantém a aplicação pelo adapter de Ordem (`actor.applyDamage`) e cria feedback privado de chat com `multi-target-damage-feedback-service.ts`.
 
 O serviço usa as chaves de i18n do sistema e whisper para GMs/donos do alvo, evitando `ui.notifications.info` de sucesso.
+
+## Assisted actions compartilhadas
+
+A partir da 0.29.1, as regras de ações assistidas passam a ficar em uma camada compartilhada em `src/features/item-use/assisted-actions/`.
+
+Arquivos principais:
+
+- `assisted-action-policy.ts`: concentra permissão GM-only, estado de resistência, modo de dano e modo de efeito.
+- `assisted-action-view-model.ts`: cria o ViewModel de ação assistida por alvo consumido pelos renderers.
+- `assisted-action-labels.ts`: cria labels públicos de dano sem RD e sem dano final pós-RD.
+- `assisted-damage-feedback-service.ts`: cria o whisper privado de dano para GMs.
+
+Decisões:
+
+- Renderers single-target e multi-target continuam separados.
+- Renderer não deve decidir a regra principal de permissão, resistência, dano normal/metade ou efeito resistido.
+- Renderer deve consumir policy/ViewModel e transformar o estado em DOM.
+- Controle de resolução é GM-only por enquanto:
+  - aplicar dano;
+  - aplicar efeito;
+  - rolar/re-rolar resistência assistida do alvo.
+- Jogadores podem ver o resultado público de resistência já rolado, mas não podem controlar a rolagem.
+- RD, dano bloqueado e dano final pós-RD não entram no estado público do card.
+- O feedback privado para GM é o local correto para detalhes reais de dano.
+- O multi-target mantém `multi-target-damage-feedback-service.ts` como wrapper legado, mas ele deve delegar para o serviço compartilhado.
+
+## Privacidade do estado público
+
+O estado público do chat card deve evitar dados que revelem RD ou dano final real após RD.
+
+Permitido no card público:
+
+- dano pré-RD escolhido pela ação;
+- resultado público da resistência;
+- estado aplicado, resistido ou pendente.
+
+Não permitido no estado público do card:
+
+- `finalDamage`;
+- `blocked`;
+- `totalFinalDamage`;
+- `totalBlocked`;
+- texto público com RD.
+
+Campos internos como `finalDamage` e `blocked` continuam válidos no `DamageApplicationResult`, em contexto de workflow interno e no whisper privado para GM.
