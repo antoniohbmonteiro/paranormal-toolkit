@@ -259,8 +259,6 @@ function readRenderedMultiTargetDamageApplications(rollCard: HTMLElement): Map<s
     const targetId = row.getAttribute(MULTI_TARGET_TARGET_ATTRIBUTE);
     const mode = row.getAttribute(MULTI_TARGET_DAMAGE_MODE_ATTRIBUTE);
     const inputAmount = parseInteger(row.getAttribute(MULTI_TARGET_DAMAGE_INPUT_AMOUNT_ATTRIBUTE));
-    const finalDamage = parseInteger(row.getAttribute(MULTI_TARGET_DAMAGE_FINAL_AMOUNT_ATTRIBUTE));
-    const blocked = parseInteger(row.getAttribute(MULTI_TARGET_DAMAGE_BLOCKED_ATTRIBUTE));
     const targetName = row.getAttribute(MULTI_TARGET_DAMAGE_TARGET_NAME_ATTRIBUTE);
     const appliedAt = row.getAttribute(MULTI_TARGET_DAMAGE_APPLIED_AT_ATTRIBUTE);
 
@@ -268,8 +266,6 @@ function readRenderedMultiTargetDamageApplications(rollCard: HTMLElement): Map<s
       !targetId
       || !isDamageMode(mode)
       || inputAmount === null
-      || finalDamage === null
-      || blocked === null
       || !targetName
       || !appliedAt
     ) {
@@ -281,8 +277,6 @@ function readRenderedMultiTargetDamageApplications(rollCard: HTMLElement): Map<s
       targetName,
       mode,
       inputAmount,
-      finalDamage,
-      blocked,
       appliedAt
     });
   }
@@ -564,8 +558,8 @@ function setTargetDamageApplicationAttributes(row: HTMLElement, application: Mul
 
   row.setAttribute(MULTI_TARGET_DAMAGE_MODE_ATTRIBUTE, application.mode);
   row.setAttribute(MULTI_TARGET_DAMAGE_INPUT_AMOUNT_ATTRIBUTE, String(application.inputAmount));
-  row.setAttribute(MULTI_TARGET_DAMAGE_FINAL_AMOUNT_ATTRIBUTE, String(application.finalDamage));
-  row.setAttribute(MULTI_TARGET_DAMAGE_BLOCKED_ATTRIBUTE, String(application.blocked));
+  row.removeAttribute(MULTI_TARGET_DAMAGE_FINAL_AMOUNT_ATTRIBUTE);
+  row.removeAttribute(MULTI_TARGET_DAMAGE_BLOCKED_ATTRIBUTE);
   row.setAttribute(MULTI_TARGET_DAMAGE_TARGET_NAME_ATTRIBUTE, application.targetName);
   row.setAttribute(MULTI_TARGET_DAMAGE_APPLIED_AT_ATTRIBUTE, application.appliedAt);
 }
@@ -612,10 +606,10 @@ function createTargetSummary(target: MultiTargetViewModel, viewModel: MultiTarge
 
   const actions = document.createElement("div");
   actions.classList.add(`${PROMPT_CLASS}__target-summary-actions`);
-  actions.append(
+  appendVisibleTargetActions(actions, [
     createTargetDamageActionButton(target, viewModel, "compact"),
     createTargetEffectActionButton(target, viewModel, "compact")
-  );
+  ]);
 
   summary.append(main, actions);
   return summary;
@@ -800,7 +794,7 @@ function createTargetDamageActionButton(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel,
   density: "compact" | "full"
-): HTMLElement {
+): HTMLElement | null {
   if (target.damageApplication) {
     return createTargetActionButton(
       "✓",
@@ -813,7 +807,7 @@ function createTargetDamageActionButton(
   const actionState = target.assistedActions.policy.damageActionState;
 
   if (!target.assistedActions.policy.canShowApplyDamage) {
-    return createHiddenTargetActionPlaceholder();
+    return null;
   }
 
   if (isActionWaitingForResistance(actionState)) {
@@ -920,8 +914,6 @@ async function handleTargetDamageApplication(
       targetName: actor.name ?? target.name,
       mode,
       inputAmount: amount,
-      finalDamage: result.value.totalFinalDamage,
-      blocked: result.value.totalBlocked,
       appliedAt: new Date().toISOString()
     };
 
@@ -954,7 +946,7 @@ function createTargetEffectActionButton(
   target: MultiTargetViewModel,
   viewModel: MultiTargetCardViewModel,
   density: "compact" | "full"
-): HTMLElement {
+): HTMLElement | null {
   const actionState = target.assistedActions.policy.effectActionState;
 
   if (!viewModel.effect) {
@@ -994,7 +986,7 @@ function createTargetEffectActionButton(
   }
 
   if (!target.assistedActions.policy.canShowApplyEffect) {
-    return createHiddenTargetActionPlaceholder();
+    return null;
   }
 
   const button = createTargetActionButton(
@@ -1104,10 +1096,10 @@ async function handleTargetEffectApplication(
   }
 }
 
-function createHiddenTargetActionPlaceholder(): HTMLElement {
-  const placeholder = document.createElement("span");
-  placeholder.hidden = true;
-  return placeholder;
+function appendVisibleTargetActions(container: HTMLElement, actions: Array<HTMLElement | null>): void {
+  for (const action of actions) {
+    if (action) container.append(action);
+  }
 }
 
 function createTargetActionButton(
@@ -1244,10 +1236,10 @@ function createTargetResistanceRollDisplay(
 function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): HTMLElement {
   const actions = document.createElement("div");
   actions.classList.add(`${PROMPT_CLASS}__target-details-actions`);
-  actions.append(
+  appendVisibleTargetActions(actions, [
     createTargetDamageActionButton(target, viewModel, "full"),
     createTargetEffectActionButton(target, viewModel, "full")
-  );
+  ]);
   return actions;
 }
 

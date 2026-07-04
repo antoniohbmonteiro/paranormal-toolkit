@@ -487,10 +487,10 @@ function appendPromptToRoot(root: HTMLElement, prompt: RenderableItemUseAutomati
   appendPromptContent(section, prompt);
 
   const actionSection = createActionSection(prompt);
+  if (shouldHideAssistedApplyPrompt(actionSection)) return;
+
   const actions = getOrCreateActionsContainer(section, actionSection);
-  if (!shouldHideAssistedApplyPrompt(actionSection)) {
-    actions.append(createPromptButton(prompt));
-  }
+  actions.append(createPromptButton(prompt));
 }
 
 function shouldHideAssistedApplyPrompt(actionSection: PromptActionSection): boolean {
