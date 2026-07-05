@@ -1,6 +1,5 @@
 import {
   PROMPT_CLASS,
-  RESISTANCE_ROLL_BUTTON_SELECTOR,
   RESISTANCE_SELECTOR
 } from "../item-use-chat-card-constants";
 import { findWorkflowSectionByTitle } from "../item-use-card-dom";
@@ -10,6 +9,7 @@ import {
   mountEffectActionSection,
   updateEffectActionResistanceGate
 } from "../item-use-card-effect-section";
+import { bindSingleTargetCardRefresh } from "./single-target-card-actions";
 import {
   findDamageActionSection,
   findDamageWorkflowSection,
@@ -17,7 +17,6 @@ import {
 } from "./single-target-card-dom";
 
 const LAYOUT_NORMALIZED_ATTRIBUTE = "data-paranormal-toolkit-card-layout-normalized";
-const REFRESH_BOUND_ATTRIBUTE = "data-paranormal-toolkit-card-layout-refresh-bound";
 
 type EnhanceSingleTargetCardLayoutInput = {
   rollCard: HTMLElement;
@@ -42,7 +41,11 @@ type SingleTargetCardLayout = {
 export function enhanceSingleTargetCardLayout(input: EnhanceSingleTargetCardLayoutInput): EnhancedSingleTargetCardLayout {
   const layout = resolveSingleTargetCardLayout(input.rollCard);
   const mountedEffectSection = normalizeSingleTargetCardLayout(layout);
-  bindSingleTargetCardRefresh(input.rollCard, input.refreshDelaysMs, input.onRefresh);
+  bindSingleTargetCardRefresh({
+    rollCard: input.rollCard,
+    refreshDelaysMs: input.refreshDelaysMs,
+    onRefresh: input.onRefresh,
+  });
 
   return {
     damageSection: layout.damageSection,
@@ -99,21 +102,4 @@ function normalizeSingleTargetCardLayout(layout: SingleTargetCardLayout): HTMLEl
   }
 
   return mountedEffectSection;
-}
-
-function bindSingleTargetCardRefresh(
-  rollCard: HTMLElement,
-  refreshDelaysMs: readonly number[],
-  onRefresh: () => void
-): void {
-  const resistanceButton = rollCard.querySelector<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR);
-  if (!resistanceButton) return;
-  if (resistanceButton.getAttribute(REFRESH_BOUND_ATTRIBUTE) === "true") return;
-
-  resistanceButton.setAttribute(REFRESH_BOUND_ATTRIBUTE, "true");
-  resistanceButton.addEventListener("click", () => {
-    for (const delayMs of refreshDelaysMs) {
-      globalThis.setTimeout(onRefresh, delayMs);
-    }
-  });
 }
