@@ -20,6 +20,8 @@ const DAMAGE_BUTTON_LABELS = {
   half: /\bmetade\b|\bmeio\b|1\/2/iu
 } as const;
 
+const SKIPPED_DAMAGE_BUTTON_LABEL = "Outra opção escolhida";
+
 export function enhanceDamageResolutionSection(rollCard: HTMLElement, actions: HTMLElement): void {
   actions.classList.add(`${PROMPT_CLASS}__actions--embedded`, `${PROMPT_CLASS}__actions--damage-resolution`);
   setActionTitle(actions, "Aplicar dano");
@@ -32,6 +34,7 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
   const halfButton = findDamageButton(buttons, "half");
 
   if (!normalButton || !halfButton) {
+    removeSkippedDamageButtons(buttons);
     actions.classList.add(`${PROMPT_CLASS}__actions--compact`);
     return;
   }
@@ -43,6 +46,8 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
     rollCard,
     normalButtonApplied: isAppliedDamageButton(normalButton),
     halfButtonApplied: isAppliedDamageButton(halfButton),
+    normalButtonSkipped: isSkippedDamageButton(normalButton),
+    halfButtonSkipped: isSkippedDamageButton(halfButton),
   });
 
   if (!viewModel.canShowApplyDamage) {
@@ -62,17 +67,42 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
 
 function applyDamageButtonViewModel(button: HTMLButtonElement, viewModel: SingleTargetDamageButtonViewModel): void {
   if (viewModel.applied) return;
+
+  if (!viewModel.visible && viewModel.skipped) {
+    button.remove();
+    return;
+  }
+
   setDamageButtonVisibility(button, viewModel.visible);
   setDamageButtonEnabled(button, viewModel.enabled, viewModel.kind, viewModel.waitingLabel);
 }
 
+function removeSkippedDamageButtons(buttons: HTMLButtonElement[]): void {
+  for (const button of buttons) {
+    if (isSkippedDamageButton(button)) button.remove();
+  }
+}
+
 function isAppliedDamageButton(button: HTMLButtonElement): boolean {
-  return button.textContent?.trim().startsWith("✓") ?? false;
+  const label = button.textContent?.trim() ?? "";
+  return label.startsWith("✓") && !label.includes(SKIPPED_DAMAGE_BUTTON_LABEL);
+}
+
+function isSkippedDamageButton(button: HTMLButtonElement): boolean {
+  return button.textContent?.includes(SKIPPED_DAMAGE_BUTTON_LABEL) ?? false;
 }
 
 function findDamageButton(buttons: HTMLButtonElement[], kind: "normal" | "half"): HTMLButtonElement | null {
   const matcher = DAMAGE_BUTTON_LABELS[kind];
-  return buttons.find((button) => matcher.test(button.textContent ?? "")) ?? null;
+  return buttons.find((button) => matcher.test(getDamageButtonLookupLabel(button))) ?? null;
+}
+
+function getDamageButtonLookupLabel(button: HTMLButtonElement): string {
+  return [
+    button.getAttribute(DAMAGE_BUTTON_ORIGINAL_LABEL_ATTRIBUTE),
+    button.getAttribute("aria-label"),
+    button.textContent,
+  ].filter((label): label is string => Boolean(label)).join(" ");
 }
 
 function enhanceDamageButtonIcon(button: HTMLButtonElement, kind: "normal" | "half"): void {
@@ -100,7 +130,7 @@ function enhanceDamageButtonIcon(button: HTMLButtonElement, kind: "normal" | "ha
 }
 
 function hideUnresolvedDamageButton(button: HTMLButtonElement): void {
-  if (button.textContent?.trim().startsWith("✓")) return;
+  if (isAppliedDamageButton(button)) return;
   button.remove();
 }
 
@@ -115,7 +145,7 @@ function setDamageButtonEnabled(
   kind: "normal" | "half",
   waitingLabel = "Role resistência"
 ): void {
-  if (button.textContent?.trim().startsWith("✓")) return;
+  if (isAppliedDamageButton(button)) return;
 
   button.disabled = !enabled;
   button.classList.toggle(`${PROMPT_CLASS}__button--damage-resolution-waiting`, !enabled);

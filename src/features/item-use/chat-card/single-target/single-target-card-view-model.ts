@@ -8,7 +8,6 @@ import type {
 import { getItemUseDamageResolutionMode, getItemUseResistanceGateMode } from "../../item-use-settings";
 import { createAssistedTargetActionViewModel } from "../../assisted-actions/assisted-action-view-model";
 
-
 export type SingleTargetEffectActionKind = "hidden" | "waiting-resistance" | "resisted" | "applied" | "applicable";
 
 export type SingleTargetEffectViewModelInput = {
@@ -155,6 +154,7 @@ export type SingleTargetDamageButtonViewModel = {
   visible: boolean;
   enabled: boolean;
   applied: boolean;
+  skipped: boolean;
   waitingLabel?: string;
 };
 
@@ -162,6 +162,8 @@ type SingleTargetDamageViewModelInput = {
   rollCard: HTMLElement;
   normalButtonApplied?: boolean;
   halfButtonApplied?: boolean;
+  normalButtonSkipped?: boolean;
+  halfButtonSkipped?: boolean;
 };
 
 export type SingleTargetDamageViewModel = {
@@ -193,6 +195,32 @@ export function createSingleTargetDamageViewModel(input: SingleTargetDamageViewM
   });
   const actionState = assistedTarget.policy.damageActionState;
   const waitingForResistance = isActionWaitingForResistance(actionState);
+  const appliedKind = resolveAppliedDamageKind(input);
+
+  if (appliedKind) {
+    return {
+      mode,
+      canShowApplyDamage: true,
+      waitingForResistance,
+      resistanceState,
+      actionState,
+      normalButton: createDamageButtonViewModel(
+        "normal",
+        appliedKind === "normal",
+        false,
+        appliedKind === "normal",
+        Boolean(input.normalButtonSkipped)
+      ),
+      halfButton: createDamageButtonViewModel(
+        "half",
+        appliedKind === "half",
+        false,
+        appliedKind === "half",
+        Boolean(input.halfButtonSkipped)
+      ),
+      summary: createResolvedDamageSummary(resistanceState),
+    };
+  }
 
   if (!assistedTarget.policy.canShowApplyDamage) {
     return {
@@ -201,11 +229,27 @@ export function createSingleTargetDamageViewModel(input: SingleTargetDamageViewM
       waitingForResistance,
       resistanceState,
       actionState,
-      normalButton: createDamageButtonViewModel("normal", false, false, Boolean(input.normalButtonApplied), actionState.label),
-      halfButton: createDamageButtonViewModel("half", false, false, Boolean(input.halfButtonApplied), actionState.label),
+      normalButton: createDamageButtonViewModel("normal", false, false, false, Boolean(input.normalButtonSkipped), actionState.label),
+      halfButton: createDamageButtonViewModel("half", false, false, false, Boolean(input.halfButtonSkipped), actionState.label),
       summary: {
         state: waitingForResistance ? "pending" : "manual",
         message: waitingForResistance ? actionState.reason : null,
+      },
+    };
+  }
+
+  if (waitingForResistance) {
+    return {
+      mode,
+      canShowApplyDamage: true,
+      waitingForResistance,
+      resistanceState,
+      actionState,
+      normalButton: createDamageButtonViewModel("normal", true, false, false, Boolean(input.normalButtonSkipped), actionState.label),
+      halfButton: createDamageButtonViewModel("half", false, false, false, Boolean(input.halfButtonSkipped)),
+      summary: {
+        state: "pending",
+        message: actionState.reason ?? "Role resistência para aplicar dano.",
       },
     };
   }
@@ -217,8 +261,8 @@ export function createSingleTargetDamageViewModel(input: SingleTargetDamageViewM
       waitingForResistance,
       resistanceState,
       actionState,
-      normalButton: createDamageButtonViewModel("normal", true, !waitingForResistance, Boolean(input.normalButtonApplied), actionState.label),
-      halfButton: createDamageButtonViewModel("half", true, !waitingForResistance, Boolean(input.halfButtonApplied), actionState.label),
+      normalButton: createDamageButtonViewModel("normal", true, true, false, Boolean(input.normalButtonSkipped), actionState.label),
+      halfButton: createDamageButtonViewModel("half", true, true, false, Boolean(input.halfButtonSkipped), actionState.label),
       summary: {
         state: waitingForResistance ? "pending" : "manual",
         message: waitingForResistance ? actionState.reason ?? "Role resistência para aplicar dano." : null,
@@ -233,8 +277,8 @@ export function createSingleTargetDamageViewModel(input: SingleTargetDamageViewM
       waitingForResistance,
       resistanceState,
       actionState,
-      normalButton: createDamageButtonViewModel("normal", true, true, Boolean(input.normalButtonApplied)),
-      halfButton: createDamageButtonViewModel("half", true, true, Boolean(input.halfButtonApplied)),
+      normalButton: createDamageButtonViewModel("normal", true, true, false, Boolean(input.normalButtonSkipped)),
+      halfButton: createDamageButtonViewModel("half", true, true, false, Boolean(input.halfButtonSkipped)),
       summary: {
         state: "manual",
         message: "Sem DT confiável: escolha manualmente.",
@@ -249,8 +293,8 @@ export function createSingleTargetDamageViewModel(input: SingleTargetDamageViewM
       waitingForResistance,
       resistanceState,
       actionState,
-      normalButton: createDamageButtonViewModel("normal", true, !waitingForResistance, Boolean(input.normalButtonApplied), actionState.label),
-      halfButton: createDamageButtonViewModel("half", false, false, Boolean(input.halfButtonApplied)),
+      normalButton: createDamageButtonViewModel("normal", true, true, false, Boolean(input.normalButtonSkipped), actionState.label),
+      halfButton: createDamageButtonViewModel("half", false, false, false, Boolean(input.halfButtonSkipped)),
       summary: {
         state: "pending",
         message: waitingForResistance ? actionState.reason ?? "Role resistência para aplicar dano." : null,
@@ -266,8 +310,8 @@ export function createSingleTargetDamageViewModel(input: SingleTargetDamageViewM
     waitingForResistance,
     resistanceState,
     actionState,
-    normalButton: createDamageButtonViewModel("normal", !resisted, !resisted, Boolean(input.normalButtonApplied)),
-    halfButton: createDamageButtonViewModel("half", resisted, resisted, Boolean(input.halfButtonApplied)),
+    normalButton: createDamageButtonViewModel("normal", !resisted, !resisted, false, Boolean(input.normalButtonSkipped)),
+    halfButton: createDamageButtonViewModel("half", resisted, resisted, false, Boolean(input.halfButtonSkipped)),
     summary: {
       state: resisted ? "resisted" : "failed",
       message: resisted
@@ -277,11 +321,33 @@ export function createSingleTargetDamageViewModel(input: SingleTargetDamageViewM
   };
 }
 
+function createResolvedDamageSummary(resistanceState: ResistanceResolutionState): SingleTargetDamageViewModel["summary"] {
+  if (resistanceState.kind === "succeeded") {
+    return {
+      state: "resisted",
+      message: `Resistiu: ${resistanceState.total} vs DT ${resistanceState.difficulty}.`,
+    };
+  }
+
+  if (resistanceState.kind === "failed") {
+    return {
+      state: "failed",
+      message: `Falhou: ${resistanceState.total} vs DT ${resistanceState.difficulty}.`,
+    };
+  }
+
+  return {
+    state: "manual",
+    message: null,
+  };
+}
+
 function createDamageButtonViewModel(
   kind: SingleTargetDamageButtonKind,
   visible: boolean,
   enabled: boolean,
   applied: boolean,
+  skipped: boolean,
   waitingLabel?: string
 ): SingleTargetDamageButtonViewModel {
   return {
@@ -289,8 +355,15 @@ function createDamageButtonViewModel(
     visible,
     enabled,
     applied,
+    skipped,
     waitingLabel,
   };
+}
+
+function resolveAppliedDamageKind(input: SingleTargetDamageViewModelInput): SingleTargetDamageButtonKind | null {
+  if (input.normalButtonApplied) return "normal";
+  if (input.halfButtonApplied) return "half";
+  return null;
 }
 
 function getDamageResolutionModeSafe(): SingleTargetDamageResolutionMode {
