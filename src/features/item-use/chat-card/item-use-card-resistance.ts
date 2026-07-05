@@ -8,6 +8,7 @@ import {
   RESISTANCE_SELECTOR
 } from "./item-use-chat-card-constants";
 import { enhanceRitualCardLayout } from "./item-use-card-layout";
+import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
 
 const RESISTANCE_ROLL_RESULT_ENHANCED_ATTRIBUTE =
   "data-paranormal-toolkit-resistance-roll-result-enhanced";
@@ -57,6 +58,8 @@ function enhanceResistanceCard(resistance: HTMLElement): void {
 
     enhanceResistanceRollResult(result);
   }
+
+  decorateResistanceRollButton(button);
 
   if (button.parentElement !== resistance) {
     resistance.append(button);
@@ -142,6 +145,29 @@ function createResistanceRollDisplay(result: ResistanceRollDisplay): HTMLElement
   if (diceTray) roll.append(diceTray);
 
   return roll;
+}
+
+
+function decorateResistanceRollButton(button: HTMLElement): void {
+  button.classList.remove(
+    `${PROMPT_CLASS}__resistance-roll-button--succeeded`,
+    `${PROMPT_CLASS}__resistance-roll-button--failed`,
+  );
+
+  const rollCard = button.closest<HTMLElement>(`.${PROMPT_CLASS}__roll-card`);
+  if (!rollCard) return;
+
+  const state = createSingleTargetResistanceUiState(rollCard).state;
+  if (state.kind !== "succeeded" && state.kind !== "failed") return;
+
+  const outcome = state.kind === "succeeded" ? "succeeded" : "failed";
+  const marker = outcome === "succeeded" ? "✓" : "✕";
+  const outcomeLabel = outcome === "succeeded" ? "sucesso" : "falha";
+
+  button.classList.add(`${PROMPT_CLASS}__resistance-roll-button--${outcome}`);
+  button.textContent = `${state.total} ${marker}`;
+  button.title = `${button.getAttribute("data-paranormal-toolkit-resistance-skill-label") ?? "Resistência"}: ${state.total}, ${outcomeLabel}. Rolar novamente`;
+  button.setAttribute("aria-label", button.title);
 }
 
 function createDiceTray(result: ResistanceRollDisplay): HTMLElement | null {

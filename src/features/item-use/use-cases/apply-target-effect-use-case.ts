@@ -21,6 +21,8 @@ export type ApplyTargetEffectUseCaseInput = {
   resistanceGateMode: ItemUseResistanceGateMode;
   resistanceState: ResistanceResolutionState;
   isGM?: boolean;
+  allowSuccessfulResistance?: boolean;
+  requiredResistanceOutcome?: "failed" | "succeeded" | null;
 };
 
 export type ApplyTargetEffectBlockedFailure = {
@@ -28,7 +30,7 @@ export type ApplyTargetEffectBlockedFailure = {
   actorId: string | null;
   actorName: string;
   conditionId: string;
-  reason: "resistance-pending" | "resistance-succeeded" | "permission-denied";
+  reason: "resistance-pending" | "resistance-succeeded" | "resistance-outcome-mismatch" | "permission-denied";
   message: string;
 };
 
@@ -53,7 +55,19 @@ export class ApplyTargetEffectUseCase {
       return this.block(input, "resistance-pending", "Role a resistência do alvo antes de aplicar efeito.");
     }
 
-    if (input.resistanceState.kind === "succeeded") {
+    if (input.requiredResistanceOutcome && input.resistanceState.kind !== input.requiredResistanceOutcome) {
+      return this.block(
+        input,
+        input.resistanceState.kind === "pending" || input.resistanceState.kind === "none"
+          ? "resistance-pending"
+          : "resistance-outcome-mismatch",
+        input.resistanceState.kind === "pending" || input.resistanceState.kind === "none"
+          ? "Role a resistência do alvo antes de aplicar efeito."
+          : "O resultado da resistência não permite aplicar este efeito.",
+      );
+    }
+
+    if (input.resistanceState.kind === "succeeded" && !input.allowSuccessfulResistance) {
       return this.block(input, "resistance-succeeded", "Este alvo resistiu ao efeito.");
     }
 

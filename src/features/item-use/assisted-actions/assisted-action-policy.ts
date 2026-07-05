@@ -20,6 +20,8 @@ export type AssistedTargetActionPolicyInput = {
   hasEffect: boolean;
   damageAlreadyApplied?: boolean;
   effectAlreadyApplied?: boolean;
+  effectCanApplyOnSuccessfulResistance?: boolean;
+  effectRequiresResolvedResistance?: boolean;
 };
 
 export type AssistedTargetActionPolicy = {
@@ -43,7 +45,7 @@ export function canCurrentUserApplyAssistedActions(): boolean {
 export function resolveAssistedTargetActionPolicy(input: AssistedTargetActionPolicyInput): AssistedTargetActionPolicy {
   const blocksPendingResistance = shouldBlockPendingResistanceAction(input.resistanceGateMode, input.resistanceState);
   const damageMode = resolveAssistedDamageMode(input.resistanceState, input.hasDamage);
-  const effectMode = resolveAssistedEffectMode(input.resistanceState, input.hasEffect);
+  const effectMode = resolveAssistedEffectMode(input.resistanceState, input.hasEffect, Boolean(input.effectCanApplyOnSuccessfulResistance));
 
   const damageActionState = resolveDamageActionState({
     resistanceGateMode: input.resistanceGateMode,
@@ -56,6 +58,8 @@ export function resolveAssistedTargetActionPolicy(input: AssistedTargetActionPol
     resistanceState: input.resistanceState,
     alreadyApplied: input.effectAlreadyApplied,
     unavailable: !input.hasEffect,
+    allowsSuccessfulResistance: Boolean(input.effectCanApplyOnSuccessfulResistance),
+    requiresResolvedResistance: Boolean(input.effectRequiresResolvedResistance),
   });
 
   return {
@@ -80,7 +84,9 @@ export function resolveAssistedDamageMode(
 export function resolveAssistedEffectMode(
   resistanceState: ResistanceResolutionState,
   hasEffect: boolean,
+  canApplyOnSuccessfulResistance = false,
 ): AssistedEffectMode {
   if (!hasEffect) return "unavailable";
-  return resistanceState.kind === "succeeded" ? "resisted" : "applicable";
+  if (resistanceState.kind === "succeeded" && !canApplyOnSuccessfulResistance) return "resisted";
+  return "applicable";
 }

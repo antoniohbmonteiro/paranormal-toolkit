@@ -20,6 +20,8 @@ export type AssistedTargetActionViewModelInput = {
   effect: AssistedEffectActionViewModel | null;
   damageAlreadyApplied?: boolean;
   effectAlreadyApplied?: boolean;
+  effectCanApplyOnSuccessfulResistance?: boolean;
+  effectRequiresResolvedResistance?: boolean;
   isGM?: boolean;
 };
 
@@ -48,6 +50,8 @@ export function createAssistedTargetActionViewModel(input: AssistedTargetActionV
       hasEffect: input.effect !== null,
       damageAlreadyApplied: input.damageAlreadyApplied,
       effectAlreadyApplied: input.effectAlreadyApplied,
+      effectCanApplyOnSuccessfulResistance: input.effectCanApplyOnSuccessfulResistance,
+      effectRequiresResolvedResistance: input.effectRequiresResolvedResistance,
     }),
   };
 }

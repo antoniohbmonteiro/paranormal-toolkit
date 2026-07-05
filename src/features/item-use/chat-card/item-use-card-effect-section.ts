@@ -1,8 +1,18 @@
+import type { AutomationConditionApplicationDefinition } from "../../../core/automation/automation-definition";
+import { readAutomationDefinition } from "../../automation/automation-flag-reader";
+import {
+  getResistanceOutcomeForAction,
+  matchesResistanceOutcome,
+  normalizeConditionApplicationResistanceTrigger,
+  requiresResolvedResistanceOutcome,
+} from "../condition-application-resistance-outcome";
+import { resolveMultiTargetSourceItem } from "./multi-target/multi-target-source-item-resolver";
 import { PROMPT_CLASS } from "./item-use-chat-card-constants";
 import {
   normalizeLookupText,
   normalizeText,
-  readPersistedButtonLabelForButton
+  readPersistedButtonLabelForButton,
+  readPersistedItemUsePromptContext
 } from "./item-use-card-roll-context";
 import {
   ACTION_BUTTON_SELECTOR,
@@ -12,6 +22,7 @@ import {
   PROMPT_EXECUTED_BUTTON_CLASS
 } from "./item-use-card-dom";
 import { createSingleTargetEffectViewModel } from "./single-target/single-target-card-view-model";
+import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
 
 const EFFECT_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-effect-icon-enhanced";
 const EFFECT_ACTION_COMPACTED_ATTRIBUTE = "data-paranormal-toolkit-effect-action-compacted";
@@ -52,10 +63,16 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, section:
 
   const currentLabel = button.textContent?.trim() ?? "";
   const effectLabel = resolveEffectActionDisplayLabel(section, button, currentLabel);
+  const application = resolveConditionApplicationForButton(rollCard, button);
   const viewModel = createSingleTargetEffectViewModel({
     rollCard,
     effectLabel,
     applied: isResolvedEffectButton(button, currentLabel),
+    effectCanApplyOnSuccessfulResistance: application
+      ? normalizeConditionApplicationResistanceTrigger(application) === "success"
+        || normalizeConditionApplicationResistanceTrigger(application) === "always"
+      : false,
+    effectRequiresResolvedResistance: application ? requiresResolvedResistanceOutcome(application) : false,
   });
 
   if (viewModel.applied) {
@@ -83,9 +100,56 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, section:
 }
 
 function resolveEffectButton(input: EffectActionSectionInput): HTMLButtonElement | null {
-  return input.sourceActions?.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR)
-    ?? input.existingSection?.querySelector<HTMLButtonElement>(ACTION_BUTTON_SELECTOR)
-    ?? null;
+  const sourceButtons = Array.from(input.sourceActions?.querySelectorAll<HTMLButtonElement>(ACTION_BUTTON_SELECTOR) ?? []);
+  const existingButtons = Array.from(input.existingSection?.querySelectorAll<HTMLButtonElement>(ACTION_BUTTON_SELECTOR) ?? []);
+  const candidates = [...sourceButtons, ...existingButtons];
+  if (candidates.length === 0) return null;
+
+  return selectEffectButtonForResistanceOutcome(input.rollCard, candidates) ?? candidates[0] ?? null;
+}
+
+
+function selectEffectButtonForResistanceOutcome(
+  rollCard: HTMLElement,
+  buttons: readonly HTMLButtonElement[],
+): HTMLButtonElement | null {
+  const resistanceState = createSingleTargetResistanceUiState(rollCard).state;
+  const outcome = getResistanceOutcomeForAction(resistanceState);
+  const applications = readTargetConditionApplications(rollCard);
+  if (applications.length === 0) return null;
+
+  for (const button of buttons) {
+    const application = resolveConditionApplicationForButton(rollCard, button, applications);
+    if (application && matchesResistanceOutcome(application, outcome)) return button;
+  }
+
+  return null;
+}
+
+function resolveConditionApplicationForButton(
+  rollCard: HTMLElement,
+  button: HTMLButtonElement,
+  applications = readTargetConditionApplications(rollCard),
+): AutomationConditionApplicationDefinition | null {
+  const label = resolveEffectActionOriginalLabel(button, button.textContent?.trim() ?? "");
+  const normalizedLabel = normalizeLookupText(label);
+  if (!normalizedLabel) return null;
+
+  return applications.find((application) => {
+    return [application.label, application.conditionId]
+      .some((candidate) => normalizeLookupText(candidate) === normalizedLabel);
+  }) ?? null;
+}
+
+function readTargetConditionApplications(rollCard: HTMLElement): AutomationConditionApplicationDefinition[] {
+  const sourceItem = resolveMultiTargetSourceItem(readPersistedItemUsePromptContext(rollCard));
+  if (!sourceItem) return [];
+
+  const definition = readAutomationDefinition(sourceItem);
+  if (!definition.ok) return [];
+
+  return (definition.value.conditionApplications ?? [])
+    .filter((application) => application.actor === "target");
 }
 
 function createEffectSection(): HTMLElement {
@@ -118,6 +182,11 @@ function ensureEffectSectionStructure(section: HTMLElement, button: HTMLButtonEl
   if (button.parentElement !== action) {
     action.append(button);
   }
+
+  for (const actionButton of Array.from(action.querySelectorAll<HTMLButtonElement>(ACTION_BUTTON_SELECTOR))) {
+    actionButton.hidden = actionButton !== button;
+  }
+  button.hidden = false;
 
   const currentLabel = button.textContent?.trim() ?? "";
   if (!isResolvedEffectButton(button, currentLabel) && !isResistanceGatedEffectButton(button, currentLabel)) {
@@ -188,6 +257,13 @@ function placeEffectSection(rollCard: HTMLElement, section: HTMLElement, after: 
 
 function removeConsumedLegacyActionSource(sourceActions: HTMLElement | null, section: HTMLElement): void {
   if (!sourceActions || sourceActions === section) return;
+
+  if (sourceActions.querySelector(ACTION_BUTTON_SELECTOR)) {
+    sourceActions.hidden = true;
+    sourceActions.setAttribute("aria-hidden", "true");
+    return;
+  }
+
   sourceActions.remove();
 }
 

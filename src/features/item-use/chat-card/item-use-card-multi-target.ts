@@ -6,6 +6,10 @@ import type { AutomationConditionApplicationDefinition } from "../../../core/aut
 import { ConditionEngine } from "../../conditions/condition-engine";
 import { createToolkitConditionRegistry } from "../../conditions/condition-registry";
 import { readAutomationDefinition } from "../../automation/automation-flag-reader";
+import {
+  resolveConditionApplicationForResistanceOutcome,
+  type ConditionApplicationResistanceOutcome,
+} from "../condition-application-resistance-outcome";
 import { getItemUseResistanceGateMode } from "../item-use-settings";
 import type {
   ItemUseResistanceGateMode,
@@ -110,20 +114,27 @@ export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput):
   input.rollCard.classList.add(`${PROMPT_CLASS}__roll-card--multi-target`);
   hideSingleTargetSourceSections(input);
 
-  const damageInfo = getOrCreateDamageInfoSection(input.rollCard);
-  renderDamageInfoSection(damageInfo, viewModel.damage);
-  placeDamageInfoSection(input.rollCard, damageInfo);
+  const damageInfo = renderOptionalDamageInfoSection(input.rollCard, viewModel);
+  const effectInfo = renderOptionalEffectInfoSection(input.rollCard, viewModel);
+
+  if (!damageInfo && effectInfo) {
+    placeEffectInfoSectionBeforeTargets(input.rollCard, effectInfo, input.effectSection);
+  }
 
   const targetSection = getOrCreateTargetSection(input.rollCard);
   renderTargetSection(targetSection, viewModel);
-  placeTargetSection(input.rollCard, targetSection, damageInfo);
+  placeTargetSection(
+    input.rollCard,
+    targetSection,
+    resolveTargetSectionAnchor(input.rollCard, {
+      damageInfo,
+      effectInfo,
+      effectSection: input.effectSection,
+    }),
+  );
 
-  if (viewModel.effect) {
-    const effectInfo = getOrCreateEffectInfoSection(input.rollCard);
-    renderEffectInfoSection(effectInfo, viewModel.effect);
+  if (damageInfo && effectInfo) {
     placeEffectInfoSection(input.rollCard, effectInfo, targetSection);
-  } else {
-    findEffectInfoSection(input.rollCard)?.remove();
   }
 
   return true;
@@ -140,7 +151,11 @@ function createMultiTargetCardViewModelFromLayout(input: MultiTargetCardLayoutIn
   });
 }
 
-function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: string | null): TargetConditionApplication | null {
+function resolveTargetConditionApplication(
+  rollCard: HTMLElement,
+  displayLabel: string | null,
+  resistanceOutcome: ConditionApplicationResistanceOutcome | null,
+): TargetConditionApplication | null {
   const context = readPersistedMultiTargetPromptContext(rollCard);
   const sourceItem = resolveMultiTargetSourceItem(context);
   if (!sourceItem) return null;
@@ -153,7 +168,7 @@ function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: 
 
   if (targetApplications.length === 0) return null;
 
-  const application = selectTargetConditionApplication(targetApplications, displayLabel);
+  const application = selectTargetConditionApplication(targetApplications, displayLabel, resistanceOutcome);
   if (!application) return null;
 
   return {
@@ -161,14 +176,24 @@ function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: 
     conditionLabel: application.label ?? application.conditionId,
     duration: application.duration ?? null,
     source: application.source ?? "item-use.condition-action",
-    originUuid: sourceItem.uuid ?? null
+    originUuid: sourceItem.uuid ?? null,
+    applyOnResistance: application.applyOnResistance ?? "failure"
   };
 }
 
 function selectTargetConditionApplication(
   applications: AutomationConditionApplicationDefinition[],
-  displayLabel: string | null
+  displayLabel: string | null,
+  resistanceOutcome: ConditionApplicationResistanceOutcome | null,
 ): AutomationConditionApplicationDefinition | null {
+  const application = resolveConditionApplicationForResistanceOutcome(
+    applications,
+    resistanceOutcome,
+    displayLabel,
+    normalizeLookupName,
+  );
+  if (application) return application;
+
   if (applications.length === 1) return applications[0] ?? null;
   if (!displayLabel) return null;
 
@@ -317,6 +342,51 @@ function readRenderedMultiTargetResistanceResults(rollCard: HTMLElement): Map<st
 function hideSingleTargetSourceSections(input: MultiTargetCardLayoutInput): void {
   input.damageSection?.classList.add(`${PROMPT_CLASS}__workflow-section--multi-target-source`);
   input.effectSection?.classList.add(`${PROMPT_CLASS}__workflow-section--multi-target-effect-source`);
+}
+
+function renderOptionalDamageInfoSection(
+  rollCard: HTMLElement,
+  viewModel: MultiTargetCardViewModel,
+): HTMLElement | null {
+  if (!viewModel.damage) {
+    findDamageInfoSection(rollCard)?.remove();
+    return null;
+  }
+
+  const damageInfo = getOrCreateDamageInfoSection(rollCard);
+  renderDamageInfoSection(damageInfo, viewModel.damage);
+  placeDamageInfoSection(rollCard, damageInfo);
+  return damageInfo;
+}
+
+function renderOptionalEffectInfoSection(
+  rollCard: HTMLElement,
+  viewModel: MultiTargetCardViewModel,
+): HTMLElement | null {
+  if (!viewModel.effect) {
+    findEffectInfoSection(rollCard)?.remove();
+    return null;
+  }
+
+  const effectInfo = getOrCreateEffectInfoSection(rollCard);
+  renderEffectInfoSection(effectInfo, viewModel.effect);
+  return effectInfo;
+}
+
+type TargetSectionAnchorInput = {
+  damageInfo: HTMLElement | null;
+  effectInfo: HTMLElement | null;
+  effectSection: HTMLElement | null;
+};
+
+function resolveTargetSectionAnchor(
+  rollCard: HTMLElement,
+  input: TargetSectionAnchorInput,
+): HTMLElement | null {
+  if (input.damageInfo?.parentElement === rollCard) return input.damageInfo;
+  if (input.effectInfo?.parentElement === rollCard) return input.effectInfo;
+  if (input.effectSection?.parentElement === rollCard) return input.effectSection;
+  return findWorkflowSectionByTitle(rollCard, "Conjuração");
 }
 
 function getOrCreateDamageInfoSection(rollCard: HTMLElement): HTMLElement {
@@ -821,9 +891,12 @@ function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement 
   return rollCard.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section--multi-target-effect-source`);
 }
 
-function shouldBlockTargetActionsByResistance(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): boolean {
-  void viewModel;
+function shouldBlockTargetDamageByResistance(target: MultiTargetViewModel): boolean {
   return isActionWaitingForResistance(target.assistedActions.policy.damageActionState);
+}
+
+function shouldBlockTargetEffectByResistance(target: MultiTargetViewModel): boolean {
+  return isActionWaitingForResistance(target.assistedActions.policy.effectActionState);
 }
 
 function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
@@ -864,6 +937,8 @@ function createTargetDamageActionButton(
   }
 
   const mode = target.assistedActions.policy.damageMode ?? "normal";
+  if (!viewModel.damage) return null;
+
   const amount = getTargetDamageAmount(mode, viewModel.damage);
   if (amount === null) {
     return createTargetActionButton(
@@ -910,13 +985,19 @@ async function handleTargetDamageApplication(
 ): Promise<void> {
   if (target.damageApplication) return;
 
-  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
+  if (shouldBlockTargetDamageByResistance(target)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar dano.");
     return;
   }
 
+  const damage = viewModel.damage;
+  if (!damage) {
+    ui.notifications?.warn?.("Paranormal Toolkit: este card não possui dano estruturado para aplicar.");
+    return;
+  }
+
   const mode = target.assistedActions.policy.damageMode ?? "normal";
-  const amount = getTargetDamageAmount(mode, viewModel.damage);
+  const amount = getTargetDamageAmount(mode, damage);
 
   if (amount === null) {
     ui.notifications?.warn?.("Paranormal Toolkit: não consegui resolver o dano deste card.");
@@ -938,7 +1019,7 @@ async function handleTargetDamageApplication(
     const result = await applyTargetDamageUseCase.execute({
       actor,
       amount,
-      damageType: viewModel.damage.typeLabel,
+      damageType: damage.typeLabel,
       label: mode === "half" ? "Metade" : "Dano normal",
       sourceRollId: "damage",
       source: "item-use.multi-target-damage",
@@ -992,8 +1073,9 @@ function createTargetEffectActionButton(
   density: "compact" | "full"
 ): HTMLElement | null {
   const actionState = target.assistedActions.policy.effectActionState;
+  const effect = target.effect ?? viewModel.effect;
 
-  if (!viewModel.effect) {
+  if (!effect) {
     return createTargetActionButton(
       "✦",
       density === "full" ? actionState.label : actionState.compactLabel,
@@ -1035,12 +1117,12 @@ function createTargetEffectActionButton(
 
   const button = createTargetActionButton(
     "✦",
-    density === "full" ? `Aplicar ${viewModel.effect.conditionLabel}` : "Efeito",
+    density === "full" ? `Aplicar ${effect.conditionLabel}` : "Efeito",
     [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--pending-effect`],
     false
   );
 
-  button.title = `Aplicar ${viewModel.effect.conditionLabel} em ${target.name}`;
+  button.title = `Aplicar ${effect.conditionLabel} em ${target.name}`;
   button.setAttribute("aria-label", button.title);
   button.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1062,7 +1144,7 @@ async function handleTargetEffectApplication(
 ): Promise<void> {
   if (target.effectApplication) return;
 
-  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
+  if (shouldBlockTargetEffectByResistance(target)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar efeito.");
     return;
   }
@@ -1072,7 +1154,7 @@ async function handleTargetEffectApplication(
     return;
   }
 
-  const effect = viewModel.effect;
+  const effect = target.effect ?? viewModel.effect;
   if (!effect) {
     ui.notifications?.warn?.("Paranormal Toolkit: este card não possui efeito estruturado para aplicar.");
     return;
@@ -1097,7 +1179,13 @@ async function handleTargetEffectApplication(
       originUuid: effect.originUuid,
       source: effect.source,
       resistanceGateMode: getResistanceGateModeSafe(),
-      resistanceState: target.assistedActions.resistanceState
+      resistanceState: target.assistedActions.resistanceState,
+      allowSuccessfulResistance: effect.applyOnResistance === "success" || effect.applyOnResistance === "always",
+      requiredResistanceOutcome: effect.applyOnResistance === "success"
+        ? "succeeded"
+        : effect.applyOnResistance === "failure"
+          ? "failed"
+          : null
     });
 
     if (!result.ok) {
@@ -1287,11 +1375,7 @@ function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: Mul
   return actions;
 }
 
-function placeTargetSection(rollCard: HTMLElement, section: HTMLElement, damageInfoSection: HTMLElement): void {
-  const anchor = damageInfoSection.parentElement === rollCard
-    ? damageInfoSection
-    : findWorkflowSectionByTitle(rollCard, "Conjuração");
-
+function placeTargetSection(rollCard: HTMLElement, section: HTMLElement, anchor: HTMLElement | null): void {
   if (!anchor) {
     rollCard.prepend(section);
     return;
@@ -1342,6 +1426,24 @@ function renderEffectInfoSection(section: HTMLElement, effect: TargetEffectViewM
 
   body.append(label, hint);
   section.append(header, body);
+}
+
+function placeEffectInfoSectionBeforeTargets(
+  rollCard: HTMLElement,
+  section: HTMLElement,
+  effectSection: HTMLElement | null,
+): void {
+  const anchor = effectSection?.parentElement === rollCard
+    ? effectSection
+    : findWorkflowSectionByTitle(rollCard, "Conjuração");
+
+  if (!anchor) {
+    rollCard.prepend(section);
+    return;
+  }
+
+  if (section.parentElement === rollCard && section.previousElementSibling === anchor) return;
+  rollCard.insertBefore(section, anchor.nextElementSibling);
 }
 
 function placeEffectInfoSection(rollCard: HTMLElement, section: HTMLElement, targetSection: HTMLElement): void {

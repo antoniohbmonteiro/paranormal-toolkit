@@ -44,6 +44,8 @@ export type AutomationConditionDurationDefinition = {
   expiry?: AutomationConditionExpiryEvent | null;
 };
 
+export type AutomationConditionApplicationResistanceTrigger = "failure" | "success" | "always";
+
 export type AutomationConditionApplicationDefinition = {
   id: string;
   actor: AutomationActorSelector;
@@ -54,6 +56,7 @@ export type AutomationConditionApplicationDefinition = {
   actionSectionId?: string;
   actionSectionTitle?: string;
   executedLabel?: string;
+  applyOnResistance?: AutomationConditionApplicationResistanceTrigger;
 };
 
 export type AutomationRitualFormId = "base" | "discente" | "verdadeiro";

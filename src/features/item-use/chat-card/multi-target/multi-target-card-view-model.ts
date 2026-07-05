@@ -3,6 +3,12 @@ import type { AutomationConditionApplicationDefinition } from "../../../../core/
 import type { ToolkitConditionDurationInput } from "../../../conditions/condition-duration";
 import type { ItemUseResistanceGateMode } from "../../config/item-use-resistance-gate-policy";
 import { createTargetResistanceUiState } from "../item-use-card-resistance-state";
+import {
+  getResistanceOutcomeForAction,
+  normalizeConditionApplicationResistanceTrigger,
+  requiresResolvedResistanceOutcome,
+  type ConditionApplicationResistanceTrigger,
+} from "../../condition-application-resistance-outcome";
 import { createAssistedTargetActionViewModel, type AssistedTargetActionViewModel } from "../../assisted-actions/assisted-action-view-model";
 import {
   PROMPT_CLASS,
@@ -43,6 +49,7 @@ export type MultiTargetCardViewModelInput = MultiTargetCardLayoutInput & {
   resolveTargetConditionApplication: (
     rollCard: HTMLElement,
     displayLabel: string | null,
+    resistanceOutcome: "failure" | "success" | null,
   ) => TargetConditionApplication | null;
   resistanceGateMode: ItemUseResistanceGateMode;
 };
@@ -50,7 +57,7 @@ export type MultiTargetCardViewModelInput = MultiTargetCardLayoutInput & {
 export type MultiTargetCardViewModel = {
   rollCard: HTMLElement;
   targets: MultiTargetViewModel[];
-  damage: TargetDamageViewModel;
+  damage: TargetDamageViewModel | null;
   effect: TargetEffectViewModel | null;
   resistance: TargetResistanceViewModel | null;
 };
@@ -63,6 +70,7 @@ export type MultiTargetViewModel = {
   damageApplication: MultiTargetDamageApplication | null;
   effectApplication: MultiTargetEffectApplication | null;
   assistedActions: AssistedTargetActionViewModel;
+  effect: TargetEffectViewModel | null;
 };
 
 export type TargetDamageViewModel = {
@@ -85,6 +93,7 @@ export type TargetEffectViewModel = {
   duration: ToolkitConditionDurationInput | null;
   source: string | null;
   originUuid: string | null;
+  applyOnResistance: ConditionApplicationResistanceTrigger;
 };
 
 export type TargetResistanceViewModel = {
@@ -101,18 +110,35 @@ export type TargetConditionApplication = {
   duration: AutomationConditionApplicationDefinition["duration"] | null;
   source: string | null;
   originUuid: string | null;
+  applyOnResistance: ConditionApplicationResistanceTrigger;
 };
 
 export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelInput): MultiTargetCardViewModel | null {
-  const resistance = createResistanceViewModel(input.rollCard, input.damageSection);
-  const damage = createDamageViewModel(input.damageSection);
-  const effect = createEffectViewModel(input.rollCard, input.effectSection, input.resolveTargetConditionApplication);
+  const resistance = createResistanceViewModel(input.rollCard, [
+    input.damageSection,
+    input.effectSection,
+    input.rollCard,
+  ]);
+  const damage = input.damageSection ? createDamageViewModel(input.damageSection) : null;
+  const effect = createEffectViewModel(input.rollCard, input.effectSection, input.resolveTargetConditionApplication, null);
   const targets = readTargetNames(input.rollCard).map((name, index) => {
     const id = createTargetId(name, index);
     const resistanceResult = input.resistanceResults.get(id) ?? null;
     const state = resolveTargetState(resistanceResult, resistance?.difficulty ?? null);
     const damageApplication = input.damageApplications.get(id) ?? null;
     const effectApplication = input.effectApplications.get(id) ?? null;
+    const resistanceState = createTargetResistanceUiState({
+      hasResistance: Boolean(resistance),
+      difficulty: resistance?.difficulty ?? null,
+      total: resistanceResult?.total ?? null,
+      status: getTargetResistanceStatusFromState(state),
+    }).state;
+    const targetEffect = createEffectViewModel(
+      input.rollCard,
+      input.effectSection,
+      input.resolveTargetConditionApplication,
+      getResistanceOutcomeForAction(resistanceState),
+    ) ?? effect;
 
     return {
       id,
@@ -121,25 +147,23 @@ export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelIn
       resistanceResult,
       damageApplication,
       effectApplication,
+      effect: targetEffect,
       assistedActions: createAssistedTargetActionViewModel({
         targetId: id,
         targetName: name,
         resistanceGateMode: input.resistanceGateMode,
-        resistanceState: createTargetResistanceUiState({
-          hasResistance: Boolean(resistance),
-          difficulty: resistance?.difficulty ?? null,
-          total: resistanceResult?.total ?? null,
-          status: getTargetResistanceStatusFromState(state),
-        }).state,
+        resistanceState,
         damage,
-        effect,
+        effect: targetEffect,
         damageAlreadyApplied: Boolean(damageApplication),
         effectAlreadyApplied: Boolean(effectApplication),
+        effectCanApplyOnSuccessfulResistance: targetEffect?.applyOnResistance === "success" || targetEffect?.applyOnResistance === "always",
+        effectRequiresResolvedResistance: targetEffect ? requiresResolvedResistanceOutcome(targetEffect) : false,
       }),
     };
   });
 
-  if (targets.length <= 1 || !input.damageSection) return null;
+  if (targets.length <= 1 || (!damage && !effect)) return null;
 
   return {
     rollCard: input.rollCard,
@@ -166,7 +190,7 @@ function createTargetId(name: string, index: number): string {
   return `${normalizeText(name)}:${index}`;
 }
 
-function createDamageViewModel(damageSection: HTMLElement | null): TargetDamageViewModel {
+function createDamageViewModel(damageSection: HTMLElement): TargetDamageViewModel {
   const total = readRollTotal(damageSection);
   const halfAmount = total !== null ? Math.floor(total / 2) : null;
 
@@ -188,9 +212,10 @@ function createEffectViewModel(
   rollCard: HTMLElement,
   effectSection: HTMLElement | null,
   resolveTargetConditionApplication: MultiTargetCardViewModelInput["resolveTargetConditionApplication"],
+  resistanceOutcome: "failure" | "success" | null,
 ): TargetEffectViewModel | null {
   const displayLabel = effectSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__effect-section-label`)?.textContent?.trim();
-  const application = resolveTargetConditionApplication(rollCard, displayLabel ?? null);
+  const application = resolveTargetConditionApplication(rollCard, displayLabel ?? null, resistanceOutcome);
   if (!application) return null;
 
   return {
@@ -200,6 +225,7 @@ function createEffectViewModel(
     duration: normalizeConditionDuration(application.duration),
     source: application.source,
     originUuid: application.originUuid,
+    applyOnResistance: normalizeConditionApplicationResistanceTrigger(application),
   };
 }
 
@@ -214,9 +240,13 @@ function normalizeConditionDuration(
   };
 }
 
-function createResistanceViewModel(rollCard: HTMLElement, damageSection: HTMLElement | null): TargetResistanceViewModel | null {
-  const description = damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance-description`)?.textContent?.trim();
-  const sourceButton = damageSection?.querySelector<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR) ?? null;
+function createResistanceViewModel(
+  rollCard: HTMLElement,
+  candidateSections: readonly (HTMLElement | null)[],
+): TargetResistanceViewModel | null {
+  const candidates = normalizeResistanceCandidateSections(candidateSections);
+  const description = findResistanceDescriptionElement(candidates)?.textContent?.trim();
+  const sourceButton = findResistanceButtonElement(candidates);
   const skill = sourceButton?.getAttribute(RESISTANCE_SKILL_ATTRIBUTE) ?? null;
   const skillLabel = sourceButton?.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : null);
 
@@ -224,11 +254,49 @@ function createResistanceViewModel(rollCard: HTMLElement, damageSection: HTMLEle
 
   return {
     description: description ?? "Resistência do alvo.",
-    formula: damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance .${PROMPT_CLASS}__workflow-roll-formula`)?.textContent?.trim() ?? null,
+    formula: findResistanceFormulaElement(candidates)?.textContent?.trim() ?? null,
     skill,
     skillLabel,
     difficulty: readCastingDifficulty(rollCard),
   };
+}
+
+function normalizeResistanceCandidateSections(candidateSections: readonly (HTMLElement | null)[]): HTMLElement[] {
+  const normalized: HTMLElement[] = [];
+
+  for (const section of candidateSections) {
+    if (!section || normalized.includes(section)) continue;
+    normalized.push(section);
+  }
+
+  return normalized;
+}
+
+function findResistanceDescriptionElement(candidates: readonly HTMLElement[]): HTMLElement | null {
+  return findFirstInCandidateSections(candidates, `.${PROMPT_CLASS}__resistance-description`);
+}
+
+function findResistanceButtonElement(candidates: readonly HTMLElement[]): HTMLButtonElement | null {
+  return findFirstInCandidateSections(candidates, RESISTANCE_ROLL_BUTTON_SELECTOR);
+}
+
+function findResistanceFormulaElement(candidates: readonly HTMLElement[]): HTMLElement | null {
+  return findFirstInCandidateSections(
+    candidates,
+    `.${PROMPT_CLASS}__resistance .${PROMPT_CLASS}__workflow-roll-formula`,
+  );
+}
+
+function findFirstInCandidateSections<T extends HTMLElement>(
+  candidates: readonly HTMLElement[],
+  selector: string,
+): T | null {
+  for (const candidate of candidates) {
+    const element = candidate.querySelector<T>(selector);
+    if (element) return element;
+  }
+
+  return null;
 }
 
 function resolveTargetState(result: MultiTargetResistanceResult | null, difficulty: number | null): MultiTargetState {

@@ -78,9 +78,13 @@ function normalizeSingleTargetCardLayout(layout: SingleTargetCardLayout): HTMLEl
   rollCard.setAttribute(LAYOUT_NORMALIZED_ATTRIBUTE, "true");
   rollCard.classList.add(`${PROMPT_CLASS}__roll-card--structured`);
 
-  if (damageSection && resistance && resistance.parentElement !== damageSection) {
-    damageSection.append(resistance);
-  }
+  const castingSection = findWorkflowSectionByTitle(rollCard, "Conjuração");
+  const resistanceAnchor = placeSingleTargetResistanceSection({
+    rollCard,
+    damageSection,
+    resistance,
+    fallbackAfter: castingSection,
+  });
 
   if (damageSection && damageActions) {
     if (damageActions.parentElement !== damageSection) {
@@ -94,8 +98,8 @@ function normalizeSingleTargetCardLayout(layout: SingleTargetCardLayout): HTMLEl
     rollCard,
     existingSection: effectSection,
     sourceActions: effectActionSource,
-    after: damageSection,
-    fallbackAfter: findWorkflowSectionByTitle(rollCard, "Conjuração")
+    after: resolveSingleTargetEffectAnchor(damageSection, resistanceAnchor),
+    fallbackAfter: castingSection
   });
 
   if (mountedEffectSection) {
@@ -103,4 +107,46 @@ function normalizeSingleTargetCardLayout(layout: SingleTargetCardLayout): HTMLEl
   }
 
   return mountedEffectSection;
+}
+
+type PlaceSingleTargetResistanceSectionInput = {
+  rollCard: HTMLElement;
+  damageSection: HTMLElement | null;
+  resistance: HTMLElement | null;
+  fallbackAfter: HTMLElement | null;
+};
+
+function placeSingleTargetResistanceSection(input: PlaceSingleTargetResistanceSectionInput): HTMLElement | null {
+  const { rollCard, damageSection, resistance, fallbackAfter } = input;
+  if (!resistance) return null;
+
+  if (damageSection) {
+    if (resistance.parentElement !== damageSection) {
+      damageSection.append(resistance);
+    }
+
+    return damageSection;
+  }
+
+  if (!fallbackAfter) {
+    if (resistance.parentElement !== rollCard || resistance.previousElementSibling !== null) {
+      rollCard.prepend(resistance);
+    }
+
+    return resistance;
+  }
+
+  if (resistance.parentElement === rollCard && resistance.previousElementSibling === fallbackAfter) {
+    return resistance;
+  }
+
+  rollCard.insertBefore(resistance, fallbackAfter.nextElementSibling);
+  return resistance;
+}
+
+function resolveSingleTargetEffectAnchor(
+  damageSection: HTMLElement | null,
+  resistanceAnchor: HTMLElement | null,
+): HTMLElement | null {
+  return damageSection ?? resistanceAnchor;
 }
