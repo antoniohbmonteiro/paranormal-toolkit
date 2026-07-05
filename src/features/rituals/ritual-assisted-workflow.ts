@@ -270,6 +270,10 @@ export class RitualAssistedWorkflow {
         context,
         castOptions,
       );
+      const conditionActionResult = createAssistedConditionActions(
+        definition,
+        context,
+      );
       const backlashActions = createCastingFailureSanityActions(
         context.actor as Actor,
         castingCheck,
@@ -286,11 +290,24 @@ export class RitualAssistedWorkflow {
         castingCheck,
       );
 
-      if (backlashActions.length > 0) {
+      if (!conditionActionResult.ok) {
+        return {
+          status: "failed",
+          reason: conditionActionResult.reason,
+          message: conditionActionResult.message,
+        };
+      }
+
+      const actions: AssistedRitualAction[] = [
+        ...backlashActions,
+        ...conditionActionResult.actions,
+      ];
+
+      if (actions.length > 0) {
         return {
           status: "ready",
           workflowContext,
-          actions: backlashActions,
+          actions,
           summaryLines,
         };
       }
