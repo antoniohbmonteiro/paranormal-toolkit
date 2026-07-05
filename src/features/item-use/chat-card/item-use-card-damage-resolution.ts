@@ -1,18 +1,15 @@
 import { PROMPT_CLASS } from "./item-use-chat-card-constants";
-import { getItemUseDamageResolutionMode, getItemUseResistanceGateMode } from "../item-use-settings";
-import type {
-  ItemUseResistanceGateMode,
-  ResistanceResolutionState,
-} from "../config/item-use-resistance-gate-policy";
-import { isActionWaitingForResistance } from "./item-use-card-action-state";
-import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
-import { createAssistedTargetActionViewModel } from "../assisted-actions/assisted-action-view-model";
 import {
   ACTION_BUTTON_SELECTOR,
   ACTIONS_TITLE_SELECTOR,
   createButtonLabel,
   setActionTitle
 } from "./item-use-card-dom";
+import type {
+  SingleTargetDamageButtonViewModel,
+  SingleTargetDamageResolutionState,
+} from "./single-target/single-target-card-view-model";
+import { createSingleTargetDamageViewModel } from "./single-target/single-target-card-view-model";
 
 const DAMAGE_RESOLUTION_STATE_ATTRIBUTE = "data-paranormal-toolkit-damage-resolution-state";
 const DAMAGE_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-damage-icon-enhanced";
@@ -22,8 +19,6 @@ const DAMAGE_BUTTON_LABELS = {
   normal: /\bnormal\b|\bcheio\b/iu,
   half: /\bmetade\b|\bmeio\b|1\/2/iu
 } as const;
-
-type DamageResolutionState = "manual" | "pending" | "resisted" | "failed";
 
 export function enhanceDamageResolutionSection(rollCard: HTMLElement, actions: HTMLElement): void {
   actions.classList.add(`${PROMPT_CLASS}__actions--embedded`, `${PROMPT_CLASS}__actions--damage-resolution`);
@@ -44,80 +39,35 @@ function updateDamageActionButtons(rollCard: HTMLElement, actions: HTMLElement):
   enhanceDamageButtonIcon(normalButton, "normal");
   enhanceDamageButtonIcon(halfButton, "half");
 
-  const mode = getDamageResolutionModeSafe();
-  const gateMode = getResistanceGateModeSafe();
-  const resistanceState = resolveDamageResistanceState(rollCard);
-  const assistedTarget = createAssistedTargetActionViewModel({
-    targetId: "single-target",
-    targetName: "Alvo",
-    resistanceGateMode: gateMode,
-    resistanceState,
-    damage: { normalAmount: null, halfAmount: null },
-    effect: null,
+  const viewModel = createSingleTargetDamageViewModel({
+    rollCard,
+    normalButtonApplied: isAppliedDamageButton(normalButton),
+    halfButtonApplied: isAppliedDamageButton(halfButton),
   });
-  const damageActionState = assistedTarget.policy.damageActionState;
-  const blockPending = isActionWaitingForResistance(damageActionState);
 
-  if (!assistedTarget.policy.canShowApplyDamage) {
+  if (!viewModel.canShowApplyDamage) {
     hideUnresolvedDamageButton(normalButton);
     hideUnresolvedDamageButton(halfButton);
-    updateDamageResolutionSummary(actions, blockPending ? "pending" : "manual", blockPending ? damageActionState.reason : null);
+    updateDamageResolutionSummary(actions, viewModel.summary.state, viewModel.summary.message);
     return;
   }
 
-  actions.classList.toggle(`${PROMPT_CLASS}__actions--assisted`, mode === "assisted");
-  actions.classList.toggle(`${PROMPT_CLASS}__actions--manual`, mode !== "assisted");
+  actions.classList.toggle(`${PROMPT_CLASS}__actions--assisted`, viewModel.mode === "assisted");
+  actions.classList.toggle(`${PROMPT_CLASS}__actions--manual`, viewModel.mode !== "assisted");
 
-  if (mode !== "assisted") {
-    setDamageButtonVisibility(normalButton, true);
-    setDamageButtonVisibility(halfButton, true);
-    setDamageButtonEnabled(normalButton, !blockPending, "normal", damageActionState.label);
-    setDamageButtonEnabled(halfButton, !blockPending, "half", damageActionState.label);
-    updateDamageResolutionSummary(
-      actions,
-      blockPending ? "pending" : "manual",
-      blockPending ? damageActionState.reason ?? "Role resistência para aplicar dano." : null
-    );
-    return;
-  }
-
-  if (resistanceState.kind === "none") {
-    setDamageButtonVisibility(normalButton, true);
-    setDamageButtonVisibility(halfButton, true);
-    setDamageButtonEnabled(normalButton, true, "normal");
-    setDamageButtonEnabled(halfButton, true, "half");
-    updateDamageResolutionSummary(actions, "manual", "Sem DT confiável: escolha manualmente.");
-    return;
-  }
-
-  if (resistanceState.kind === "pending") {
-    setDamageButtonVisibility(normalButton, true);
-    setDamageButtonVisibility(halfButton, false);
-    setDamageButtonEnabled(normalButton, !blockPending, "normal", damageActionState.label);
-    updateDamageResolutionSummary(
-      actions,
-      "pending",
-      blockPending ? damageActionState.reason ?? "Role resistência para aplicar dano." : null
-    );
-    return;
-  }
-
-  const resisted = resistanceState.kind === "succeeded";
-  setDamageButtonVisibility(normalButton, !resisted);
-  setDamageButtonVisibility(halfButton, resisted);
-  setDamageButtonEnabled(normalButton, !resisted, "normal");
-  setDamageButtonEnabled(halfButton, resisted, "half");
-  updateDamageResolutionSummary(
-    actions,
-    resisted ? "resisted" : "failed",
-    resisted
-      ? `Resistiu: ${resistanceState.total} vs DT ${resistanceState.difficulty}.`
-      : `Falhou: ${resistanceState.total} vs DT ${resistanceState.difficulty}.`
-  );
+  applyDamageButtonViewModel(normalButton, viewModel.normalButton);
+  applyDamageButtonViewModel(halfButton, viewModel.halfButton);
+  updateDamageResolutionSummary(actions, viewModel.summary.state, viewModel.summary.message);
 }
 
-function resolveDamageResistanceState(rollCard: HTMLElement): ResistanceResolutionState {
-  return createSingleTargetResistanceUiState(rollCard).state;
+function applyDamageButtonViewModel(button: HTMLButtonElement, viewModel: SingleTargetDamageButtonViewModel): void {
+  if (viewModel.applied) return;
+  setDamageButtonVisibility(button, viewModel.visible);
+  setDamageButtonEnabled(button, viewModel.enabled, viewModel.kind, viewModel.waitingLabel);
+}
+
+function isAppliedDamageButton(button: HTMLButtonElement): boolean {
+  return button.textContent?.trim().startsWith("✓") ?? false;
 }
 
 function findDamageButton(buttons: HTMLButtonElement[], kind: "normal" | "half"): HTMLButtonElement | null {
@@ -204,7 +154,7 @@ function createDamageButtonIcon(kind: "normal" | "half"): HTMLElement {
   return icon;
 }
 
-function updateDamageResolutionSummary(actions: HTMLElement, state: DamageResolutionState, message: string | null): void {
+function updateDamageResolutionSummary(actions: HTMLElement, state: SingleTargetDamageResolutionState, message: string | null): void {
   actions.setAttribute(DAMAGE_RESOLUTION_STATE_ATTRIBUTE, state);
 
   const existing = actions.querySelector<HTMLElement>(`.${PROMPT_CLASS}__damage-resolution-summary`);
@@ -221,21 +171,5 @@ function updateDamageResolutionSummary(actions: HTMLElement, state: DamageResolu
   if (!existing) {
     const title = actions.querySelector<HTMLElement>(ACTIONS_TITLE_SELECTOR);
     title?.after(summary);
-  }
-}
-
-function getDamageResolutionModeSafe(): "manual" | "assisted" {
-  try {
-    return getItemUseDamageResolutionMode();
-  } catch {
-    return "assisted";
-  }
-}
-
-function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
-  try {
-    return getItemUseResistanceGateMode();
-  } catch {
-    return "strict";
   }
 }
