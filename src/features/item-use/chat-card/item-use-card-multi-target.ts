@@ -107,25 +107,30 @@ export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput):
   const viewModel = createMultiTargetCardViewModelFromLayout(input);
   if (!viewModel) return false;
 
-  if (!viewModel.damage) return false;
-
   input.rollCard.classList.add(`${PROMPT_CLASS}__roll-card--multi-target`);
   hideSingleTargetSourceSections(input);
 
-  const damageInfo = getOrCreateDamageInfoSection(input.rollCard);
-  renderDamageInfoSection(damageInfo, viewModel.damage);
-  placeDamageInfoSection(input.rollCard, damageInfo);
+  const damageInfo = renderOptionalDamageInfoSection(input.rollCard, viewModel);
+  const effectInfo = renderOptionalEffectInfoSection(input.rollCard, viewModel);
+
+  if (!damageInfo && effectInfo) {
+    placeEffectInfoSectionBeforeTargets(input.rollCard, effectInfo, input.effectSection);
+  }
 
   const targetSection = getOrCreateTargetSection(input.rollCard);
   renderTargetSection(targetSection, viewModel);
-  placeTargetSection(input.rollCard, targetSection, damageInfo);
+  placeTargetSection(
+    input.rollCard,
+    targetSection,
+    resolveTargetSectionAnchor(input.rollCard, {
+      damageInfo,
+      effectInfo,
+      effectSection: input.effectSection,
+    }),
+  );
 
-  if (viewModel.effect) {
-    const effectInfo = getOrCreateEffectInfoSection(input.rollCard);
-    renderEffectInfoSection(effectInfo, viewModel.effect);
+  if (damageInfo && effectInfo) {
     placeEffectInfoSection(input.rollCard, effectInfo, targetSection);
-  } else {
-    findEffectInfoSection(input.rollCard)?.remove();
   }
 
   return true;
@@ -319,6 +324,51 @@ function readRenderedMultiTargetResistanceResults(rollCard: HTMLElement): Map<st
 function hideSingleTargetSourceSections(input: MultiTargetCardLayoutInput): void {
   input.damageSection?.classList.add(`${PROMPT_CLASS}__workflow-section--multi-target-source`);
   input.effectSection?.classList.add(`${PROMPT_CLASS}__workflow-section--multi-target-effect-source`);
+}
+
+function renderOptionalDamageInfoSection(
+  rollCard: HTMLElement,
+  viewModel: MultiTargetCardViewModel,
+): HTMLElement | null {
+  if (!viewModel.damage) {
+    findDamageInfoSection(rollCard)?.remove();
+    return null;
+  }
+
+  const damageInfo = getOrCreateDamageInfoSection(rollCard);
+  renderDamageInfoSection(damageInfo, viewModel.damage);
+  placeDamageInfoSection(rollCard, damageInfo);
+  return damageInfo;
+}
+
+function renderOptionalEffectInfoSection(
+  rollCard: HTMLElement,
+  viewModel: MultiTargetCardViewModel,
+): HTMLElement | null {
+  if (!viewModel.effect) {
+    findEffectInfoSection(rollCard)?.remove();
+    return null;
+  }
+
+  const effectInfo = getOrCreateEffectInfoSection(rollCard);
+  renderEffectInfoSection(effectInfo, viewModel.effect);
+  return effectInfo;
+}
+
+type TargetSectionAnchorInput = {
+  damageInfo: HTMLElement | null;
+  effectInfo: HTMLElement | null;
+  effectSection: HTMLElement | null;
+};
+
+function resolveTargetSectionAnchor(
+  rollCard: HTMLElement,
+  input: TargetSectionAnchorInput,
+): HTMLElement | null {
+  if (input.damageInfo?.parentElement === rollCard) return input.damageInfo;
+  if (input.effectInfo?.parentElement === rollCard) return input.effectInfo;
+  if (input.effectSection?.parentElement === rollCard) return input.effectSection;
+  return findWorkflowSectionByTitle(rollCard, "Conjuração");
 }
 
 function getOrCreateDamageInfoSection(rollCard: HTMLElement): HTMLElement {
@@ -1297,11 +1347,7 @@ function createTargetDetailsActions(target: MultiTargetViewModel, viewModel: Mul
   return actions;
 }
 
-function placeTargetSection(rollCard: HTMLElement, section: HTMLElement, damageInfoSection: HTMLElement): void {
-  const anchor = damageInfoSection.parentElement === rollCard
-    ? damageInfoSection
-    : findWorkflowSectionByTitle(rollCard, "Conjuração");
-
+function placeTargetSection(rollCard: HTMLElement, section: HTMLElement, anchor: HTMLElement | null): void {
   if (!anchor) {
     rollCard.prepend(section);
     return;
@@ -1352,6 +1398,24 @@ function renderEffectInfoSection(section: HTMLElement, effect: TargetEffectViewM
 
   body.append(label, hint);
   section.append(header, body);
+}
+
+function placeEffectInfoSectionBeforeTargets(
+  rollCard: HTMLElement,
+  section: HTMLElement,
+  effectSection: HTMLElement | null,
+): void {
+  const anchor = effectSection?.parentElement === rollCard
+    ? effectSection
+    : findWorkflowSectionByTitle(rollCard, "Conjuração");
+
+  if (!anchor) {
+    rollCard.prepend(section);
+    return;
+  }
+
+  if (section.parentElement === rollCard && section.previousElementSibling === anchor) return;
+  rollCard.insertBefore(section, anchor.nextElementSibling);
 }
 
 function placeEffectInfoSection(rollCard: HTMLElement, section: HTMLElement, targetSection: HTMLElement): void {
