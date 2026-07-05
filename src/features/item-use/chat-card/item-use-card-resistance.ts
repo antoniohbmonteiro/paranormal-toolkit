@@ -8,6 +8,7 @@ import {
   RESISTANCE_SELECTOR
 } from "./item-use-chat-card-constants";
 import { enhanceRitualCardLayout } from "./item-use-card-layout";
+import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
 
 const RESISTANCE_ROLL_RESULT_ENHANCED_ATTRIBUTE =
   "data-paranormal-toolkit-resistance-roll-result-enhanced";
@@ -17,7 +18,10 @@ type ResistanceRollDisplay = {
   formula: string;
   total: number;
   diceValues: number[];
+  outcome?: ResistanceRollOutcome;
 };
+
+type ResistanceRollOutcome = "failed" | "succeeded" | null;
 
 type RollDieViewModel = {
   value: number;
@@ -78,7 +82,10 @@ function enhanceResistanceRollResult(result: HTMLElement): void {
   if (!parsed) return;
 
   result.setAttribute(RESISTANCE_ROLL_RESULT_ENHANCED_ATTRIBUTE, "true");
-  result.replaceChildren(createResistanceRollDisplay(parsed));
+  result.replaceChildren(createResistanceRollDisplay({
+    ...parsed,
+    outcome: resolveResistanceRollOutcome(result),
+  }));
 }
 
 function parseResistanceRollResult(text: string): ResistanceRollDisplay | null {
@@ -129,6 +136,9 @@ function createResistanceRollDisplay(result: ResistanceRollDisplay): HTMLElement
     `${PROMPT_CLASS}__workflow-roll`,
     `${PROMPT_CLASS}__resistance-workflow-roll`
   );
+  if (result.outcome) {
+    roll.classList.add(`${PROMPT_CLASS}__resistance-workflow-roll--${result.outcome}`);
+  }
   roll.setAttribute("data-paranormal-toolkit-resistance-total", String(result.total));
 
   const formula = document.createElement("span");
@@ -136,12 +146,44 @@ function createResistanceRollDisplay(result: ResistanceRollDisplay): HTMLElement
   formula.textContent = result.formula;
   formula.title = `${result.skillLabel}: ${result.formula}`;
 
-  roll.append(formula);
+  const total = createResistanceTotal(result);
+
+  roll.append(formula, total);
 
   const diceTray = createDiceTray(result);
   if (diceTray) roll.append(diceTray);
 
   return roll;
+}
+
+
+function resolveResistanceRollOutcome(result: HTMLElement): ResistanceRollOutcome {
+  const rollCard = result.closest<HTMLElement>(`.${PROMPT_CLASS}__roll-card`);
+  if (!rollCard) return null;
+
+  const state = createSingleTargetResistanceUiState(rollCard).state;
+  if (state.kind === "succeeded") return "succeeded";
+  if (state.kind === "failed") return "failed";
+  return null;
+}
+
+function createResistanceTotal(result: ResistanceRollDisplay): HTMLElement {
+  const total = document.createElement("strong");
+  total.classList.add(`${PROMPT_CLASS}__workflow-roll-total`);
+  if (result.outcome) {
+    total.classList.add(`${PROMPT_CLASS}__resistance-roll-total--${result.outcome}`);
+  }
+
+  const marker = result.outcome === "succeeded" ? "✓" : result.outcome === "failed" ? "✕" : null;
+  total.textContent = marker ? `${result.total} ${marker}` : String(result.total);
+
+  if (result.outcome) {
+    const outcomeLabel = result.outcome === "succeeded" ? "sucesso" : "falha";
+    total.title = `${result.skillLabel}: ${result.total}, ${outcomeLabel}.`;
+    total.setAttribute("aria-label", total.title);
+  }
+
+  return total;
 }
 
 function createDiceTray(result: ResistanceRollDisplay): HTMLElement | null {
