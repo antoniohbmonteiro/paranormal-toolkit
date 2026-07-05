@@ -873,9 +873,12 @@ function findMultiTargetEffectSourceSection(rollCard: HTMLElement): HTMLElement 
   return rollCard.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section--multi-target-effect-source`);
 }
 
-function shouldBlockTargetActionsByResistance(target: MultiTargetViewModel, viewModel: MultiTargetCardViewModel): boolean {
-  void viewModel;
+function shouldBlockTargetDamageByResistance(target: MultiTargetViewModel): boolean {
   return isActionWaitingForResistance(target.assistedActions.policy.damageActionState);
+}
+
+function shouldBlockTargetEffectByResistance(target: MultiTargetViewModel): boolean {
+  return isActionWaitingForResistance(target.assistedActions.policy.effectActionState);
 }
 
 function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
@@ -964,7 +967,7 @@ async function handleTargetDamageApplication(
 ): Promise<void> {
   if (target.damageApplication) return;
 
-  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
+  if (shouldBlockTargetDamageByResistance(target)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar dano.");
     return;
   }
@@ -1122,7 +1125,7 @@ async function handleTargetEffectApplication(
 ): Promise<void> {
   if (target.effectApplication) return;
 
-  if (shouldBlockTargetActionsByResistance(target, viewModel)) {
+  if (shouldBlockTargetEffectByResistance(target)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar efeito.");
     return;
   }
