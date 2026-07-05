@@ -21,6 +21,7 @@ export type AssistedTargetActionPolicyInput = {
   damageAlreadyApplied?: boolean;
   effectAlreadyApplied?: boolean;
   effectCanApplyOnSuccessfulResistance?: boolean;
+  effectRequiresResolvedResistance?: boolean;
 };
 
 export type AssistedTargetActionPolicy = {
@@ -58,6 +59,7 @@ export function resolveAssistedTargetActionPolicy(input: AssistedTargetActionPol
     alreadyApplied: input.effectAlreadyApplied,
     unavailable: !input.hasEffect,
     allowsSuccessfulResistance: Boolean(input.effectCanApplyOnSuccessfulResistance),
+    requiresResolvedResistance: Boolean(input.effectRequiresResolvedResistance),
   });
 
   return {

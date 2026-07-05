@@ -16,6 +16,7 @@ export type SingleTargetEffectViewModelInput = {
   effectLabel: string;
   applied?: boolean;
   effectCanApplyOnSuccessfulResistance?: boolean;
+  effectRequiresResolvedResistance?: boolean;
 };
 
 export type SingleTargetEffectViewModel = {
@@ -46,6 +47,7 @@ export function createSingleTargetEffectViewModel(input: SingleTargetEffectViewM
     damage: null,
     effect: { conditionLabel: input.effectLabel },
     effectCanApplyOnSuccessfulResistance: input.effectCanApplyOnSuccessfulResistance,
+    effectRequiresResolvedResistance: input.effectRequiresResolvedResistance,
   });
   const actionState = assistedTarget.policy.effectActionState;
   const waitingForResistance = isActionWaitingForResistance(actionState);

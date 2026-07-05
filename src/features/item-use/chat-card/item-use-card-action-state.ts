@@ -26,6 +26,7 @@ type ResolveActionStateInput = {
   unavailable?: boolean;
   labels?: Partial<ItemUseActionStateLabels>;
   allowsSuccessfulResistance?: boolean;
+  requiresResolvedResistance?: boolean;
 };
 
 type ItemUseActionStateLabels = {
@@ -96,6 +97,16 @@ function resolveActionState(
 
   if (input.unavailable) {
     return createActionState("unavailable", false, labels.unavailable, labels.unavailableCompact, labels.unavailable);
+  }
+
+  if (input.requiresResolvedResistance && (input.resistanceState.kind === "pending" || input.resistanceState.kind === "none")) {
+    return createActionState(
+      "waiting-resistance",
+      false,
+      labels.waitingResistance,
+      labels.waitingResistanceCompact,
+      "Role a resistência antes de aplicar esta ação.",
+    );
   }
 
   if (shouldBlockPendingResistanceAction(input.resistanceGateMode, input.resistanceState)) {

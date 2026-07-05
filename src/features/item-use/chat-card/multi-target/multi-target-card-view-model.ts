@@ -6,6 +6,7 @@ import { createTargetResistanceUiState } from "../item-use-card-resistance-state
 import {
   getResistanceOutcomeForAction,
   normalizeConditionApplicationResistanceTrigger,
+  requiresResolvedResistanceOutcome,
   type ConditionApplicationResistanceTrigger,
 } from "../../condition-application-resistance-outcome";
 import { createAssistedTargetActionViewModel, type AssistedTargetActionViewModel } from "../../assisted-actions/assisted-action-view-model";
@@ -157,6 +158,7 @@ export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelIn
         damageAlreadyApplied: Boolean(damageApplication),
         effectAlreadyApplied: Boolean(effectApplication),
         effectCanApplyOnSuccessfulResistance: targetEffect?.applyOnResistance === "success" || targetEffect?.applyOnResistance === "always",
+        effectRequiresResolvedResistance: targetEffect ? requiresResolvedResistanceOutcome(targetEffect) : false,
       }),
     };
   });

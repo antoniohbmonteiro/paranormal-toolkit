@@ -24,8 +24,15 @@ export function matchesResistanceOutcome(
 ): boolean {
   const trigger = normalizeConditionApplicationResistanceTrigger(application);
   if (trigger === "always") return true;
-  if (!outcome) return trigger === "failure";
+  if (!outcome) return false;
   return trigger === outcome;
+}
+
+export function requiresResolvedResistanceOutcome(
+  application: Pick<AutomationConditionApplicationDefinition, "applyOnResistance">,
+): boolean {
+  const trigger = normalizeConditionApplicationResistanceTrigger(application);
+  return trigger === "failure" || trigger === "success";
 }
 
 export function hasConditionApplicationForResistanceSuccess(
@@ -41,7 +48,9 @@ export function resolveConditionApplicationForResistanceOutcome(
   normalizeLabel: (value: string | null | undefined) => string | null,
 ): AutomationConditionApplicationDefinition | null {
   const matchingOutcome = applications.filter((application) => matchesResistanceOutcome(application, outcome));
-  if (matchingOutcome.length === 0) return null;
+  if (matchingOutcome.length === 0) {
+    return outcome ? null : applications[0] ?? null;
+  }
 
   const exactOutcome = outcome
     ? matchingOutcome.filter((application) => normalizeConditionApplicationResistanceTrigger(application) === outcome)

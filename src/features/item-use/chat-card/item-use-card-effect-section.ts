@@ -4,6 +4,7 @@ import {
   getResistanceOutcomeForAction,
   matchesResistanceOutcome,
   normalizeConditionApplicationResistanceTrigger,
+  requiresResolvedResistanceOutcome,
 } from "../condition-application-resistance-outcome";
 import { resolveMultiTargetSourceItem } from "./multi-target/multi-target-source-item-resolver";
 import { PROMPT_CLASS } from "./item-use-chat-card-constants";
@@ -71,6 +72,7 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, section:
       ? normalizeConditionApplicationResistanceTrigger(application) === "success"
         || normalizeConditionApplicationResistanceTrigger(application) === "always"
       : false,
+    effectRequiresResolvedResistance: application ? requiresResolvedResistanceOutcome(application) : false,
   });
 
   if (viewModel.applied) {

@@ -1180,7 +1180,12 @@ async function handleTargetEffectApplication(
       source: effect.source,
       resistanceGateMode: getResistanceGateModeSafe(),
       resistanceState: target.assistedActions.resistanceState,
-      allowSuccessfulResistance: effect.applyOnResistance === "success" || effect.applyOnResistance === "always"
+      allowSuccessfulResistance: effect.applyOnResistance === "success" || effect.applyOnResistance === "always",
+      requiredResistanceOutcome: effect.applyOnResistance === "success"
+        ? "succeeded"
+        : effect.applyOnResistance === "failure"
+          ? "failed"
+          : null
     });
 
     if (!result.ok) {
