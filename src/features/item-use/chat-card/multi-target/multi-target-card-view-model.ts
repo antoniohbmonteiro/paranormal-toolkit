@@ -104,7 +104,11 @@ export type TargetConditionApplication = {
 };
 
 export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelInput): MultiTargetCardViewModel | null {
-  const resistance = createResistanceViewModel(input.rollCard, input.damageSection);
+  const resistance = createResistanceViewModel(input.rollCard, [
+    input.damageSection,
+    input.effectSection,
+    input.rollCard,
+  ]);
   const damage = input.damageSection ? createDamageViewModel(input.damageSection) : null;
   const effect = createEffectViewModel(input.rollCard, input.effectSection, input.resolveTargetConditionApplication);
   const targets = readTargetNames(input.rollCard).map((name, index) => {
@@ -214,9 +218,13 @@ function normalizeConditionDuration(
   };
 }
 
-function createResistanceViewModel(rollCard: HTMLElement, damageSection: HTMLElement | null): TargetResistanceViewModel | null {
-  const description = damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance-description`)?.textContent?.trim();
-  const sourceButton = damageSection?.querySelector<HTMLButtonElement>(RESISTANCE_ROLL_BUTTON_SELECTOR) ?? null;
+function createResistanceViewModel(
+  rollCard: HTMLElement,
+  candidateSections: readonly (HTMLElement | null)[],
+): TargetResistanceViewModel | null {
+  const candidates = normalizeResistanceCandidateSections(candidateSections);
+  const description = findResistanceDescriptionElement(candidates)?.textContent?.trim();
+  const sourceButton = findResistanceButtonElement(candidates);
   const skill = sourceButton?.getAttribute(RESISTANCE_SKILL_ATTRIBUTE) ?? null;
   const skillLabel = sourceButton?.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : null);
 
@@ -224,11 +232,49 @@ function createResistanceViewModel(rollCard: HTMLElement, damageSection: HTMLEle
 
   return {
     description: description ?? "Resistência do alvo.",
-    formula: damageSection?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__resistance .${PROMPT_CLASS}__workflow-roll-formula`)?.textContent?.trim() ?? null,
+    formula: findResistanceFormulaElement(candidates)?.textContent?.trim() ?? null,
     skill,
     skillLabel,
     difficulty: readCastingDifficulty(rollCard),
   };
+}
+
+function normalizeResistanceCandidateSections(candidateSections: readonly (HTMLElement | null)[]): HTMLElement[] {
+  const normalized: HTMLElement[] = [];
+
+  for (const section of candidateSections) {
+    if (!section || normalized.includes(section)) continue;
+    normalized.push(section);
+  }
+
+  return normalized;
+}
+
+function findResistanceDescriptionElement(candidates: readonly HTMLElement[]): HTMLElement | null {
+  return findFirstInCandidateSections(candidates, `.${PROMPT_CLASS}__resistance-description`);
+}
+
+function findResistanceButtonElement(candidates: readonly HTMLElement[]): HTMLButtonElement | null {
+  return findFirstInCandidateSections(candidates, RESISTANCE_ROLL_BUTTON_SELECTOR);
+}
+
+function findResistanceFormulaElement(candidates: readonly HTMLElement[]): HTMLElement | null {
+  return findFirstInCandidateSections(
+    candidates,
+    `.${PROMPT_CLASS}__resistance .${PROMPT_CLASS}__workflow-roll-formula`,
+  );
+}
+
+function findFirstInCandidateSections<T extends HTMLElement>(
+  candidates: readonly HTMLElement[],
+  selector: string,
+): T | null {
+  for (const candidate of candidates) {
+    const element = candidate.querySelector<T>(selector);
+    if (element) return element;
+  }
+
+  return null;
 }
 
 function resolveTargetState(result: MultiTargetResistanceResult | null, difficulty: number | null): MultiTargetState {
