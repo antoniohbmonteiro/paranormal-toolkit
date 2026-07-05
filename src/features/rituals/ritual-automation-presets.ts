@@ -10,6 +10,7 @@ import type {
 export const RITUAL_COST_ONLY_PRESET_ID = "ritual.costOnly";
 export const RITUAL_SIMPLE_HEALING_PRESET_ID = "ritual.simpleHealing";
 export const RITUAL_ELECTROCUTION_PRESET_ID = "ritual.eletrocussao";
+export const RITUAL_WITHER_PRESET_ID = "ritual.definhar";
 export const RITUAL_SIMPLE_DAMAGE_PRESET_ID = "ritual.simpleDamage";
 export const GENERIC_SIMPLE_HEALING_PRESET_ID = "generic.simpleHealing";
 
@@ -24,6 +25,7 @@ export function createBuiltInAutomationPresets(): AutomationPreset[] {
     createRitualCostOnlyPreset(),
     createRitualSimpleHealingPreset(),
     createRitualElectrocutionPreset(),
+    createRitualWitherPreset(),
     createRitualSimpleDamagePreset(),
     createGenericSimpleHealingPreset(),
   ];
@@ -99,6 +101,27 @@ export function createRitualElectrocutionPreset(): AutomationPreset {
     ],
     automation: createRitualElectrocutionDefinition(),
     itemPatch: createElectrocutionItemPatch(),
+  };
+}
+
+
+export function createRitualWitherPreset(): AutomationPreset {
+  return {
+    id: RITUAL_WITHER_PRESET_ID,
+    version: "1.0.0",
+    label: "Definhar",
+    description:
+      "Preset assistido da forma Padrão: gasta o custo do ritual, rola Fortitude e aplica Fatigado na falha ou Vulnerável no sucesso.",
+    category: "ritual",
+    itemTypes: ["ritual"],
+    matchers: [
+      {
+        type: "normalizedName",
+        names: ["definhar"],
+      },
+    ],
+    automation: createRitualWitherDefinition(),
+    itemPatch: createWitherItemPatch(),
   };
 }
 
@@ -275,6 +298,60 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
   };
 }
 
+
+export function createRitualWitherDefinition(): AutomationDefinition {
+  return {
+    version: 1,
+    label: "Definhar",
+    ritualForms: {
+      base: {
+        label: "Padrão",
+      },
+    },
+    resistance: {
+      skill: "resilience",
+      label: "Fortitude",
+      effect: "reducesByHalf",
+      summary: "Fortitude parcial: falha aplica Fatigado; sucesso aplica Vulnerável.",
+    },
+    conditionApplications: [
+      {
+        id: "definhar-fatigued",
+        actor: "target",
+        conditionId: "fatigued",
+        label: "Fatigado",
+        source: "ritual.definhar",
+        actionSectionId: "apply-effects",
+        actionSectionTitle: "Aplicar efeito",
+        executedLabel: "✓ Fatigado aplicado",
+        applyOnResistance: "failure",
+      },
+      {
+        id: "definhar-vulnerable",
+        actor: "target",
+        conditionId: "vulnerable",
+        label: "Vulnerável",
+        source: "ritual.definhar",
+        actionSectionId: "apply-effects",
+        actionSectionTitle: "Aplicar efeito",
+        executedLabel: "✓ Vulnerável aplicado",
+        applyOnResistance: "success",
+      },
+    ],
+    steps: [
+      {
+        type: "spendRitualCost",
+      },
+      {
+        type: "chatCard",
+        title: "Definhar",
+        message:
+          "Gasta o custo do ritual e prepara aplicação assistida de condição conforme a resistência do alvo.",
+      },
+    ],
+  };
+}
+
 export function createRitualSimpleDamageDefinition(
   formula = "1d8",
   options: {
@@ -348,6 +425,28 @@ function createCicatrizationItemPatch(): AutomationPresetItemPatch {
       duration: "instantaneous",
       resistanceSkill: "",
       resistance: "",
+      studentForm: false,
+      trueForm: false,
+    },
+  };
+}
+
+
+function createWitherItemPatch(): AutomationPresetItemPatch {
+  return {
+    kind: "ritual",
+    name: "Definhar",
+    descriptionHtml: AUTOMATED_RITUAL_DESCRIPTION,
+    ritual: {
+      circle: 1,
+      element: "death",
+      execution: "default",
+      range: "medium",
+      target: "creatures",
+      targetQuantity: "1",
+      duration: "instantaneous",
+      resistanceSkill: "resilience",
+      resistance: "reducesByHalf",
       studentForm: false,
       trueForm: false,
     },

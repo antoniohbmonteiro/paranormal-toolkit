@@ -6,6 +6,10 @@ import type { AutomationConditionApplicationDefinition } from "../../../core/aut
 import { ConditionEngine } from "../../conditions/condition-engine";
 import { createToolkitConditionRegistry } from "../../conditions/condition-registry";
 import { readAutomationDefinition } from "../../automation/automation-flag-reader";
+import {
+  resolveConditionApplicationForResistanceOutcome,
+  type ConditionApplicationResistanceOutcome,
+} from "../condition-application-resistance-outcome";
 import { getItemUseResistanceGateMode } from "../item-use-settings";
 import type {
   ItemUseResistanceGateMode,
@@ -147,7 +151,11 @@ function createMultiTargetCardViewModelFromLayout(input: MultiTargetCardLayoutIn
   });
 }
 
-function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: string | null): TargetConditionApplication | null {
+function resolveTargetConditionApplication(
+  rollCard: HTMLElement,
+  displayLabel: string | null,
+  resistanceOutcome: ConditionApplicationResistanceOutcome | null,
+): TargetConditionApplication | null {
   const context = readPersistedMultiTargetPromptContext(rollCard);
   const sourceItem = resolveMultiTargetSourceItem(context);
   if (!sourceItem) return null;
@@ -160,7 +168,7 @@ function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: 
 
   if (targetApplications.length === 0) return null;
 
-  const application = selectTargetConditionApplication(targetApplications, displayLabel);
+  const application = selectTargetConditionApplication(targetApplications, displayLabel, resistanceOutcome);
   if (!application) return null;
 
   return {
@@ -168,14 +176,24 @@ function resolveTargetConditionApplication(rollCard: HTMLElement, displayLabel: 
     conditionLabel: application.label ?? application.conditionId,
     duration: application.duration ?? null,
     source: application.source ?? "item-use.condition-action",
-    originUuid: sourceItem.uuid ?? null
+    originUuid: sourceItem.uuid ?? null,
+    applyOnResistance: application.applyOnResistance ?? "failure"
   };
 }
 
 function selectTargetConditionApplication(
   applications: AutomationConditionApplicationDefinition[],
-  displayLabel: string | null
+  displayLabel: string | null,
+  resistanceOutcome: ConditionApplicationResistanceOutcome | null,
 ): AutomationConditionApplicationDefinition | null {
+  const application = resolveConditionApplicationForResistanceOutcome(
+    applications,
+    resistanceOutcome,
+    displayLabel,
+    normalizeLookupName,
+  );
+  if (application) return application;
+
   if (applications.length === 1) return applications[0] ?? null;
   if (!displayLabel) return null;
 
@@ -1055,8 +1073,9 @@ function createTargetEffectActionButton(
   density: "compact" | "full"
 ): HTMLElement | null {
   const actionState = target.assistedActions.policy.effectActionState;
+  const effect = target.effect ?? viewModel.effect;
 
-  if (!viewModel.effect) {
+  if (!effect) {
     return createTargetActionButton(
       "✦",
       density === "full" ? actionState.label : actionState.compactLabel,
@@ -1098,12 +1117,12 @@ function createTargetEffectActionButton(
 
   const button = createTargetActionButton(
     "✦",
-    density === "full" ? `Aplicar ${viewModel.effect.conditionLabel}` : "Efeito",
+    density === "full" ? `Aplicar ${effect.conditionLabel}` : "Efeito",
     [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--pending-effect`],
     false
   );
 
-  button.title = `Aplicar ${viewModel.effect.conditionLabel} em ${target.name}`;
+  button.title = `Aplicar ${effect.conditionLabel} em ${target.name}`;
   button.setAttribute("aria-label", button.title);
   button.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1135,7 +1154,7 @@ async function handleTargetEffectApplication(
     return;
   }
 
-  const effect = viewModel.effect;
+  const effect = target.effect ?? viewModel.effect;
   if (!effect) {
     ui.notifications?.warn?.("Paranormal Toolkit: este card não possui efeito estruturado para aplicar.");
     return;
@@ -1160,7 +1179,8 @@ async function handleTargetEffectApplication(
       originUuid: effect.originUuid,
       source: effect.source,
       resistanceGateMode: getResistanceGateModeSafe(),
-      resistanceState: target.assistedActions.resistanceState
+      resistanceState: target.assistedActions.resistanceState,
+      allowSuccessfulResistance: effect.applyOnResistance === "success" || effect.applyOnResistance === "always"
     });
 
     if (!result.ok) {

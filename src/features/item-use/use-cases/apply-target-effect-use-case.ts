@@ -21,6 +21,7 @@ export type ApplyTargetEffectUseCaseInput = {
   resistanceGateMode: ItemUseResistanceGateMode;
   resistanceState: ResistanceResolutionState;
   isGM?: boolean;
+  allowSuccessfulResistance?: boolean;
 };
 
 export type ApplyTargetEffectBlockedFailure = {
@@ -53,7 +54,7 @@ export class ApplyTargetEffectUseCase {
       return this.block(input, "resistance-pending", "Role a resistência do alvo antes de aplicar efeito.");
     }
 
-    if (input.resistanceState.kind === "succeeded") {
+    if (input.resistanceState.kind === "succeeded" && !input.allowSuccessfulResistance) {
       return this.block(input, "resistance-succeeded", "Este alvo resistiu ao efeito.");
     }
 

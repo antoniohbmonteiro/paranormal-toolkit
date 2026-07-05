@@ -225,8 +225,16 @@ function isConditionApplicationDefinition(
     (candidate.actionSectionTitle === undefined ||
       isNonEmptyString(candidate.actionSectionTitle)) &&
     (candidate.executedLabel === undefined ||
-      isNonEmptyString(candidate.executedLabel))
+      isNonEmptyString(candidate.executedLabel)) &&
+    (candidate.applyOnResistance === undefined ||
+      isConditionApplicationResistanceTrigger(candidate.applyOnResistance))
   );
+}
+
+function isConditionApplicationResistanceTrigger(
+  value: unknown,
+): value is AutomationConditionApplicationDefinition["applyOnResistance"] {
+  return value === "failure" || value === "success" || value === "always";
 }
 
 function isConditionDurationDefinition(

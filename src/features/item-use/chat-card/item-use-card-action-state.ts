@@ -25,6 +25,7 @@ type ResolveActionStateInput = {
   alreadyApplied?: boolean;
   unavailable?: boolean;
   labels?: Partial<ItemUseActionStateLabels>;
+  allowsSuccessfulResistance?: boolean;
 };
 
 type ItemUseActionStateLabels = {
@@ -71,7 +72,7 @@ export function resolveDamageActionState(input: ResolveActionStateInput): ItemUs
 }
 
 export function resolveEffectActionState(input: ResolveActionStateInput): ItemUseActionState {
-  return resolveActionState(input, EFFECT_LABELS, true);
+  return resolveActionState(input, EFFECT_LABELS, !input.allowsSuccessfulResistance);
 }
 
 export function isActionWaitingForResistance(state: ItemUseActionState): boolean {

@@ -18,6 +18,8 @@ type PersistedPromptLike = {
   pendingId?: unknown;
   actorId?: unknown;
   buttonLabel?: unknown;
+  itemId?: unknown;
+  itemName?: unknown;
   summaryLines?: unknown;
 };
 
@@ -46,6 +48,23 @@ export function readCastingDifficulty(rollCard: HTMLElement): number | null {
   if (actorDifficulty !== null) return actorDifficulty;
 
   return readLegacyDifficultyFromRenderedCard(rollCard);
+}
+
+export type PersistedItemUsePromptContext = {
+  actorId: string | null;
+  itemId: string | null;
+  itemName: string | null;
+};
+
+export function readPersistedItemUsePromptContext(rollCard: HTMLElement): PersistedItemUsePromptContext | null {
+  const prompt = readPersistedPromptForRollCard(rollCard);
+  if (!prompt) return null;
+
+  return {
+    actorId: readNullableString(prompt.actorId),
+    itemId: readNullableString(prompt.itemId),
+    itemName: readNullableString(prompt.itemName),
+  };
 }
 
 export function readPersistedButtonLabelForButton(button: HTMLButtonElement): string | null {
@@ -184,4 +203,8 @@ function isChatMessageFlagDocument(value: unknown): value is ChatMessageFlagDocu
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object");
+}
+
+function readNullableString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
