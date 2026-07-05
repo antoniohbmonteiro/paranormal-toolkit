@@ -221,7 +221,7 @@ function createConfiguredRitualForms(
   return forms;
 }
 
-function createResistanceFromRitualItem(item: Item): AutomationResistanceDefinition | undefined {
+export function createResistanceFromRitualItem(item: Item): AutomationResistanceDefinition | undefined {
   const system = readSystemRecord(item);
   const skill = normalizeOptionalString(system.skillResis);
   const resistance = normalizeOptionalString(system.resistance);

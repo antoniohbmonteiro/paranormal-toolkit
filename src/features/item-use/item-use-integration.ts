@@ -18,7 +18,10 @@ import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { DebugOutputService } from "../../debug/output/debug-output-service";
 import { readAutomationDefinition } from "../automation/automation-flag-reader";
 import { neutralizeAutomatedItemInlineRolls } from "../chat/inline-roll-sanitizer";
-import { createRitualRollAutomationDefinition } from "../rituals/config/ritual-roll-config";
+import {
+  createResistanceFromRitualItem,
+  createRitualRollAutomationDefinition,
+} from "../rituals/config/ritual-roll-config";
 import type {
   ConditionEngine,
   ApplyConditionResult,
@@ -188,12 +191,17 @@ export class ItemUseIntegration {
 
     this.markExecution(context);
 
+    const automationDefinition = withAssistedEffectResistance(
+      context.item,
+      definition.value,
+    );
+
     switch (settings.executionMode) {
       case "ask":
-        await this.handleAskMode(context, definition.value);
+        await this.handleAskMode(context, automationDefinition);
         return;
       case "automatic":
-        await this.executeAutomation(context, definition.value, "automatic");
+        await this.executeAutomation(context, automationDefinition, "automatic");
         return;
     }
   }
@@ -675,6 +683,41 @@ function createDamageApplicationExecutedLabel(
   result: DamageApplicationResult,
 ): string {
   return createPublicDamageAppliedLabel({ inputAmount: result.totalRawDamage });
+}
+
+function withAssistedEffectResistance(
+  item: Item,
+  definition: AutomationDefinition,
+): AutomationDefinition {
+  if (definition.resistance || !shouldCreateAssistedResistance(definition)) {
+    return definition;
+  }
+
+  const resistance = createResistanceFromRitualItem(item);
+  return resistance ? { ...definition, resistance } : definition;
+}
+
+function shouldCreateAssistedResistance(definition: AutomationDefinition): boolean {
+  return (
+    hasTargetConditionApplications(definition) &&
+    !hasTargetDamageWorkflow(definition)
+  );
+}
+
+function hasTargetConditionApplications(definition: AutomationDefinition): boolean {
+  return (definition.conditionApplications ?? []).some(
+    (application) => application.actor === "target",
+  );
+}
+
+function hasTargetDamageWorkflow(definition: AutomationDefinition): boolean {
+  return definition.steps.some(
+    (step) =>
+      step.type === "modifyResource" &&
+      step.actor === "target" &&
+      step.resource === "PV" &&
+      step.operation === "damage",
+  );
 }
 
 function getActionChoiceGroupId(action: AssistedRitualAction): string | null {
