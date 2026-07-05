@@ -18,10 +18,7 @@ type ResistanceRollDisplay = {
   formula: string;
   total: number;
   diceValues: number[];
-  outcome?: ResistanceRollOutcome;
 };
-
-type ResistanceRollOutcome = "failed" | "succeeded" | null;
 
 type RollDieViewModel = {
   value: number;
@@ -62,6 +59,8 @@ function enhanceResistanceCard(resistance: HTMLElement): void {
     enhanceResistanceRollResult(result);
   }
 
+  decorateResistanceRollButton(button);
+
   if (button.parentElement !== resistance) {
     resistance.append(button);
   }
@@ -82,10 +81,7 @@ function enhanceResistanceRollResult(result: HTMLElement): void {
   if (!parsed) return;
 
   result.setAttribute(RESISTANCE_ROLL_RESULT_ENHANCED_ATTRIBUTE, "true");
-  result.replaceChildren(createResistanceRollDisplay({
-    ...parsed,
-    outcome: resolveResistanceRollOutcome(result),
-  }));
+  result.replaceChildren(createResistanceRollDisplay(parsed));
 }
 
 function parseResistanceRollResult(text: string): ResistanceRollDisplay | null {
@@ -136,9 +132,6 @@ function createResistanceRollDisplay(result: ResistanceRollDisplay): HTMLElement
     `${PROMPT_CLASS}__workflow-roll`,
     `${PROMPT_CLASS}__resistance-workflow-roll`
   );
-  if (result.outcome) {
-    roll.classList.add(`${PROMPT_CLASS}__resistance-workflow-roll--${result.outcome}`);
-  }
   roll.setAttribute("data-paranormal-toolkit-resistance-total", String(result.total));
 
   const formula = document.createElement("span");
@@ -146,9 +139,7 @@ function createResistanceRollDisplay(result: ResistanceRollDisplay): HTMLElement
   formula.textContent = result.formula;
   formula.title = `${result.skillLabel}: ${result.formula}`;
 
-  const total = createResistanceTotal(result);
-
-  roll.append(formula, total);
+  roll.append(formula);
 
   const diceTray = createDiceTray(result);
   if (diceTray) roll.append(diceTray);
@@ -157,33 +148,26 @@ function createResistanceRollDisplay(result: ResistanceRollDisplay): HTMLElement
 }
 
 
-function resolveResistanceRollOutcome(result: HTMLElement): ResistanceRollOutcome {
-  const rollCard = result.closest<HTMLElement>(`.${PROMPT_CLASS}__roll-card`);
-  if (!rollCard) return null;
+function decorateResistanceRollButton(button: HTMLElement): void {
+  button.classList.remove(
+    `${PROMPT_CLASS}__resistance-roll-button--succeeded`,
+    `${PROMPT_CLASS}__resistance-roll-button--failed`,
+  );
+
+  const rollCard = button.closest<HTMLElement>(`.${PROMPT_CLASS}__roll-card`);
+  if (!rollCard) return;
 
   const state = createSingleTargetResistanceUiState(rollCard).state;
-  if (state.kind === "succeeded") return "succeeded";
-  if (state.kind === "failed") return "failed";
-  return null;
-}
+  if (state.kind !== "succeeded" && state.kind !== "failed") return;
 
-function createResistanceTotal(result: ResistanceRollDisplay): HTMLElement {
-  const total = document.createElement("strong");
-  total.classList.add(`${PROMPT_CLASS}__workflow-roll-total`);
-  if (result.outcome) {
-    total.classList.add(`${PROMPT_CLASS}__resistance-roll-total--${result.outcome}`);
-  }
+  const outcome = state.kind === "succeeded" ? "succeeded" : "failed";
+  const marker = outcome === "succeeded" ? "✓" : "✕";
+  const outcomeLabel = outcome === "succeeded" ? "sucesso" : "falha";
 
-  const marker = result.outcome === "succeeded" ? "✓" : result.outcome === "failed" ? "✕" : null;
-  total.textContent = marker ? `${result.total} ${marker}` : String(result.total);
-
-  if (result.outcome) {
-    const outcomeLabel = result.outcome === "succeeded" ? "sucesso" : "falha";
-    total.title = `${result.skillLabel}: ${result.total}, ${outcomeLabel}.`;
-    total.setAttribute("aria-label", total.title);
-  }
-
-  return total;
+  button.classList.add(`${PROMPT_CLASS}__resistance-roll-button--${outcome}`);
+  button.textContent = `${state.total} ${marker}`;
+  button.title = `${button.getAttribute("data-paranormal-toolkit-resistance-skill-label") ?? "Resistência"}: ${state.total}, ${outcomeLabel}. Rolar novamente`;
+  button.setAttribute("aria-label", button.title);
 }
 
 function createDiceTray(result: ResistanceRollDisplay): HTMLElement | null {

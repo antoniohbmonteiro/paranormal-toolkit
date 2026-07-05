@@ -201,31 +201,17 @@ export function ensureItemUseChatCardStyles(): void {
   margin-left: auto;
 }
 
-.${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-roll-total {
-  display: inline-flex;
-  min-height: 1.78rem;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  border: 1px solid rgba(79, 55, 42, 0.16);
-  border-radius: 8px;
-  padding: 0.18rem 0.55rem;
-  background: rgba(255, 255, 255, 0.68);
-  font-weight: 800;
-}
-
-.${PROMPT_CLASS}__resistance-workflow-roll--succeeded .${PROMPT_CLASS}__workflow-roll-total {
+.${PROMPT_CLASS}__resistance > .${PROMPT_CLASS}__resistance-roll-button--succeeded {
   border-color: rgba(34, 116, 70, 0.34);
   background: rgba(52, 168, 83, 0.12);
   color: #1f6f43;
 }
 
-.${PROMPT_CLASS}__resistance-workflow-roll--failed .${PROMPT_CLASS}__workflow-roll-total {
+.${PROMPT_CLASS}__resistance > .${PROMPT_CLASS}__resistance-roll-button--failed {
   border-color: rgba(150, 45, 52, 0.34);
   background: rgba(189, 54, 62, 0.12);
   color: #8f2f36;
 }
-
 
 .${PROMPT_CLASS}__resistance-workflow-roll .${PROMPT_CLASS}__workflow-dice-tray {
   display: flex;
