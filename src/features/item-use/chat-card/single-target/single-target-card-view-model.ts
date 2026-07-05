@@ -1,5 +1,5 @@
 import type { ItemUseActionState } from "../item-use-card-action-state";
-import { isActionWaitingForResistance } from "../item-use-card-action-state";
+import { isActionResisted, isActionWaitingForResistance } from "../item-use-card-action-state";
 import { createSingleTargetResistanceUiState } from "../item-use-card-resistance-state";
 import type {
   ItemUseResistanceGateMode,
@@ -7,6 +7,144 @@ import type {
 } from "../../config/item-use-resistance-gate-policy";
 import { getItemUseDamageResolutionMode, getItemUseResistanceGateMode } from "../../item-use-settings";
 import { createAssistedTargetActionViewModel } from "../../assisted-actions/assisted-action-view-model";
+
+
+export type SingleTargetEffectActionKind = "hidden" | "waiting-resistance" | "resisted" | "applied" | "applicable";
+
+export type SingleTargetEffectViewModelInput = {
+  rollCard: HTMLElement;
+  effectLabel: string;
+  applied?: boolean;
+};
+
+export type SingleTargetEffectViewModel = {
+  kind: SingleTargetEffectActionKind;
+  visible: boolean;
+  enabled: boolean;
+  applied: boolean;
+  waitingForResistance: boolean;
+  resisted: boolean;
+  applicable: boolean;
+  effectLabel: string;
+  displayLabel: string;
+  actionLabel: string;
+  compactLabel: string;
+  reason: string | null;
+  resistanceState: ResistanceResolutionState;
+  actionState: ItemUseActionState;
+};
+
+export function createSingleTargetEffectViewModel(input: SingleTargetEffectViewModelInput): SingleTargetEffectViewModel {
+  const resistanceGateMode = getResistanceGateModeSafe();
+  const resistanceState = createSingleTargetResistanceUiState(input.rollCard).state;
+  const assistedTarget = createAssistedTargetActionViewModel({
+    targetId: "single-target",
+    targetName: "Alvo",
+    resistanceGateMode,
+    resistanceState,
+    damage: null,
+    effect: { conditionLabel: input.effectLabel },
+  });
+  const actionState = assistedTarget.policy.effectActionState;
+  const waitingForResistance = isActionWaitingForResistance(actionState);
+  const resisted = isActionResisted(actionState);
+
+  if (input.applied) {
+    return createEffectViewModel({
+      kind: "applied",
+      visible: true,
+      enabled: false,
+      applied: true,
+      waitingForResistance,
+      resisted,
+      applicable: false,
+      effectLabel: input.effectLabel,
+      actionState,
+      resistanceState,
+    });
+  }
+
+  if (!assistedTarget.policy.canShowApplyEffect) {
+    return createEffectViewModel({
+      kind: "hidden",
+      visible: false,
+      enabled: false,
+      applied: false,
+      waitingForResistance,
+      resisted,
+      applicable: false,
+      effectLabel: input.effectLabel,
+      actionState,
+      resistanceState,
+    });
+  }
+
+  if (waitingForResistance) {
+    return createEffectViewModel({
+      kind: "waiting-resistance",
+      visible: true,
+      enabled: false,
+      applied: false,
+      waitingForResistance: true,
+      resisted: false,
+      applicable: false,
+      effectLabel: input.effectLabel,
+      actionState,
+      resistanceState,
+    });
+  }
+
+  if (resisted) {
+    return createEffectViewModel({
+      kind: "resisted",
+      visible: true,
+      enabled: false,
+      applied: false,
+      waitingForResistance: false,
+      resisted: true,
+      applicable: false,
+      effectLabel: input.effectLabel,
+      actionState,
+      resistanceState,
+    });
+  }
+
+  return createEffectViewModel({
+    kind: "applicable",
+    visible: true,
+    enabled: true,
+    applied: false,
+    waitingForResistance: false,
+    resisted: false,
+    applicable: true,
+    effectLabel: input.effectLabel,
+    actionState,
+    resistanceState,
+  });
+}
+
+type CreateEffectViewModelInput = {
+  kind: SingleTargetEffectActionKind;
+  visible: boolean;
+  enabled: boolean;
+  applied: boolean;
+  waitingForResistance: boolean;
+  resisted: boolean;
+  applicable: boolean;
+  effectLabel: string;
+  actionState: ItemUseActionState;
+  resistanceState: ResistanceResolutionState;
+};
+
+function createEffectViewModel(input: CreateEffectViewModelInput): SingleTargetEffectViewModel {
+  return {
+    ...input,
+    displayLabel: input.effectLabel,
+    actionLabel: input.actionState.label,
+    compactLabel: input.actionState.compactLabel,
+    reason: input.actionState.reason,
+  };
+}
 
 export type SingleTargetDamageResolutionState = "manual" | "pending" | "resisted" | "failed";
 export type SingleTargetDamageResolutionMode = "manual" | "assisted";

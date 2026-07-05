@@ -1,20 +1,9 @@
 import { PROMPT_CLASS } from "./item-use-chat-card-constants";
-import { getItemUseResistanceGateMode } from "../item-use-settings";
-import type {
-  ItemUseResistanceGateMode,
-  ResistanceResolutionState,
-} from "../config/item-use-resistance-gate-policy";
-import {
-  isActionResisted,
-  isActionWaitingForResistance,
-} from "./item-use-card-action-state";
 import {
   normalizeLookupText,
   normalizeText,
   readPersistedButtonLabelForButton
 } from "./item-use-card-roll-context";
-import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
-import { createAssistedTargetActionViewModel } from "../assisted-actions/assisted-action-view-model";
 import {
   ACTION_BUTTON_SELECTOR,
   createButtonIcon,
@@ -22,6 +11,7 @@ import {
   EXECUTED_LABEL_ATTRIBUTE,
   PROMPT_EXECUTED_BUTTON_CLASS
 } from "./item-use-card-dom";
+import { createSingleTargetEffectViewModel } from "./single-target/single-target-card-view-model";
 
 const EFFECT_BUTTON_ICON_ATTRIBUTE = "data-paranormal-toolkit-effect-icon-enhanced";
 const EFFECT_ACTION_COMPACTED_ATTRIBUTE = "data-paranormal-toolkit-effect-action-compacted";
@@ -61,47 +51,35 @@ export function updateEffectActionResistanceGate(rollCard: HTMLElement, section:
   if (!button) return;
 
   const currentLabel = button.textContent?.trim() ?? "";
-  if (isResolvedEffectButton(button, currentLabel)) {
+  const effectLabel = resolveEffectActionDisplayLabel(section, button, currentLabel);
+  const viewModel = createSingleTargetEffectViewModel({
+    rollCard,
+    effectLabel,
+    applied: isResolvedEffectButton(button, currentLabel),
+  });
+
+  if (viewModel.applied) {
     compactResolvedEffectActionButton(button);
     return;
   }
 
-  const effectLabel = resolveEffectActionDisplayLabel(section, button, currentLabel);
-  const resistanceState = resolveEffectResistanceState(rollCard);
-
-  const effectActionState = createAssistedTargetActionViewModel({
-    targetId: "single-target",
-    targetName: "Alvo",
-    resistanceGateMode: getResistanceGateModeSafe(),
-    resistanceState,
-    damage: null,
-    effect: { conditionLabel: effectLabel },
-  }).policy.effectActionState;
-
-  if (!createAssistedTargetActionViewModel({
-    targetId: "single-target",
-    targetName: "Alvo",
-    resistanceGateMode: getResistanceGateModeSafe(),
-    resistanceState,
-    damage: null,
-    effect: { conditionLabel: effectLabel },
-  }).policy.canShowApplyEffect) {
+  if (!viewModel.visible) {
     hideUnresolvedEffectButton(button);
     return;
   }
 
-  if (isActionWaitingForResistance(effectActionState)) {
-    setEffectWaitingForResistance(button, effectActionState.label);
+  if (viewModel.waitingForResistance) {
+    setEffectWaitingForResistance(button, viewModel.actionLabel);
     return;
   }
 
-  if (isActionResisted(effectActionState)) {
-    setEffectResisted(button, effectActionState.compactLabel);
+  if (viewModel.resisted) {
+    setEffectResisted(button, viewModel.compactLabel);
     return;
   }
 
   clearEffectResistanceGate(button);
-  enhanceEffectActionButton(button, effectLabel);
+  enhanceEffectActionButton(button, viewModel.displayLabel);
 }
 
 function resolveEffectButton(input: EffectActionSectionInput): HTMLButtonElement | null {
@@ -297,10 +275,6 @@ function resolveEffectActionDisplayLabel(section: HTMLElement, button: HTMLButto
   return resolveEffectActionOriginalLabel(button, currentLabel) ?? currentLabel;
 }
 
-function resolveEffectResistanceState(rollCard: HTMLElement): ResistanceResolutionState {
-  return createSingleTargetResistanceUiState(rollCard).state;
-}
-
 function hideUnresolvedEffectButton(button: HTMLButtonElement): void {
   if (isResolvedEffectButton(button, button.textContent?.trim() ?? "")) return;
   button.remove();
@@ -345,14 +319,6 @@ function clearEffectResistanceGate(button: HTMLButtonElement): void {
   );
   button.removeAttribute(EFFECT_RESISTANCE_GATE_ATTRIBUTE);
   button.removeAttribute("aria-disabled");
-}
-
-function getResistanceGateModeSafe(): ItemUseResistanceGateMode {
-  try {
-    return getItemUseResistanceGateMode();
-  } catch {
-    return "strict";
-  }
 }
 
 function formatEffectActionLabel(label: string): string {
