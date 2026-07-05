@@ -50,7 +50,7 @@ export type MultiTargetCardViewModelInput = MultiTargetCardLayoutInput & {
 export type MultiTargetCardViewModel = {
   rollCard: HTMLElement;
   targets: MultiTargetViewModel[];
-  damage: TargetDamageViewModel;
+  damage: TargetDamageViewModel | null;
   effect: TargetEffectViewModel | null;
   resistance: TargetResistanceViewModel | null;
 };
@@ -105,7 +105,7 @@ export type TargetConditionApplication = {
 
 export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelInput): MultiTargetCardViewModel | null {
   const resistance = createResistanceViewModel(input.rollCard, input.damageSection);
-  const damage = createDamageViewModel(input.damageSection);
+  const damage = input.damageSection ? createDamageViewModel(input.damageSection) : null;
   const effect = createEffectViewModel(input.rollCard, input.effectSection, input.resolveTargetConditionApplication);
   const targets = readTargetNames(input.rollCard).map((name, index) => {
     const id = createTargetId(name, index);
@@ -139,7 +139,7 @@ export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelIn
     };
   });
 
-  if (targets.length <= 1 || !input.damageSection) return null;
+  if (targets.length <= 1 || (!damage && !effect)) return null;
 
   return {
     rollCard: input.rollCard,
@@ -166,7 +166,7 @@ function createTargetId(name: string, index: number): string {
   return `${normalizeText(name)}:${index}`;
 }
 
-function createDamageViewModel(damageSection: HTMLElement | null): TargetDamageViewModel {
+function createDamageViewModel(damageSection: HTMLElement): TargetDamageViewModel {
   const total = readRollTotal(damageSection);
   const halfAmount = total !== null ? Math.floor(total / 2) : null;
 

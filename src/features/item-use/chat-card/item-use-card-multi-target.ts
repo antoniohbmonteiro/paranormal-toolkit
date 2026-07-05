@@ -107,6 +107,8 @@ export function enhanceMultiTargetCardLayout(input: MultiTargetCardLayoutInput):
   const viewModel = createMultiTargetCardViewModelFromLayout(input);
   if (!viewModel) return false;
 
+  if (!viewModel.damage) return false;
+
   input.rollCard.classList.add(`${PROMPT_CLASS}__roll-card--multi-target`);
   hideSingleTargetSourceSections(input);
 
@@ -864,6 +866,8 @@ function createTargetDamageActionButton(
   }
 
   const mode = target.assistedActions.policy.damageMode ?? "normal";
+  if (!viewModel.damage) return null;
+
   const amount = getTargetDamageAmount(mode, viewModel.damage);
   if (amount === null) {
     return createTargetActionButton(
@@ -915,8 +919,14 @@ async function handleTargetDamageApplication(
     return;
   }
 
+  const damage = viewModel.damage;
+  if (!damage) {
+    ui.notifications?.warn?.("Paranormal Toolkit: este card não possui dano estruturado para aplicar.");
+    return;
+  }
+
   const mode = target.assistedActions.policy.damageMode ?? "normal";
-  const amount = getTargetDamageAmount(mode, viewModel.damage);
+  const amount = getTargetDamageAmount(mode, damage);
 
   if (amount === null) {
     ui.notifications?.warn?.("Paranormal Toolkit: não consegui resolver o dano deste card.");
@@ -938,7 +948,7 @@ async function handleTargetDamageApplication(
     const result = await applyTargetDamageUseCase.execute({
       actor,
       amount,
-      damageType: viewModel.damage.typeLabel,
+      damageType: damage.typeLabel,
       label: mode === "half" ? "Metade" : "Dano normal",
       sourceRollId: "damage",
       source: "item-use.multi-target-damage",
