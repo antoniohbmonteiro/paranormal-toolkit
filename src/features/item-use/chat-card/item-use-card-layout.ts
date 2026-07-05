@@ -1,6 +1,6 @@
 import { PROMPT_CLASS } from "./item-use-chat-card-constants";
 import { enhanceMultiTargetCardLayout } from "./item-use-card-multi-target";
-import { enhanceSingleTargetCardLayout } from "./single-target/single-target-card-enhancer";
+import { enhanceSingleTargetCardLayout } from "./single-target";
 
 const LAYOUT_REFRESH_DELAYS_MS = [0, 80, 180, 400, 900, 1_600, 3_000] as const;
 

@@ -1,3 +1,4 @@
+// DOM lookup helpers for single-target item-use/ritual cards. No game-rule decisions live here.
 import { PROMPT_CLASS } from "../item-use-chat-card-constants";
 import {
   ACTION_SECTION_ATTRIBUTE,

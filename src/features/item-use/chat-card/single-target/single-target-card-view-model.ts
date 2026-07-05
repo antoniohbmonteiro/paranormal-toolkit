@@ -1,3 +1,4 @@
+// View models for single-target damage/effect decisions consumed by DOM facades.
 import type { ItemUseActionState } from "../item-use-card-action-state";
 import { isActionResisted, isActionWaitingForResistance } from "../item-use-card-action-state";
 import { createSingleTargetResistanceUiState } from "../item-use-card-resistance-state";

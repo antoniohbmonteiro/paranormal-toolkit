@@ -1,3 +1,4 @@
+// Internal enhancer that orchestrates single-target card layout without owning game-rule decisions.
 import {
   PROMPT_CLASS,
   RESISTANCE_SELECTOR

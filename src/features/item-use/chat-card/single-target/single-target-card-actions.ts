@@ -1,3 +1,4 @@
+// Minimal single-target card action bindings. Resistance rolling itself stays in the legacy prompt module.
 import { RESISTANCE_ROLL_BUTTON_SELECTOR } from "../item-use-chat-card-constants";
 
 const REFRESH_BOUND_ATTRIBUTE = "data-paranormal-toolkit-card-layout-refresh-bound";
