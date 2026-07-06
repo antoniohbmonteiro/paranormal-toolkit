@@ -19,6 +19,14 @@ export class RegionTargetResolver {
       };
     }
 
+    const tokenDocumentTargets = this.resolveTokenDocumentTargets(region, sceneTokens);
+    if (tokenDocumentTargets.length > 0) {
+      return {
+        targets: tokenDocumentTargets.map(createWorkflowTargetFromToken),
+        source: "tokenDocument",
+      };
+    }
+
     return {
       targets: this.resolveTestPointTokens(region, sceneTokens).map(createWorkflowTargetFromToken),
       source: "testPoint",
@@ -58,7 +66,26 @@ export class RegionTargetResolver {
           x: point.x,
           y: point.y,
           elevation,
+          z: elevation,
         }) === true);
+      }),
+    );
+  }
+
+  private resolveTokenDocumentTargets(
+    region: RegionDocumentLike,
+    sceneTokens: TokenLike[],
+  ): TokenLike[] {
+    return uniqueTokens(
+      sceneTokens.filter((token) => {
+        if (!token.actor) return false;
+        if (typeof token.document?.testInsideRegion !== "function") return false;
+
+        const elevation = getTokenElevation(token);
+        return token.document.testInsideRegion(region, {
+          elevation,
+          z: elevation,
+        });
       }),
     );
   }

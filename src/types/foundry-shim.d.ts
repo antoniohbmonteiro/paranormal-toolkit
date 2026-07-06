@@ -34,6 +34,7 @@ type CanvasAppLike = {
 
 type ElevatedPointLike = CanvasPointLike & {
   elevation?: number | null;
+  z?: number | null;
 };
 
 type RegionShapeDataLike = Record<string, unknown> & {
@@ -91,6 +92,7 @@ type TokenLike = {
     width?: number | null;
     height?: number | null;
     elevation?: number | null;
+    testInsideRegion?: (region: RegionDocumentLike, data?: Partial<ElevatedPointLike>) => boolean;
   } | null;
 };
 

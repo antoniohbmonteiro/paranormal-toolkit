@@ -42,7 +42,7 @@ export type RegionLinePlacementResult =
   | RegionLinePlacementCancelled
   | RegionLinePlacementFailed;
 
-export type RegionTargetResolutionSource = "regionTokens" | "testPoint";
+export type RegionTargetResolutionSource = "regionTokens" | "tokenDocument" | "testPoint";
 
 export type RegionTargetResolutionResult = {
   targets: WorkflowTarget[];
