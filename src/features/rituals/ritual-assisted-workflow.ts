@@ -130,11 +130,13 @@ export type RitualAssistedRunResult =
   | {
       status: "completed-without-actions";
       workflowContext: WorkflowContext;
+      itemUseContext: ItemUseContext;
       summaryLines: string[];
     }
   | {
       status: "ready";
       workflowContext: WorkflowContext;
+      itemUseContext: ItemUseContext;
       actions: AssistedRitualAction[];
       summaryLines: string[];
     };
@@ -333,6 +335,7 @@ export class RitualAssistedWorkflow {
         return {
           status: "ready",
           workflowContext,
+          itemUseContext: effectiveContext,
           actions,
           summaryLines,
         };
@@ -341,6 +344,7 @@ export class RitualAssistedWorkflow {
       return {
         status: "completed-without-actions",
         workflowContext,
+        itemUseContext: effectiveContext,
         summaryLines,
       };
     }
@@ -423,6 +427,7 @@ export class RitualAssistedWorkflow {
       return {
         status: "completed-without-actions",
         workflowContext,
+        itemUseContext: effectiveContext,
         summaryLines,
       };
     }
@@ -430,6 +435,7 @@ export class RitualAssistedWorkflow {
     return {
       status: "ready",
       workflowContext,
+      itemUseContext: effectiveContext,
       actions,
       summaryLines,
     };

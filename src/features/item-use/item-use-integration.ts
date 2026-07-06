@@ -355,7 +355,10 @@ export class ItemUseIntegration {
         ui.notifications?.warn(`Paranormal Toolkit: ${result.message}`);
         return;
       case "completed-without-actions":
-        await this.registerCompletedRitualCard(context, result.summaryLines);
+        await this.registerCompletedRitualCard(
+          result.itemUseContext,
+          result.summaryLines,
+        );
         this.setAttempt(context, "completed", "ritual-assisted-no-actions");
         ModuleLogger.info(
           "Ritual assistido concluído sem ações pendentes.",
@@ -364,7 +367,7 @@ export class ItemUseIntegration {
         return;
       case "ready":
         await this.registerAssistedActions(
-          context,
+          result.itemUseContext,
           result.workflowContext,
           result.actions,
           result.summaryLines,
