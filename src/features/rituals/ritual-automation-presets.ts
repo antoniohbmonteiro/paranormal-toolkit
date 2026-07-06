@@ -286,7 +286,7 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
         targeting: {
           mode: "lineArea",
           label: "Linha",
-          optionLabel: "Selecionar alvos por linha ao conjurar",
+          optionLabel: "Usar linha na cena",
           optional: true,
           defaultEnabled: true,
           template: {

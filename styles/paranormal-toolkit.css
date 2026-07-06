@@ -1221,13 +1221,7 @@
   gap: 7px;
 }
 
-.paranormal-toolkit-ritual-cast__targeting-mode-choice {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-}
-
-.paranormal-toolkit-ritual-cast__targeting-mode-option {
+.paranormal-toolkit-ritual-cast__targeting-line-toggle {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 7px;
@@ -1239,25 +1233,25 @@
   color: rgba(36, 27, 24, 0.84);
 }
 
-.paranormal-toolkit-ritual-cast__targeting-mode-option input[type="radio"] {
+.paranormal-toolkit-ritual-cast__targeting-line-toggle input[type="checkbox"] {
   width: 15px;
   height: 15px;
   margin: 1px 0 0;
   accent-color: #f0a24a;
 }
 
-.paranormal-toolkit-ritual-cast__targeting-mode-option span {
+.paranormal-toolkit-ritual-cast__targeting-line-toggle span {
   display: grid;
   gap: 3px;
 }
 
-.paranormal-toolkit-ritual-cast__targeting-mode-option strong {
+.paranormal-toolkit-ritual-cast__targeting-line-toggle strong {
   font-size: 0.8rem;
   font-weight: 900;
   line-height: 1.1;
 }
 
-.paranormal-toolkit-ritual-cast__targeting-mode-option em {
+.paranormal-toolkit-ritual-cast__targeting-line-toggle em {
   color: rgba(36, 27, 24, 0.66);
   font-size: 0.74rem;
   font-style: normal;

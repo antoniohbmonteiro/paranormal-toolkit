@@ -1,14 +1,12 @@
-import { LineAreaPlacementService } from "./line-area-placement-service";
-import { LineAreaTargetResolver } from "./line-area-target-resolver";
 import type { PreCastTargetingInput, PreCastTargetingResult } from "./area-targeting-types";
 import { FoundryAreaTargetingAdapter } from "./foundry-area-targeting-adapter";
-
-const NO_LINE_TARGETS_MESSAGE = "Nenhum alvo encontrado na linha.";
+import { NativeRayTemplatePlacementService } from "./native-template/native-ray-template-placement-service";
+import { MeasuredTemplateTargetResolver } from "./native-template/measured-template-target-resolver";
 
 export class AreaTargetingService {
   constructor(
-    private readonly linePlacement = new LineAreaPlacementService(),
-    private readonly lineTargetResolver = new LineAreaTargetResolver(),
+    private readonly nativeRayPlacement = new NativeRayTemplatePlacementService(),
+    private readonly measuredTemplateTargetResolver = new MeasuredTemplateTargetResolver(),
     private readonly foundryAdapter = new FoundryAreaTargetingAdapter(),
   ) {}
 
@@ -23,16 +21,15 @@ export class AreaTargetingService {
     }
 
     if (requestedTargeting.mode === "lineArea") {
-      const placementResult = await this.linePlacement.placeLine();
+      const placementResult = await this.nativeRayPlacement.placeRayTemplate();
 
       if (placementResult.status === "confirmed") {
-        const targets = this.lineTargetResolver.resolveTargets({
-          line: placementResult.line,
-          width: input.formTargeting?.template?.width,
-        });
+        const targets = this.measuredTemplateTargetResolver.resolveTargets(
+          placementResult.templateDocument,
+        );
 
         if (targets.length === 0) {
-          this.foundryAdapter.warn(NO_LINE_TARGETS_MESSAGE);
+          this.foundryAdapter.warn("Nenhum alvo encontrado na linha.");
           return {
             status: "cancelled",
             reason: "no-targets-found",
@@ -42,8 +39,11 @@ export class AreaTargetingService {
         return {
           status: "confirmed",
           targets,
-          line: placementResult.line,
         };
+      }
+
+      if (placementResult.status === "failed") {
+        this.foundryAdapter.warn(placementResult.message);
       }
 
       return placementResult;

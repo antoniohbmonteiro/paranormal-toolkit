@@ -2,31 +2,17 @@ import type { AutomationRitualTargetingDefinition } from "../../core/automation/
 import type { WorkflowTarget } from "../../core/workflow/workflow-context";
 import type { RitualCastOptions } from "../rituals/ritual-cast-options";
 
-export type ScreenPoint = {
-  x: number;
-  y: number;
-};
-
-export type CanvasPoint = {
-  x: number;
-  y: number;
-};
-
-export type LineAreaPlacement = {
-  origin: CanvasPoint;
-  destination: CanvasPoint;
-};
-
 export type AreaTargetingCancellationReason = "user-cancelled" | "no-targets-found";
 
 export type AreaTargetingFailureReason =
   | "canvas-unavailable"
   | "scene-unavailable"
   | "placement-failed"
+  | "native-template-unavailable"
   | "unsupported-targeting-mode";
 
-export type LineAreaPlacementResult =
-  | { status: "confirmed"; line: LineAreaPlacement }
+export type NativeRayTemplatePlacementResult =
+  | { status: "confirmed"; templateDocument: unknown }
   | { status: "cancelled"; reason: AreaTargetingCancellationReason }
   | { status: "failed"; reason: AreaTargetingFailureReason; message: string };
 
@@ -39,7 +25,6 @@ export type PreCastTargetingInput = {
 export type PreCastTargetingConfirmed = {
   status: "confirmed";
   targets: WorkflowTarget[];
-  line?: LineAreaPlacement;
 };
 
 export type PreCastTargetingCancelled = {
