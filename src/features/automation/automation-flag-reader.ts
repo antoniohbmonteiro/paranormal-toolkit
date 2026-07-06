@@ -7,6 +7,10 @@ import type {
   AutomationConditionApplicationDefinition,
   AutomationConditionDurationDefinition,
   AutomationDefinition,
+  AutomationRitualFormDefinition,
+  AutomationRitualFormId,
+  AutomationRitualTargetingDefinition,
+  AutomationRitualTargetingTemplateDefinition,
   AutomationStep,
   ChatCardStep,
   ModifyResourceStep,
@@ -82,6 +86,8 @@ export function isAutomationDefinition(
     isNonEmptyString(candidate.label) &&
     Array.isArray(candidate.steps) &&
     candidate.steps.every(isAutomationStep) &&
+    (candidate.ritualForms === undefined ||
+      isRitualFormDefinitionRecord(candidate.ritualForms)) &&
     (candidate.conditionApplications === undefined ||
       isConditionApplicationList(candidate.conditionApplications))
   );
@@ -198,6 +204,88 @@ function isChatCardStep(value: Partial<AutomationStep>): value is ChatCardStep {
   );
 }
 
+function isRitualFormDefinitionRecord(
+  value: unknown,
+): value is Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+  const candidate = value as Record<string, unknown>;
+  const allowedFormIds = new Set<AutomationRitualFormId>([
+    "base",
+    "discente",
+    "verdadeiro",
+  ]);
+
+  return Object.entries(candidate).every(
+    ([formId, formDefinition]) =>
+      allowedFormIds.has(formId as AutomationRitualFormId) &&
+      isRitualFormDefinition(formDefinition),
+  );
+}
+
+function isRitualFormDefinition(
+  value: unknown,
+): value is AutomationRitualFormDefinition {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+  const candidate = value as Partial<AutomationRitualFormDefinition>;
+
+  return (
+    (candidate.label === undefined || isNonEmptyString(candidate.label)) &&
+    (candidate.extraCost === undefined ||
+      isNonNegativeInteger(candidate.extraCost)) &&
+    (candidate.rollFormulaOverrides === undefined ||
+      isStringRecord(candidate.rollFormulaOverrides)) &&
+    (candidate.notes === undefined ||
+      isNonEmptyStringList(candidate.notes)) &&
+    (candidate.targeting === undefined ||
+      isRitualTargetingDefinition(candidate.targeting))
+  );
+}
+
+function isRitualTargetingDefinition(
+  value: unknown,
+): value is AutomationRitualTargetingDefinition {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+  const candidate = value as Partial<AutomationRitualTargetingDefinition>;
+
+  return (
+    isAutomationTargetingMode(candidate.mode) &&
+    isNonEmptyString(candidate.label) &&
+    (candidate.optionLabel === undefined ||
+      isNonEmptyString(candidate.optionLabel)) &&
+    (candidate.optional === undefined ||
+      typeof candidate.optional === "boolean") &&
+    (candidate.template === undefined ||
+      isRitualTargetingTemplateDefinition(candidate.template))
+  );
+}
+
+function isRitualTargetingTemplateDefinition(
+  value: unknown,
+): value is AutomationRitualTargetingTemplateDefinition {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+  const candidate = value as Partial<AutomationRitualTargetingTemplateDefinition>;
+
+  return (
+    candidate.shape === "ray" &&
+    (candidate.distance === undefined ||
+      candidate.distance === null ||
+      isNonNegativeNumber(candidate.distance)) &&
+    (candidate.width === undefined ||
+      candidate.width === null ||
+      isNonNegativeNumber(candidate.width))
+  );
+}
+
+function isAutomationTargetingMode(
+  value: unknown,
+): value is AutomationRitualTargetingDefinition["mode"] {
+  return value === "selectedTokens" || value === "lineArea";
+}
+
 function isConditionApplicationList(
   value: unknown,
 ): value is AutomationConditionApplicationDefinition[] {
@@ -306,6 +394,27 @@ function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+function isNonEmptyStringList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(isNonEmptyString);
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+  return Object.entries(value).every(
+    ([key, recordValue]) =>
+      isNonEmptyString(key) && isNonEmptyString(recordValue),
+  );
 }
