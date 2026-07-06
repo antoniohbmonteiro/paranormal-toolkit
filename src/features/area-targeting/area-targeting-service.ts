@@ -1,8 +1,11 @@
+import { LineAreaPlacementService } from "./line-area-placement-service";
 import type { PreCastTargetingInput, PreCastTargetingResult } from "./area-targeting-types";
 
-const LINE_AREA_NOT_IMPLEMENTED_MESSAGE = "Seleção por linha ainda não implementada.";
-
 export class AreaTargetingService {
+  constructor(
+    private readonly linePlacement = new LineAreaPlacementService(),
+  ) {}
+
   async resolvePreCastTargets(input: PreCastTargetingInput): Promise<PreCastTargetingResult> {
     const requestedTargeting = input.castOptions.areaTargeting;
 
@@ -14,11 +17,17 @@ export class AreaTargetingService {
     }
 
     if (requestedTargeting.mode === "lineArea") {
-      ui.notifications?.warn(`Paranormal Toolkit: ${LINE_AREA_NOT_IMPLEMENTED_MESSAGE}`);
-      return {
-        status: "cancelled",
-        reason: "line-area-not-implemented",
-      };
+      const placementResult = await this.linePlacement.placeLine();
+
+      if (placementResult.status === "confirmed") {
+        return {
+          status: "confirmed",
+          targets: input.currentTargets,
+          line: placementResult.line,
+        };
+      }
+
+      return placementResult;
     }
 
     return {

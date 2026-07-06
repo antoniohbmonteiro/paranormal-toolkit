@@ -89,6 +89,8 @@ declare const game: {
 
 declare const canvas:
   | {
+      ready?: boolean;
+      scene?: SceneLike | null;
       tokens?: {
         controlled?: TokenLike[];
         placeables?: TokenLike[];
