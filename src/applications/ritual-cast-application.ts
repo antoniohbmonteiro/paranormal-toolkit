@@ -195,16 +195,37 @@ function renderVariantOption(option: RitualCastFormModel): string {
 
 function renderTargetForm(option: RitualCastTargetFormModel): string {
   const checked = option.checked ? "" : "hidden";
-  const lineOption = option.showLineOption && option.optionLabel
+  const targetingOptions = option.showLineOption && option.lineOptionLabel && option.manualOptionLabel
     ? `
-        <label class="paranormal-toolkit-ritual-cast__line-targeting-toggle">
-          <input type="checkbox" name="areaTargeting" value="lineArea" ${option.areaTargetingChecked ? "checked" : ""} data-paranormal-toolkit-area-targeting-checkbox>
-          <span>${escapeHtml(option.optionLabel)}</span>
-        </label>
+        <div class="paranormal-toolkit-ritual-cast__targeting-mode-choice" role="radiogroup" aria-label="Modo de alvo">
+          <label class="paranormal-toolkit-ritual-cast__targeting-mode-option">
+            <input
+              type="radio"
+              name="areaTargeting-${escapeHtml(option.variant)}"
+              value="lineArea"
+              ${option.defaultMode === "lineArea" ? "checked" : ""}
+              data-paranormal-toolkit-area-targeting-mode
+            >
+            <span>
+              <strong>${escapeHtml(option.lineOptionLabel)}</strong>
+              ${option.helperText ? `<em>${escapeHtml(option.helperText)}</em>` : ""}
+            </span>
+          </label>
+          <label class="paranormal-toolkit-ritual-cast__targeting-mode-option">
+            <input
+              type="radio"
+              name="areaTargeting-${escapeHtml(option.variant)}"
+              value="selectedTokens"
+              ${option.defaultMode === "selectedTokens" ? "checked" : ""}
+              data-paranormal-toolkit-area-targeting-mode
+            >
+            <span>
+              <strong>${escapeHtml(option.manualOptionLabel)}</strong>
+              ${option.manualHelperText ? `<em>${escapeHtml(option.manualHelperText)}</em>` : ""}
+            </span>
+          </label>
+        </div>
       `
-    : "";
-  const helperText = option.helperText
-    ? `<p class="paranormal-toolkit-ritual-cast__targeting-helper">${escapeHtml(option.helperText)}</p>`
     : "";
 
   return `
@@ -217,8 +238,7 @@ function renderTargetForm(option: RitualCastTargetFormModel): string {
       <dl class="paranormal-toolkit-ritual-cast__summary paranormal-toolkit-ritual-cast__summary--targeting-mode">
         <div><dt>Modo</dt><dd>${escapeHtml(option.modeLabel)}</dd></div>
       </dl>
-      ${lineOption}
-      ${helperText}
+      ${targetingOptions}
     </div>
   `;
 }
@@ -320,11 +340,11 @@ function readAreaTargeting(root: HTMLElement | null, variant: RitualCastVariant)
   const mode = targetingForm?.dataset.paranormalToolkitTargetingMode;
 
   if (mode === "lineArea") {
-    const enabled = targetingForm?.querySelector<HTMLInputElement>(
-      "[data-paranormal-toolkit-area-targeting-checkbox]",
-    )?.checked === true;
+    const selectedMode = targetingForm?.querySelector<HTMLInputElement>(
+      "[data-paranormal-toolkit-area-targeting-mode]:checked",
+    )?.value;
 
-    return enabled
+    return selectedMode === "lineArea"
       ? { mode: "lineArea", enabled: true }
       : { mode: "selectedTokens", enabled: false };
   }

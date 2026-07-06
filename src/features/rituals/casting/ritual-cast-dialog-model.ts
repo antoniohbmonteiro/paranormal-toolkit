@@ -54,10 +54,12 @@ export type RitualCastTargetFormModel = {
   variant: RitualCastVariant;
   mode: "selectedTokens" | "lineArea";
   modeLabel: string;
-  optionLabel: string | null;
+  lineOptionLabel: string | null;
+  manualOptionLabel: string | null;
   helperText: string | null;
+  manualHelperText: string | null;
   showLineOption: boolean;
-  areaTargetingChecked: boolean;
+  defaultMode: "selectedTokens" | "lineArea";
   checked: boolean;
 };
 
@@ -138,14 +140,20 @@ function createTargetFormModel(option: RitualCastVariantOption, ritual: Item): R
     variant: option.variant,
     mode,
     modeLabel: targeting?.label ?? "Alvos selecionados",
-    optionLabel: mode === "lineArea" && targeting?.optional === true
-      ? targeting.optionLabel ?? "Selecionar alvos por linha ao conjurar"
+    lineOptionLabel: mode === "lineArea" && targeting?.optional === true
+      ? "Linha na cena"
+      : null,
+    manualOptionLabel: mode === "lineArea" && targeting?.optional === true
+      ? "Alvos selecionados manualmente"
       : null,
     helperText: mode === "lineArea" && targeting?.optional === true
-      ? "Se desmarcado, usa os alvos selecionados manualmente."
+      ? "Trace a linha na cena para definir os alvos."
+      : null,
+    manualHelperText: mode === "lineArea" && targeting?.optional === true
+      ? "Use os alvos já marcados na cena."
       : null,
     showLineOption: mode === "lineArea" && targeting?.optional === true,
-    areaTargetingChecked: targeting?.defaultEnabled === true,
+    defaultMode: targeting?.defaultEnabled === true ? "lineArea" : "selectedTokens",
     checked: option.variant === "base",
   };
 }
