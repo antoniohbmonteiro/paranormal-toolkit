@@ -1,4 +1,4 @@
-import type { CanvasPoint, LineAreaPlacementResult } from "./area-targeting-types";
+import type { CanvasPoint, LineAreaPlacementResult, ScreenPoint } from "./area-targeting-types";
 import { FoundryAreaTargetingAdapter } from "./foundry-area-targeting-adapter";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -24,7 +24,7 @@ export class LineAreaPlacementService {
     return new Promise((resolve) => {
       const overlay = createOverlay();
       const line = createPreviewLine();
-      let origin: CanvasPoint | null = null;
+      let origin: { screen: ScreenPoint; canvas: CanvasPoint } | null = null;
       let isSettled = false;
 
       overlay.append(line);
@@ -58,19 +58,29 @@ export class LineAreaPlacementService {
           return;
         }
 
-        const point = createPointFromPointerEvent(event);
+        const screenPoint = createPointFromPointerEvent(event);
+        const canvasPoint = this.foundryAdapter.screenPointToCanvasPoint(screenPoint);
+
+        if (!canvasPoint) {
+          settle({
+            status: "failed",
+            reason: "placement-failed",
+            message: "Não foi possível converter o ponto da linha para coordenadas da cena.",
+          });
+          return;
+        }
 
         if (!origin) {
-          origin = point;
-          updatePreviewLine(line, origin, point);
+          origin = { screen: screenPoint, canvas: canvasPoint };
+          updatePreviewLine(line, origin.screen, screenPoint);
           return;
         }
 
         settle({
           status: "confirmed",
           line: {
-            origin,
-            destination: point,
+            origin: origin.canvas,
+            destination: canvasPoint,
           },
         });
       };
@@ -78,7 +88,7 @@ export class LineAreaPlacementService {
       const onPointerMove = (event: PointerEvent): void => {
         if (!origin) return;
         event.preventDefault();
-        updatePreviewLine(line, origin, createPointFromPointerEvent(event));
+        updatePreviewLine(line, origin.screen, createPointFromPointerEvent(event));
       };
 
       const onContextMenu = (event: MouseEvent): void => {
@@ -127,14 +137,14 @@ function createPreviewLine(): SVGLineElement {
   return line;
 }
 
-function createPointFromPointerEvent(event: PointerEvent): CanvasPoint {
+function createPointFromPointerEvent(event: PointerEvent): ScreenPoint {
   return {
     x: event.clientX,
     y: event.clientY,
   };
 }
 
-function updatePreviewLine(line: SVGLineElement, origin: CanvasPoint, destination: CanvasPoint): void {
+function updatePreviewLine(line: SVGLineElement, origin: ScreenPoint, destination: ScreenPoint): void {
   line.setAttribute("x1", String(origin.x));
   line.setAttribute("y1", String(origin.y));
   line.setAttribute("x2", String(destination.x));

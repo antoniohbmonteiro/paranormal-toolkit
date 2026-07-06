@@ -15,6 +15,23 @@ type SceneLike = {
   id?: string | null;
 };
 
+type CanvasPointLike = {
+  x: number;
+  y: number;
+};
+
+type CanvasStageLike = {
+  toLocal(point: CanvasPointLike): CanvasPointLike;
+};
+
+type CanvasAppLike = {
+  view?: unknown;
+  canvas?: unknown;
+  renderer?: {
+    view?: unknown;
+  };
+};
+
 type TokenLike = {
   id?: string | null;
   uuid?: string | null;
@@ -91,6 +108,8 @@ declare const canvas:
   | {
       ready?: boolean;
       scene?: SceneLike | null;
+      stage?: CanvasStageLike;
+      app?: CanvasAppLike;
       tokens?: {
         controlled?: TokenLike[];
         placeables?: TokenLike[];

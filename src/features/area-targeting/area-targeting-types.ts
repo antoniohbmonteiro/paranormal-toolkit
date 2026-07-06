@@ -2,6 +2,11 @@ import type { AutomationRitualTargetingDefinition } from "../../core/automation/
 import type { WorkflowTarget } from "../../core/workflow/workflow-context";
 import type { RitualCastOptions } from "../rituals/ritual-cast-options";
 
+export type ScreenPoint = {
+  x: number;
+  y: number;
+};
+
 export type CanvasPoint = {
   x: number;
   y: number;
