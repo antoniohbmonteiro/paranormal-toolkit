@@ -28,12 +28,15 @@ export type {
 export type AreaTargetingCancellationReason =
   | "user-cancelled"
   | "no-targets-found"
-  | "region-targeting-unavailable";
+  | "region-targeting-unavailable"
+  | "region-placement-cancelled";
 
 export type AreaTargetingFailureReason =
   | "canvas-unavailable"
   | "scene-unavailable"
   | "placement-failed"
+  | "region-layer-unavailable"
+  | "region-placement-failed"
   | "unsupported-targeting-mode";
 
 export type PreCastTargetingInput = {
