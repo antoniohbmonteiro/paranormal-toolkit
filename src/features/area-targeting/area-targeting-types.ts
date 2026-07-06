@@ -3,6 +3,15 @@ import type { WorkflowTarget } from "../../core/workflow/workflow-context";
 import type { RitualCastOptions } from "../rituals/ritual-cast-options";
 
 export type {
+  FoundryRegionAdapter,
+  FoundryRegionPlacementState,
+} from "./region/foundry-region-adapter";
+
+export type {
+  RegionLinePlacementService,
+} from "./region/region-line-placement-service";
+
+export type {
   RegionLinePlacementResult,
   RegionLineShapeConfig,
   RegionPlacementMode,

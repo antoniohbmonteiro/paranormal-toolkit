@@ -113,6 +113,7 @@ type GameSettingRegistrationData = BooleanGameSettingRegistrationData | StringGa
 
 type FoundryUserLike = {
   id?: string;
+  color?: string | null;
   isGM?: boolean;
   active?: boolean;
   character?: Actor | null;
