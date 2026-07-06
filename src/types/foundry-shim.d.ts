@@ -79,13 +79,17 @@ type TokenLike = {
   center?: CanvasPointLike | null;
   w?: number | null;
   h?: number | null;
+  elevation?: number | null;
   document?: {
+    id?: string | null;
+    uuid?: string | null;
     actor?: Actor | null;
     name?: string | null;
     x?: number | null;
     y?: number | null;
     width?: number | null;
     height?: number | null;
+    elevation?: number | null;
   } | null;
 };
 

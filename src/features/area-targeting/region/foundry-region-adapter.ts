@@ -38,6 +38,10 @@ export class FoundryRegionAdapter {
     return canvas?.regions?.placeRegion(data, options) ?? null;
   }
 
+  getSceneTokens(): TokenLike[] {
+    return canvas?.tokens?.placeables ?? [];
+  }
+
   getUserColor(): string | null {
     const color = game.user?.color;
     return typeof color === "string" && color.length > 0 ? color : null;

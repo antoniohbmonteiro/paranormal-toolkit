@@ -12,9 +12,15 @@ export type {
 } from "./region/region-line-placement-service";
 
 export type {
+  RegionTargetResolver,
+} from "./region/region-target-resolver";
+
+export type {
   RegionLinePlacementResult,
   RegionLineShapeConfig,
   RegionPlacementMode,
+  RegionTargetResolutionResult,
+  RegionTargetResolutionSource,
   RegionTargetingCancellationReason,
   RegionTargetingFailureReason,
 } from "./region/region-targeting-types";

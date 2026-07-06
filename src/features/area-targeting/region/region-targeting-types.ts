@@ -1,3 +1,5 @@
+import type { WorkflowTarget } from "../../../core/workflow/workflow-context";
+
 export type RegionTargetingCancellationReason =
   | "user-cancelled"
   | "region-placement-cancelled";
@@ -39,3 +41,10 @@ export type RegionLinePlacementResult =
   | RegionLinePlacementConfirmed
   | RegionLinePlacementCancelled
   | RegionLinePlacementFailed;
+
+export type RegionTargetResolutionSource = "regionTokens" | "testPoint";
+
+export type RegionTargetResolutionResult = {
+  targets: WorkflowTarget[];
+  source: RegionTargetResolutionSource;
+};
