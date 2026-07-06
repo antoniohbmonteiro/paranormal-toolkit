@@ -8,6 +8,10 @@ export type {
 } from "./region/foundry-region-adapter";
 
 export type {
+  RegionCleanupService,
+} from "./region/region-cleanup-service";
+
+export type {
   RegionLinePlacementService,
 } from "./region/region-line-placement-service";
 
@@ -37,6 +41,7 @@ export type AreaTargetingFailureReason =
   | "placement-failed"
   | "region-layer-unavailable"
   | "region-placement-failed"
+  | "region-resolution-failed"
   | "unsupported-targeting-mode";
 
 export type PreCastTargetingInput = {

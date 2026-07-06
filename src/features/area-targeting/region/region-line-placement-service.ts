@@ -30,7 +30,7 @@ export class RegionLinePlacementService {
       const gridSize = this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE;
       const region = await this.foundryAdapter.placeRegion(
         createLineRegionData(config, this.foundryAdapter.getUserColor(), gridSize),
-        { create: false, allowRotation: true },
+        { create: true, allowRotation: true },
       );
 
       if (!region) {
@@ -43,7 +43,7 @@ export class RegionLinePlacementService {
       return {
         status: "confirmed",
         region,
-        wasCreated: false,
+        wasCreated: true,
       };
     } catch (error) {
       return {
@@ -115,9 +115,12 @@ function getUsefulPixelDimension(
 }
 
 function getPlacementFailureMessage(error: unknown): string {
+  const baseMessage =
+    "Não foi possível criar a linha na cena. Desmarque para usar os alvos selecionados manualmente.";
+
   if (error instanceof Error && error.message.trim().length > 0) {
-    return `Falha ao posicionar a Region de linha: ${error.message}`;
+    return `${baseMessage} (${error.message})`;
   }
 
-  return "Falha ao posicionar a Region de linha.";
+  return baseMessage;
 }
