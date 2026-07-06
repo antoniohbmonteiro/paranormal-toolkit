@@ -1,12 +1,11 @@
 import type { PreCastTargetingInput, PreCastTargetingResult } from "./area-targeting-types";
 import { FoundryAreaTargetingAdapter } from "./foundry-area-targeting-adapter";
-import { NativeRayTemplatePlacementService } from "./native-template/native-ray-template-placement-service";
-import { MeasuredTemplateTargetResolver } from "./native-template/measured-template-target-resolver";
+
+const REGION_TARGETING_UNAVAILABLE_MESSAGE =
+  "Linha por Region nativa ainda não está disponível. Desmarque para usar os alvos selecionados manualmente.";
 
 export class AreaTargetingService {
   constructor(
-    private readonly nativeRayPlacement = new NativeRayTemplatePlacementService(),
-    private readonly measuredTemplateTargetResolver = new MeasuredTemplateTargetResolver(),
     private readonly foundryAdapter = new FoundryAreaTargetingAdapter(),
   ) {}
 
@@ -21,32 +20,11 @@ export class AreaTargetingService {
     }
 
     if (requestedTargeting.mode === "lineArea") {
-      const placementResult = await this.nativeRayPlacement.placeRayTemplate();
-
-      if (placementResult.status === "confirmed") {
-        const targets = this.measuredTemplateTargetResolver.resolveTargets(
-          placementResult.templateDocument,
-        );
-
-        if (targets.length === 0) {
-          this.foundryAdapter.warn("Nenhum alvo encontrado na linha.");
-          return {
-            status: "cancelled",
-            reason: "no-targets-found",
-          };
-        }
-
-        return {
-          status: "confirmed",
-          targets,
-        };
-      }
-
-      if (placementResult.status === "failed") {
-        this.foundryAdapter.warn(placementResult.message);
-      }
-
-      return placementResult;
+      this.foundryAdapter.warn(REGION_TARGETING_UNAVAILABLE_MESSAGE);
+      return {
+        status: "cancelled",
+        reason: "region-targeting-unavailable",
+      };
     }
 
     return {
