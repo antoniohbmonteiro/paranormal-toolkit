@@ -5,8 +5,8 @@ import type {
 } from "./region-targeting-types";
 import { FoundryRegionAdapter } from "./foundry-region-adapter";
 
-const DEFAULT_REGION_LINE_LENGTH = 30;
-const DEFAULT_REGION_LINE_WIDTH = 5;
+const FALLBACK_GRID_SIZE = 100;
+const DEFAULT_REGION_LINE_LENGTH_IN_GRID_CELLS = 12;
 
 export class RegionLinePlacementService {
   constructor(
@@ -27,9 +27,10 @@ export class RegionLinePlacementService {
     }
 
     try {
+      const gridSize = this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE;
       const region = await this.foundryAdapter.placeRegion(
-        createLineRegionData(config, this.foundryAdapter.getUserColor()),
-        { create: false },
+        createLineRegionData(config, this.foundryAdapter.getUserColor(), gridSize),
+        { create: false, allowRotation: true },
       );
 
       if (!region) {
@@ -57,6 +58,7 @@ export class RegionLinePlacementService {
 function createLineRegionData(
   config: RegionLineShapeConfig,
   userColor: string | null,
+  gridSize: number,
 ): RegionDataLike {
   return {
     name: "Ritual: Linha de efeito",
@@ -69,20 +71,47 @@ function createLineRegionData(
         purpose: "ritual-line-targeting",
       },
     },
-    shapes: [createLineShapeData(config)],
+    shapes: [createLineShapeData(config, gridSize)],
   };
 }
 
-function createLineShapeData(config: RegionLineShapeConfig): RegionShapeDataLike {
+function createLineShapeData(config: RegionLineShapeConfig, gridSize: number): RegionShapeDataLike {
+  const dimensions = resolveRegionLineShapeDimensions(config, gridSize);
+
   return {
     type: "line",
     x: 0,
     y: 0,
-    length: config.length ?? DEFAULT_REGION_LINE_LENGTH,
-    width: config.width ?? DEFAULT_REGION_LINE_WIDTH,
+    length: dimensions.length,
+    width: dimensions.width,
     direction: config.direction ?? 0,
     elevation: config.elevation ?? 0,
   };
+}
+
+function resolveRegionLineShapeDimensions(
+  config: RegionLineShapeConfig,
+  gridSize: number,
+): { length: number; width: number } {
+  const widthFallback = gridSize;
+  const lengthFallback = gridSize * DEFAULT_REGION_LINE_LENGTH_IN_GRID_CELLS;
+
+  return {
+    length: getUsefulPixelDimension(config.length, lengthFallback, gridSize),
+    width: getUsefulPixelDimension(config.width, widthFallback, gridSize),
+  };
+}
+
+function getUsefulPixelDimension(
+  configuredValue: number | null | undefined,
+  fallback: number,
+  minimumUsefulPixels: number,
+): number {
+  return typeof configuredValue === "number" &&
+    Number.isFinite(configuredValue) &&
+    configuredValue >= minimumUsefulPixels
+    ? configuredValue
+    : fallback;
 }
 
 function getPlacementFailureMessage(error: unknown): string {

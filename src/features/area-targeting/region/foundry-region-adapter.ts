@@ -42,6 +42,11 @@ export class FoundryRegionAdapter {
     return canvas?.tokens?.placeables ?? [];
   }
 
+  getGridSize(): number | null {
+    const size = canvas?.grid?.size;
+    return typeof size === "number" && Number.isFinite(size) && size > 0 ? size : null;
+  }
+
   getUserColor(): string | null {
     const color = game.user?.color;
     return typeof color === "string" && color.length > 0 ? color : null;

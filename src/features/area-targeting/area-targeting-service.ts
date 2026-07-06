@@ -25,6 +25,7 @@ export class AreaTargetingService {
     if (requestedTargeting.mode === "lineArea") {
       const placementResult = await this.regionLinePlacement.placeLine({
         shape: "line",
+        length: input.formTargeting?.template?.distance,
         width: input.formTargeting?.template?.width,
       });
 

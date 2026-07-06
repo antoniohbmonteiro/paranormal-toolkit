@@ -47,6 +47,7 @@ type RegionDataLike = Record<string, unknown> & {
 
 type RegionPlacementOptionsLike = {
   create?: boolean;
+  allowRotation?: boolean;
 };
 
 type RegionDocumentLike = {
