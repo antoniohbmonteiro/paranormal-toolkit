@@ -2,6 +2,14 @@ import type { AutomationRitualTargetingDefinition } from "../../core/automation/
 import type { WorkflowTarget } from "../../core/workflow/workflow-context";
 import type { RitualCastOptions } from "../rituals/ritual-cast-options";
 
+export type {
+  RegionLinePlacementResult,
+  RegionLineShapeConfig,
+  RegionPlacementMode,
+  RegionTargetingCancellationReason,
+  RegionTargetingFailureReason,
+} from "./region/region-targeting-types";
+
 export type AreaTargetingCancellationReason =
   | "user-cancelled"
   | "no-targets-found"

@@ -32,6 +32,38 @@ type CanvasAppLike = {
   };
 };
 
+type ElevatedPointLike = CanvasPointLike & {
+  elevation?: number | null;
+};
+
+type RegionShapeDataLike = Record<string, unknown> & {
+  type: string;
+};
+
+type RegionDataLike = Record<string, unknown> & {
+  name?: string;
+  shapes?: RegionShapeDataLike[];
+};
+
+type RegionPlacementOptionsLike = {
+  create?: boolean;
+};
+
+type RegionDocumentLike = {
+  id?: string | null;
+  name?: string | null;
+  tokens?: ReadonlySet<unknown>;
+  testPoint?: (point: ElevatedPointLike) => boolean;
+  delete?: () => Promise<unknown>;
+};
+
+type RegionLayerLike = {
+  placeRegion(
+    data: RegionDataLike,
+    options?: RegionPlacementOptionsLike,
+  ): Promise<RegionDocumentLike | null>;
+};
+
 type TokenLike = {
   id?: string | null;
   uuid?: string | null;
@@ -130,6 +162,7 @@ declare const canvas:
         controlled?: TokenLike[];
         placeables?: TokenLike[];
       };
+      regions?: RegionLayerLike;
     }
   | undefined;
 
