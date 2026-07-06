@@ -16,6 +16,7 @@ export type RitualCastDialogModel = {
   header: RitualCastDialogHeaderModel;
   forms: RitualCastFormModel[];
   cost: RitualCastCostPanelModel;
+  targets: RitualCastTargetPanelModel;
   automation: RitualCastAutomationModel;
 };
 
@@ -38,7 +39,13 @@ export type RitualCastCostPanelModel = {
   spendResourceChecked: boolean;
   baseCostText: string;
   casterName: string;
+};
+
+export type RitualCastTargetPanelModel = {
+  modeLabel: string;
+  targetNames: string[];
   targetText: string;
+  hasTargets: boolean;
 };
 
 export type RitualCastAutomationModel = {
@@ -59,8 +66,8 @@ export function createRitualCastDialogModel(input: RitualCastDialogModelInput): 
       spendResourceChecked: input.defaultSpendResource,
       baseCostText: input.cost ? `${input.cost.amount} ${input.cost.resource}` : "não resolvido",
       casterName: input.actor.name ?? "Ator sem nome",
-      targetText: input.targetNames.length > 0 ? input.targetNames.join(", ") : "Nenhum alvo selecionado",
     },
+    targets: createTargetPanelModel(input.targetNames),
     automation: createAutomationModel(input.automationStatus ?? "assisted"),
   };
 }
@@ -91,6 +98,19 @@ function createFormDetails(option: RitualCastVariantOption): string[] {
 
 function createFallbackFinalCostText(cost: RitualCost | null): string {
   return cost ? `${cost.amount} ${cost.resource}` : "custo não resolvido";
+}
+
+function createTargetPanelModel(targetNames: string[]): RitualCastTargetPanelModel {
+  const normalizedTargetNames = targetNames
+    .map((targetName) => targetName.trim())
+    .filter((targetName) => targetName.length > 0);
+
+  return {
+    modeLabel: "Alvos selecionados",
+    targetNames: normalizedTargetNames,
+    targetText: normalizedTargetNames.length > 0 ? normalizedTargetNames.join(", ") : "Nenhum alvo selecionado.",
+    hasTargets: normalizedTargetNames.length > 0,
+  };
 }
 
 function createAutomationModel(status: "assisted" | "generic"): RitualCastAutomationModel {

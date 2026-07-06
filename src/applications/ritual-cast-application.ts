@@ -114,14 +114,20 @@ export class RitualCastApplication extends ApplicationV2 {
         <dl class="paranormal-toolkit-ritual-cast__summary">
           <div><dt>Custo base</dt><dd>${escapeHtml(this.model.cost.baseCostText)}</dd></div>
           <div><dt>Conjurador</dt><dd>${escapeHtml(this.model.cost.casterName)}</dd></div>
-          <div><dt>Alvos</dt><dd>${escapeHtml(this.model.cost.targetText)}</dd></div>
         </dl>
       </section>
 
-      <section class="paranormal-toolkit-ritual-cast__panel paranormal-toolkit-ritual-cast__automation paranormal-toolkit-ritual-cast__automation--${this.model.automation.status}">
-        <h3>Automação</h3>
-        <p><strong>${escapeHtml(this.model.automation.title)}</strong></p>
-        <p>${escapeHtml(this.model.automation.description)}</p>
+      <section class="paranormal-toolkit-ritual-cast__panel paranormal-toolkit-ritual-cast__panel--targets">
+        <div class="paranormal-toolkit-ritual-cast__panel-heading">
+          <h3>Alvos</h3>
+          <span class="paranormal-toolkit-ritual-cast__automation-note paranormal-toolkit-ritual-cast__automation-note--${this.model.automation.status}">
+            ${escapeHtml(this.model.automation.title)}
+          </span>
+        </div>
+        <dl class="paranormal-toolkit-ritual-cast__summary paranormal-toolkit-ritual-cast__summary--targets">
+          <div><dt>Modo</dt><dd>${escapeHtml(this.model.targets.modeLabel)}</dd></div>
+          <div class="paranormal-toolkit-ritual-cast__summary-targets"><dt>Alvos</dt><dd>${escapeHtml(this.model.targets.targetText)}</dd></div>
+        </dl>
       </section>
 
       <footer class="paranormal-toolkit-ritual-cast__footer">
