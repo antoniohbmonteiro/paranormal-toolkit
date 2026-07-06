@@ -1175,7 +1175,11 @@
 }
 
 .paranormal-toolkit-ritual-cast__summary--targets {
-  grid-template-columns: 0.85fr 1.5fr;
+  grid-template-columns: 1fr;
+}
+
+.paranormal-toolkit-ritual-cast__summary--targeting-mode {
+  grid-template-columns: 1fr;
 }
 
 .paranormal-toolkit-ritual-cast__summary div {
@@ -1210,6 +1214,41 @@
 
 .paranormal-toolkit-ritual-cast__summary-targets dd {
   white-space: normal;
+}
+
+.paranormal-toolkit-ritual-cast__targeting-form {
+  display: grid;
+  gap: 7px;
+}
+
+.paranormal-toolkit-ritual-cast__line-targeting-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  border: 1px solid rgba(89, 36, 42, 0.14);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(252, 250, 246, 0.84);
+  color: rgba(36, 27, 24, 0.84);
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.paranormal-toolkit-ritual-cast__line-targeting-toggle input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #f0a24a;
+}
+
+.paranormal-toolkit-ritual-cast__targeting-helper {
+  margin: -2px 0 0;
+  color: rgba(36, 27, 24, 0.66);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .paranormal-toolkit-ritual-cast__automation-note {

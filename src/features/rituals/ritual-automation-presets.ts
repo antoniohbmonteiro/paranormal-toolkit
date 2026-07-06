@@ -283,6 +283,15 @@ export function createRitualElectrocutionDefinition(): AutomationDefinition {
         rollFormulaOverrides: {
           damage: "6d6",
         },
+        targeting: {
+          mode: "lineArea",
+          label: "Linha",
+          optionLabel: "Selecionar alvos por linha ao conjurar",
+          optional: true,
+          template: {
+            shape: "ray",
+          },
+        },
       },
       verdadeiro: {
         label: "Verdadeiro",

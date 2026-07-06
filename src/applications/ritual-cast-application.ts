@@ -3,7 +3,8 @@ import {
   createRitualCastDialogModel,
   type RitualCastDialogModel,
   type RitualCastDialogModelInput,
-  type RitualCastFormModel
+  type RitualCastFormModel,
+  type RitualCastTargetFormModel
 } from "../features/rituals/casting/ritual-cast-dialog-model";
 import {
   isRitualCastVariant,
@@ -75,7 +76,9 @@ export class RitualCastApplication extends ApplicationV2 {
     const root = content.querySelector<HTMLElement>(".paranormal-toolkit-ritual-cast") ?? content;
     bindVariantSelection(root, (variant) => {
       this.selectedVariant = variant;
+      updateTargetingPanelState(root, variant);
     });
+    updateTargetingPanelState(root, this.selectedVariant);
     bindSpendResourceToggle(root, (spendResource) => {
       this.spendResource = spendResource;
     });
@@ -124,9 +127,11 @@ export class RitualCastApplication extends ApplicationV2 {
             ${escapeHtml(this.model.automation.title)}
           </span>
         </div>
+        <div class="paranormal-toolkit-ritual-cast__targeting-forms">
+          ${this.model.targets.forms.map(renderTargetForm).join("")}
+        </div>
         <dl class="paranormal-toolkit-ritual-cast__summary paranormal-toolkit-ritual-cast__summary--targets">
-          <div><dt>Modo</dt><dd>${escapeHtml(this.model.targets.modeLabel)}</dd></div>
-          <div class="paranormal-toolkit-ritual-cast__summary-targets"><dt>Alvos</dt><dd>${escapeHtml(this.model.targets.targetText)}</dd></div>
+          <div class="paranormal-toolkit-ritual-cast__summary-targets"><dt>Alvos atuais</dt><dd>${escapeHtml(this.model.targets.targetText)}</dd></div>
         </dl>
       </section>
 
@@ -188,6 +193,36 @@ function renderVariantOption(option: RitualCastFormModel): string {
   `;
 }
 
+function renderTargetForm(option: RitualCastTargetFormModel): string {
+  const checked = option.checked ? "" : "hidden";
+  const lineOption = option.showLineOption && option.optionLabel
+    ? `
+        <label class="paranormal-toolkit-ritual-cast__line-targeting-toggle">
+          <input type="checkbox" name="areaTargeting" value="lineArea" data-paranormal-toolkit-area-targeting-checkbox>
+          <span>${escapeHtml(option.optionLabel)}</span>
+        </label>
+      `
+    : "";
+  const helperText = option.helperText
+    ? `<p class="paranormal-toolkit-ritual-cast__targeting-helper">${escapeHtml(option.helperText)}</p>`
+    : "";
+
+  return `
+    <div
+      class="paranormal-toolkit-ritual-cast__targeting-form"
+      data-paranormal-toolkit-targeting-form="${escapeHtml(option.variant)}"
+      data-paranormal-toolkit-targeting-mode="${escapeHtml(option.mode)}"
+      ${checked}
+    >
+      <dl class="paranormal-toolkit-ritual-cast__summary paranormal-toolkit-ritual-cast__summary--targeting-mode">
+        <div><dt>Modo</dt><dd>${escapeHtml(option.modeLabel)}</dd></div>
+      </dl>
+      ${lineOption}
+      ${helperText}
+    </div>
+  `;
+}
+
 function bindVariantSelection(root: HTMLElement, onVariantSelected: (variant: RitualCastVariant) => void): void {
   const formCards = Array.from(root.querySelectorAll<HTMLElement>("[data-paranormal-toolkit-ritual-cast-form]"));
 
@@ -219,6 +254,7 @@ function selectVariantCard(
   onVariantSelected(input.value);
   input.dispatchEvent(new Event("change", { bubbles: true }));
   updateVariantCardState(root);
+  updateTargetingPanelState(root, input.value);
 }
 
 function updateVariantCardState(root: HTMLElement): RitualCastVariant | null {
@@ -242,6 +278,15 @@ function updateVariantCardState(root: HTMLElement): RitualCastVariant | null {
   return selectedVariant;
 }
 
+function updateTargetingPanelState(root: HTMLElement, variant: RitualCastVariant): void {
+  const targetingForms = root.querySelectorAll<HTMLElement>("[data-paranormal-toolkit-targeting-form]");
+
+  for (const targetingForm of targetingForms) {
+    const isActive = targetingForm.dataset.paranormalToolkitTargetingForm === variant;
+    targetingForm.hidden = !isActive;
+  }
+}
+
 function bindSpendResourceToggle(root: HTMLElement, onSpendResourceChanged: (spendResource: boolean) => void): void {
   const input = root.querySelector<HTMLInputElement>('input[name="spendResource"]');
   if (!input) return;
@@ -259,11 +304,32 @@ function readOptionsFromRoot(
 ): RitualCastOptions {
   const variant = readVariant(root) ?? fallbackVariant;
   const spendResource = root?.querySelector<HTMLInputElement>('input[name="spendResource"]')?.checked ?? fallbackSpendResource;
+  const areaTargeting = readAreaTargeting(root, variant);
 
   return {
     variant,
-    spendResource
+    spendResource,
+    areaTargeting
   };
+}
+
+function readAreaTargeting(root: HTMLElement | null, variant: RitualCastVariant): RitualCastOptions["areaTargeting"] {
+  const targetingForm = root?.querySelector<HTMLElement>(
+    `[data-paranormal-toolkit-targeting-form="${variant}"]`,
+  );
+  const mode = targetingForm?.dataset.paranormalToolkitTargetingMode;
+
+  if (mode === "lineArea") {
+    const enabled = targetingForm?.querySelector<HTMLInputElement>(
+      "[data-paranormal-toolkit-area-targeting-checkbox]",
+    )?.checked === true;
+
+    return enabled
+      ? { mode: "lineArea", enabled: true }
+      : { mode: "selectedTokens", enabled: false };
+  }
+
+  return { mode: "selectedTokens", enabled: false };
 }
 
 function readVariant(root: HTMLElement | null): RitualCastVariant | null {

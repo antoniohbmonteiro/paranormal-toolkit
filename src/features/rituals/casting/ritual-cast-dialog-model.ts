@@ -1,5 +1,7 @@
 import { MODULE_TITLE } from "../../../constants";
+import type { AutomationRitualTargetingDefinition } from "../../../core/automation/automation-definition";
 import type { RitualCost } from "../../../core/rituals/ritual-types";
+import { readAutomationDefinition } from "../../automation/automation-flag-reader";
 import type { RitualCastVariant, RitualCastVariantOption } from "../ritual-cast-options";
 
 export type RitualCastDialogModelInput = {
@@ -42,10 +44,20 @@ export type RitualCastCostPanelModel = {
 };
 
 export type RitualCastTargetPanelModel = {
-  modeLabel: string;
   targetNames: string[];
   targetText: string;
   hasTargets: boolean;
+  forms: RitualCastTargetFormModel[];
+};
+
+export type RitualCastTargetFormModel = {
+  variant: RitualCastVariant;
+  mode: "selectedTokens" | "lineArea";
+  modeLabel: string;
+  optionLabel: string | null;
+  helperText: string | null;
+  showLineOption: boolean;
+  checked: boolean;
 };
 
 export type RitualCastAutomationModel = {
@@ -67,7 +79,7 @@ export function createRitualCastDialogModel(input: RitualCastDialogModelInput): 
       baseCostText: input.cost ? `${input.cost.amount} ${input.cost.resource}` : "não resolvido",
       casterName: input.actor.name ?? "Ator sem nome",
     },
-    targets: createTargetPanelModel(input.targetNames),
+    targets: createTargetPanelModel(input.targetNames, input.variantOptions, input.ritual),
     automation: createAutomationModel(input.automationStatus ?? "assisted"),
   };
 }
@@ -100,17 +112,50 @@ function createFallbackFinalCostText(cost: RitualCost | null): string {
   return cost ? `${cost.amount} ${cost.resource}` : "custo não resolvido";
 }
 
-function createTargetPanelModel(targetNames: string[]): RitualCastTargetPanelModel {
+function createTargetPanelModel(
+  targetNames: string[],
+  variantOptions: RitualCastVariantOption[],
+  ritual: Item,
+): RitualCastTargetPanelModel {
   const normalizedTargetNames = targetNames
     .map((targetName) => targetName.trim())
     .filter((targetName) => targetName.length > 0);
 
   return {
-    modeLabel: "Alvos selecionados",
     targetNames: normalizedTargetNames,
     targetText: normalizedTargetNames.length > 0 ? normalizedTargetNames.join(", ") : "Nenhum alvo selecionado.",
     hasTargets: normalizedTargetNames.length > 0,
+    forms: variantOptions.map((option) => createTargetFormModel(option, ritual)),
   };
+}
+
+function createTargetFormModel(option: RitualCastVariantOption, ritual: Item): RitualCastTargetFormModel {
+  const targeting = option.targeting ?? resolveRitualFormTargeting(ritual, option.variant);
+  const mode = targeting?.mode === "lineArea" ? "lineArea" : "selectedTokens";
+
+  return {
+    variant: option.variant,
+    mode,
+    modeLabel: targeting?.label ?? "Alvos selecionados",
+    optionLabel: mode === "lineArea" && targeting?.optional === true
+      ? targeting.optionLabel ?? "Selecionar alvos por linha ao conjurar"
+      : null,
+    helperText: mode === "lineArea" && targeting?.optional === true
+      ? "Se desmarcado, usa os alvos selecionados manualmente."
+      : null,
+    showLineOption: mode === "lineArea" && targeting?.optional === true,
+    checked: option.variant === "base",
+  };
+}
+
+function resolveRitualFormTargeting(
+  ritual: Item,
+  variant: RitualCastVariant,
+): AutomationRitualTargetingDefinition | undefined {
+  const definition = readAutomationDefinition(ritual);
+  if (!definition.ok) return undefined;
+
+  return definition.value.ritualForms?.[variant]?.targeting;
 }
 
 function createAutomationModel(status: "assisted" | "generic"): RitualCastAutomationModel {
