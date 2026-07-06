@@ -69,6 +69,12 @@ type RegionLayerLike = {
   ): Promise<RegionDocumentLike | null>;
 };
 
+type TokenTargetOptionsLike = {
+  user?: FoundryUserLike | null;
+  releaseOthers?: boolean;
+  groupSelection?: boolean;
+};
+
 type TokenLike = {
   id?: string | null;
   uuid?: string | null;
@@ -85,6 +91,7 @@ type TokenLike = {
   w?: number | null;
   h?: number | null;
   elevation?: number | null;
+  setTarget?: (targeted: boolean, options?: TokenTargetOptionsLike) => void;
   document?: {
     id?: string | null;
     uuid?: string | null;

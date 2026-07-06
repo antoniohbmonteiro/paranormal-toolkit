@@ -50,8 +50,28 @@ export class FoundryRegionAdapter {
   }
 
   updateUserTargets(targetIds: string[]): void {
+    this.updateUserTargetState(targetIds);
+    this.updateTokenTargetVisuals(targetIds);
+  }
+
+  private updateUserTargetState(targetIds: string[]): void {
     game.user?.updateTokenTargets?.(targetIds);
     game.user?.broadcastActivity?.({ targets: targetIds });
+  }
+
+  private updateTokenTargetVisuals(targetIds: string[]): void {
+    const targetIdSet = new Set(targetIds);
+
+    for (const token of this.getSceneTokens()) {
+      if (typeof token.setTarget !== "function") continue;
+
+      const tokenId = token.id ?? token.document?.id ?? null;
+      token.setTarget(Boolean(tokenId && targetIdSet.has(tokenId)), {
+        user: game.user ?? undefined,
+        releaseOthers: false,
+        groupSelection: true,
+      });
+    }
   }
 
   getGridSize(): number | null {
