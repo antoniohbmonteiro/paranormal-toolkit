@@ -198,7 +198,7 @@ function renderTargetForm(option: RitualCastTargetFormModel): string {
   const lineOption = option.showLineOption && option.optionLabel
     ? `
         <label class="paranormal-toolkit-ritual-cast__line-targeting-toggle">
-          <input type="checkbox" name="areaTargeting" value="lineArea" data-paranormal-toolkit-area-targeting-checkbox>
+          <input type="checkbox" name="areaTargeting" value="lineArea" ${option.areaTargetingChecked ? "checked" : ""} data-paranormal-toolkit-area-targeting-checkbox>
           <span>${escapeHtml(option.optionLabel)}</span>
         </label>
       `

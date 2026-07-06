@@ -57,6 +57,7 @@ export type RitualCastTargetFormModel = {
   optionLabel: string | null;
   helperText: string | null;
   showLineOption: boolean;
+  areaTargetingChecked: boolean;
   checked: boolean;
 };
 
@@ -144,6 +145,7 @@ function createTargetFormModel(option: RitualCastVariantOption, ritual: Item): R
       ? "Se desmarcado, usa os alvos selecionados manualmente."
       : null,
     showLineOption: mode === "lineArea" && targeting?.optional === true,
+    areaTargetingChecked: targeting?.defaultEnabled === true,
     checked: option.variant === "base",
   };
 }

@@ -257,6 +257,8 @@ function isRitualTargetingDefinition(
       isNonEmptyString(candidate.optionLabel)) &&
     (candidate.optional === undefined ||
       typeof candidate.optional === "boolean") &&
+    (candidate.defaultEnabled === undefined ||
+      typeof candidate.defaultEnabled === "boolean") &&
     (candidate.template === undefined ||
       isRitualTargetingTemplateDefinition(candidate.template))
   );

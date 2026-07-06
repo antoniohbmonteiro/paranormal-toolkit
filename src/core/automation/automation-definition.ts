@@ -76,6 +76,7 @@ export type AutomationRitualTargetingDefinition = {
   label: string;
   optionLabel?: string;
   optional?: boolean;
+  defaultEnabled?: boolean;
   template?: AutomationRitualTargetingTemplateDefinition;
 };
 

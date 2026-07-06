@@ -17,7 +17,7 @@ export type LineAreaPlacement = {
   destination: CanvasPoint;
 };
 
-export type AreaTargetingCancellationReason = "user-cancelled";
+export type AreaTargetingCancellationReason = "user-cancelled" | "no-targets-found";
 
 export type AreaTargetingFailureReason =
   | "canvas-unavailable"

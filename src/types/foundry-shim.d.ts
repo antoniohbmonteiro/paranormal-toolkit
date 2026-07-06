@@ -38,9 +38,22 @@ type TokenLike = {
   name?: string;
   actor?: Actor | null;
   scene?: SceneLike | null;
+  bounds?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null;
+  center?: CanvasPointLike | null;
+  w?: number | null;
+  h?: number | null;
   document?: {
     actor?: Actor | null;
     name?: string | null;
+    x?: number | null;
+    y?: number | null;
+    width?: number | null;
+    height?: number | null;
   } | null;
 };
 
@@ -110,6 +123,9 @@ declare const canvas:
       scene?: SceneLike | null;
       stage?: CanvasStageLike;
       app?: CanvasAppLike;
+      grid?: {
+        size?: number | null;
+      };
       tokens?: {
         controlled?: TokenLike[];
         placeables?: TokenLike[];
