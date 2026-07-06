@@ -42,6 +42,18 @@ export class FoundryRegionAdapter {
     return canvas?.tokens?.placeables ?? [];
   }
 
+  getUserTargetIds(): string[] {
+    return Array.from(game.user?.targets ?? []).flatMap((token) => {
+      const id = token.id ?? token.document?.id ?? null;
+      return id ? [id] : [];
+    });
+  }
+
+  updateUserTargets(targetIds: string[]): void {
+    game.user?.updateTokenTargets?.(targetIds);
+    game.user?.broadcastActivity?.({ targets: targetIds });
+  }
+
   getGridSize(): number | null {
     const size = canvas?.grid?.size;
     return typeof size === "number" && Number.isFinite(size) && size > 0 ? size : null;

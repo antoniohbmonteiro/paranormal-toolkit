@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../../../constants";
 import type {
+  RegionLinePlacementCallbacks,
   RegionLinePlacementResult,
   RegionLineShapeConfig,
 } from "./region-targeting-types";
@@ -15,6 +16,7 @@ export class RegionLinePlacementService {
 
   async placeLine(
     config: RegionLineShapeConfig = { shape: "line" },
+    callbacks: RegionLinePlacementCallbacks = {},
   ): Promise<RegionLinePlacementResult> {
     const placementState = this.foundryAdapter.canPlaceRegions();
 
@@ -30,7 +32,11 @@ export class RegionLinePlacementService {
       const gridSize = this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE;
       const region = await this.foundryAdapter.placeRegion(
         createLineRegionData(config, this.foundryAdapter.getUserColor(), gridSize),
-        { create: true, allowRotation: true },
+        {
+          create: true,
+          allowRotation: true,
+          onChange: callbacks.onChange,
+        },
       );
 
       if (!region) {

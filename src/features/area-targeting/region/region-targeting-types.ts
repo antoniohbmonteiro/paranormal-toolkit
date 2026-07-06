@@ -20,6 +20,10 @@ export type RegionLineShapeConfig = {
   elevation?: number | null;
 };
 
+export type RegionLinePlacementCallbacks = {
+  onChange?: (region: RegionDocumentLike) => void;
+};
+
 export type RegionLinePlacementConfirmed = {
   status: "confirmed";
   region: RegionDocumentLike;
@@ -44,7 +48,11 @@ export type RegionLinePlacementResult =
 
 export type RegionTargetResolutionSource = "regionTokens" | "tokenDocument" | "testPoint" | "lineGeometry";
 
-export type RegionTargetResolutionResult = {
-  targets: WorkflowTarget[];
+export type RegionTargetTokenResolutionResult = {
+  tokens: TokenLike[];
   source: RegionTargetResolutionSource;
+};
+
+export type RegionTargetResolutionResult = RegionTargetTokenResolutionResult & {
+  targets: WorkflowTarget[];
 };

@@ -2,6 +2,7 @@ import type { PreCastTargetingInput, PreCastTargetingResult } from "./area-targe
 import { FoundryAreaTargetingAdapter } from "./foundry-area-targeting-adapter";
 import { RegionCleanupService } from "./region/region-cleanup-service";
 import { RegionLinePlacementService } from "./region/region-line-placement-service";
+import { RegionTargetPreviewService } from "./region/region-target-preview-service";
 import { RegionTargetResolver } from "./region/region-target-resolver";
 
 const NO_LINE_TARGETS_MESSAGE = "Nenhum alvo encontrado na linha.";
@@ -11,6 +12,7 @@ export class AreaTargetingService {
     private readonly regionLinePlacement = new RegionLinePlacementService(),
     private readonly regionTargetResolver = new RegionTargetResolver(),
     private readonly regionCleanup = new RegionCleanupService(),
+    private readonly regionTargetPreview = new RegionTargetPreviewService(),
     private readonly foundryAdapter = new FoundryAreaTargetingAdapter(),
   ) {}
 
@@ -25,17 +27,36 @@ export class AreaTargetingService {
     }
 
     if (requestedTargeting.mode === "lineArea") {
-      const placementResult = await this.regionLinePlacement.placeLine({
-        shape: "line",
-        length: input.formTargeting?.template?.distance,
-        width: input.formTargeting?.template?.width,
-      });
+      const targetSnapshot = this.regionTargetPreview.captureCurrentTargets();
+      const restorePreviewTargets = (): void => {
+        this.regionTargetPreview.restorePreviousTargets(targetSnapshot);
+      };
+
+      const placementResult = await this.regionLinePlacement.placeLine(
+        {
+          shape: "line",
+          length: input.formTargeting?.template?.distance,
+          width: input.formTargeting?.template?.width,
+        },
+        {
+          onChange: (region) => {
+            try {
+              const resolution = this.regionTargetResolver.resolveTargetTokens(region);
+              this.regionTargetPreview.previewTargets(resolution.tokens);
+            } catch {
+              this.regionTargetPreview.previewTargets([]);
+            }
+          },
+        },
+      );
 
       if (placementResult.status === "cancelled") {
+        restorePreviewTargets();
         return placementResult;
       }
 
       if (placementResult.status === "failed") {
+        restorePreviewTargets();
         this.foundryAdapter.warn(placementResult.message);
         return placementResult;
       }
@@ -44,6 +65,7 @@ export class AreaTargetingService {
         const resolution = this.regionTargetResolver.resolveTargets(placementResult.region);
 
         if (resolution.targets.length === 0) {
+          restorePreviewTargets();
           this.foundryAdapter.warn(NO_LINE_TARGETS_MESSAGE);
           return {
             status: "cancelled",
@@ -51,11 +73,13 @@ export class AreaTargetingService {
           };
         }
 
+        this.regionTargetPreview.keepPreviewTargets(resolution.tokens);
         return {
           status: "confirmed",
           targets: resolution.targets,
         };
       } catch (error) {
+        restorePreviewTargets();
         const message = createRegionResolutionFailureMessage(error);
         this.foundryAdapter.warn(message);
         return {

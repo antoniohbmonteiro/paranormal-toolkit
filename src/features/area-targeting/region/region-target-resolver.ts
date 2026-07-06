@@ -1,7 +1,10 @@
 import type { WorkflowTarget } from "../../../core/workflow/workflow-context";
 import { createWorkflowTargetFromToken } from "../../automation/workflow-target-resolver";
 import { FoundryRegionAdapter } from "./foundry-region-adapter";
-import type { RegionTargetResolutionResult } from "./region-targeting-types";
+import type {
+  RegionTargetResolutionResult,
+  RegionTargetTokenResolutionResult,
+} from "./region-targeting-types";
 
 export class RegionTargetResolver {
   constructor(
@@ -9,12 +12,21 @@ export class RegionTargetResolver {
   ) {}
 
   resolveTargets(region: RegionDocumentLike): RegionTargetResolutionResult {
+    const resolution = this.resolveTargetTokens(region);
+
+    return {
+      ...resolution,
+      targets: resolution.tokens.map(createWorkflowTargetFromToken),
+    };
+  }
+
+  resolveTargetTokens(region: RegionDocumentLike): RegionTargetTokenResolutionResult {
     const sceneTokens = this.foundryAdapter.getSceneTokens();
     const regionTokens = this.resolveRegionTokens(region, sceneTokens);
 
     if (regionTokens.length > 0) {
       return {
-        targets: regionTokens.map(createWorkflowTargetFromToken),
+        tokens: regionTokens,
         source: "regionTokens",
       };
     }
@@ -22,7 +34,7 @@ export class RegionTargetResolver {
     const tokenDocumentTargets = this.resolveTokenDocumentTargets(region, sceneTokens);
     if (tokenDocumentTargets.length > 0) {
       return {
-        targets: tokenDocumentTargets.map(createWorkflowTargetFromToken),
+        tokens: tokenDocumentTargets,
         source: "tokenDocument",
       };
     }
@@ -30,13 +42,13 @@ export class RegionTargetResolver {
     const testPointTargets = this.resolveTestPointTokens(region, sceneTokens);
     if (testPointTargets.length > 0) {
       return {
-        targets: testPointTargets.map(createWorkflowTargetFromToken),
+        tokens: testPointTargets,
         source: "testPoint",
       };
     }
 
     return {
-      targets: this.resolveLineGeometryTokens(region, sceneTokens).map(createWorkflowTargetFromToken),
+      tokens: this.resolveLineGeometryTokens(region, sceneTokens),
       source: "lineGeometry",
     };
   }

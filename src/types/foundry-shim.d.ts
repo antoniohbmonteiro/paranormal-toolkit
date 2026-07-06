@@ -49,6 +49,7 @@ type RegionDataLike = Record<string, unknown> & {
 type RegionPlacementOptionsLike = {
   create?: boolean;
   allowRotation?: boolean;
+  onChange?: (region: RegionDocumentLike) => void;
 };
 
 type RegionDocumentLike = {
@@ -127,6 +128,8 @@ type FoundryUserLike = {
   active?: boolean;
   character?: Actor | null;
   targets?: Set<TokenLike>;
+  updateTokenTargets?: (targetIds: string[]) => void;
+  broadcastActivity?: (activity: { targets?: string[] }) => void;
 };
 
 type FoundryCollectionLike<T = unknown> = {
