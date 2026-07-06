@@ -54,8 +54,10 @@ type RegionPlacementOptionsLike = {
 type RegionDocumentLike = {
   id?: string | null;
   name?: string | null;
+  shapes?: RegionShapeDataLike[];
   tokens?: ReadonlySet<unknown>;
   testPoint?: (point: ElevatedPointLike) => boolean;
+  toObject?: () => RegionDataLike;
   delete?: () => Promise<unknown>;
 };
 

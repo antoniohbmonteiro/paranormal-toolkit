@@ -27,9 +27,17 @@ export class RegionTargetResolver {
       };
     }
 
+    const testPointTargets = this.resolveTestPointTokens(region, sceneTokens);
+    if (testPointTargets.length > 0) {
+      return {
+        targets: testPointTargets.map(createWorkflowTargetFromToken),
+        source: "testPoint",
+      };
+    }
+
     return {
-      targets: this.resolveTestPointTokens(region, sceneTokens).map(createWorkflowTargetFromToken),
-      source: "testPoint",
+      targets: this.resolveLineGeometryTokens(region, sceneTokens).map(createWorkflowTargetFromToken),
+      source: "lineGeometry",
     };
   }
 
@@ -89,6 +97,78 @@ export class RegionTargetResolver {
       }),
     );
   }
+
+  private resolveLineGeometryTokens(
+    region: RegionDocumentLike,
+    sceneTokens: TokenLike[],
+  ): TokenLike[] {
+    const line = getRegionLineGeometry(region, this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE);
+    if (!line) return [];
+
+    return uniqueTokens(
+      sceneTokens.filter((token) => {
+        if (!token.actor) return false;
+
+        const sampledPoints = sampleTokenPoints(token);
+        if (sampledPoints.length === 0) return false;
+
+        return sampledPoints.some(
+          (point) => distancePointToSegment(point, line.origin, line.destination) <= line.width / 2,
+        );
+      }),
+    );
+  }
+}
+
+type RegionLineGeometry = {
+  origin: CanvasPointLike;
+  destination: CanvasPointLike;
+  width: number;
+};
+
+const FALLBACK_GRID_SIZE = 100;
+
+function getRegionLineGeometry(region: RegionDocumentLike, gridSize: number): RegionLineGeometry | null {
+  const shape = getRegionLineShape(region);
+  if (!shape) return null;
+
+  const x = getFiniteNumber(shape.x);
+  const y = getFiniteNumber(shape.y);
+  const length = getFiniteNumber(shape.length);
+  const direction = getFiniteNumber(shape.direction) ?? getFiniteNumber(shape.rotation) ?? 0;
+
+  if (x === null || y === null || length === null || length <= 0) return null;
+
+  const directionRadians = degreesToRadians(direction);
+  const origin = { x, y };
+
+  return {
+    origin,
+    destination: {
+      x: origin.x + Math.cos(directionRadians) * length,
+      y: origin.y + Math.sin(directionRadians) * length,
+    },
+    width: getUsefulLineWidth(getFiniteNumber(shape.width), gridSize),
+  };
+}
+
+function getRegionLineShape(region: RegionDocumentLike): RegionShapeDataLike | null {
+  const shapes = getRegionShapes(region);
+  return shapes.find((shape) => shape.type === "line") ?? null;
+}
+
+function getRegionShapes(region: RegionDocumentLike): RegionShapeDataLike[] {
+  const objectShapes = region.toObject?.().shapes;
+  if (Array.isArray(objectShapes)) return objectShapes;
+  return Array.isArray(region.shapes) ? region.shapes : [];
+}
+
+function getUsefulLineWidth(width: number | null, gridSize: number): number {
+  return width !== null && width >= gridSize ? width : gridSize;
+}
+
+function degreesToRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
 }
 
 function resolveTokenFromRegionEntry(entry: unknown, sceneTokens: TokenLike[]): TokenLike | null {
@@ -201,6 +281,30 @@ function uniqueTokens(tokens: TokenLike[]): TokenLike[] {
     seen.add(key);
     return true;
   });
+}
+
+function distancePointToSegment(point: CanvasPointLike, start: CanvasPointLike, end: CanvasPointLike): number {
+  const segmentX = end.x - start.x;
+  const segmentY = end.y - start.y;
+  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
+
+  if (lengthSquared <= 0) {
+    return distanceBetweenPoints(point, start);
+  }
+
+  const projected =
+    ((point.x - start.x) * segmentX + (point.y - start.y) * segmentY) / lengthSquared;
+  const clampedProjection = Math.max(0, Math.min(1, projected));
+  const closest = {
+    x: start.x + clampedProjection * segmentX,
+    y: start.y + clampedProjection * segmentY,
+  };
+
+  return distanceBetweenPoints(point, closest);
+}
+
+function distanceBetweenPoints(left: CanvasPointLike, right: CanvasPointLike): number {
+  return Math.hypot(left.x - right.x, left.y - right.y);
 }
 
 function getStringProperty(value: unknown, key: string): string | null {
