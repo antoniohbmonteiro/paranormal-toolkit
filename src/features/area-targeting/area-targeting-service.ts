@@ -39,9 +39,9 @@ export class AreaTargetingService {
           width: input.formTargeting?.template?.width,
         },
         {
-          onChange: (region) => {
+          onChange: (change) => {
             try {
-              const resolution = this.regionTargetResolver.resolveTargetTokens(region);
+              const resolution = this.regionTargetResolver.resolvePreviewTargetTokens(change);
               this.regionTargetPreview.previewTargets(resolution.tokens);
             } catch {
               this.regionTargetPreview.previewTargets([]);

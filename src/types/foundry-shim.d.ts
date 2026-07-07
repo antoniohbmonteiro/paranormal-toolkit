@@ -46,10 +46,24 @@ type RegionDataLike = Record<string, unknown> & {
   shapes?: RegionShapeDataLike[];
 };
 
+type RegionObjectLike = Record<string, unknown> & {
+  document?: RegionDocumentLike | null;
+};
+
+type RegionPlacementCallbackArgsLike = {
+  document: RegionDocumentLike;
+  preview?: RegionObjectLike | null;
+  shape?: RegionShapeDataLike | null;
+};
+
+type RegionPlacementCallbackLike = (args: RegionPlacementCallbackArgsLike) => void;
+
 type RegionPlacementOptionsLike = {
   create?: boolean;
   allowRotation?: boolean;
-  onChange?: (region: RegionDocumentLike) => void;
+  onChange?: RegionPlacementCallbackLike;
+  onMove?: RegionPlacementCallbackLike;
+  onRotate?: RegionPlacementCallbackLike;
 };
 
 type RegionDocumentLike = {

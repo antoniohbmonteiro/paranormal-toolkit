@@ -2,6 +2,7 @@ import type { WorkflowTarget } from "../../../core/workflow/workflow-context";
 import { createWorkflowTargetFromToken } from "../../automation/workflow-target-resolver";
 import { FoundryRegionAdapter } from "./foundry-region-adapter";
 import type {
+  RegionPlacementChange,
   RegionTargetResolutionResult,
   RegionTargetTokenResolutionResult,
 } from "./region-targeting-types";
@@ -18,6 +19,18 @@ export class RegionTargetResolver {
       ...resolution,
       targets: resolution.tokens.map(createWorkflowTargetFromToken),
     };
+  }
+
+
+  resolvePreviewTargetTokens(change: RegionPlacementChange): RegionTargetTokenResolutionResult {
+    if (change.shape?.type === "line") {
+      return {
+        tokens: this.resolveLineGeometryTokensFromShape(change.shape),
+        source: "lineGeometry",
+      };
+    }
+
+    return this.resolveTargetTokens(change.document);
   }
 
   resolveTargetTokens(region: RegionDocumentLike): RegionTargetTokenResolutionResult {
@@ -110,6 +123,13 @@ export class RegionTargetResolver {
     );
   }
 
+  private resolveLineGeometryTokensFromShape(shape: RegionShapeDataLike): TokenLike[] {
+    const sceneTokens = this.foundryAdapter.getSceneTokens();
+    const line = getRegionLineShapeGeometry(shape, this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE);
+
+    return line ? resolveLineGeometryTokens(sceneTokens, line) : [];
+  }
+
   private resolveLineGeometryTokens(
     region: RegionDocumentLike,
     sceneTokens: TokenLike[],
@@ -117,18 +137,7 @@ export class RegionTargetResolver {
     const line = getRegionLineGeometry(region, this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE);
     if (!line) return [];
 
-    return uniqueTokens(
-      sceneTokens.filter((token) => {
-        if (!token.actor) return false;
-
-        const sampledPoints = sampleTokenPoints(token);
-        if (sampledPoints.length === 0) return false;
-
-        return sampledPoints.some(
-          (point) => distancePointToSegment(point, line.origin, line.destination) <= line.width / 2,
-        );
-      }),
-    );
+    return resolveLineGeometryTokens(sceneTokens, line);
   }
 }
 
@@ -140,10 +149,27 @@ type RegionLineGeometry = {
 
 const FALLBACK_GRID_SIZE = 100;
 
+function resolveLineGeometryTokens(sceneTokens: TokenLike[], line: RegionLineGeometry): TokenLike[] {
+  return uniqueTokens(
+    sceneTokens.filter((token) => {
+      if (!token.actor) return false;
+
+      const sampledPoints = sampleTokenPoints(token);
+      if (sampledPoints.length === 0) return false;
+
+      return sampledPoints.some(
+        (point) => distancePointToSegment(point, line.origin, line.destination) <= line.width / 2,
+      );
+    }),
+  );
+}
+
 function getRegionLineGeometry(region: RegionDocumentLike, gridSize: number): RegionLineGeometry | null {
   const shape = getRegionLineShape(region);
-  if (!shape) return null;
+  return shape ? getRegionLineShapeGeometry(shape, gridSize) : null;
+}
 
+function getRegionLineShapeGeometry(shape: RegionShapeDataLike, gridSize: number): RegionLineGeometry | null {
   const x = getFiniteNumber(shape.x);
   const y = getFiniteNumber(shape.y);
   const length = getFiniteNumber(shape.length);

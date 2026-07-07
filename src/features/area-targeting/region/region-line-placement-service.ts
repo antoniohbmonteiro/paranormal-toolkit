@@ -3,6 +3,7 @@ import type {
   RegionLinePlacementCallbacks,
   RegionLinePlacementResult,
   RegionLineShapeConfig,
+  RegionPlacementChange,
 } from "./region-targeting-types";
 import { FoundryRegionAdapter } from "./foundry-region-adapter";
 
@@ -30,12 +31,13 @@ export class RegionLinePlacementService {
 
     try {
       const gridSize = this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE;
+      const placementCallbacks = createPlacementCallbacks(callbacks);
       const region = await this.foundryAdapter.placeRegion(
         createLineRegionData(config, this.foundryAdapter.getUserColor(), gridSize),
         {
           create: true,
           allowRotation: true,
-          onChange: callbacks.onChange,
+          ...placementCallbacks,
         },
       );
 
@@ -129,4 +131,44 @@ function getPlacementFailureMessage(error: unknown): string {
   }
 
   return baseMessage;
+}
+
+function createPlacementCallbacks(
+  callbacks: RegionLinePlacementCallbacks,
+): Pick<RegionPlacementOptionsLike, "onChange" | "onMove" | "onRotate"> {
+  const notifyChange = (args: RegionPlacementCallbackArgsLike | RegionDocumentLike): void => {
+    const change = normalizePlacementChange(args);
+    if (change) callbacks.onChange?.(change);
+  };
+
+  return {
+    onChange: notifyChange,
+    onMove: notifyChange,
+    onRotate: notifyChange,
+  };
+}
+
+function normalizePlacementChange(
+  args: RegionPlacementCallbackArgsLike | RegionDocumentLike,
+): RegionPlacementChange | null {
+  if (isPlacementCallbackArgs(args)) {
+    return {
+      document: args.document,
+      preview: args.preview ?? null,
+      shape: args.shape ?? null,
+    };
+  }
+
+  return { document: args };
+}
+
+function isPlacementCallbackArgs(
+  value: RegionPlacementCallbackArgsLike | RegionDocumentLike,
+): value is RegionPlacementCallbackArgsLike {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "document" in value &&
+      (value as RegionPlacementCallbackArgsLike).document,
+  );
 }

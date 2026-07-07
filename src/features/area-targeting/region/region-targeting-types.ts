@@ -20,8 +20,14 @@ export type RegionLineShapeConfig = {
   elevation?: number | null;
 };
 
+export type RegionPlacementChange = {
+  document: RegionDocumentLike;
+  preview?: RegionObjectLike | null;
+  shape?: RegionShapeDataLike | null;
+};
+
 export type RegionLinePlacementCallbacks = {
-  onChange?: (region: RegionDocumentLike) => void;
+  onChange?: (change: RegionPlacementChange) => void;
 };
 
 export type RegionLinePlacementConfirmed = {

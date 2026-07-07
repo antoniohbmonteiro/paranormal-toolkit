@@ -104,6 +104,7 @@ describe("AutomationExecutionMode", () => {
       executionMode: "automatic",
       systemCardMode: "keep",
       damageResolutionMode: "assisted",
+      resistanceGateMode: "strict",
       ritualCastingCheckEnabled: true
     });
 
@@ -116,6 +117,7 @@ describe("AutomationExecutionMode", () => {
       executionMode: "ask",
       systemCardMode: "replace",
       damageResolutionMode: "manual",
+      resistanceGateMode: "strict",
       ritualCastingCheckEnabled: false
     });
   });
