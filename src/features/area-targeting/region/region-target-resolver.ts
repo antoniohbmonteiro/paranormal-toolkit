@@ -87,10 +87,10 @@ type RegionCandidate = {
 
 function getPreviewRegionCandidates(change: RegionPlacementChange): RegionCandidate[] {
   return [
+    { source: "document", region: getBoundsRegionCandidate(change.document) },
+    { source: "document.object", region: getBoundsRegionCandidate(change.document.object) },
     { source: "preview", region: getBoundsRegionCandidate(change.preview) },
     { source: "preview.document.object", region: getBoundsRegionCandidate(change.preview?.document?.object) },
-    { source: "document.object", region: getBoundsRegionCandidate(change.document.object) },
-    { source: "document", region: getBoundsRegionCandidate(change.document) },
   ];
 }
 
