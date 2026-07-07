@@ -13,6 +13,7 @@ type ChatMessageCreateData = {
 
 type SceneLike = {
   id?: string | null;
+  deleteEmbeddedDocuments?: (embeddedName: string, ids: string[]) => Promise<unknown>;
 };
 
 type CanvasPointLike = {
@@ -52,8 +53,10 @@ type RegionDataLike = Record<string, unknown> & {
 };
 
 type RegionObjectLike = Record<string, unknown> & {
+  id?: string | null;
   bounds?: BoundsLike | null;
   document?: RegionDocumentLike | null;
+  delete?: () => Promise<unknown>;
 };
 
 type RegionPlacementCallbackArgsLike = {
@@ -75,6 +78,7 @@ type RegionPlacementOptionsLike = {
 type RegionDocumentLike = {
   id?: string | null;
   name?: string | null;
+  bounds?: BoundsLike | null;
   shapes?: RegionShapeDataLike[];
   tokens?: ReadonlySet<unknown>;
   object?: RegionObjectLike | null;

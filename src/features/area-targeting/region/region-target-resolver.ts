@@ -7,6 +7,8 @@ import type {
   RegionTargetTokenResolutionResult,
 } from "./region-targeting-types";
 
+const DEBUG_REGION_TARGETING = false;
+
 export class RegionTargetResolver {
   constructor(
     private readonly foundryAdapter = new FoundryRegionAdapter(),
@@ -22,47 +24,108 @@ export class RegionTargetResolver {
   }
 
   resolvePreviewTargetTokens(change: RegionPlacementChange): RegionTargetTokenResolutionResult {
-    if (change.preview?.bounds) {
-      return this.resolveRegionObjectTargetTokens(change.preview);
-    }
-
-    const documentObject = change.document.object ?? null;
-    return documentObject
-      ? this.resolveRegionObjectTargetTokens(documentObject)
-      : { tokens: [], source: "regionObjectUnavailable" };
+    return this.resolveFirstRegionCandidate(getPreviewRegionCandidates(change), "preview");
   }
 
   resolveTargetTokens(region: RegionDocumentLike | RegionObjectLike): RegionTargetTokenResolutionResult {
-    const regionObject = getRegionObject(region);
-
-    return regionObject
-      ? this.resolveRegionObjectTargetTokens(regionObject)
-      : { tokens: [], source: "regionObjectUnavailable" };
+    return this.resolveFirstRegionCandidate(getFinalRegionCandidates(region), "final");
   }
 
-  private resolveRegionObjectTargetTokens(region: RegionObjectLike): RegionTargetTokenResolutionResult {
+  private resolveFirstRegionCandidate(
+    candidates: RegionCandidate[],
+    phase: "preview" | "final",
+  ): RegionTargetTokenResolutionResult {
+    debugRegionTargeting("Region targeting candidates.", {
+      phase,
+      candidates: candidates.map((candidate) => ({
+        source: candidate.source,
+        hasBounds: hasBounds(candidate.region),
+      })),
+    });
+
+    for (const candidate of candidates) {
+      if (!hasBounds(candidate.region)) continue;
+
+      const result = this.resolveRegionObjectTargetTokens(candidate.region);
+      debugRegionTargeting("Region targeting resolved candidate.", {
+        phase,
+        source: candidate.source,
+        targetCount: result.tokens.length,
+      });
+      return result;
+    }
+
+    return { tokens: [], source: "regionObjectUnavailable" };
+  }
+
+  private resolveRegionObjectTargetTokens(region: RegionObjectLike | RegionDocumentLike): RegionTargetTokenResolutionResult {
     if (!region.bounds) return { tokens: [], source: "regionObjectUnavailable" };
 
-    return {
-      tokens: uniqueTokens(
-        this.foundryAdapter.getTokensInBounds(region.bounds).filter((token) => {
-          if (!token.actor) return false;
-          if (typeof token.document?.testInsideRegion !== "function") return false;
+    const candidates = this.foundryAdapter.getTokensInBounds(region.bounds);
+    const tokens = uniqueTokens(
+      candidates.filter((token) => {
+        if (!token.actor) return false;
+        if (typeof token.document?.testInsideRegion !== "function") return false;
 
-          return token.document.testInsideRegion(region);
-        }),
-      ),
-      source: "regionObject",
-    };
+        return token.document.testInsideRegion(region);
+      }),
+    );
+
+    debugRegionTargeting("Region targeting quadtree result.", {
+      candidateCount: candidates.length,
+      targetCount: tokens.length,
+    });
+
+    return { tokens, source: "regionObject" };
   }
 }
 
-function getRegionObject(region: RegionDocumentLike | RegionObjectLike): RegionObjectLike | null {
-  return isRegionObject(region) ? region : region.object ?? null;
+type RegionCandidate = {
+  source: string;
+  region: RegionObjectLike | RegionDocumentLike | null;
+};
+
+function getPreviewRegionCandidates(change: RegionPlacementChange): RegionCandidate[] {
+  return [
+    { source: "preview", region: getBoundsRegionCandidate(change.preview) },
+    { source: "preview.document.object", region: getBoundsRegionCandidate(change.preview?.document?.object) },
+    { source: "document.object", region: getBoundsRegionCandidate(change.document.object) },
+    { source: "document", region: getBoundsRegionCandidate(change.document) },
+  ];
 }
 
-function isRegionObject(region: RegionDocumentLike | RegionObjectLike): region is RegionObjectLike {
-  return "bounds" in region;
+function getFinalRegionCandidates(region: RegionDocumentLike | RegionObjectLike): RegionCandidate[] {
+  return [
+    { source: "input", region: getBoundsRegionCandidate(region) },
+    { source: "input.object", region: isRegionDocument(region) ? getBoundsRegionCandidate(region.object) : null },
+    { source: "input.document.object", region: isRegionObject(region) ? getBoundsRegionCandidate(region.document?.object) : null },
+  ];
+}
+
+function getBoundsRegionCandidate(value: unknown): RegionObjectLike | RegionDocumentLike | null {
+  return hasBounds(value) ? value : null;
+}
+
+function hasBounds(value: unknown): value is RegionObjectLike | RegionDocumentLike {
+  if (!value || typeof value !== "object") return false;
+  const bounds = (value as { bounds?: unknown }).bounds;
+  if (!bounds || typeof bounds !== "object") return false;
+
+  const candidate = bounds as Partial<BoundsLike>;
+  return (
+    isFiniteNumber(candidate.x) &&
+    isFiniteNumber(candidate.y) &&
+    isFiniteNumber(candidate.width) &&
+    isFiniteNumber(candidate.height)
+  );
+}
+
+function isRegionObject(region: RegionObjectLike | RegionDocumentLike): region is RegionObjectLike {
+  return "document" in region && "bounds" in region;
+}
+
+function isRegionDocument(region: RegionObjectLike | RegionDocumentLike): region is RegionDocumentLike {
+  return !isRegionObject(region);
 }
 
 function uniqueTokens(tokens: TokenLike[]): TokenLike[] {
@@ -76,4 +139,13 @@ function uniqueTokens(tokens: TokenLike[]): TokenLike[] {
     seen.add(key);
     return true;
   });
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function debugRegionTargeting(message: string, data: Record<string, unknown>): void {
+  if (!DEBUG_REGION_TARGETING) return;
+  console.debug(`Paranormal Toolkit: ${message}`, data);
 }

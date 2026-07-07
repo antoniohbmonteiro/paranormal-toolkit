@@ -43,6 +43,10 @@ export class FoundryRegionAdapter {
     return objects ? Array.from(objects) : this.getSceneTokens();
   }
 
+  async deleteRegionDocumentById(id: string): Promise<void> {
+    await canvas?.scene?.deleteEmbeddedDocuments?.("Region", [id]);
+  }
+
   getSceneTokens(): TokenLike[] {
     return canvas?.tokens?.placeables ?? [];
   }
