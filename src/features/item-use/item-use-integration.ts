@@ -1,4 +1,6 @@
 import type { AutomationDefinition } from "../../core/automation/automation-definition";
+import type { RitualEventBus } from "../../core/public-api/ritual-event-bus";
+import type { RitualAutomationSourceInput } from "../../core/public-api/ritual-event-types";
 import type { DamageApplicationAdapter } from "../../core/damage/damage-adapter";
 import type {
   DamageApplicationFailure,
@@ -16,7 +18,7 @@ import { createWorkflowDebugSnapshot } from "../../core/workflow/workflow-debug-
 import type { WorkflowContext } from "../../core/workflow/workflow-context";
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { DebugOutputService } from "../../debug/output/debug-output-service";
-import { readAutomationDefinition } from "../automation/automation-flag-reader";
+import { readAutomationFlagValue } from "../automation/automation-flag-reader";
 import { neutralizeAutomatedItemInlineRolls } from "../chat/inline-roll-sanitizer";
 import {
   createResistanceFromRitualItem,
@@ -108,11 +110,13 @@ export class ItemUseIntegration {
     private readonly damage: DamageApplicationAdapter,
     private readonly conditions: ConditionEngine,
     private readonly debugOutput: DebugOutputService,
+    ritualEvents: RitualEventBus,
   ) {
     this.ritualAssistant = new RitualAssistedWorkflow(
       workflow,
       resources,
       ritualCosts,
+      ritualEvents,
     );
   }
 
@@ -145,11 +149,11 @@ export class ItemUseIntegration {
       return;
     }
 
-    const definition = readAutomationDefinition(context.item);
+    const automationFlag = readAutomationFlagValue(context.item);
 
-    if (!definition.ok) {
+    if (!automationFlag.ok) {
       if (
-        definition.error.reason === "missing-automation" &&
+        automationFlag.error.reason === "missing-automation" &&
         isRitualItem(context.item) &&
         settings.executionMode === "ask"
       ) {
@@ -158,14 +162,14 @@ export class ItemUseIntegration {
       }
 
       const status =
-        definition.error.reason === "missing-automation" ? "ignored" : "failed";
-      this.setAttempt(context, status, definition.error.reason);
+        automationFlag.error.reason === "missing-automation" ? "ignored" : "failed";
+      this.setAttempt(context, status, automationFlag.error.reason);
 
-      if (definition.error.reason === "invalid-automation") {
+      if (automationFlag.error.reason === "invalid-automation") {
         this.debugOutput.warn({
           title: "Automação de item inválida",
-          message: definition.error.message,
-          data: definition.error,
+          message: automationFlag.error.message,
+          data: automationFlag.error,
         });
       }
 
@@ -193,12 +197,12 @@ export class ItemUseIntegration {
 
     const automationDefinition = withAssistedEffectResistance(
       context.item,
-      definition.value,
+      automationFlag.value.definition,
     );
 
     switch (settings.executionMode) {
       case "ask":
-        await this.handleAskMode(context, automationDefinition);
+        await this.handleAskMode(context, automationDefinition, automationFlag.value.source);
         return;
       case "automatic":
         await this.executeAutomation(context, automationDefinition, "automatic");
@@ -299,9 +303,10 @@ export class ItemUseIntegration {
   private async handleAskMode(
     context: ItemUseContext,
     definition: AutomationDefinition,
+    automationSource: RitualAutomationSourceInput,
   ): Promise<void> {
     if (this.ritualAssistant.canHandle(context, definition)) {
-      await this.handleAssistedRitual(context, definition);
+      await this.handleAssistedRitual(context, definition, automationSource);
       return;
     }
 
@@ -330,16 +335,18 @@ export class ItemUseIntegration {
     await this.handleAssistedRitual(
       context,
       createGenericRitualDefinition(context.item),
+      { type: "generic" },
     );
   }
 
   private async handleAssistedRitual(
     context: ItemUseContext,
     definition: AutomationDefinition,
+    automationSource: RitualAutomationSourceInput,
   ): Promise<void> {
     this.setAttempt(context, "running", "ritual-assisted-cast");
 
-    const result = await this.ritualAssistant.run(context, definition);
+    const result = await this.ritualAssistant.run(context, definition, automationSource);
 
     switch (result.status) {
       case "cancelled":

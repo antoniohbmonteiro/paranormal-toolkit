@@ -1,4 +1,5 @@
 import type { AutomationRitualTargetingDefinition } from "../../core/automation/automation-definition";
+import type { PublicRitualArea } from "../../core/public-api/ritual-event-types";
 import type { WorkflowTarget } from "../../core/workflow/workflow-context";
 import type { RitualCastOptions } from "../rituals/ritual-cast-options";
 
@@ -53,6 +54,7 @@ export type PreCastTargetingInput = {
 export type PreCastTargetingConfirmed = {
   status: "confirmed";
   targets: WorkflowTarget[];
+  areaSnapshot?: PublicRitualArea | null;
 };
 
 export type PreCastTargetingCancelled = {

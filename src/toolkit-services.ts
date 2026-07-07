@@ -11,6 +11,7 @@ import { AutomationBinder } from "./core/automation/automation-binder";
 import { AutomationRegistry } from "./core/automation/automation-registry";
 import { AutomationRunner } from "./core/automation/automation-runner";
 import { DamageEngine } from "./core/damage/damage-engine";
+import { RitualEventBus } from "./core/public-api/ritual-event-bus";
 import { ResistanceEngine } from "./core/resistance/resistance-engine";
 import { ResourceEngine } from "./core/resources/resource-engine";
 import { RitualCastingEngine } from "./core/rituals/ritual-casting-engine";
@@ -45,6 +46,7 @@ export type ToolkitServices = {
   debugOutput: DebugOutputService;
   chatMessages: ChatMessageService;
   workflowHooks: WorkflowHookEmitter;
+  ritualEvents: RitualEventBus;
   automation: AutomationRunner;
   workflow: WorkflowEngine;
   itemUseIntegration: ItemUseIntegration;
@@ -85,6 +87,7 @@ export function createToolkitServices(): ToolkitServices {
   const debugOutput = new DebugOutputService();
   const chatMessages = new ChatMessageService(debugOutput);
   const workflowHooks = new WorkflowHookEmitter();
+  const ritualEvents = new RitualEventBus();
   const automation = new AutomationRunner(
     resources,
     ritualCosts,
@@ -99,6 +102,7 @@ export function createToolkitServices(): ToolkitServices {
     damage,
     conditions,
     debugOutput,
+    ritualEvents,
   );
 
   itemUseIntegration.addStrategy(
@@ -124,6 +128,7 @@ export function createToolkitServices(): ToolkitServices {
     debugOutput,
     chatMessages,
     workflowHooks,
+    ritualEvents,
     automation,
     workflow,
     itemUseIntegration,

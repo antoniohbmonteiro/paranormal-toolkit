@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants";
 import { createDebugApi, DebugApi } from "../debug/debug-api";
+import { PARANORMAL_TOOLKIT_HOOKS } from "./public-api/paranormal-toolkit-hooks";
 import {
   createConditionApi,
   type ToolkitConditionApi,
@@ -19,6 +20,7 @@ export type ParanormalToolkitApi = {
   itemUseIntegration: ToolkitServices["itemUseIntegration"];
   conditions: ToolkitConditionApi;
   debug: DebugApi;
+  hooks: typeof PARANORMAL_TOOLKIT_HOOKS;
 };
 
 export function registerGlobalApi(
@@ -37,6 +39,7 @@ export function registerGlobalApi(
     itemUseIntegration: services.itemUseIntegration,
     conditions: createConditionApi(services.conditions),
     debug: createDebugApi(services),
+    hooks: PARANORMAL_TOOLKIT_HOOKS,
   };
 
   const globalObject = globalThis as typeof globalThis &
