@@ -150,18 +150,85 @@ type RegionLineGeometry = {
 const FALLBACK_GRID_SIZE = 100;
 
 function resolveLineGeometryTokens(sceneTokens: TokenLike[], line: RegionLineGeometry): TokenLike[] {
+  const linePolygon = createLineAreaPolygon(line);
+
   return uniqueTokens(
     sceneTokens.filter((token) => {
       if (!token.actor) return false;
 
-      const sampledPoints = sampleTokenPoints(token);
-      if (sampledPoints.length === 0) return false;
+      const tokenBounds = getTokenBounds(token);
+      if (!tokenBounds) return false;
 
-      return sampledPoints.some(
-        (point) => distancePointToSegment(point, line.origin, line.destination) <= line.width / 2,
-      );
+      return polygonsIntersect(linePolygon, createBoundsPolygon(tokenBounds));
     }),
   );
+}
+
+function createLineAreaPolygon(line: RegionLineGeometry): CanvasPointLike[] {
+  const direction = normalizeVector({
+    x: line.destination.x - line.origin.x,
+    y: line.destination.y - line.origin.y,
+  });
+  const normal = { x: -direction.y, y: direction.x };
+  const halfWidth = line.width / 2;
+  const offset = { x: normal.x * halfWidth, y: normal.y * halfWidth };
+
+  return [
+    { x: line.origin.x + offset.x, y: line.origin.y + offset.y },
+    { x: line.destination.x + offset.x, y: line.destination.y + offset.y },
+    { x: line.destination.x - offset.x, y: line.destination.y - offset.y },
+    { x: line.origin.x - offset.x, y: line.origin.y - offset.y },
+  ];
+}
+
+function createBoundsPolygon(bounds: { x: number; y: number; width: number; height: number }): CanvasPointLike[] {
+  const left = bounds.x;
+  const right = bounds.x + bounds.width;
+  const top = bounds.y;
+  const bottom = bounds.y + bounds.height;
+
+  return [
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom },
+  ];
+}
+
+function polygonsIntersect(left: CanvasPointLike[], right: CanvasPointLike[]): boolean {
+  const axes = [...getPolygonAxes(left), ...getPolygonAxes(right)];
+
+  return axes.every((axis) => projectionsOverlap(projectPolygon(left, axis), projectPolygon(right, axis)));
+}
+
+function getPolygonAxes(polygon: CanvasPointLike[]): CanvasPointLike[] {
+  const axes: CanvasPointLike[] = [];
+
+  for (let index = 0; index < polygon.length; index += 1) {
+    const current = polygon[index];
+    const next = polygon[(index + 1) % polygon.length];
+    const edge = { x: next.x - current.x, y: next.y - current.y };
+    axes.push(normalizeVector({ x: -edge.y, y: edge.x }));
+  }
+
+  return axes;
+}
+
+function projectPolygon(polygon: CanvasPointLike[], axis: CanvasPointLike): { min: number; max: number } {
+  const projections = polygon.map((point) => point.x * axis.x + point.y * axis.y);
+  return {
+    min: Math.min(...projections),
+    max: Math.max(...projections),
+  };
+}
+
+function projectionsOverlap(left: { min: number; max: number }, right: { min: number; max: number }): boolean {
+  return left.max >= right.min && right.max >= left.min;
+}
+
+function normalizeVector(vector: CanvasPointLike): CanvasPointLike {
+  const length = Math.hypot(vector.x, vector.y);
+  return length > 0 ? { x: vector.x / length, y: vector.y / length } : { x: 0, y: 0 };
 }
 
 function getRegionLineGeometry(region: RegionDocumentLike, gridSize: number): RegionLineGeometry | null {
@@ -319,30 +386,6 @@ function uniqueTokens(tokens: TokenLike[]): TokenLike[] {
     seen.add(key);
     return true;
   });
-}
-
-function distancePointToSegment(point: CanvasPointLike, start: CanvasPointLike, end: CanvasPointLike): number {
-  const segmentX = end.x - start.x;
-  const segmentY = end.y - start.y;
-  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
-
-  if (lengthSquared <= 0) {
-    return distanceBetweenPoints(point, start);
-  }
-
-  const projected =
-    ((point.x - start.x) * segmentX + (point.y - start.y) * segmentY) / lengthSquared;
-  const clampedProjection = Math.max(0, Math.min(1, projected));
-  const closest = {
-    x: start.x + clampedProjection * segmentX,
-    y: start.y + clampedProjection * segmentY,
-  };
-
-  return distanceBetweenPoints(point, closest);
-}
-
-function distanceBetweenPoints(left: CanvasPointLike, right: CanvasPointLike): number {
-  return Math.hypot(left.x - right.x, left.y - right.y);
 }
 
 function getStringProperty(value: unknown, key: string): string | null {
