@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.33.0`.
+Versão atual documentada: `v0.33.1`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,17 @@ O Toolkit já tem:
 
 ## Roadmap por prioridade
 
+
+### Concluído em 0.33.1 — DT correta para O Custo do Paranormal
+
+Objetivo: corrigir a DT usada para definir se a falha na conjuração gera dano de sanidade no conjurador, sem alterar a resistência dos alvos.
+
+Entrega feita:
+
+- calcula a DT de conjuração do Custo do Paranormal como `20 + PE final`;
+- mantém o bloco visual de Conjuração no chat card;
+- mantém resistência dos alvos, dano normal/metade e aplicação assistida de efeitos sem alterações;
+- não implementa dano permanente de sanidade.
 
 ### Concluído em 0.33.0 — API pública de lifecycle de rituais
 

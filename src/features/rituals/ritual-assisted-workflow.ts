@@ -17,6 +17,7 @@ import {
   rollOrdemRitualCastingCheck,
   type OrdemRitualCastingCheckResult,
 } from "../../adapters/ordem/ordem-ritual-casting-adapter";
+import { calculateParanormalCostDifficulty } from "../../adapters/ordem/ordem-ritual-formulas";
 import { resolveAutomationAmount } from "../../core/automation/automation-amount-resolver";
 import { executeAutomationResourceOperation } from "../../core/automation/automation-resource-executor";
 import type { DamageApplicationInstanceInput } from "../../core/damage/damage-application";
@@ -327,8 +328,13 @@ export class RitualAssistedWorkflow {
       }
 
       try {
-        castingCheck = await rollOrdemRitualCastingCheck(
+        const rollResult = await rollOrdemRitualCastingCheck(
           effectiveContext.actor as Actor,
+        );
+        castingCheck = createRitualCastingCheckSummary(
+          rollResult,
+          form,
+          cost,
         );
       } catch (cause) {
         const message = cause instanceof Error
@@ -662,6 +668,31 @@ function applyFormOverridesToStep(
     ...step,
     formula,
   } satisfies RollFormulaStep;
+}
+
+function createRitualCastingCheckSummary(
+  result: OrdemRitualCastingCheckResult,
+  form: AutomationRitualFormDefinition,
+  cost: RitualCost | null,
+): RitualCastingCheckSummary {
+  const sanityDifficulty = calculateRitualSanityDifficulty(cost, form);
+  const difficulty = sanityDifficulty ?? result.difficulty;
+
+  return {
+    ...result,
+    difficulty,
+    success: result.total >= difficulty,
+  };
+}
+
+function calculateRitualSanityDifficulty(
+  cost: RitualCost | null,
+  form: AutomationRitualFormDefinition,
+): number | null {
+  const finalCost = calculateFinalRitualCost(cost, form);
+  if (!finalCost) return null;
+
+  return calculateParanormalCostDifficulty(finalCost.amount);
 }
 
 function createCastingFailureSanityActions(
