@@ -23,10 +23,24 @@ export class RegionTargetResolver {
 
 
   resolvePreviewTargetTokens(change: RegionPlacementChange): RegionTargetTokenResolutionResult {
-    if (change.shape?.type === "line") {
+    const sceneTokens = this.foundryAdapter.getSceneTokens();
+    const previewRegionTokens = change.preview?.document
+      ? this.resolveRegionTokens(change.preview.document, sceneTokens)
+      : [];
+
+    if (previewRegionTokens.length > 0) {
+      return { tokens: previewRegionTokens, source: "regionTokens" };
+    }
+
+    const documentRegionTokens = this.resolveRegionTokens(change.document, sceneTokens);
+    if (documentRegionTokens.length > 0) {
+      return { tokens: documentRegionTokens, source: "regionTokens" };
+    }
+
+    if (change.shape) {
       return {
-        tokens: this.resolveLineGeometryTokensFromShape(change.shape),
-        source: "lineGeometry",
+        tokens: this.resolveShapeGeometryTokens(change.shape),
+        source: "shapeGeometry",
       };
     }
 
@@ -61,8 +75,8 @@ export class RegionTargetResolver {
     }
 
     return {
-      tokens: this.resolveLineGeometryTokens(region, sceneTokens),
-      source: "lineGeometry",
+      tokens: this.resolveShapeGeometryTokensFromRegion(region, sceneTokens),
+      source: "shapeGeometry",
     };
   }
 
@@ -123,21 +137,37 @@ export class RegionTargetResolver {
     );
   }
 
-  private resolveLineGeometryTokensFromShape(shape: RegionShapeDataLike): TokenLike[] {
+  private resolveShapeGeometryTokens(shape: RegionShapeDataLike): TokenLike[] {
     const sceneTokens = this.foundryAdapter.getSceneTokens();
-    const line = getRegionLineShapeGeometry(shape, this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE);
+    const gridSize = this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE;
 
-    return line ? resolveLineGeometryTokens(sceneTokens, line) : [];
+    if (shape.type === "rectangle") {
+      const rectangle = getRegionRectangleShapeGeometry(shape);
+      return rectangle ? resolvePolygonGeometryTokens(sceneTokens, rectangle) : [];
+    }
+
+    if (shape.type === "line") {
+      const line = getRegionLineShapeGeometry(shape, gridSize);
+      return line ? resolvePolygonGeometryTokens(sceneTokens, createLineAreaPolygon(line)) : [];
+    }
+
+    return [];
   }
 
-  private resolveLineGeometryTokens(
+  private resolveShapeGeometryTokensFromRegion(
     region: RegionDocumentLike,
     sceneTokens: TokenLike[],
   ): TokenLike[] {
-    const line = getRegionLineGeometry(region, this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE);
-    if (!line) return [];
+    const shape = getRegionTargetingShape(region);
+    if (!shape) return [];
 
-    return resolveLineGeometryTokens(sceneTokens, line);
+    if (shape.type === "rectangle") {
+      const rectangle = getRegionRectangleShapeGeometry(shape);
+      return rectangle ? resolvePolygonGeometryTokens(sceneTokens, rectangle) : [];
+    }
+
+    const line = getRegionLineGeometry(region, this.foundryAdapter.getGridSize() ?? FALLBACK_GRID_SIZE);
+    return line ? resolvePolygonGeometryTokens(sceneTokens, createLineAreaPolygon(line)) : [];
   }
 }
 
@@ -149,17 +179,15 @@ type RegionLineGeometry = {
 
 const FALLBACK_GRID_SIZE = 100;
 
-function resolveLineGeometryTokens(sceneTokens: TokenLike[], line: RegionLineGeometry): TokenLike[] {
-  const linePolygon = createLineAreaPolygon(line);
-
+function resolvePolygonGeometryTokens(sceneTokens: TokenLike[], areaPolygon: CanvasPointLike[]): TokenLike[] {
   return uniqueTokens(
     sceneTokens.filter((token) => {
       if (!token.actor) return false;
 
-      const tokenBounds = getTokenBounds(token);
+      const tokenBounds = getTokenDocumentBounds(token);
       if (!tokenBounds) return false;
 
-      return polygonsIntersect(linePolygon, createBoundsPolygon(tokenBounds));
+      return polygonsIntersect(areaPolygon, createBoundsPolygon(tokenBounds));
     }),
   );
 }
@@ -179,6 +207,44 @@ function createLineAreaPolygon(line: RegionLineGeometry): CanvasPointLike[] {
     { x: line.destination.x - offset.x, y: line.destination.y - offset.y },
     { x: line.origin.x - offset.x, y: line.origin.y - offset.y },
   ];
+}
+
+
+function getRegionRectangleShapeGeometry(shape: RegionShapeDataLike): CanvasPointLike[] | null {
+  const x = getFiniteNumber(shape.x);
+  const y = getFiniteNumber(shape.y);
+  const width = getFiniteNumber(shape.width);
+  const height = getFiniteNumber(shape.height);
+  const direction = getFiniteNumber(shape.direction) ?? getFiniteNumber(shape.rotation) ?? 0;
+
+  if (x === null || y === null || width === null || height === null || width <= 0 || height <= 0) {
+    return null;
+  }
+
+  return rotatePolygon(
+    createBoundsPolygon({ x, y, width, height }),
+    { x, y: y + height / 2 },
+    degreesToRadians(direction),
+  );
+}
+
+function rotatePolygon(
+  polygon: CanvasPointLike[],
+  origin: CanvasPointLike,
+  radians: number,
+): CanvasPointLike[] {
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+
+  return polygon.map((point) => {
+    const translatedX = point.x - origin.x;
+    const translatedY = point.y - origin.y;
+
+    return {
+      x: origin.x + translatedX * cosine - translatedY * sine,
+      y: origin.y + translatedX * sine + translatedY * cosine,
+    };
+  });
 }
 
 function createBoundsPolygon(bounds: { x: number; y: number; width: number; height: number }): CanvasPointLike[] {
@@ -257,9 +323,14 @@ function getRegionLineShapeGeometry(shape: RegionShapeDataLike, gridSize: number
   };
 }
 
-function getRegionLineShape(region: RegionDocumentLike): RegionShapeDataLike | null {
+function getRegionTargetingShape(region: RegionDocumentLike): RegionShapeDataLike | null {
   const shapes = getRegionShapes(region);
-  return shapes.find((shape) => shape.type === "line") ?? null;
+  return shapes.find((shape) => shape.type === "rectangle") ?? shapes.find((shape) => shape.type === "line") ?? null;
+}
+
+function getRegionLineShape(region: RegionDocumentLike): RegionShapeDataLike | null {
+  const shape = getRegionTargetingShape(region);
+  return shape?.type === "line" ? shape : null;
 }
 
 function getRegionShapes(region: RegionDocumentLike): RegionShapeDataLike[] {
@@ -332,6 +403,25 @@ function sampleTokenPoints(token: TokenLike): CanvasPointLike[] {
     { x: middleX, y: bottom },
     { x: left, y: middleY },
   ];
+}
+
+function getTokenDocumentBounds(token: TokenLike): { x: number; y: number; width: number; height: number } | null {
+  const gridSize = getFiniteNumber(canvas?.grid?.size) ?? FALLBACK_GRID_SIZE;
+  const x = getFiniteNumber(token.document?.x);
+  const y = getFiniteNumber(token.document?.y);
+  const documentWidth = getFiniteNumber(token.document?.width);
+  const documentHeight = getFiniteNumber(token.document?.height);
+
+  if (x !== null && y !== null && documentWidth !== null && documentHeight !== null) {
+    return {
+      x,
+      y,
+      width: documentWidth * gridSize,
+      height: documentHeight * gridSize,
+    };
+  }
+
+  return getTokenBounds(token);
 }
 
 function getTokenBounds(token: TokenLike): { x: number; y: number; width: number; height: number } | null {

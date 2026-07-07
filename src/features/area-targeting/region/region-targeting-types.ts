@@ -13,7 +13,7 @@ export type RegionTargetingFailureReason =
 export type RegionPlacementMode = "ephemeral" | "persistent";
 
 export type RegionLineShapeConfig = {
-  shape: "line";
+  shape: "rectangleRay";
   length?: number | null;
   width?: number | null;
   direction?: number | null;
@@ -52,7 +52,7 @@ export type RegionLinePlacementResult =
   | RegionLinePlacementCancelled
   | RegionLinePlacementFailed;
 
-export type RegionTargetResolutionSource = "regionTokens" | "tokenDocument" | "testPoint" | "lineGeometry";
+export type RegionTargetResolutionSource = "regionTokens" | "tokenDocument" | "testPoint" | "lineGeometry" | "shapeGeometry";
 
 export type RegionTargetTokenResolutionResult = {
   tokens: TokenLike[];

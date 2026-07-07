@@ -16,7 +16,7 @@ export class RegionLinePlacementService {
   ) {}
 
   async placeLine(
-    config: RegionLineShapeConfig = { shape: "line" },
+    config: RegionLineShapeConfig = { shape: "rectangleRay" },
     callbacks: RegionLinePlacementCallbacks = {},
   ): Promise<RegionLinePlacementResult> {
     const placementState = this.foundryAdapter.canPlaceRegions();
@@ -79,19 +79,19 @@ function createLineRegionData(
         purpose: "ritual-line-targeting",
       },
     },
-    shapes: [createLineShapeData(config, gridSize)],
+    shapes: [createRectangleRayShapeData(config, gridSize)],
   };
 }
 
-function createLineShapeData(config: RegionLineShapeConfig, gridSize: number): RegionShapeDataLike {
+function createRectangleRayShapeData(config: RegionLineShapeConfig, gridSize: number): RegionShapeDataLike {
   const dimensions = resolveRegionLineShapeDimensions(config, gridSize);
 
   return {
-    type: "line",
+    type: "rectangle",
     x: 0,
-    y: 0,
-    length: dimensions.length,
-    width: dimensions.width,
+    y: -dimensions.width / 2,
+    width: dimensions.length,
+    height: dimensions.width,
     direction: config.direction ?? 0,
     elevation: config.elevation ?? 0,
   };
@@ -113,13 +113,13 @@ function resolveRegionLineShapeDimensions(
 function getUsefulPixelDimension(
   configuredValue: number | null | undefined,
   fallback: number,
-  minimumUsefulPixels: number,
+  gridSize: number,
 ): number {
-  return typeof configuredValue === "number" &&
-    Number.isFinite(configuredValue) &&
-    configuredValue >= minimumUsefulPixels
-    ? configuredValue
-    : fallback;
+  if (typeof configuredValue !== "number" || !Number.isFinite(configuredValue) || configuredValue <= 0) {
+    return fallback;
+  }
+
+  return configuredValue >= gridSize ? configuredValue : configuredValue * gridSize;
 }
 
 function getPlacementFailureMessage(error: unknown): string {

@@ -34,7 +34,7 @@ export class AreaTargetingService {
 
       const placementResult = await this.regionLinePlacement.placeLine(
         {
-          shape: "line",
+          shape: "rectangleRay",
           length: input.formTargeting?.template?.distance,
           width: input.formTargeting?.template?.width,
         },
