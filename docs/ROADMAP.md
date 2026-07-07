@@ -44,6 +44,19 @@ O Toolkit já tem:
 
 ## Roadmap por prioridade
 
+### Concluído em 0.32.0 — Seleção de alvos por área com Scene Regions
+
+Objetivo: permitir que rituais com área, como Eletrocussão Discente, selecionem alvos pela cena em vez de depender só dos tokens já selecionados manualmente.
+
+Entrega feita:
+
+- adiciona seleção opcional de alvos por Region retangular rotacionável na cena;
+- usa Scene Regions do Foundry v14 para preview e confirmação;
+- resolve alvos com `canvas.tokens.quadtree.getObjects(region.bounds)` e `token.document.testInsideRegion(region)`;
+- mostra preview visual de targets durante movimento/rotação;
+- remove a Region temporária após confirmar ou cancelar;
+- preserva o fluxo assistido existente de dano/resistência, sem aplicar efeitos automaticamente.
+
 ### Concluído em 0.12.0 — Ação de GM para aplicar presets pela ficha
 
 Objetivo: tirar o fluxo normal do console.
