@@ -26,14 +26,14 @@ export class RegionTargetResolver {
     const sceneTokens = this.foundryAdapter.getSceneTokens();
     const previewRegionTokens = change.preview?.document
       ? this.resolveRegionTokens(change.preview.document, sceneTokens)
-      : [];
+      : null;
 
-    if (previewRegionTokens.length > 0) {
+    if (previewRegionTokens !== null) {
       return { tokens: previewRegionTokens, source: "regionTokens" };
     }
 
     const documentRegionTokens = this.resolveRegionTokens(change.document, sceneTokens);
-    if (documentRegionTokens.length > 0) {
+    if (documentRegionTokens !== null) {
       return { tokens: documentRegionTokens, source: "regionTokens" };
     }
 
@@ -51,7 +51,7 @@ export class RegionTargetResolver {
     const sceneTokens = this.foundryAdapter.getSceneTokens();
     const regionTokens = this.resolveRegionTokens(region, sceneTokens);
 
-    if (regionTokens.length > 0) {
+    if (regionTokens !== null) {
       return {
         tokens: regionTokens,
         source: "regionTokens",
@@ -83,9 +83,10 @@ export class RegionTargetResolver {
   private resolveRegionTokens(
     region: RegionDocumentLike,
     sceneTokens: TokenLike[],
-  ): TokenLike[] {
-    const regionTokenEntries = Array.from(region.tokens ?? []);
-    if (regionTokenEntries.length === 0) return [];
+  ): TokenLike[] | null {
+    if (!region.tokens) return null;
+
+    const regionTokenEntries = Array.from(region.tokens);
 
     return uniqueTokens(
       regionTokenEntries.flatMap((entry) => {
@@ -223,7 +224,7 @@ function getRegionRectangleShapeGeometry(shape: RegionShapeDataLike): CanvasPoin
 
   return rotatePolygon(
     createBoundsPolygon({ x, y, width, height }),
-    { x, y: y + height / 2 },
+    { x, y },
     degreesToRadians(direction),
   );
 }

@@ -89,7 +89,7 @@ function createRectangleRayShapeData(config: RegionLineShapeConfig, gridSize: nu
   return {
     type: "rectangle",
     x: 0,
-    y: -dimensions.width / 2,
+    y: 0,
     width: dimensions.length,
     height: dimensions.width,
     direction: config.direction ?? 0,
@@ -101,25 +101,24 @@ function resolveRegionLineShapeDimensions(
   config: RegionLineShapeConfig,
   gridSize: number,
 ): { length: number; width: number } {
-  const widthFallback = gridSize;
-  const lengthFallback = gridSize * DEFAULT_REGION_LINE_LENGTH_IN_GRID_CELLS;
-
   return {
-    length: getUsefulPixelDimension(config.length, lengthFallback, gridSize),
-    width: getUsefulPixelDimension(config.width, widthFallback, gridSize),
+    length: getGridCellDimensionPixels(config.length, DEFAULT_REGION_LINE_LENGTH_IN_GRID_CELLS, gridSize),
+    width: getGridCellDimensionPixels(config.width, 1, gridSize),
   };
 }
 
-function getUsefulPixelDimension(
-  configuredValue: number | null | undefined,
-  fallback: number,
+function getGridCellDimensionPixels(
+  configuredGridCells: number | null | undefined,
+  fallbackGridCells: number,
   gridSize: number,
 ): number {
-  if (typeof configuredValue !== "number" || !Number.isFinite(configuredValue) || configuredValue <= 0) {
-    return fallback;
-  }
+  const gridCells = typeof configuredGridCells === "number" &&
+    Number.isFinite(configuredGridCells) &&
+    configuredGridCells > 0
+    ? configuredGridCells
+    : fallbackGridCells;
 
-  return configuredValue >= gridSize ? configuredValue : configuredValue * gridSize;
+  return gridCells * gridSize;
 }
 
 function getPlacementFailureMessage(error: unknown): string {
