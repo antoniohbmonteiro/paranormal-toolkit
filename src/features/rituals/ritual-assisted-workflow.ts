@@ -21,6 +21,17 @@ import { resolveAutomationAmount } from "../../core/automation/automation-amount
 import { executeAutomationResourceOperation } from "../../core/automation/automation-resource-executor";
 import type { DamageApplicationInstanceInput } from "../../core/damage/damage-application";
 import { getToolkitDamageTypeLabel } from "../../core/damage/damage-types";
+import type { RitualEventBus } from "../../core/public-api/ritual-event-bus";
+import {
+  createRitualAreaResolvedEvent,
+  createRitualCastFinishedEvent,
+  createRitualCastId,
+  createRitualCastStartedEvent,
+} from "../../core/public-api/ritual-event-builder";
+import type {
+  RitualAutomationSourceInput,
+  RitualCastFinishedStatus,
+} from "../../core/public-api/ritual-event-types";
 import type { RitualCostProvider } from "../../core/rituals/ritual-cost-provider";
 import {
   createCurrentCombatDurationAnchor,
@@ -171,6 +182,7 @@ export class RitualAssistedWorkflow {
     private readonly workflow: WorkflowEngine,
     private readonly resources: ResourceEngine,
     private readonly ritualCosts: RitualCostProvider,
+    private readonly ritualEvents: RitualEventBus,
   ) {}
 
   canHandle(
@@ -186,6 +198,7 @@ export class RitualAssistedWorkflow {
   async run(
     context: ItemUseContext,
     definition: AutomationDefinition,
+    automationSource: RitualAutomationSourceInput,
   ): Promise<RitualAssistedRunResult> {
     if (!context.actor) {
       return {
@@ -224,6 +237,34 @@ export class RitualAssistedWorkflow {
       castOptions.variant,
       isGenericRitual,
     );
+    const castId = createRitualCastId();
+    const formLabel = form.label ?? getRitualCastVariantLabel(castOptions.variant);
+    const createEventInput = (targets: WorkflowTarget[] = context.targets) => ({
+      castId,
+      context,
+      automationSource,
+      form: castOptions.variant,
+      formLabel,
+      targets,
+    });
+    const emitFinished = (
+      status: RitualCastFinishedStatus,
+      targets: WorkflowTarget[] = context.targets,
+      details: { reason?: string; message?: string } = {},
+    ): void => {
+      this.ritualEvents.emitCastFinished(
+        createRitualCastFinishedEvent({
+          ...createEventInput(targets),
+          status,
+          ...details,
+        }),
+      );
+    };
+
+    this.ritualEvents.emitCastStarted(
+      createRitualCastStartedEvent(createEventInput()),
+    );
+
     const targetingResult = await this.areaTargeting.resolvePreCastTargets({
       castOptions,
       formTargeting: form.targeting,
@@ -231,10 +272,15 @@ export class RitualAssistedWorkflow {
     });
 
     if (targetingResult.status === "cancelled") {
+      emitFinished("cancelled", context.targets, { reason: targetingResult.reason });
       return { status: "cancelled" };
     }
 
     if (targetingResult.status === "failed") {
+      emitFinished("failed", context.targets, {
+        reason: targetingResult.reason,
+        message: targetingResult.message,
+      });
       return {
         status: "failed",
         reason: targetingResult.reason,
@@ -246,6 +292,16 @@ export class RitualAssistedWorkflow {
       context,
       targetingResult.targets,
     );
+
+    if (targetingResult.areaSnapshot) {
+      this.ritualEvents.emitAreaResolved(
+        createRitualAreaResolvedEvent({
+          ...createEventInput(targetingResult.targets),
+          area: targetingResult.areaSnapshot,
+        }),
+      );
+    }
+
     const shouldRollCastingCheck = getRitualCastingCheckEnabled();
     let castingCheck: RitualCastingCheckSummary | null = null;
 
@@ -259,6 +315,10 @@ export class RitualAssistedWorkflow {
       );
 
       if (!costResult.ok) {
+        emitFinished("failed", effectiveContext.targets, {
+          reason: costResult.reason,
+          message: costResult.message,
+        });
         return {
           status: "failed",
           reason: costResult.reason,
@@ -271,13 +331,17 @@ export class RitualAssistedWorkflow {
           effectiveContext.actor as Actor,
         );
       } catch (cause) {
+        const message = cause instanceof Error
+          ? cause.message
+          : "Não foi possível rolar Ocultismo para conjurar o ritual.";
+        emitFinished("failed", effectiveContext.targets, {
+          reason: "ritual-casting-check-failed",
+          message,
+        });
         return {
           status: "failed",
           reason: "ritual-casting-check-failed",
-          message:
-            cause instanceof Error
-              ? cause.message
-              : "Não foi possível rolar Ocultismo para conjurar o ritual.",
+          message,
           cause,
         };
       }
@@ -319,6 +383,10 @@ export class RitualAssistedWorkflow {
       );
 
       if (!conditionActionResult.ok) {
+        emitFinished("failed", effectiveContext.targets, {
+          reason: conditionActionResult.reason,
+          message: conditionActionResult.message,
+        });
         return {
           status: "failed",
           reason: conditionActionResult.reason,
@@ -332,6 +400,7 @@ export class RitualAssistedWorkflow {
       ];
 
       if (actions.length > 0) {
+        emitFinished("ready", effectiveContext.targets);
         return {
           status: "ready",
           workflowContext,
@@ -341,6 +410,7 @@ export class RitualAssistedWorkflow {
         };
       }
 
+      emitFinished("completed-without-actions", effectiveContext.targets);
       return {
         status: "completed-without-actions",
         workflowContext,
@@ -367,6 +437,10 @@ export class RitualAssistedWorkflow {
     });
 
     if (!runResult.ok) {
+      emitFinished("failed", effectiveContext.targets, {
+        reason: runResult.error.reason,
+        message: runResult.error.message,
+      });
       return {
         status: "failed",
         reason: runResult.error.reason,
@@ -402,6 +476,10 @@ export class RitualAssistedWorkflow {
     );
 
     if (!actionResult.ok) {
+      emitFinished("failed", effectiveContext.targets, {
+        reason: actionResult.reason,
+        message: actionResult.message,
+      });
       return {
         status: "failed",
         reason: actionResult.reason,
@@ -410,6 +488,10 @@ export class RitualAssistedWorkflow {
     }
 
     if (!conditionActionResult.ok) {
+      emitFinished("failed", effectiveContext.targets, {
+        reason: conditionActionResult.reason,
+        message: conditionActionResult.message,
+      });
       return {
         status: "failed",
         reason: conditionActionResult.reason,
@@ -424,6 +506,7 @@ export class RitualAssistedWorkflow {
     ];
 
     if (actions.length === 0) {
+      emitFinished("completed-without-actions", effectiveContext.targets);
       return {
         status: "completed-without-actions",
         workflowContext,
@@ -432,6 +515,7 @@ export class RitualAssistedWorkflow {
       };
     }
 
+    emitFinished("ready", effectiveContext.targets);
     return {
       status: "ready",
       workflowContext,

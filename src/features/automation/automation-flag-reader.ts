@@ -35,7 +35,20 @@ export type AutomationFlagResult = Result<
   AutomationFlagFailure
 >;
 
+export type AutomationFlagValueResult = Result<
+  AutomationFlagValue,
+  AutomationFlagFailure
+>;
+
 export function readAutomationDefinition(item: Item): AutomationFlagResult {
+  const value = readAutomationFlagValue(item);
+
+  if (!value.ok) return value;
+
+  return success(value.value.definition);
+}
+
+export function readAutomationFlagValue(item: Item): AutomationFlagValueResult {
   const value = item.getFlag(MODULE_ID, "automation");
 
   if (value === undefined || value === null) {
@@ -53,7 +66,7 @@ export function readAutomationDefinition(item: Item): AutomationFlagResult {
     });
   }
 
-  return success(value.definition);
+  return success(value);
 }
 
 export function hasValidAutomationFlag(item: Item): boolean {

@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.32.0`.
+Versão atual documentada: `v0.33.0`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,20 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos e remoção automática da área temporária.
 
 ## Roadmap por prioridade
+
+
+### Concluído em 0.33.0 — API pública de lifecycle de rituais
+
+Objetivo: expor hooks públicos estáveis para módulos externos observarem o ciclo de conjuração assistida sem transformar o Toolkit em módulo de animações.
+
+Entrega feita:
+
+- adiciona hooks versionados para início de conjuração, área resolvida e término de conjuração;
+- expõe payloads públicos em snapshots serializáveis, sem usar `WorkflowContext` como contrato público;
+- inclui metadados da fonte de automação, com `presetId` como chave estável para integrações externas;
+- marca `automation.fxEligible` apenas para automações vindas de presets do Toolkit;
+- documenta que Paranormal FX e outros módulos devem preferir `automation.presetId` / `ritual.presetId` e ignorar automações manuais ou genéricas;
+- mantém o Toolkit sem Sequencer, JB2A, chamadas de animação, sons, engine de macros, configurações de FX ou presets de FX.
 
 ### Concluído em 0.32.0 — Seleção de alvos por área com Scene Regions
 

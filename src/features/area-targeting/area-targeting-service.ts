@@ -1,4 +1,5 @@
 import type { PreCastTargetingInput, PreCastTargetingResult } from "./area-targeting-types";
+import { createRectangleRayAreaSnapshot } from "../../core/public-api/ritual-event-builder";
 import { FoundryAreaTargetingAdapter } from "./foundry-area-targeting-adapter";
 import { RegionCleanupService } from "./region/region-cleanup-service";
 import { RegionLinePlacementService } from "./region/region-line-placement-service";
@@ -63,6 +64,7 @@ export class AreaTargetingService {
 
       try {
         const resolution = this.regionTargetResolver.resolveTargets(placementResult.region);
+        const areaSnapshot = createRectangleRayAreaSnapshot(placementResult.region);
 
         if (resolution.targets.length === 0) {
           restorePreviewTargets();
@@ -77,6 +79,7 @@ export class AreaTargetingService {
         return {
           status: "confirmed",
           targets: resolution.targets,
+          areaSnapshot,
         };
       } catch (error) {
         restorePreviewTargets();
