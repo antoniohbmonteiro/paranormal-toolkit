@@ -115,8 +115,9 @@ export function createAutomationSourceSnapshot(
 
 export function createRectangleRayAreaSnapshot(region: RegionDocumentLike | RegionObjectLike): PublicRitualArea {
   const regionDocument = getRegionDocument(region);
-  const bounds = getBounds(region) ?? { x: 0, y: 0, width: 0, height: 0 };
-  const shape = getRectangleShape(regionDocument) ?? getRectangleShape(region) ?? createShapeFromBounds(bounds);
+  const candidates = getRegionCandidates(region);
+  const bounds = getBounds(candidates) ?? { x: 0, y: 0, width: 0, height: 0 };
+  const shape = getRectangleShape(candidates) ?? createShapeFromBounds(bounds);
   const gridSize = getPositiveNumber(canvas?.grid?.size);
 
   return {
@@ -256,10 +257,30 @@ function getRegionDocument(region: RegionDocumentLike | RegionObjectLike): Regio
   return region as RegionDocumentLike;
 }
 
-function getBounds(region: RegionDocumentLike | RegionObjectLike): BoundsLike | null {
-  const candidates = [region.bounds, "document" in region ? region.document?.bounds : null];
+function getRegionCandidates(region: RegionDocumentLike | RegionObjectLike): Array<RegionDocumentLike | RegionObjectLike> {
+  const candidates: Array<RegionDocumentLike | RegionObjectLike | null | undefined> = [
+    region,
+    getRegionObject(region),
+    "document" in region ? region.document : null,
+    "document" in region ? region.document?.object : null,
+  ];
 
-  for (const candidate of candidates) {
+  return candidates.filter(isRegionCandidate);
+}
+
+function getRegionObject(region: RegionDocumentLike | RegionObjectLike): RegionObjectLike | null {
+  if ("object" in region) return isRegionCandidate(region.object) ? region.object : null;
+  return null;
+}
+
+function isRegionCandidate(value: unknown): value is RegionDocumentLike | RegionObjectLike {
+  return Boolean(value && typeof value === "object");
+}
+
+function getBounds(candidates: Array<RegionDocumentLike | RegionObjectLike>): BoundsLike | null {
+  const boundsCandidates = candidates.map((candidate) => candidate.bounds);
+
+  for (const candidate of boundsCandidates) {
     if (!candidate) continue;
 
     const x = getNumber(candidate.x);
@@ -275,9 +296,13 @@ function getBounds(region: RegionDocumentLike | RegionObjectLike): BoundsLike | 
   return null;
 }
 
-function getRectangleShape(value: unknown): RegionShapeDataLike | null {
-  const shapes = getShapes(value);
-  return shapes.find((shape) => shape.type === "rectangle") ?? null;
+function getRectangleShape(candidates: Array<RegionDocumentLike | RegionObjectLike>): RegionShapeDataLike | null {
+  for (const candidate of candidates) {
+    const shape = getShapes(candidate).find((shape) => shape.type === "rectangle") ?? null;
+    if (shape) return shape;
+  }
+
+  return null;
 }
 
 function getShapes(value: unknown): RegionShapeDataLike[] {
