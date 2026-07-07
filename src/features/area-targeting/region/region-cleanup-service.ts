@@ -8,16 +8,26 @@ export class RegionCleanupService {
     private readonly foundryAdapter = new FoundryRegionAdapter(),
   ) {}
 
-  async deleteCreatedRegion(region: RegionDocumentLike): Promise<void> {
-    if (typeof region.delete !== "function") {
+  async deleteCreatedRegion(region: RegionDocumentLike | RegionObjectLike): Promise<void> {
+    const document = getRegionDocument(region);
+
+    if (typeof document?.delete !== "function") {
       this.foundryAdapter.warn(REGION_CLEANUP_FAILED_MESSAGE);
       return;
     }
 
     try {
-      await region.delete();
+      await document.delete();
     } catch {
       this.foundryAdapter.warn(REGION_CLEANUP_FAILED_MESSAGE);
     }
   }
+}
+
+function getRegionDocument(region: RegionDocumentLike | RegionObjectLike): RegionDocumentLike | null {
+  return isRegionObject(region) ? region.document ?? null : region;
+}
+
+function isRegionObject(region: RegionDocumentLike | RegionObjectLike): region is RegionObjectLike {
+  return "bounds" in region;
 }

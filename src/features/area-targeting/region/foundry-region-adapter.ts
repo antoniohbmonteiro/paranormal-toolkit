@@ -34,8 +34,13 @@ export class FoundryRegionAdapter {
   async placeRegion(
     data: RegionDataLike,
     options: RegionPlacementOptionsLike = {},
-  ): Promise<RegionDocumentLike | null> {
+  ): Promise<RegionDocumentLike | RegionObjectLike | null> {
     return canvas?.regions?.placeRegion(data, options) ?? null;
+  }
+
+  getTokensInBounds(bounds: BoundsLike): TokenLike[] {
+    const objects = canvas?.tokens?.quadtree?.getObjects?.(bounds);
+    return objects ? Array.from(objects) : this.getSceneTokens();
   }
 
   getSceneTokens(): TokenLike[] {

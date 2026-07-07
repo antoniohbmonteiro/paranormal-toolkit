@@ -20,6 +20,11 @@ type CanvasPointLike = {
   y: number;
 };
 
+type BoundsLike = CanvasPointLike & {
+  width: number;
+  height: number;
+};
+
 type CanvasStageLike = {
   toLocal(point: CanvasPointLike): CanvasPointLike;
 };
@@ -47,6 +52,7 @@ type RegionDataLike = Record<string, unknown> & {
 };
 
 type RegionObjectLike = Record<string, unknown> & {
+  bounds?: BoundsLike | null;
   document?: RegionDocumentLike | null;
 };
 
@@ -71,7 +77,7 @@ type RegionDocumentLike = {
   name?: string | null;
   shapes?: RegionShapeDataLike[];
   tokens?: ReadonlySet<unknown>;
-  testPoint?: (point: ElevatedPointLike) => boolean;
+  object?: RegionObjectLike | null;
   toObject?: () => RegionDataLike;
   delete?: () => Promise<unknown>;
 };
@@ -80,7 +86,7 @@ type RegionLayerLike = {
   placeRegion(
     data: RegionDataLike,
     options?: RegionPlacementOptionsLike,
-  ): Promise<RegionDocumentLike | null>;
+  ): Promise<RegionDocumentLike | RegionObjectLike | null>;
 };
 
 type TokenTargetOptionsLike = {
@@ -116,7 +122,7 @@ type TokenLike = {
     width?: number | null;
     height?: number | null;
     elevation?: number | null;
-    testInsideRegion?: (region: RegionDocumentLike, data?: Partial<ElevatedPointLike>) => boolean;
+    testInsideRegion?: (region: RegionDocumentLike | RegionObjectLike, data?: Partial<ElevatedPointLike>) => boolean;
   } | null;
 };
 
@@ -195,6 +201,9 @@ declare const canvas:
       tokens?: {
         controlled?: TokenLike[];
         placeables?: TokenLike[];
+        quadtree?: {
+          getObjects?: (bounds: BoundsLike) => Iterable<TokenLike> | ArrayLike<TokenLike>;
+        };
       };
       regions?: RegionLayerLike;
     }

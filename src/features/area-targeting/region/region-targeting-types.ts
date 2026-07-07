@@ -32,7 +32,7 @@ export type RegionLinePlacementCallbacks = {
 
 export type RegionLinePlacementConfirmed = {
   status: "confirmed";
-  region: RegionDocumentLike;
+  region: RegionDocumentLike | RegionObjectLike;
   wasCreated: boolean;
 };
 
@@ -52,7 +52,7 @@ export type RegionLinePlacementResult =
   | RegionLinePlacementCancelled
   | RegionLinePlacementFailed;
 
-export type RegionTargetResolutionSource = "regionTokens" | "tokenDocument" | "testPoint" | "lineGeometry" | "shapeGeometry";
+export type RegionTargetResolutionSource = "regionObject" | "regionObjectUnavailable";
 
 export type RegionTargetTokenResolutionResult = {
   tokens: TokenLike[];
