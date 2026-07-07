@@ -3,13 +3,17 @@ import type { WorkflowTarget, WorkflowTokenRef } from "../../core/workflow/workf
 export function getCurrentWorkflowTargets(): WorkflowTarget[] {
   const targets = Array.from(game.user?.targets ?? []);
 
-  return targets.map((token) => ({
+  return targets.map(createWorkflowTargetFromToken);
+}
+
+export function createWorkflowTargetFromToken(token: TokenLike): WorkflowTarget {
+  return {
     tokenId: getNullableString(token.id),
     actorId: getNullableString(token.actor?.id),
     sceneId: getNullableString(token.scene?.id),
     name: token.name ?? token.actor?.name ?? "Alvo sem nome",
     actor: token.actor ?? null
-  }));
+  };
 }
 
 export function getCurrentSourceTokenRef(): WorkflowTokenRef | null {

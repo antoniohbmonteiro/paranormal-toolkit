@@ -1169,9 +1169,17 @@
 
 .paranormal-toolkit-ritual-cast__summary {
   display: grid;
-  grid-template-columns: 0.85fr 1fr 1.35fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
   margin: 0;
+}
+
+.paranormal-toolkit-ritual-cast__summary--targets {
+  grid-template-columns: 1fr;
+}
+
+.paranormal-toolkit-ritual-cast__summary--targeting-mode {
+  grid-template-columns: 1fr;
 }
 
 .paranormal-toolkit-ritual-cast__summary div {
@@ -1204,18 +1212,69 @@
   white-space: nowrap;
 }
 
-.paranormal-toolkit-ritual-cast__automation p {
-  margin: 0;
-  color: rgba(36, 27, 24, 0.78);
-  line-height: 1.28;
+.paranormal-toolkit-ritual-cast__summary-targets dd {
+  white-space: normal;
 }
 
-.paranormal-toolkit-ritual-cast__automation p + p {
-  margin-top: 2px;
+.paranormal-toolkit-ritual-cast__targeting-form {
+  display: grid;
+  gap: 7px;
 }
 
-.paranormal-toolkit-ritual-cast__automation--generic {
-  border-left-color: rgba(112, 85, 42, 0.72);
+.paranormal-toolkit-ritual-cast__targeting-line-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
+  align-items: start;
+  border: 1px solid rgba(89, 36, 42, 0.14);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: rgba(252, 250, 246, 0.84);
+  color: rgba(36, 27, 24, 0.84);
+}
+
+.paranormal-toolkit-ritual-cast__targeting-line-toggle input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 1px 0 0;
+  accent-color: #f0a24a;
+}
+
+.paranormal-toolkit-ritual-cast__targeting-line-toggle span {
+  display: grid;
+  gap: 3px;
+}
+
+.paranormal-toolkit-ritual-cast__targeting-line-toggle strong {
+  font-size: 0.8rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.paranormal-toolkit-ritual-cast__targeting-line-toggle em {
+  color: rgba(36, 27, 24, 0.66);
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.paranormal-toolkit-ritual-cast__automation-note {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(89, 36, 42, 0.14);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(89, 36, 42, 0.06);
+  color: rgba(36, 27, 24, 0.68);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.paranormal-toolkit-ritual-cast__automation-note--generic {
+  border-color: rgba(112, 85, 42, 0.18);
+  background: rgba(112, 85, 42, 0.08);
 }
 
 .paranormal-toolkit-ritual-cast__footer {

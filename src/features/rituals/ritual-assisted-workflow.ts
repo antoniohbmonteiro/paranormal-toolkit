@@ -34,9 +34,11 @@ import type {
 import {
   createWorkflowContext,
   type WorkflowContext,
+  type WorkflowTarget,
 } from "../../core/workflow/workflow-context";
 import type { WorkflowEngine } from "../../core/workflow/workflow-engine";
 import type { WorkflowRollResult } from "../../core/workflow/workflow-roll";
+import { AreaTargetingService } from "../area-targeting/area-targeting-service";
 import type { ItemUseContext } from "../item-use/item-use-context";
 import { getRitualCastingCheckEnabled } from "../item-use/item-use-settings";
 import { requestRitualCastOptions } from "./ritual-cast-dialog";
@@ -128,11 +130,13 @@ export type RitualAssistedRunResult =
   | {
       status: "completed-without-actions";
       workflowContext: WorkflowContext;
+      itemUseContext: ItemUseContext;
       summaryLines: string[];
     }
   | {
       status: "ready";
       workflowContext: WorkflowContext;
+      itemUseContext: ItemUseContext;
       actions: AssistedRitualAction[];
       summaryLines: string[];
     };
@@ -161,6 +165,8 @@ const GENERIC_VERDADEIRO_FORM: AutomationRitualFormDefinition = {
 };
 
 export class RitualAssistedWorkflow {
+  private readonly areaTargeting = new AreaTargetingService();
+
   constructor(
     private readonly workflow: WorkflowEngine,
     private readonly resources: ResourceEngine,
@@ -218,13 +224,35 @@ export class RitualAssistedWorkflow {
       castOptions.variant,
       isGenericRitual,
     );
+    const targetingResult = await this.areaTargeting.resolvePreCastTargets({
+      castOptions,
+      formTargeting: form.targeting,
+      currentTargets: context.targets,
+    });
+
+    if (targetingResult.status === "cancelled") {
+      return { status: "cancelled" };
+    }
+
+    if (targetingResult.status === "failed") {
+      return {
+        status: "failed",
+        reason: targetingResult.reason,
+        message: targetingResult.message,
+      };
+    }
+
+    const effectiveContext = withResolvedTargets(
+      context,
+      targetingResult.targets,
+    );
     const shouldRollCastingCheck = getRitualCastingCheckEnabled();
     let castingCheck: RitualCastingCheckSummary | null = null;
 
     if (shouldRollCastingCheck) {
       const costResult = await spendRitualCostForCastingAttempt(
         this.resources,
-        context.actor as Actor,
+        effectiveContext.actor as Actor,
         castOptions,
         form,
         cost,
@@ -240,7 +268,7 @@ export class RitualAssistedWorkflow {
 
       try {
         castingCheck = await rollOrdemRitualCastingCheck(
-          context.actor as Actor,
+          effectiveContext.actor as Actor,
         );
       } catch (cause) {
         return {
@@ -267,15 +295,15 @@ export class RitualAssistedWorkflow {
 
     if (preparationDefinition.steps.length === 0) {
       const workflowContext = createEmptyRitualWorkflowContext(
-        context,
+        effectiveContext,
         castOptions,
       );
       const conditionActionResult = createAssistedConditionActions(
         definition,
-        context,
+        effectiveContext,
       );
       const backlashActions = createCastingFailureSanityActions(
-        context.actor as Actor,
+        effectiveContext.actor as Actor,
         castingCheck,
         form,
         cost,
@@ -286,7 +314,7 @@ export class RitualAssistedWorkflow {
         form,
         cost,
         workflowContext,
-        context,
+        effectiveContext,
         castingCheck,
       );
 
@@ -307,6 +335,7 @@ export class RitualAssistedWorkflow {
         return {
           status: "ready",
           workflowContext,
+          itemUseContext: effectiveContext,
           actions,
           summaryLines,
         };
@@ -315,18 +344,19 @@ export class RitualAssistedWorkflow {
       return {
         status: "completed-without-actions",
         workflowContext,
+        itemUseContext: effectiveContext,
         summaryLines,
       };
     }
 
     const runResult = await this.workflow.runAutomation(preparationDefinition, {
-      sourceActor: context.actor as Actor,
-      sourceToken: context.token,
-      item: context.item,
-      targets: context.targets,
+      sourceActor: effectiveContext.actor as Actor,
+      sourceToken: effectiveContext.token,
+      item: effectiveContext.item,
+      targets: effectiveContext.targets,
       flags: {
         itemUse: {
-          source: context.source,
+          source: effectiveContext.source,
           executionMode: "ask",
         },
         ritualCast: {
@@ -348,15 +378,15 @@ export class RitualAssistedWorkflow {
     const workflowContext = runResult.value.context;
     const actionResult = createAssistedResourceActions(
       definition,
-      context,
+      effectiveContext,
       workflowContext,
     );
     const conditionActionResult = createAssistedConditionActions(
       definition,
-      context,
+      effectiveContext,
     );
     const backlashActions = createCastingFailureSanityActions(
-      context.actor as Actor,
+      effectiveContext.actor as Actor,
       castingCheck,
       form,
       cost,
@@ -367,7 +397,7 @@ export class RitualAssistedWorkflow {
       form,
       cost,
       workflowContext,
-      context,
+      effectiveContext,
       castingCheck,
     );
 
@@ -397,6 +427,7 @@ export class RitualAssistedWorkflow {
       return {
         status: "completed-without-actions",
         workflowContext,
+        itemUseContext: effectiveContext,
         summaryLines,
       };
     }
@@ -404,6 +435,7 @@ export class RitualAssistedWorkflow {
     return {
       status: "ready",
       workflowContext,
+      itemUseContext: effectiveContext,
       actions,
       summaryLines,
     };
@@ -439,6 +471,17 @@ function normalizeRitualCastOptions(
   return {
     variant: options.variant,
     spendResource: options.spendResource === true,
+    areaTargeting: options.areaTargeting,
+  };
+}
+
+function withResolvedTargets(
+  context: ItemUseContext,
+  targets: WorkflowTarget[],
+): ItemUseContext {
+  return {
+    ...context,
+    targets,
   };
 }
 

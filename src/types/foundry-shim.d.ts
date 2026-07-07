@@ -13,6 +13,90 @@ type ChatMessageCreateData = {
 
 type SceneLike = {
   id?: string | null;
+  deleteEmbeddedDocuments?: (embeddedName: string, ids: string[]) => Promise<unknown>;
+};
+
+type CanvasPointLike = {
+  x: number;
+  y: number;
+};
+
+type BoundsLike = CanvasPointLike & {
+  width: number;
+  height: number;
+};
+
+type CanvasStageLike = {
+  toLocal(point: CanvasPointLike): CanvasPointLike;
+};
+
+type CanvasAppLike = {
+  view?: unknown;
+  canvas?: unknown;
+  renderer?: {
+    view?: unknown;
+  };
+};
+
+type ElevatedPointLike = CanvasPointLike & {
+  elevation?: number | null;
+  z?: number | null;
+};
+
+type RegionShapeDataLike = Record<string, unknown> & {
+  type: string;
+};
+
+type RegionDataLike = Record<string, unknown> & {
+  name?: string;
+  shapes?: RegionShapeDataLike[];
+};
+
+type RegionObjectLike = Record<string, unknown> & {
+  id?: string | null;
+  bounds?: BoundsLike | null;
+  document?: RegionDocumentLike | null;
+  delete?: () => Promise<unknown>;
+};
+
+type RegionPlacementCallbackArgsLike = {
+  document: RegionDocumentLike;
+  preview?: RegionObjectLike | null;
+  shape?: RegionShapeDataLike | null;
+};
+
+type RegionPlacementCallbackLike = (args: RegionPlacementCallbackArgsLike) => void;
+
+type RegionPlacementOptionsLike = {
+  create?: boolean;
+  allowRotation?: boolean;
+  onChange?: RegionPlacementCallbackLike;
+  onMove?: RegionPlacementCallbackLike;
+  onRotate?: RegionPlacementCallbackLike;
+};
+
+type RegionDocumentLike = {
+  id?: string | null;
+  name?: string | null;
+  bounds?: BoundsLike | null;
+  shapes?: RegionShapeDataLike[];
+  tokens?: ReadonlySet<unknown>;
+  object?: RegionObjectLike | null;
+  toObject?: () => RegionDataLike;
+  delete?: () => Promise<unknown>;
+};
+
+type RegionLayerLike = {
+  placeRegion(
+    data: RegionDataLike,
+    options?: RegionPlacementOptionsLike,
+  ): Promise<RegionDocumentLike | RegionObjectLike | null>;
+};
+
+type TokenTargetOptionsLike = {
+  user?: FoundryUserLike | null;
+  releaseOthers?: boolean;
+  groupSelection?: boolean;
 };
 
 type TokenLike = {
@@ -21,9 +105,28 @@ type TokenLike = {
   name?: string;
   actor?: Actor | null;
   scene?: SceneLike | null;
+  bounds?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null;
+  center?: CanvasPointLike | null;
+  w?: number | null;
+  h?: number | null;
+  elevation?: number | null;
+  setTarget?: (targeted: boolean, options?: TokenTargetOptionsLike) => void;
   document?: {
+    id?: string | null;
+    uuid?: string | null;
     actor?: Actor | null;
     name?: string | null;
+    x?: number | null;
+    y?: number | null;
+    width?: number | null;
+    height?: number | null;
+    elevation?: number | null;
+    testInsideRegion?: (region: RegionDocumentLike | RegionObjectLike, data?: Partial<ElevatedPointLike>) => boolean;
   } | null;
 };
 
@@ -51,10 +154,13 @@ type GameSettingRegistrationData = BooleanGameSettingRegistrationData | StringGa
 
 type FoundryUserLike = {
   id?: string;
+  color?: string | null;
   isGM?: boolean;
   active?: boolean;
   character?: Actor | null;
   targets?: Set<TokenLike>;
+  updateTokenTargets?: (targetIds: string[]) => void;
+  broadcastActivity?: (activity: { targets?: string[] }) => void;
 };
 
 type FoundryCollectionLike<T = unknown> = {
@@ -89,10 +195,21 @@ declare const game: {
 
 declare const canvas:
   | {
+      ready?: boolean;
+      scene?: SceneLike | null;
+      stage?: CanvasStageLike;
+      app?: CanvasAppLike;
+      grid?: {
+        size?: number | null;
+      };
       tokens?: {
         controlled?: TokenLike[];
         placeables?: TokenLike[];
+        quadtree?: {
+          getObjects?: (bounds: BoundsLike) => Iterable<TokenLike> | ArrayLike<TokenLike>;
+        };
       };
+      regions?: RegionLayerLike;
     }
   | undefined;
 

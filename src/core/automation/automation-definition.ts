@@ -61,11 +61,31 @@ export type AutomationConditionApplicationDefinition = {
 
 export type AutomationRitualFormId = "base" | "discente" | "verdadeiro";
 
+export type AutomationTargetingMode = "selectedTokens" | "lineArea";
+
+export type AutomationRitualTargetingTemplateShape = "ray";
+
+export type AutomationRitualTargetingTemplateDefinition = {
+  shape: AutomationRitualTargetingTemplateShape;
+  distance?: number | null;
+  width?: number | null;
+};
+
+export type AutomationRitualTargetingDefinition = {
+  mode: AutomationTargetingMode;
+  label: string;
+  optionLabel?: string;
+  optional?: boolean;
+  defaultEnabled?: boolean;
+  template?: AutomationRitualTargetingTemplateDefinition;
+};
+
 export type AutomationRitualFormDefinition = {
   label?: string;
   extraCost?: number;
   rollFormulaOverrides?: Record<string, string>;
   notes?: string[];
+  targeting?: AutomationRitualTargetingDefinition;
 };
 
 export type AutomationActorSelector = "self" | "target";
