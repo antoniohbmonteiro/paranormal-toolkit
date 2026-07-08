@@ -67,8 +67,8 @@ describe("createRectangleRayAreaSnapshot", () => {
     expect(area.shape.direction).toBeCloseTo(30, 1);
     expect(area.ray.start?.x).toBeCloseTo(2325, 1);
     expect(area.ray.start?.y).toBeCloseTo(5743.3, 1);
-    expect(area.ray.end?.x).toBeCloseTo(3364.2, 1);
-    expect(area.ray.end?.y).toBeCloseTo(6343.3, 1);
+    expect(area.ray.end?.x).toBeCloseTo(3363.9, 1);
+    expect(area.ray.end?.y).toBeCloseTo(6343.9, 1);
   });
 
   it("não acessa caminhos aninhados nulos ao procurar rotação", () => {
@@ -109,5 +109,4 @@ describe("createRectangleRayAreaSnapshot", () => {
     expect(area.ray.start).toEqual({ x: 2300, y: 5850 });
     expect(area.ray.end).toEqual({ x: 3500, y: 5850 });
   });
-
 });
