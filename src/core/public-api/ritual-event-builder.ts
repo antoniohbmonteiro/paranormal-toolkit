@@ -30,7 +30,7 @@ export type RitualEventBuildInput = {
 
 type RectangleRaySnapshotOptions = {
   candidates?: unknown[];
-  shape?: RegionShapeDataLike | null;
+  shape?: unknown | null;
 };
 
 type RectangleRayShapeSnapshot = {
@@ -174,12 +174,12 @@ function createRectangleRayShapeSnapshot(
   candidates: Array<RegionDocumentLike | RegionObjectLike>,
 ): RectangleRayShapeSnapshot {
   const baseShape = {
-    x: getNumber(shape.x) ?? 0,
-    y: getNumber(shape.y) ?? 0,
-    width: getNumber(shape.width) ?? bounds.width,
-    height: getNumber(shape.height) ?? bounds.height,
-    direction: getNumber(shape.direction) ?? 0,
-    elevation: getNumber(shape.elevation),
+    x: readNumberProperty(shape, "x") ?? 0,
+    y: readNumberProperty(shape, "y") ?? 0,
+    width: readNumberProperty(shape, "width") ?? bounds.width,
+    height: readNumberProperty(shape, "height") ?? bounds.height,
+    direction: readNumberProperty(shape, "direction") ?? 0,
+    elevation: readNumberProperty(shape, "elevation"),
   };
 
   return {
@@ -267,7 +267,7 @@ function inferDirectionFromRotatedBounds(
 
   if (!best || best.error >= unrotatedError) return null;
 
-  const tolerance = Math.max(1, Math.min(shape.width, Math.max(shape.height, 1)) * 0.05);
+  const tolerance = Math.max(12, Math.min(shape.width, Math.max(shape.height, 1)) * 0.12);
   return best.error <= tolerance ? normalizeDirectionDegrees(best.direction) : null;
 }
 
@@ -500,7 +500,7 @@ function getRegionDocument(region: RegionDocumentLike | RegionObjectLike): Regio
 }
 
 function getRectangleShapeFromOptions(options: RectangleRaySnapshotOptions): RegionShapeDataLike | null {
-  return options.shape && isRegionShapeDataLike(options.shape) ? options.shape : null;
+  return normalizeRegionShapeData(options.shape);
 }
 
 function getRegionCandidatesFromUnknown(values: unknown[]): Array<RegionDocumentLike | RegionObjectLike> {
@@ -528,22 +528,31 @@ function isRegionCandidate(value: unknown): value is RegionDocumentLike | Region
 }
 
 function getBounds(candidates: Array<RegionDocumentLike | RegionObjectLike>): BoundsLike | null {
-  const boundsCandidates = candidates.map((candidate) => candidate.bounds);
+  for (const candidate of candidates) {
+    const fromObject = normalizeBoundsLike(safeGetProperty(callToObject(candidate), "bounds"));
+    if (fromObject) return fromObject;
 
-  for (const candidate of boundsCandidates) {
-    if (!candidate) continue;
-
-    const x = getNumber(candidate.x);
-    const y = getNumber(candidate.y);
-    const width = getNumber(candidate.width);
-    const height = getNumber(candidate.height);
-
-    if (x === null || y === null || width === null || height === null) continue;
-
-    return { x, y, width, height };
+    const direct = normalizeBoundsLike(safeGetProperty(candidate, "bounds"));
+    if (direct) return direct;
   }
 
   return null;
+}
+
+
+function normalizeBoundsLike(value: unknown): BoundsLike | null {
+  const x = readNumberProperty(value, "x");
+  const y = readNumberProperty(value, "y");
+  const width = readNumberProperty(value, "width");
+  const height = readNumberProperty(value, "height");
+
+  if (x === null || y === null || width === null || height === null) return null;
+
+  return { x, y, width, height };
+}
+
+function readNumberProperty(value: unknown, path: string): number | null {
+  return getNumber(safeGetProperty(value, path));
 }
 
 function getRectangleShape(candidates: Array<RegionDocumentLike | RegionObjectLike>): RegionShapeDataLike | null {
@@ -558,18 +567,36 @@ function getRectangleShape(candidates: Array<RegionDocumentLike | RegionObjectLi
 function getShapes(value: unknown): RegionShapeDataLike[] {
   if (!value || typeof value !== "object") return [];
 
-  const directShapes = (value as { shapes?: unknown }).shapes;
-  if (Array.isArray(directShapes)) return directShapes.filter(isRegionShapeDataLike);
+  const objectShapes = getShapeArrayFromSource(callToObject(value));
+  if (objectShapes.length > 0) return objectShapes;
 
-  const toObject = (value as { toObject?: unknown }).toObject;
-  if (typeof toObject !== "function") return [];
-
-  const data = toObject.call(value) as { shapes?: unknown } | null;
-  return Array.isArray(data?.shapes) ? data.shapes.filter(isRegionShapeDataLike) : [];
+  return getShapeArrayFromSource(value);
 }
 
-function isRegionShapeDataLike(value: unknown): value is RegionShapeDataLike {
-  return Boolean(value && typeof value === "object" && typeof (value as { type?: unknown }).type === "string");
+function getShapeArrayFromSource(value: unknown): RegionShapeDataLike[] {
+  const shapes = safeGetProperty(value, "shapes");
+  if (!Array.isArray(shapes)) return [];
+
+  return shapes
+    .map(normalizeRegionShapeData)
+    .filter((shape): shape is RegionShapeDataLike => shape !== null);
+}
+
+function normalizeRegionShapeData(value: unknown): RegionShapeDataLike | null {
+  const source = callToObject(value) ?? value;
+  const type = safeGetProperty(source, "type");
+
+  if (typeof type !== "string") return null;
+
+  return {
+    type,
+    x: readNumberProperty(source, "x"),
+    y: readNumberProperty(source, "y"),
+    width: readNumberProperty(source, "width"),
+    height: readNumberProperty(source, "height"),
+    direction: readNumberProperty(source, "direction"),
+    elevation: readNumberProperty(source, "elevation"),
+  };
 }
 
 function createShapeFromBounds(bounds: BoundsLike): RegionShapeDataLike {
@@ -601,17 +628,32 @@ function readNestedString(value: unknown, path: string): string | null {
 function safeGetProperty(value: unknown, path: string): unknown {
   if (!value || typeof value !== "object") return undefined;
 
-  return foundry.utils.getProperty(value, path);
+  let current: unknown = value;
+  for (const segment of path.split(".")) {
+    if (!current || typeof current !== "object") return undefined;
+
+    try {
+      current = (current as Record<string, unknown>)[segment];
+    } catch {
+      return undefined;
+    }
+  }
+
+  return current;
 }
 
 function callToObject(value: unknown): object | null {
   if (!value || typeof value !== "object") return null;
 
-  const toObject = (value as { toObject?: unknown }).toObject;
+  const toObject = safeGetProperty(value, "toObject");
   if (typeof toObject !== "function") return null;
 
-  const data = toObject.call(value);
-  return data && typeof data === "object" ? data : null;
+  try {
+    const data = toObject.call(value);
+    return data && typeof data === "object" ? data : null;
+  } catch {
+    return null;
+  }
 }
 
 function getStringId(value: unknown): string | null {

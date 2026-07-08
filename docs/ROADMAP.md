@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.33.3`.
+Versão atual documentada: `v0.33.6`.
 
 O Toolkit já tem:
 
@@ -46,7 +46,15 @@ O Toolkit já tem:
 ## Roadmap por prioridade
 
 
-### Concluído em 0.33.3 — Hotfix do ray público de área
+### Concluído em 0.33.6 — Inferência tolerante de ray em área rotacionada
+
+Objetivo: corrigir o caso em que o Foundry entrega `shape.direction` como `0`, mas o `bounds` final indica uma Scene Region retangular rotacionada com pequena inflação de pixels.
+
+- aumenta a tolerância da inferência de direção a partir de `bounds`;
+- cobre o caso real observado com `width ~= 1091.23` e `height ~= 688.6` para uma linha de 12 x 1 quadrados;
+- mantém `area.ray.start/end` como fonte preferencial para consumidores externos, como Paranormal FX.
+
+### Concluído em 0.33.5 — Hotfix do ray público de área
 
 Objetivo: corrigir regressão da `0.33.2` ao ler dados opcionais da Scene Region quando o Foundry retorna `toObject()` nulo ou propriedades ausentes durante a resolução da linha.
 

@@ -52,6 +52,49 @@ describe("createRectangleRayAreaSnapshot", () => {
     expect(area.ray.end?.y).toBeCloseTo(6814.2, 1);
   });
 
+
+
+  it("infere direção em bounds rotacionado com inflação de poucos pixels", () => {
+    const area = createRectangleRayAreaSnapshot({
+      id: "region-a",
+      parent: { id: "scene-a" },
+      bounds: { x: 2299, y: 5699, width: 1091.23, height: 688.6 },
+      shapes: [
+        { type: "rectangle", x: 2350, y: 5700, width: 1200, height: 100, direction: 0, elevation: null },
+      ],
+    } as unknown as RegionDocumentLike);
+
+    expect(area.shape.direction).toBeCloseTo(30, 1);
+    expect(area.ray.start?.x).toBeCloseTo(2325, 1);
+    expect(area.ray.start?.y).toBeCloseTo(5743.3, 1);
+    expect(area.ray.end?.x).toBeCloseTo(3364.2, 1);
+    expect(area.ray.end?.y).toBeCloseTo(6343.3, 1);
+  });
+
+  it("não acessa caminhos aninhados nulos ao procurar rotação", () => {
+    vi.stubGlobal("foundry", {
+      utils: {
+        getProperty: () => {
+          throw new Error("unsafe getProperty should not be called");
+        },
+      },
+    });
+
+    const area = createRectangleRayAreaSnapshot({
+      id: "region-a",
+      parent: { id: "scene-a" },
+      document: null,
+      object: null,
+      bounds: { x: 2300, y: 5800, width: 1200, height: 100 },
+      shapes: [
+        { type: "rectangle", x: 2300, y: 5800, width: 1200, height: 100, direction: 0, elevation: null },
+      ],
+    } as unknown as RegionDocumentLike);
+
+    expect(area.ray.start).toEqual({ x: 2300, y: 5850 });
+    expect(area.ray.end).toEqual({ x: 3500, y: 5850 });
+  });
+
   it("ignora toObject nulo ao procurar rotação da região", () => {
     const area = createRectangleRayAreaSnapshot({
       id: "region-a",
