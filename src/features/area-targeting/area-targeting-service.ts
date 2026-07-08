@@ -29,7 +29,7 @@ export class AreaTargetingService {
     }
 
     if (requestedTargeting.mode === "lineArea") {
-      let latestPlacementChange: RegionPlacementChange | null = null;
+      const placementChanges: RegionPlacementChange[] = [];
       const targetSnapshot = this.regionTargetPreview.captureCurrentTargets();
       const restorePreviewTargets = (): void => {
         this.regionTargetPreview.restorePreviousTargets(targetSnapshot);
@@ -43,7 +43,7 @@ export class AreaTargetingService {
         },
         {
           onChange: (change) => {
-            latestPlacementChange = change;
+            placementChanges.push(change);
             try {
               const resolution = this.regionTargetResolver.resolvePreviewTargetTokens(change);
               this.regionTargetPreview.previewTargets(resolution.tokens);
@@ -67,6 +67,7 @@ export class AreaTargetingService {
 
       try {
         const resolution = this.regionTargetResolver.resolveTargets(placementResult.region);
+        const latestPlacementChange = getLatestPlacementChange(placementChanges);
         const areaSnapshot = createRectangleRayAreaSnapshot(placementResult.region, {
           candidates: [latestPlacementChange?.preview, latestPlacementChange?.document],
           shape: latestPlacementChange?.shape,
@@ -117,4 +118,8 @@ function createRegionResolutionFailureMessage(error: unknown): string {
   }
 
   return "Falha ao resolver os alvos da linha.";
+}
+
+function getLatestPlacementChange(changes: RegionPlacementChange[]): RegionPlacementChange | null {
+  return changes.length > 0 ? changes[changes.length - 1] ?? null : null;
 }

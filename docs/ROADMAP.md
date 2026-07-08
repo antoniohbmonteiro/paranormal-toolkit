@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.33.2`.
+Versão atual documentada: `v0.33.3`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,18 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos e remoção automática da área temporária.
 
 ## Roadmap por prioridade
+
+
+### Concluído em 0.33.3 — Hotfix do ray público de área
+
+Objetivo: corrigir regressão da `0.33.2` ao ler dados opcionais da Scene Region quando o Foundry retorna `toObject()` nulo ou propriedades ausentes durante a resolução da linha.
+
+Entrega feita:
+
+- evita acesso inseguro a propriedades opcionais como `rotation` em candidatos nulos;
+- mantém `area.ray.start` e `area.ray.end` preenchidos para áreas de ritual;
+- mantém a compatibilidade com o fallback por `bounds`/`shape` da `0.33.2`;
+- adiciona cobertura de teste para `toObject()` nulo.
 
 
 ### Concluído em 0.33.2 — Ray público para áreas de ritual rotacionadas

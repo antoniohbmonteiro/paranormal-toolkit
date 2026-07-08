@@ -210,26 +210,32 @@ function getCandidateDirection(candidates: Array<RegionDocumentLike | RegionObje
   ];
 
   for (const candidate of candidates) {
-    for (const path of paths) {
-      const value = getNumber(foundry.utils.getProperty(candidate, path));
-      if (value !== null && Math.abs(normalizeDirectionDegrees(value)) > 0.001) {
-        return normalizeDirectionDegrees(value);
-      }
-    }
+    const direction = getDirectionFromPaths(candidate, paths);
+    if (direction !== null) return direction;
 
-    const toObject = (candidate as { toObject?: unknown }).toObject;
-    if (typeof toObject !== "function") continue;
-
-    const data = toObject.call(candidate) as object | null;
-    for (const path of paths) {
-      const value = getNumber(foundry.utils.getProperty(data, path));
-      if (value !== null && Math.abs(normalizeDirectionDegrees(value)) > 0.001) {
-        return normalizeDirectionDegrees(value);
-      }
-    }
+    const data = callToObject(candidate);
+    const dataDirection = getDirectionFromPaths(data, paths);
+    if (dataDirection !== null) return dataDirection;
   }
 
   return null;
+}
+
+function getDirectionFromPaths(value: unknown, paths: string[]): number | null {
+  for (const path of paths) {
+    const direction = normalizeOptionalDirection(safeGetProperty(value, path));
+    if (direction !== null) return direction;
+  }
+
+  return null;
+}
+
+function normalizeOptionalDirection(value: unknown): number | null {
+  const direction = getNumber(value);
+  if (direction === null) return null;
+
+  const normalized = normalizeDirectionDegrees(direction);
+  return Math.abs(normalized) > 0.001 ? normalized : null;
 }
 
 function inferDirectionFromRotatedBounds(
@@ -379,9 +385,9 @@ function getExplicitRay(candidates: Array<RegionDocumentLike | RegionObjectLike>
 }
 
 function readPoint(candidate: unknown, path: string): PublicRitualArea["ray"]["start"] {
-  const value = foundry.utils.getProperty(candidate, path);
-  const x = getNumber(foundry.utils.getProperty(value, "x"));
-  const y = getNumber(foundry.utils.getProperty(value, "y"));
+  const value = safeGetProperty(candidate, path);
+  const x = getNumber(safeGetProperty(value, "x"));
+  const y = getNumber(safeGetProperty(value, "y"));
 
   if (x === null || y === null) return null;
 
@@ -589,7 +595,23 @@ function getSceneId(region: RegionDocumentLike | RegionObjectLike, regionDocumen
 }
 
 function readNestedString(value: unknown, path: string): string | null {
-  return normalizeOptionalString(foundry.utils.getProperty(value, path));
+  return normalizeOptionalString(safeGetProperty(value, path));
+}
+
+function safeGetProperty(value: unknown, path: string): unknown {
+  if (!value || typeof value !== "object") return undefined;
+
+  return foundry.utils.getProperty(value, path);
+}
+
+function callToObject(value: unknown): object | null {
+  if (!value || typeof value !== "object") return null;
+
+  const toObject = (value as { toObject?: unknown }).toObject;
+  if (typeof toObject !== "function") return null;
+
+  const data = toObject.call(value);
+  return data && typeof data === "object" ? data : null;
 }
 
 function getStringId(value: unknown): string | null {

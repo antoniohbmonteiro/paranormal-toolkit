@@ -51,4 +51,20 @@ describe("createRectangleRayAreaSnapshot", () => {
     expect(area.ray.end?.x).toBeCloseTo(3056.7, 1);
     expect(area.ray.end?.y).toBeCloseTo(6814.2, 1);
   });
+
+  it("ignora toObject nulo ao procurar rotação da região", () => {
+    const area = createRectangleRayAreaSnapshot({
+      id: "region-a",
+      parent: { id: "scene-a" },
+      bounds: { x: 2300, y: 5800, width: 1200, height: 100 },
+      shapes: [
+        { type: "rectangle", x: 2300, y: 5800, width: 1200, height: 100, direction: 0, elevation: null },
+      ],
+      toObject: () => null,
+    } as unknown as RegionDocumentLike);
+
+    expect(area.ray.start).toEqual({ x: 2300, y: 5850 });
+    expect(area.ray.end).toEqual({ x: 3500, y: 5850 });
+  });
+
 });
