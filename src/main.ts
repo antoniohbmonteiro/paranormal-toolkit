@@ -1,4 +1,4 @@
-import { MODULE_ID, MODULE_TITLE } from "./constants";
+import { MODULE_ID } from "./constants";
 import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
 import { SystemGuard } from "./core/system-guard";
@@ -46,7 +46,6 @@ Hooks.once("ready", () => {
   ModuleLogger.info(
     `API de debug disponível em globalThis["${MODULE_ID}"] e globalThis.ParanormalToolkit.`,
   );
-  ui.notifications?.info(`${MODULE_TITLE} inicializado.`);
 });
 
 export function getToolkitServices(): ToolkitServices {

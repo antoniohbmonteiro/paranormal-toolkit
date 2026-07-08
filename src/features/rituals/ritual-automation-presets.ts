@@ -14,6 +14,18 @@ export const RITUAL_WITHER_PRESET_ID = "ritual.definhar";
 export const RITUAL_SIMPLE_DAMAGE_PRESET_ID = "ritual.simpleDamage";
 export const GENERIC_SIMPLE_HEALING_PRESET_ID = "generic.simpleHealing";
 
+type RitualHealingFormulaSet = {
+  base: string;
+  discente: string;
+  verdadeiro: string;
+};
+
+const CICATRIZATION_HEALING_FORMULAS: RitualHealingFormulaSet = {
+  base: "3d8+3",
+  discente: "5d8+5",
+  verdadeiro: "7d8+7",
+};
+
 const AUTOMATED_RITUAL_DESCRIPTION = `
 <p><strong>Paranormal Toolkit</strong></p>
 <p>A descrição original foi substituída ao aplicar este preset de automação.</p>
@@ -67,10 +79,10 @@ export function createRitualCostOnlyPreset(): AutomationPreset {
 export function createRitualSimpleHealingPreset(): AutomationPreset {
   return {
     id: RITUAL_SIMPLE_HEALING_PRESET_ID,
-    version: "1.0.0",
+    version: "1.1.0",
     label: "Cicatrização",
     description:
-      "Gasta o custo do ritual, rola 2d8+2 de cura e recupera PV do alvo.",
+      "Gasta o custo do ritual, rola 3d8+3/5d8+5/7d8+7 de cura conforme a forma escolhida e recupera PV do alvo.",
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [
@@ -182,8 +194,10 @@ export function createGenericSimpleHealingPreset(): AutomationPreset {
 }
 
 export function createRitualSimpleHealingDefinition(
-  formula = "2d8+2",
+  formulas: string | Partial<RitualHealingFormulaSet> = CICATRIZATION_HEALING_FORMULAS,
 ): AutomationDefinition {
+  const healingFormulas = resolveRitualHealingFormulaSet(formulas);
+
   return replaceRollFormula(
     {
       version: 1,
@@ -192,7 +206,21 @@ export function createRitualSimpleHealingDefinition(
         base: {
           label: "Padrão",
           rollFormulaOverrides: {
-            healing: formula,
+            healing: healingFormulas.base,
+          },
+        },
+        discente: {
+          label: "Discente",
+          extraCost: 2,
+          rollFormulaOverrides: {
+            healing: healingFormulas.discente,
+          },
+        },
+        verdadeiro: {
+          label: "Verdadeiro",
+          extraCost: 9,
+          rollFormulaOverrides: {
+            healing: healingFormulas.verdadeiro,
           },
         },
       },
@@ -222,8 +250,25 @@ export function createRitualSimpleHealingDefinition(
       ],
     },
     "healing",
-    formula,
+    healingFormulas.base,
   );
+}
+
+function resolveRitualHealingFormulaSet(
+  formulas: string | Partial<RitualHealingFormulaSet>,
+): RitualHealingFormulaSet {
+  if (typeof formulas === "string") {
+    return {
+      base: formulas,
+      discente: formulas,
+      verdadeiro: formulas,
+    };
+  }
+
+  return {
+    ...CICATRIZATION_HEALING_FORMULAS,
+    ...formulas,
+  };
 }
 
 export function createRitualElectrocutionDefinition(): AutomationDefinition {
@@ -435,8 +480,8 @@ function createCicatrizationItemPatch(): AutomationPresetItemPatch {
       duration: "instantaneous",
       resistanceSkill: "",
       resistance: "",
-      studentForm: false,
-      trueForm: false,
+      studentForm: true,
+      trueForm: true,
     },
   };
 }

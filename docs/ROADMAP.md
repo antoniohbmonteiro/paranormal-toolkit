@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.3`.
+Versão atual documentada: `v0.34.4`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,18 @@ O Toolkit já tem:
 
 ## Roadmap por prioridade
 
+
+
+### Concluído em 0.34.4 — Preset de Cicatrização e inicialização silenciosa
+
+Objetivo: corrigir a progressão de cura do preset de Cicatrização e remover uma notificação visual desnecessária ao carregar o módulo.
+
+Entrega feita:
+
+- preset de Cicatrização passa a usar `3d8+3` na forma Padrão, `5d8+5` na Discente e `7d8+7` na Verdadeira;
+- formas Discente e Verdadeira ficam habilitadas no item patch do preset de Cicatrização;
+- remove o toast `Paranormal Toolkit inicializado.` no carregamento do mundo;
+- mantém logs de inicialização no console para debug e não altera workflows de custo, conjuração, resistência, dano, efeitos ou chat card.
 
 
 ### Concluído em 0.34.3 — DT correta para resistência de ritual
