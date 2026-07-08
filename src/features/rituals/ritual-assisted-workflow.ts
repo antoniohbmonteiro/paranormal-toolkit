@@ -240,6 +240,7 @@ export class RitualAssistedWorkflow {
     );
     const castId = createRitualCastId();
     const formLabel = form.label ?? getRitualCastVariantLabel(castOptions.variant);
+    const disabledRollIds = getDisabledRollIds(form);
     const createEventInput = (targets: WorkflowTarget[] = context.targets) => ({
       castId,
       context,
@@ -460,6 +461,7 @@ export class RitualAssistedWorkflow {
       definition,
       effectiveContext,
       workflowContext,
+      disabledRollIds,
     );
     const conditionActionResult = createAssistedConditionActions(
       definition,
@@ -593,7 +595,8 @@ function createPreparationDefinition(
     )
       continue;
 
-    steps.push(applyFormOverridesToStep(step, form));
+    const preparedStep = applyFormOverridesToStep(step, form);
+    if (preparedStep) steps.push(preparedStep);
   }
 
   if (
@@ -658,16 +661,36 @@ async function spendRitualCostForCastingAttempt(
 function applyFormOverridesToStep(
   step: RitualPreparationStep,
   form: AutomationRitualFormDefinition,
-): RitualPreparationStep {
+): RitualPreparationStep | null {
   if (step.type !== "rollFormula") return step;
 
-  const formula = form.rollFormulaOverrides?.[step.id];
-  if (!formula) return step;
+  const formula = getRollFormulaOverride(form, step.id);
+  if (formula === null) return step;
+  if (formula.length === 0) return null;
 
   return {
     ...step,
     formula,
   } satisfies RollFormulaStep;
+}
+
+function getRollFormulaOverride(
+  form: AutomationRitualFormDefinition,
+  rollId: string,
+): string | null {
+  const overrides = form.rollFormulaOverrides;
+  if (!overrides || !Object.prototype.hasOwnProperty.call(overrides, rollId)) return null;
+
+  const value = overrides[rollId];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getDisabledRollIds(form: AutomationRitualFormDefinition): Set<string> {
+  return new Set(
+    Object.entries(form.rollFormulaOverrides ?? {})
+      .filter(([, formula]) => typeof formula !== "string" || formula.trim().length === 0)
+      .map(([rollId]) => rollId),
+  );
 }
 
 function createRitualCastingCheckSummary(
@@ -832,6 +855,7 @@ function createAssistedResourceActions(
   definition: AutomationDefinition,
   itemUseContext: ItemUseContext,
   workflowContext: WorkflowContext,
+  disabledRollIds: Set<string> = new Set(),
 ):
   | { ok: true; actions: Array<AssistedResourceAction | AssistedDamageAction> }
   | { ok: false; reason: string; message: string } {
@@ -840,6 +864,7 @@ function createAssistedResourceActions(
 
   for (const step of definition.steps) {
     if (step.type !== "modifyResource") continue;
+    if (shouldSkipResourceStepForDisabledRoll(step, disabledRollIds)) continue;
 
     const amount = resolveAutomationAmount(step, workflowContext);
 
@@ -890,6 +915,14 @@ function createAssistedResourceActions(
   }
 
   return { ok: true, actions };
+}
+
+function shouldSkipResourceStepForDisabledRoll(
+  step: ModifyResourceStep,
+  disabledRollIds: Set<string>,
+): boolean {
+  const sourceRollId = resolveAmountSourceRollId(step.amountFrom);
+  return sourceRollId !== null && disabledRollIds.has(sourceRollId);
 }
 
 type PendingDamageActionEntry = {
@@ -1487,11 +1520,15 @@ function createVariantDetails(
   isGenericRitual: boolean,
 ): string[] {
   const details: string[] = [];
-  const formulas = Object.values(form.rollFormulaOverrides ?? {});
+  void isGenericRitual;
+
+  const formulas = Object.values(form.rollFormulaOverrides ?? {})
+    .map((formula) => formula.trim())
+    .filter((formula) => formula.length > 0);
 
   if (formulas.length > 0) {
     details.push(formulas.join(", "));
-  } else if (isGenericRitual) {
+  } else {
     details.push("efeito manual");
   }
 

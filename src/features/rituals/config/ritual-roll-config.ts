@@ -118,10 +118,10 @@ export function createRitualRollAutomationDefinition(item: Item): AutomationDefi
   const config = readRitualRollConfig(item);
   if (!config) return null;
 
-  const baseFormula = config.forms.base.formula.trim();
-  if (!baseFormula) return null;
+  const firstFormula = findFirstAvailableConfiguredFormula(item, config);
+  if (!firstFormula) return null;
 
-  const rollStep = createConfiguredRollStep(config, baseFormula);
+  const rollStep = createConfiguredRollStep(config, firstFormula);
   const steps = [
     { type: "spendRitualCost" as const },
     rollStep,
@@ -188,37 +188,43 @@ function createConfiguredRitualForms(
   item: Item,
   config: RitualRollConfig,
 ): Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>> {
-  const baseFormula = config.forms.base.formula.trim();
   const forms: Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>> = {
-    base: {
-      label: "Padrão",
-      rollFormulaOverrides: {
-        [RITUAL_ROLL_CONFIG_ROLL_ID]: baseFormula,
-      },
-    },
+    base: createConfiguredRitualForm("Padrão", config.forms.base.formula),
   };
 
-  if (isRitualFormAvailableInItem(item, "discente") && config.forms.discente.formula.trim()) {
-    forms.discente = {
-      label: "Discente",
-      extraCost: 2,
-      rollFormulaOverrides: {
-        [RITUAL_ROLL_CONFIG_ROLL_ID]: config.forms.discente.formula.trim(),
-      },
-    };
+  if (isRitualFormAvailableInItem(item, "discente")) {
+    forms.discente = createConfiguredRitualForm("Discente", config.forms.discente.formula, 2);
   }
 
-  if (isRitualFormAvailableInItem(item, "verdadeiro") && config.forms.verdadeiro.formula.trim()) {
-    forms.verdadeiro = {
-      label: "Verdadeiro",
-      extraCost: 5,
-      rollFormulaOverrides: {
-        [RITUAL_ROLL_CONFIG_ROLL_ID]: config.forms.verdadeiro.formula.trim(),
-      },
-    };
+  if (isRitualFormAvailableInItem(item, "verdadeiro")) {
+    forms.verdadeiro = createConfiguredRitualForm("Verdadeiro", config.forms.verdadeiro.formula, 5);
   }
 
   return forms;
+}
+
+function createConfiguredRitualForm(
+  label: string,
+  formula: string,
+  extraCost?: number,
+): AutomationRitualFormDefinition {
+  return {
+    label,
+    ...(extraCost ? { extraCost } : {}),
+    rollFormulaOverrides: {
+      [RITUAL_ROLL_CONFIG_ROLL_ID]: formula.trim(),
+    },
+  };
+}
+
+function findFirstAvailableConfiguredFormula(item: Item, config: RitualRollConfig): string | null {
+  const formulas = [
+    config.forms.base.formula.trim(),
+    isRitualFormAvailableInItem(item, "discente") ? config.forms.discente.formula.trim() : "",
+    isRitualFormAvailableInItem(item, "verdadeiro") ? config.forms.verdadeiro.formula.trim() : "",
+  ];
+
+  return formulas.find((formula) => formula.length > 0) ?? null;
 }
 
 export function createResistanceFromRitualItem(item: Item): AutomationResistanceDefinition | undefined {

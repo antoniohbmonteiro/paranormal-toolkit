@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.4`.
+Versão atual documentada: `v0.34.5`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,18 @@ O Toolkit já tem:
 
 ## Roadmap por prioridade
 
+
+
+### Concluído em 0.34.5 — Fórmulas por forma sem Padrão obrigatório
+
+Objetivo: permitir que rituais genéricos tenham a forma Padrão apenas como efeito manual, enquanto Discente ou Verdadeiro possuem fórmula própria de dano, cura ou utilidade.
+
+Entrega feita:
+
+- configuração de rolagem de ritual passa a aceitar fórmula em qualquer forma disponível, sem exigir fórmula no Padrão;
+- formas com fórmula vazia continuam aparecendo como `efeito manual` no popup de conjuração;
+- ao conjurar uma forma sem fórmula, o Toolkit não tenta rolar nem criar ação de dano/cura baseada em rolagem inexistente;
+- ao conjurar Discente ou Verdadeiro com fórmula configurada, a rolagem e as ações assistidas continuam funcionando normalmente.
 
 
 ### Concluído em 0.34.4 — Preset de Cicatrização e inicialização silenciosa
