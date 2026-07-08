@@ -1561,3 +1561,16 @@
   line-height: 1.2 !important;
   overflow-wrap: break-word !important;
 }
+
+/* 0.34.2 — Remove padding lateral do balão quando o Toolkit substitui o card do sistema */
+li.chat-message.paranormal-toolkit-item-use-prompt--system-card-replaced {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-inline: 0 !important;
+}
+
+li.chat-message.paranormal-toolkit-item-use-prompt--system-card-replaced > .message-header {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  padding-inline: 8px !important;
+}

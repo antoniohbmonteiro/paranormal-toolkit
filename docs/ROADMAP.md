@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.1`.
+Versão atual documentada: `v0.34.2`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,18 @@ O Toolkit já tem:
 
 ## Roadmap por prioridade
 
+
+
+### Concluído em 0.34.2 — Ajuste lateral do card substituído
+
+Objetivo: ganhar espaço horizontal no card assistido quando o Toolkit substitui visualmente o card original do sistema, sem alterar o fluxo de rolagem ou aplicação.
+
+Entrega feita:
+
+- remove o padding lateral do `li.chat-message` apenas em mensagens marcadas como card do sistema substituído pelo Toolkit;
+- preserva o padding vertical padrão da mensagem para manter respiro acima e abaixo do card;
+- restaura o padding lateral do cabeçalho da mensagem para não colar nome, horário e ações nas bordas;
+- não altera cards internos, rolagens, ações assistidas, resistência, dano, efeitos ou multi-target.
 
 
 ### Concluído em 0.34.1 — Ajuste visual da DT de resistência
