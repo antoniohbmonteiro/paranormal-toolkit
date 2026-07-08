@@ -9,9 +9,20 @@ import {
 } from "./item-use-chat-card-constants";
 import { enhanceRitualCardLayout } from "./item-use-card-layout";
 import { createSingleTargetResistanceUiState } from "./item-use-card-resistance-state";
+import { readCastingDifficulty } from "./item-use-card-roll-context";
+import {
+  createResistanceDifficultyLabelParts,
+  type ResistanceDifficultyLabelParts,
+} from "./item-use-card-resistance-label";
 
 const RESISTANCE_ROLL_RESULT_ENHANCED_ATTRIBUTE =
   "data-paranormal-toolkit-resistance-roll-result-enhanced";
+const RESISTANCE_ORIGINAL_DESCRIPTION_ATTRIBUTE =
+  "data-paranormal-toolkit-resistance-original-description";
+const RESISTANCE_SKILL_ATTRIBUTE =
+  "data-paranormal-toolkit-resistance-skill";
+const RESISTANCE_SKILL_LABEL_ATTRIBUTE =
+  "data-paranormal-toolkit-resistance-skill-label";
 
 type ResistanceRollDisplay = {
   skillLabel: string;
@@ -60,10 +71,72 @@ function enhanceResistanceCard(resistance: HTMLElement): void {
   }
 
   decorateResistanceRollButton(button);
+  decorateResistanceDifficultyLabel(resistance, button, description);
 
   if (button.parentElement !== resistance) {
     resistance.append(button);
   }
+}
+
+
+function decorateResistanceDifficultyLabel(
+  resistance: HTMLElement,
+  button: HTMLElement,
+  description: HTMLElement | null,
+): void {
+  if (!description) return;
+
+  const rollCard = resistance.closest<HTMLElement>(`.${PROMPT_CLASS}__roll-card`);
+  if (!rollCard) return;
+
+  const originalDescription = getOriginalResistanceDescription(description);
+  const label = createResistanceDifficultyLabelParts({
+    description: originalDescription,
+    skillLabel: button.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? button.getAttribute(RESISTANCE_SKILL_ATTRIBUTE),
+    difficulty: readCastingDifficulty(rollCard),
+  });
+
+  if (!label) {
+    description.textContent = originalDescription;
+    description.classList.remove(`${PROMPT_CLASS}__resistance-description--difficulty`);
+    return;
+  }
+
+  renderResistanceDifficultyLabel(description, label);
+  description.classList.add(`${PROMPT_CLASS}__resistance-description--difficulty`);
+}
+
+function renderResistanceDifficultyLabel(
+  description: HTMLElement,
+  label: ResistanceDifficultyLabelParts,
+): void {
+  const skill = document.createElement("span");
+  skill.classList.add(`${PROMPT_CLASS}__resistance-label-skill`);
+  skill.textContent = label.skillLabel;
+
+  const difficulty = document.createElement("strong");
+  difficulty.classList.add(`${PROMPT_CLASS}__resistance-label-difficulty`);
+  difficulty.textContent = label.difficultyLabel;
+
+  const children: Array<Node> = [skill, document.createTextNode(" · "), difficulty];
+
+  if (label.description) {
+    const descriptionText = document.createElement("span");
+    descriptionText.classList.add(`${PROMPT_CLASS}__resistance-label-effect`);
+    descriptionText.textContent = label.description;
+    children.push(document.createTextNode(" · "), descriptionText);
+  }
+
+  description.replaceChildren(...children);
+}
+
+function getOriginalResistanceDescription(description: HTMLElement): string {
+  const existing = description.getAttribute(RESISTANCE_ORIGINAL_DESCRIPTION_ATTRIBUTE);
+  if (existing !== null) return existing;
+
+  const original = description.textContent?.trim() ?? "";
+  description.setAttribute(RESISTANCE_ORIGINAL_DESCRIPTION_ATTRIBUTE, original);
+  return original;
 }
 
 function getOrCreateResistanceContent(resistance: HTMLElement, button: HTMLElement): HTMLElement {

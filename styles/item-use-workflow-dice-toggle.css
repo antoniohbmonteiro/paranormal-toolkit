@@ -1537,3 +1537,27 @@
   color: inherit !important;
   font-weight: 800;
 }
+
+/* 0.34.1 — DT de resistência destacada sem pesar o label inteiro */
+.paranormal-toolkit-item-use-prompt__resistance-description--difficulty {
+  color: rgba(55, 43, 38, 0.9) !important;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-label-skill,
+.paranormal-toolkit-item-use-prompt__resistance-label-effect {
+  font-weight: inherit !important;
+}
+
+.paranormal-toolkit-item-use-prompt__resistance-label-difficulty {
+  color: rgba(45, 33, 29, 0.98) !important;
+  font-weight: 950 !important;
+}
+
+.paranormal-toolkit-item-use-prompt__targets-resistance-info {
+  margin-top: 0.28rem !important;
+  color: rgba(71, 51, 45, 0.84) !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  overflow-wrap: break-word !important;
+}

@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.33.6`.
+Versão atual documentada: `v0.34.1`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,29 @@ O Toolkit já tem:
 
 ## Roadmap por prioridade
 
+
+
+### Concluído em 0.34.1 — Ajuste visual da DT de resistência
+
+Objetivo: reduzir o peso visual da linha de resistência e corrigir duplicação da DT no card multi-target, mantendo a informação visível sem poluir a lista de alvos.
+
+Entrega feita:
+
+- single-target mantém `Perícia · DT N · efeito`, mas destaca somente `DT N`;
+- multi-target mantém a informação da resistência uma única vez entre o cabeçalho de **Alvos** e a lista;
+- corrige o caso em que `DT N` podia aparecer duplicado após reidratação do card;
+- não altera rolagem, estado pendente, aplicação de dano, aplicação de efeito ou fluxo multi-target.
+
+### Concluído em 0.34.0 — DT de resistência visível no card
+
+Objetivo: deixar clara a DT usada nos testes de resistência de rituais assistidos, sem alterar rolagem, dano, aplicação de efeitos ou comportamento multi-target.
+
+Entrega feita:
+
+- single-target passa a mostrar a resistência como `Perícia · DT N · efeito`;
+- multi-target mostra a mesma informação uma única vez entre o cabeçalho de **Alvos** e a lista de alvos;
+- evita repetir a DT dentro de cada alvo para não poluir o card;
+- mantém os botões, estados pendentes, rolagem por alvo e aplicação manual exatamente como estavam.
 
 ### Concluído em 0.33.6 — Inferência tolerante de ray em área rotacionada
 

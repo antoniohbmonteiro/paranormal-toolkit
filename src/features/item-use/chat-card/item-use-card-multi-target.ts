@@ -51,6 +51,10 @@ import {
 import { findWorkflowSectionByTitle } from "./item-use-card-dom";
 import { createWorkflowRollDisplay } from "./item-use-card-roll-display";
 import {
+  createResistanceDifficultyLabelParts,
+  type ResistanceDifficultyLabelParts,
+} from "./item-use-card-resistance-label";
+import {
   persistMultiTargetDamageApplication,
   persistMultiTargetEffectApplication,
   persistMultiTargetResistanceResult,
@@ -496,7 +500,13 @@ function getOrCreateTargetSection(rollCard: HTMLElement): HTMLElement {
 
 function renderTargetSection(section: HTMLElement, viewModel: MultiTargetCardViewModel): void {
   const expandedTargets = readExpandedTargets(section);
-  section.replaceChildren(createTargetSectionHeader(viewModel), createTargetList(viewModel, expandedTargets));
+  const resistanceInfo = createTargetResistanceInfo(viewModel.resistance);
+  const children = [createTargetSectionHeader(viewModel)];
+
+  if (resistanceInfo) children.push(resistanceInfo);
+  children.push(createTargetList(viewModel, expandedTargets));
+
+  section.replaceChildren(...children);
 }
 
 function readExpandedTargets(section: HTMLElement): Set<string> {
@@ -521,6 +531,43 @@ function createTargetSectionHeader(viewModel: MultiTargetCardViewModel): HTMLEle
 
   header.append(title, status);
   return header;
+}
+
+
+function createTargetResistanceInfo(resistance: TargetResistanceViewModel | null): HTMLElement | null {
+  const label = createResistanceDifficultyLabelParts({
+    description: resistance?.description,
+    skillLabel: resistance?.skillLabel ?? resistance?.skill,
+    difficulty: resistance?.difficulty,
+  });
+
+  if (!label) return null;
+
+  const info = document.createElement("div");
+  info.classList.add(`${PROMPT_CLASS}__targets-resistance-info`);
+  renderResistanceDifficultyLabel(info, label);
+  return info;
+}
+
+function renderResistanceDifficultyLabel(element: HTMLElement, label: ResistanceDifficultyLabelParts): void {
+  const skill = document.createElement("span");
+  skill.classList.add(`${PROMPT_CLASS}__resistance-label-skill`);
+  skill.textContent = label.skillLabel;
+
+  const difficulty = document.createElement("strong");
+  difficulty.classList.add(`${PROMPT_CLASS}__resistance-label-difficulty`);
+  difficulty.textContent = label.difficultyLabel;
+
+  const children: Array<Node> = [skill, document.createTextNode(" · "), difficulty];
+
+  if (label.description) {
+    const description = document.createElement("span");
+    description.classList.add(`${PROMPT_CLASS}__resistance-label-effect`);
+    description.textContent = label.description;
+    children.push(document.createTextNode(" · "), description);
+  }
+
+  element.replaceChildren(...children);
 }
 
 function createTargetStatusLabel(targets: MultiTargetViewModel[]): string {
