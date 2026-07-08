@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.33.1`.
+Versão atual documentada: `v0.33.2`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,19 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos e remoção automática da área temporária.
 
 ## Roadmap por prioridade
+
+
+### Concluído em 0.33.2 — Ray público para áreas de ritual rotacionadas
+
+Objetivo: publicar a geometria final da linha de rituais de área para módulos externos, evitando que Paranormal FX precise adivinhar rotação a partir de `bounds` e `shape.direction`.
+
+Entrega feita:
+
+- preenche `area.ray.start` e `area.ray.end` no hook público `paranormal-toolkit.ritual.area.resolved`;
+- preserva `area.bounds`, `area.shape`, `source` e `targetingMode` por compatibilidade;
+- usa os dados de preview/rotação da Scene Region quando disponíveis;
+- adiciona fallback defensivo para inferir a direção a partir do retângulo rotacionado quando o Foundry retorna `shape.direction` como `0`;
+- mantém o fluxo de dano, resistência, card e seleção de alvos sem alterações.
 
 
 ### Concluído em 0.33.1 — DT correta para O Custo do Paranormal

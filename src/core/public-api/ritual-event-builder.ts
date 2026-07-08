@@ -28,6 +28,20 @@ export type RitualEventBuildInput = {
   targets?: WorkflowTarget[];
 };
 
+type RectangleRaySnapshotOptions = {
+  candidates?: unknown[];
+  shape?: RegionShapeDataLike | null;
+};
+
+type RectangleRayShapeSnapshot = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  direction: number;
+  elevation: number | null;
+};
+
 export function createRitualCastId(): string {
   const cryptoObject = globalThis.crypto as { randomUUID?: () => string } | undefined;
 
@@ -113,12 +127,21 @@ export function createAutomationSourceSnapshot(
   };
 }
 
-export function createRectangleRayAreaSnapshot(region: RegionDocumentLike | RegionObjectLike): PublicRitualArea {
+export function createRectangleRayAreaSnapshot(
+  region: RegionDocumentLike | RegionObjectLike,
+  options: RectangleRaySnapshotOptions = {},
+): PublicRitualArea {
   const regionDocument = getRegionDocument(region);
-  const candidates = getRegionCandidates(region);
+  const candidates = [
+    ...getRegionCandidatesFromUnknown(options.candidates ?? []),
+    ...getRegionCandidates(region),
+  ];
   const bounds = getBounds(candidates) ?? { x: 0, y: 0, width: 0, height: 0 };
-  const shape = getRectangleShape(candidates) ?? createShapeFromBounds(bounds);
+  const shape = getRectangleShapeFromOptions(options) ?? getRectangleShape(candidates) ?? createShapeFromBounds(bounds);
   const gridSize = getPositiveNumber(canvas?.grid?.size);
+  const shapeSnapshot = createRectangleRayShapeSnapshot(shape, bounds, candidates);
+  const explicitRay = getExplicitRay(candidates);
+  const inferredRay = createRayFromRectangleShape(shapeSnapshot);
 
   return {
     type: "rectangleRay",
@@ -131,25 +154,238 @@ export function createRectangleRayAreaSnapshot(region: RegionDocumentLike | Regi
       width: bounds.width,
       height: bounds.height,
     },
-    shape: {
-      x: getNumber(shape.x) ?? 0,
-      y: getNumber(shape.y) ?? 0,
-      width: getNumber(shape.width) ?? bounds.width,
-      height: getNumber(shape.height) ?? bounds.height,
-      direction: getNumber(shape.direction) ?? 0,
-      elevation: getNumber(shape.elevation),
-    },
+    shape: shapeSnapshot,
     center: {
       x: bounds.x + bounds.width / 2,
       y: bounds.y + bounds.height / 2,
     },
-    ray: {
+    ray: explicitRay ?? inferredRay ?? {
       start: null,
       end: null,
     },
     source: "lineArea",
     targetingMode: "lineArea",
   };
+}
+
+function createRectangleRayShapeSnapshot(
+  shape: RegionShapeDataLike,
+  bounds: BoundsLike,
+  candidates: Array<RegionDocumentLike | RegionObjectLike>,
+): RectangleRayShapeSnapshot {
+  const baseShape = {
+    x: getNumber(shape.x) ?? 0,
+    y: getNumber(shape.y) ?? 0,
+    width: getNumber(shape.width) ?? bounds.width,
+    height: getNumber(shape.height) ?? bounds.height,
+    direction: getNumber(shape.direction) ?? 0,
+    elevation: getNumber(shape.elevation),
+  };
+
+  return {
+    ...baseShape,
+    direction: resolveRectangleRayDirection(baseShape, bounds, candidates),
+  };
+}
+
+function resolveRectangleRayDirection(
+  shape: RectangleRayShapeSnapshot,
+  bounds: BoundsLike,
+  candidates: Array<RegionDocumentLike | RegionObjectLike>,
+): number {
+  const candidateDirection = getCandidateDirection(candidates);
+  if (candidateDirection !== null) return candidateDirection;
+
+  return inferDirectionFromRotatedBounds(shape, bounds) ?? shape.direction;
+}
+
+function getCandidateDirection(candidates: Array<RegionDocumentLike | RegionObjectLike>): number | null {
+  const paths = [
+    "rotation",
+    "direction",
+    "document.rotation",
+    "document.direction",
+    "object.rotation",
+    "object.direction",
+  ];
+
+  for (const candidate of candidates) {
+    for (const path of paths) {
+      const value = getNumber(foundry.utils.getProperty(candidate, path));
+      if (value !== null && Math.abs(normalizeDirectionDegrees(value)) > 0.001) {
+        return normalizeDirectionDegrees(value);
+      }
+    }
+
+    const toObject = (candidate as { toObject?: unknown }).toObject;
+    if (typeof toObject !== "function") continue;
+
+    const data = toObject.call(candidate) as object | null;
+    for (const path of paths) {
+      const value = getNumber(foundry.utils.getProperty(data, path));
+      if (value !== null && Math.abs(normalizeDirectionDegrees(value)) > 0.001) {
+        return normalizeDirectionDegrees(value);
+      }
+    }
+  }
+
+  return null;
+}
+
+function inferDirectionFromRotatedBounds(
+  shape: RectangleRayShapeSnapshot,
+  bounds: BoundsLike,
+): number | null {
+  if (shape.width <= 0 || shape.height < 0 || bounds.width <= 0 || bounds.height <= 0) return null;
+
+  const unrotatedError = getBoundsError(createRectangleBounds(shape, shape.direction), bounds);
+  const acuteDirection = solveAcuteDirectionFromBounds(shape, bounds);
+  if (acuteDirection === null) return null;
+
+  const candidateDirections = uniqueDirections([
+    acuteDirection,
+    -acuteDirection,
+    180 - acuteDirection,
+    180 + acuteDirection,
+    0,
+    90,
+    180,
+    270,
+  ]);
+  const best = candidateDirections
+    .map((direction) => ({
+      direction,
+      error: getBoundsError(createRectangleBounds(shape, direction), bounds),
+    }))
+    .sort((a, b) => a.error - b.error)[0];
+
+  if (!best || best.error >= unrotatedError) return null;
+
+  const tolerance = Math.max(1, Math.min(shape.width, Math.max(shape.height, 1)) * 0.05);
+  return best.error <= tolerance ? normalizeDirectionDegrees(best.direction) : null;
+}
+
+function solveAcuteDirectionFromBounds(shape: RectangleRayShapeSnapshot, bounds: BoundsLike): number | null {
+  const length = shape.width;
+  const width = shape.height;
+  const denominator = length ** 2 - width ** 2;
+
+  if (Math.abs(denominator) < 0.001) return null;
+
+  const cos = (length * bounds.width - width * bounds.height) / denominator;
+  const sin = (length * bounds.height - width * bounds.width) / denominator;
+  const clampedCos = clamp(cos, 0, 1);
+  const clampedSin = clamp(sin, 0, 1);
+
+  if (!Number.isFinite(clampedCos) || !Number.isFinite(clampedSin)) return null;
+
+  return radiansToDegrees(Math.atan2(clampedSin, clampedCos));
+}
+
+function createRectangleBounds(shape: RectangleRayShapeSnapshot, direction: number): BoundsLike {
+  const radians = degreesToRadians(direction);
+  const lengthVector = {
+    x: Math.cos(radians),
+    y: Math.sin(radians),
+  };
+  const widthVector = {
+    x: -Math.sin(radians),
+    y: Math.cos(radians),
+  };
+  const corners = [
+    { x: shape.x, y: shape.y },
+    {
+      x: shape.x + lengthVector.x * shape.width,
+      y: shape.y + lengthVector.y * shape.width,
+    },
+    {
+      x: shape.x + widthVector.x * shape.height,
+      y: shape.y + widthVector.y * shape.height,
+    },
+    {
+      x: shape.x + lengthVector.x * shape.width + widthVector.x * shape.height,
+      y: shape.y + lengthVector.y * shape.width + widthVector.y * shape.height,
+    },
+  ];
+  const xs = corners.map((corner) => corner.x);
+  const ys = corners.map((corner) => corner.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+
+function getBoundsError(actual: BoundsLike, expected: BoundsLike): number {
+  return Math.abs(actual.x - expected.x) +
+    Math.abs(actual.y - expected.y) +
+    Math.abs(actual.width - expected.width) +
+    Math.abs(actual.height - expected.height);
+}
+
+function uniqueDirections(values: number[]): number[] {
+  const directions = new Set<number>();
+
+  for (const value of values) {
+    const normalized = normalizeDirectionDegrees(value);
+    directions.add(Math.round(normalized * 1000) / 1000);
+  }
+
+  return [...directions];
+}
+
+function createRayFromRectangleShape(shape: RectangleRayShapeSnapshot): PublicRitualArea["ray"] | null {
+  if (shape.width <= 0 || shape.height < 0) return null;
+
+  const radians = degreesToRadians(shape.direction);
+  const lengthVector = {
+    x: Math.cos(radians),
+    y: Math.sin(radians),
+  };
+  const perpendicularVector = {
+    x: -Math.sin(radians),
+    y: Math.cos(radians),
+  };
+  const halfWidth = shape.height / 2;
+  const start = {
+    x: shape.x + perpendicularVector.x * halfWidth,
+    y: shape.y + perpendicularVector.y * halfWidth,
+  };
+
+  return {
+    start,
+    end: {
+      x: start.x + lengthVector.x * shape.width,
+      y: start.y + lengthVector.y * shape.width,
+    },
+  };
+}
+
+function getExplicitRay(candidates: Array<RegionDocumentLike | RegionObjectLike>): PublicRitualArea["ray"] | null {
+  for (const candidate of candidates) {
+    const start = readPoint(candidate, "ray.start");
+    const end = readPoint(candidate, "ray.end");
+
+    if (start && end) return { start, end };
+  }
+
+  return null;
+}
+
+function readPoint(candidate: unknown, path: string): PublicRitualArea["ray"]["start"] {
+  const value = foundry.utils.getProperty(candidate, path);
+  const x = getNumber(foundry.utils.getProperty(value, "x"));
+  const y = getNumber(foundry.utils.getProperty(value, "y"));
+
+  if (x === null || y === null) return null;
+
+  return { x, y };
 }
 
 function createRitualEventBase(input: RitualEventBuildInput): PublicRitualEventBase {
@@ -257,6 +493,14 @@ function getRegionDocument(region: RegionDocumentLike | RegionObjectLike): Regio
   return region as RegionDocumentLike;
 }
 
+function getRectangleShapeFromOptions(options: RectangleRaySnapshotOptions): RegionShapeDataLike | null {
+  return options.shape && isRegionShapeDataLike(options.shape) ? options.shape : null;
+}
+
+function getRegionCandidatesFromUnknown(values: unknown[]): Array<RegionDocumentLike | RegionObjectLike> {
+  return values.filter(isRegionCandidate);
+}
+
 function getRegionCandidates(region: RegionDocumentLike | RegionObjectLike): Array<RegionDocumentLike | RegionObjectLike> {
   const candidates: Array<RegionDocumentLike | RegionObjectLike | null | undefined> = [
     region,
@@ -359,4 +603,21 @@ function getNumber(value: unknown): number | null {
 function getPositiveNumber(value: unknown): number | null {
   const numberValue = getNumber(value);
   return numberValue !== null && numberValue > 0 ? numberValue : null;
+}
+
+function degreesToRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function radiansToDegrees(value: number): number {
+  return (value * 180) / Math.PI;
+}
+
+function normalizeDirectionDegrees(value: number): number {
+  const normalized = value % 360;
+  return normalized < 0 ? normalized + 360 : normalized;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }

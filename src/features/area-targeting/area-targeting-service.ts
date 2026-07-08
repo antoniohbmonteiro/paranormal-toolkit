@@ -1,4 +1,5 @@
 import type { PreCastTargetingInput, PreCastTargetingResult } from "./area-targeting-types";
+import type { RegionPlacementChange } from "./region/region-targeting-types";
 import { createRectangleRayAreaSnapshot } from "../../core/public-api/ritual-event-builder";
 import { FoundryAreaTargetingAdapter } from "./foundry-area-targeting-adapter";
 import { RegionCleanupService } from "./region/region-cleanup-service";
@@ -28,6 +29,7 @@ export class AreaTargetingService {
     }
 
     if (requestedTargeting.mode === "lineArea") {
+      let latestPlacementChange: RegionPlacementChange | null = null;
       const targetSnapshot = this.regionTargetPreview.captureCurrentTargets();
       const restorePreviewTargets = (): void => {
         this.regionTargetPreview.restorePreviousTargets(targetSnapshot);
@@ -41,6 +43,7 @@ export class AreaTargetingService {
         },
         {
           onChange: (change) => {
+            latestPlacementChange = change;
             try {
               const resolution = this.regionTargetResolver.resolvePreviewTargetTokens(change);
               this.regionTargetPreview.previewTargets(resolution.tokens);
@@ -64,7 +67,10 @@ export class AreaTargetingService {
 
       try {
         const resolution = this.regionTargetResolver.resolveTargets(placementResult.region);
-        const areaSnapshot = createRectangleRayAreaSnapshot(placementResult.region);
+        const areaSnapshot = createRectangleRayAreaSnapshot(placementResult.region, {
+          candidates: [latestPlacementChange?.preview, latestPlacementChange?.document],
+          shape: latestPlacementChange?.shape,
+        });
 
         if (resolution.targets.length === 0) {
           restorePreviewTargets();
