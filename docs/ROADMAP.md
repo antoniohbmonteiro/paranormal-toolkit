@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.2`.
+Versão atual documentada: `v0.34.3`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,18 @@ O Toolkit já tem:
 
 ## Roadmap por prioridade
 
+
+
+### Concluído em 0.34.3 — DT correta para resistência de ritual
+
+Objetivo: corrigir regressão visual e funcional em que a resistência dos alvos usava a DT de conjuração de O Custo do Paranormal (`20 + PE`) em vez da DT do Ritual do conjurador.
+
+Entrega feita:
+
+- resistência single-target e multi-target passam a usar `actor.system.ritual.DT`/`dt` como fonte preferencial;
+- mantém a DT de conjuração separada para O Custo do Paranormal;
+- preserva fallback legado para cards antigos quando a DT do Ritual não está disponível;
+- não altera custo, gasto de recurso, rolagem de dano, aplicação de dano, aplicação de efeito ou seleção de alvos.
 
 
 ### Concluído em 0.34.2 — Ajuste lateral do card substituído

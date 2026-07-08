@@ -41,11 +41,12 @@ export function readResistanceTotal(rollCard: HTMLElement): number | null {
 
 export function readCastingDifficulty(rollCard: HTMLElement): number | null {
   const prompt = readPersistedPromptForRollCard(rollCard);
-  const persistedDifficulty = readDifficultyFromPersistedPrompt(prompt);
-  if (persistedDifficulty !== null) return persistedDifficulty;
 
   const actorDifficulty = readDifficultyFromPromptActor(prompt);
   if (actorDifficulty !== null) return actorDifficulty;
+
+  const persistedDifficulty = readDifficultyFromPersistedPrompt(prompt);
+  if (persistedDifficulty !== null) return persistedDifficulty;
 
   return readLegacyDifficultyFromRenderedCard(rollCard);
 }
