@@ -23,6 +23,10 @@ const RESISTANCE_SKILL_ATTRIBUTE =
   "data-paranormal-toolkit-resistance-skill";
 const RESISTANCE_SKILL_LABEL_ATTRIBUTE =
   "data-paranormal-toolkit-resistance-skill-label";
+const RESISTANCE_WITHOUT_ROLL_BUTTON_CLASS =
+  `${PROMPT_CLASS}__resistance--without-roll-button`;
+
+const RESISTANCE_SKILL_LABELS = ["Fortitude", "Reflexos", "Vontade"] as const;
 
 type ResistanceRollDisplay = {
   skillLabel: string;
@@ -48,9 +52,12 @@ function enhanceResistanceCard(resistance: HTMLElement): void {
   const header = resistance.querySelector<HTMLElement>(RESISTANCE_HEADER_SELECTOR);
   const description = resistance.querySelector<HTMLElement>(RESISTANCE_DESCRIPTION_SELECTOR);
   const button = resistance.querySelector<HTMLElement>(RESISTANCE_ROLL_BUTTON_SELECTOR);
+  const visibleButton = isVisibleResistanceRollButton(button) ? button : null;
   const result = resistance.querySelector<HTMLElement>(RESISTANCE_ROLL_RESULT_SELECTOR);
 
-  if (!button || (!header && !description && !result)) return;
+  if (!header && !description && !result && !button) return;
+
+  resistance.classList.toggle(RESISTANCE_WITHOUT_ROLL_BUTTON_CLASS, !visibleButton);
 
   const content = getOrCreateResistanceContent(resistance, button);
 
@@ -63,25 +70,28 @@ function enhanceResistanceCard(resistance: HTMLElement): void {
   }
 
   if (result) {
-    if (result.parentElement !== resistance && !button.contains(result)) {
+    if (result.parentElement !== resistance && (!button || !button.contains(result))) {
       resistance.append(result);
     }
 
     enhanceResistanceRollResult(result);
   }
 
-  decorateResistanceRollButton(button);
   decorateResistanceDifficultyLabel(resistance, button, description);
 
-  if (button.parentElement !== resistance) {
-    resistance.append(button);
+  if (!visibleButton) return;
+
+  decorateResistanceRollButton(visibleButton);
+
+  if (visibleButton.parentElement !== resistance) {
+    resistance.append(visibleButton);
   }
 }
 
 
 function decorateResistanceDifficultyLabel(
   resistance: HTMLElement,
-  button: HTMLElement,
+  button: HTMLElement | null,
   description: HTMLElement | null,
 ): void {
   if (!description) return;
@@ -92,7 +102,7 @@ function decorateResistanceDifficultyLabel(
   const originalDescription = getOriginalResistanceDescription(description);
   const label = createResistanceDifficultyLabelParts({
     description: originalDescription,
-    skillLabel: button.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? button.getAttribute(RESISTANCE_SKILL_ATTRIBUTE),
+    skillLabel: resolveResistanceSkillLabel(button, originalDescription),
     difficulty: readCastingDifficulty(rollCard),
   });
 
@@ -139,14 +149,46 @@ function getOriginalResistanceDescription(description: HTMLElement): string {
   return original;
 }
 
-function getOrCreateResistanceContent(resistance: HTMLElement, button: HTMLElement): HTMLElement {
+function getOrCreateResistanceContent(resistance: HTMLElement, button: HTMLElement | null): HTMLElement {
   const existing = resistance.querySelector<HTMLElement>(`.${RESISTANCE_CONTENT_CLASS}`);
   if (existing) return existing;
 
   const content = document.createElement("div");
   content.classList.add(RESISTANCE_CONTENT_CLASS);
-  resistance.insertBefore(content, button.parentElement === resistance ? button : resistance.firstChild);
+  resistance.insertBefore(content, button?.parentElement === resistance ? button : resistance.firstChild);
   return content;
+}
+
+function isVisibleResistanceRollButton(button: HTMLElement | null): button is HTMLElement {
+  if (!button) return false;
+  if (button.hidden) return false;
+  return button.getAttribute("aria-hidden") !== "true";
+}
+
+function resolveResistanceSkillLabel(button: HTMLElement | null, description: string): string | null {
+  const buttonSkillLabel = button?.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE)
+    ?? button?.getAttribute(RESISTANCE_SKILL_ATTRIBUTE)
+    ?? null;
+
+  if (buttonSkillLabel) return buttonSkillLabel;
+  return readResistanceSkillLabelFromDescription(description);
+}
+
+function readResistanceSkillLabelFromDescription(description: string): string | null {
+  const normalizedDescription = normalizeResistanceText(description);
+
+  return RESISTANCE_SKILL_LABELS.find((label) => {
+    return normalizedDescription.startsWith(normalizeResistanceText(label));
+  }) ?? null;
+}
+
+function normalizeResistanceText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .toLocaleLowerCase();
 }
 
 function enhanceResistanceRollResult(result: HTMLElement): void {

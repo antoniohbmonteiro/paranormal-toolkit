@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.5`.
+Versão atual documentada: `v0.34.11`.
 
 O Toolkit já tem:
 
@@ -43,7 +43,78 @@ O Toolkit já tem:
 - rituais assistidos podem ser conjurados sem alvo selecionado; nesse caso o Toolkit rola e registra o resultado, mas não cria ações que alteram atores;
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos e remoção automática da área temporária.
 
+
+### Concluído em 0.34.11 — Remoção da captura/enriquecimento legado de alvo
+
+Objetivo: remover a feature legada que capturava alvos de qualquer ChatMessage e adicionava o bloco `Paranormal Toolkit / Origem / Alvo` no card do sistema.
+
+Entrega feita:
+
+- remove o registro de `registerChatTargetCapture()` no bootstrap do módulo;
+- remove o registro de `registerChatEnrichmentRenderer()` no bootstrap do módulo;
+- a captura genérica por chat deixa de gravar flags de workflow em mensagens comuns;
+- o renderer legado deixa de anexar o bloco visual `Origem / Alvo`;
+- cards modernos de rituais, resistência e ações assistidas continuam usando o fluxo próprio de item use.
+
+### Concluído em 0.34.9 — Remoção robusta do card legado no DOM
+
+Objetivo: remover o bloco legado `Paranormal Toolkit / Origem / Alvo` mesmo quando ele já vem anexado ao card original do sistema e não é removido apenas por CSS.
+
+Entrega feita:
+
+- registra limpeza defensiva no render de mensagens de chat;
+- remove elementos legados que correspondem ao resumo antigo do workflow;
+- preserva o card original do sistema e os cards modernos do Toolkit;
+- mantém o fallback CSS da versão anterior para mensagens antigas.
+
+
+### Concluído em 0.34.8 — Ocultar card legado de resumo do workflow
+
+Objetivo: remover visualmente o bloco legado `Paranormal Toolkit / Origem / Alvo` que ainda podia aparecer anexado ao card original do sistema em mensagens de uso de item.
+
+Entrega feita:
+
+- mantém o step legado `chatCard` como no-op;
+- adiciona fallback CSS para esconder cards antigos `.paranormal-toolkit-workflow-card`;
+- preserva cards modernos de ritual, rolagem, resistência e ações assistidas.
+
 ## Roadmap por prioridade
+
+### Concluído em 0.34.10 — Remoção do resumo legado de workflow
+
+Objetivo: remover na origem o card legado de resumo do workflow que imprimia `Paranormal Toolkit`, `Origem` e `Alvo` em cards do sistema.
+
+Entrega feita:
+
+- `chatCard` legado passa a ser ignorado como compatibilidade silenciosa;
+- `ChatMessageService` não possui mais gerador de resumo de workflow com Origem/Alvo;
+- removido o workaround de limpeza por DOM introduzido durante diagnóstico;
+- cards modernos de ritual, resistência e ações assistidas continuam sendo renderizados pelo fluxo atual.
+
+
+
+
+### Concluído em 0.34.7 — Remoção do card legado de resumo
+
+Objetivo: impedir que automações antigas criem mensagens genéricas no chat com apenas origem e alvo.
+
+Entrega feita:
+
+- transforma o step legado `chatCard` em no-op compatível;
+- mantém automações antigas funcionando sem imprimir o resumo visual antigo;
+- preserva os cards modernos de uso de item, rituais, dano, cura, resistência e ações assistidas;
+- adiciona teste para garantir que o executor de chat legado não cria mensagem.
+
+### Concluído em 0.34.6 — Resistência legível para jogadores
+
+Objetivo: corrigir o layout do bloco de resistência para jogadores, onde a ausência do botão de rolagem podia deixar o texto preso na coluna estreita reservada ao botão.
+
+Entrega feita:
+
+- o bloco de resistência agora é normalizado mesmo quando não há botão de rolagem visível;
+- a descrição da resistência passa a ficar na área principal do card para jogadores, como no card do mestre, mas sem o dado;
+- preserva o layout com botão para o mestre;
+- não altera rolagem, DT, permissões, aplicação de dano, aplicação de efeito ou fluxo multi-target.
 
 
 

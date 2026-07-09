@@ -122,6 +122,18 @@
   padding: 0.56rem 0.58rem !important;
 }
 
+.paranormal-toolkit-item-use-prompt__resistance--without-roll-button {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "content"
+    "result";
+}
+
+.paranormal-toolkit-item-use-prompt__resistance--without-roll-button
+  > .paranormal-toolkit-item-use-prompt__resistance-roll-button {
+  display: none !important;
+}
+
 .paranormal-toolkit-item-use-prompt__resistance-content {
   grid-area: content;
   display: flex;

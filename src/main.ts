@@ -3,8 +3,6 @@ import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
 import { SystemGuard } from "./core/system-guard";
 import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
-import { registerChatEnrichmentRenderer } from "./features/chat/chat-enrichment-renderer";
-import { registerChatTargetCapture } from "./features/chat/chat-target-capture";
 import { registerConditionLifecycleHooks } from "./features/conditions/condition-lifecycle-hooks";
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
 import { registerItemUseSettings } from "./features/item-use/item-use-settings";
@@ -36,8 +34,6 @@ Hooks.once("ready", () => {
   services.itemUseIntegration.registerStrategies();
   registerConditionLifecycleHooks(services.conditions);
   registerGlobalApi(services);
-  registerChatTargetCapture();
-  registerChatEnrichmentRenderer();
   registerRitualLogActionCleanup();
   registerActorSheetRitualPresetAction(services);
   registerItemSheetRitualRollConfigBlock();

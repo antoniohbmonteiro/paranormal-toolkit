@@ -1,4 +1,4 @@
-import { failure, type Result, success } from "../result";
+import { type Result, success } from "../result";
 import type { ChatCardStep } from "./automation-definition";
 import type { WorkflowContext } from "../workflow/workflow-context";
 import type { WorkflowMessageService } from "./workflow-message-service";
@@ -16,14 +16,9 @@ export async function executeAutomationChatStep(
   step: ChatCardStep,
   context: WorkflowContext
 ): Promise<AutomationChatResult> {
-  try {
-    await messages.createWorkflowSummaryMessage(context, step);
-    return success(undefined);
-  } catch (cause) {
-    return failure({
-      reason: "chat-card-failed",
-      message: "Workflow executado, mas falhou ao criar chat card de resumo.",
-      cause
-    });
-  }
+  void messages;
+  void step;
+  void context;
+
+  return success(undefined);
 }
