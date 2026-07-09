@@ -1,0 +1,199 @@
+name: Release Foundry package
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate, test and build
+        run: npm run check
+
+      - name: Validate release metadata
+        id: manifest
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from "node:fs";
+
+          const tag = process.env.GITHUB_REF_NAME ?? "";
+          const version = tag.startsWith("v") ? tag.slice(1) : tag;
+          const moduleManifest = JSON.parse(readFileSync("module.json", "utf8"));
+          const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+          const packageLock = JSON.parse(readFileSync("package-lock.json", "utf8"));
+
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+
+          if (!/^v\d+\.\d+\.\d+(?:[-+].+)?$/.test(tag)) {
+            fail(`Release tag must use vX.Y.Z format. Received: ${tag}`);
+          }
+
+          if (moduleManifest.version !== version) {
+            fail(`module.json version ${moduleManifest.version} does not match tag ${tag}.`);
+          }
+
+          if (packageJson.version !== version) {
+            fail(`package.json version ${packageJson.version} does not match tag ${tag}.`);
+          }
+
+          if (packageLock.version !== version || packageLock.packages?.[""]?.version !== version) {
+            fail(`package-lock.json version does not match tag ${tag}.`);
+          }
+
+          const compatibility = moduleManifest.compatibility ?? {};
+          if (!compatibility.minimum || !compatibility.verified) {
+            fail("module.json compatibility.minimum and compatibility.verified are required.");
+          }
+
+          const output = process.env.GITHUB_OUTPUT;
+          const lines = [
+            `package_id=${moduleManifest.id}`,
+            `version=${version}`,
+            `minimum=${compatibility.minimum}`,
+            `verified=${compatibility.verified}`,
+            `maximum=${compatibility.maximum ?? ""}`,
+          ];
+          await import("node:fs").then(({ appendFileSync }) => appendFileSync(output, `${lines.join("\n")}\n`));
+          NODE
+
+      - name: Build Foundry package zip
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          package_id="${{ steps.manifest.outputs.package_id }}"
+          zip_name="${package_id}.zip"
+          staging_dir=".release/${package_id}"
+
+          rm -rf .release
+          mkdir -p "$staging_dir"
+
+          cp module.json "$staging_dir/module.json"
+          [ -f README.md ] && cp README.md "$staging_dir/README.md"
+
+          for license_file in LICENSE LICENSE.md LICENSE.txt; do
+            [ -f "$license_file" ] && cp "$license_file" "$staging_dir/$license_file"
+          done
+
+          for dir in dist styles templates lang assets packs docs; do
+            [ -d "$dir" ] && cp -R "$dir" "$staging_dir/$dir"
+          done
+
+          (cd "$staging_dir" && zip -qr "../$zip_name" .)
+
+          unzip -l ".release/$zip_name"
+
+          if unzip -l ".release/$zip_name" | grep -E '(^|[[:space:]])(src/|node_modules/|package\.json|package-lock\.json|vite\.config|tsconfig\.json)' >/dev/null; then
+            echo "Release zip contains development-only files." >&2
+            exit 1
+          fi
+
+          echo "zip_path=.release/$zip_name" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+          zip_path="${{ steps.package.outputs.zip_path }}"
+
+          gh release create "$tag" \
+            module.json \
+            "$zip_path" \
+            --title "$tag" \
+            --notes "Release generated automatically from tag $tag."
+
+      - name: Publish release to Foundry VTT
+        env:
+          FOUNDRY_RELEASE_TOKEN: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
+          PACKAGE_ID: ${{ steps.manifest.outputs.package_id }}
+          VERSION: ${{ steps.manifest.outputs.version }}
+          MINIMUM: ${{ steps.manifest.outputs.minimum }}
+          VERIFIED: ${{ steps.manifest.outputs.verified }}
+          MAXIMUM: ${{ steps.manifest.outputs.maximum }}
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const endpoint = "https://foundryvtt.com/_api/packages/release_version/";
+          const token = process.env.FOUNDRY_RELEASE_TOKEN;
+
+          if (!token) {
+            throw new Error("Missing GitHub secret: FOUNDRY_RELEASE_TOKEN");
+          }
+
+          const release = {
+            version: process.env.VERSION,
+            manifest: `https://github.com/${process.env.REPOSITORY}/releases/download/${process.env.TAG}/module.json`,
+            notes: `https://github.com/${process.env.REPOSITORY}/releases/tag/${process.env.TAG}`,
+            compatibility: {
+              minimum: process.env.MINIMUM,
+              verified: process.env.VERIFIED,
+              maximum: process.env.MAXIMUM ?? "",
+            },
+          };
+
+          async function submit(dryRun) {
+            const payload = {
+              id: process.env.PACKAGE_ID,
+              ...(dryRun ? { "dry-run": true } : {}),
+              release,
+            };
+
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: token,
+              },
+              body: JSON.stringify(payload),
+            });
+
+            const text = await response.text();
+            let body;
+            try {
+              body = JSON.parse(text);
+            } catch {
+              body = text;
+            }
+
+            if (!response.ok) {
+              console.error(JSON.stringify(body, null, 2));
+              throw new Error(`Foundry release ${dryRun ? "dry-run" : "publish"} failed with HTTP ${response.status}.`);
+            }
+
+            console.log(JSON.stringify(body, null, 2));
+          }
+
+          await submit(true);
+          await submit(false);
+          NODE
