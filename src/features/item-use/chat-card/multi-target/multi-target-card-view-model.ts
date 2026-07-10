@@ -24,6 +24,10 @@ import type {
 
 const RESISTANCE_SKILL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill";
 const RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-resistance-skill-label";
+const ROLL_CARD_TARGET_NAMES_ATTRIBUTE = "data-paranormal-toolkit-roll-card-target-names";
+const ROLL_CARD_RESISTANCE_ATTRIBUTE = "data-paranormal-toolkit-roll-card-resistance";
+const ROLL_CARD_RESISTANCE_SKILL_ATTRIBUTE = "data-paranormal-toolkit-roll-card-resistance-skill";
+const ROLL_CARD_RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-roll-card-resistance-skill-label";
 
 export const MULTI_TARGET_PENDING_STATE = "pending";
 export const MULTI_TARGET_SUCCESS_STATE = "success";
@@ -163,7 +167,7 @@ export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelIn
     };
   });
 
-  if (targets.length <= 1 || (!damage && !effect)) return null;
+  if (targets.length <= 1 || (!damage && !effect && !resistance)) return null;
 
   return {
     rollCard: input.rollCard,
@@ -175,6 +179,11 @@ export function createMultiTargetCardViewModel(input: MultiTargetCardViewModelIn
 }
 
 function readTargetNames(rollCard: HTMLElement): string[] {
+  const encodedTargetNames = rollCard.getAttribute(ROLL_CARD_TARGET_NAMES_ATTRIBUTE);
+  const targetNames = encodedTargetNames ? parseStringArray(encodedTargetNames) : [];
+
+  if (targetNames.length > 0) return targetNames;
+
   const prompt = rollCard.closest<HTMLElement>(`.${PROMPT_CLASS}`);
   const summary = prompt?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__summary`)?.textContent ?? "";
   const [, targetText] = summary.split("→");
@@ -245,10 +254,11 @@ function createResistanceViewModel(
   candidateSections: readonly (HTMLElement | null)[],
 ): TargetResistanceViewModel | null {
   const candidates = normalizeResistanceCandidateSections(candidateSections);
-  const description = findResistanceDescriptionElement(candidates)?.textContent?.trim();
+  const metadata = readRollCardResistanceMetadata(rollCard);
+  const description = metadata.description ?? findResistanceDescriptionElement(candidates)?.textContent?.trim();
   const sourceButton = findResistanceButtonElement(candidates);
-  const skill = sourceButton?.getAttribute(RESISTANCE_SKILL_ATTRIBUTE) ?? null;
-  const skillLabel = sourceButton?.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : null);
+  const skill = metadata.skill ?? sourceButton?.getAttribute(RESISTANCE_SKILL_ATTRIBUTE) ?? null;
+  const skillLabel = metadata.skillLabel ?? sourceButton?.getAttribute(RESISTANCE_SKILL_LABEL_ATTRIBUTE) ?? (skill ? getResistanceSkillLabel(skill) : null);
 
   if (!description && !skill) return null;
 
@@ -258,6 +268,18 @@ function createResistanceViewModel(
     skill,
     skillLabel,
     difficulty: readCastingDifficulty(rollCard),
+  };
+}
+
+function readRollCardResistanceMetadata(rollCard: HTMLElement): {
+  description: string | null;
+  skill: string | null;
+  skillLabel: string | null;
+} {
+  return {
+    description: readNonEmptyAttribute(rollCard, ROLL_CARD_RESISTANCE_ATTRIBUTE),
+    skill: readNonEmptyAttribute(rollCard, ROLL_CARD_RESISTANCE_SKILL_ATTRIBUTE),
+    skillLabel: readNonEmptyAttribute(rollCard, ROLL_CARD_RESISTANCE_SKILL_LABEL_ATTRIBUTE),
   };
 }
 
@@ -321,6 +343,25 @@ function readRollFormula(section: HTMLElement | null): string | null {
 function readWorkflowSectionDescription(section: HTMLElement | null): string | null {
   const description = section?.querySelector<HTMLElement>(`.${PROMPT_CLASS}__workflow-section-description`)?.textContent?.trim();
   return description && description.length > 0 ? description : null;
+}
+
+function parseStringArray(value: string): string[] {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function readNonEmptyAttribute(element: HTMLElement, attribute: string): string | null {
+  const value = element.getAttribute(attribute)?.trim();
+  return value && value.length > 0 ? value : null;
 }
 
 function normalizeText(value: string | null | undefined): string {

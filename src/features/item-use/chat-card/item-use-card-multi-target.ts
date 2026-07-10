@@ -1122,15 +1122,6 @@ function createTargetEffectActionButton(
   const actionState = target.assistedActions.policy.effectActionState;
   const effect = target.effect ?? viewModel.effect;
 
-  if (!effect) {
-    return createTargetActionButton(
-      "✦",
-      density === "full" ? actionState.label : actionState.compactLabel,
-      [`${PROMPT_CLASS}__target-action--effect`, `${PROMPT_CLASS}__target-action--disabled`],
-      true
-    );
-  }
-
   if (target.effectApplication) {
     return createTargetActionButton(
       "✓",
@@ -1139,6 +1130,8 @@ function createTargetEffectActionButton(
       true
     );
   }
+
+  if (!effect) return null;
 
   if (isActionWaitingForResistance(actionState)) {
     return createTargetActionButton(

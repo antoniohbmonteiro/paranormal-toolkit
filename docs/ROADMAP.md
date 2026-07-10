@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.13`.
+Versão atual documentada: `v0.34.15`.
 
 O Toolkit já tem:
 
@@ -42,6 +42,32 @@ O Toolkit já tem:
 - bloco Paranormal Toolkit na aba Atributos do item ritual para configurar fórmula genérica por forma, tipo de rolagem e tipo de dano em flags do módulo;
 - rituais assistidos podem ser conjurados sem alvo selecionado; nesse caso o Toolkit rola e registra o resultado, mas não cria ações que alteram atores;
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos, minimização temporária de fichas abertas e remoção automática da área temporária.
+
+
+
+### Concluído em 0.34.15 — Card multi-target nasce pelo número real de alvos
+
+Objetivo: corrigir a arquitetura do card para que a escolha entre sem alvo, single-target e multi-target aconteça na criação do card, antes de qualquer hidratação visual.
+
+Entrega feita:
+
+- o card registra `none`, `single` ou `multi` pela quantidade real de alvos resolvidos no workflow;
+- cards com dois ou mais alvos reais já nascem com modo multi-target, inclusive em rituais manuais sem dano;
+- a resistência em cards multi-target fica armazenada como metadado estrutural do card e é exibida por alvo na seção **Alvos**;
+- o bloco single-target de resistência deixa de ser criado para cards multi-target, evitando a duplicação visual vista em rituais sem dano;
+- botões desabilitados de efeito indisponível, como `Sem efeito`, não são renderizados quando o alvo não possui efeito estruturado.
+
+### Concluído em 0.34.14 — Card multi-target para rituais sem dano
+
+Objetivo: garantir que a estrutura do card siga a quantidade real de alvos resolvidos no workflow, mesmo quando o ritual não possui dano ou ação automática para aplicar.
+
+Entrega feita:
+
+- cards com dois ou mais alvos reais passam a usar o layout multi-target quando houver resistência configurada;
+- rituais genéricos sem dano, como Perturbação com múltiplos alvos, exibem a lista de alvos no card;
+- cada alvo mantém o botão próprio de resistência para o mestre rolar e decidir manualmente o efeito;
+- a versão inicial ainda dependia da hidratação visual para converter o card em multi-target, o que foi corrigido estruturalmente na `0.34.15`;
+- ações indisponíveis de efeito não aparecem como botões desabilitados em cards multi-target sem efeito estruturado.
 
 
 ### Concluído em 0.34.13 — Foco no canvas durante seleção de área

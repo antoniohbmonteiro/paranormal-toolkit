@@ -1,0 +1,11 @@
+.paranormal-toolkit-item-use-prompt__roll-card--multi-target
+  > .paranormal-toolkit-item-use-prompt__resistance,
+.paranormal-toolkit-item-use-prompt__roll-card--multi-target
+  > .paranormal-toolkit-item-use-prompt__workflow-section:has(> .paranormal-toolkit-item-use-prompt__resistance) {
+  display: none !important;
+}
+
+.paranormal-toolkit-item-use-prompt__roll-card--multi-target
+  .paranormal-toolkit-item-use-prompt__target-action--effect.paranormal-toolkit-item-use-prompt__target-action--disabled {
+  display: none !important;
+}

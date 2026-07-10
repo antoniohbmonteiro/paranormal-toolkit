@@ -35,6 +35,11 @@ const PROMPT_SUMMARY_CLASS = `${PROMPT_CLASS}__summary`;
 const PROMPT_TITLE_CLASS = `${PROMPT_CLASS}__title`;
 const PROMPT_EXECUTED_BUTTON_CLASS = `${PROMPT_CLASS}__button--executed`;
 const PROMPT_ROLL_CARD_CLASS = `${PROMPT_CLASS}__roll-card`;
+const ROLL_CARD_TARGET_MODE_ATTRIBUTE = "data-paranormal-toolkit-roll-card-target-mode";
+const ROLL_CARD_TARGET_NAMES_ATTRIBUTE = "data-paranormal-toolkit-roll-card-target-names";
+const ROLL_CARD_RESISTANCE_ATTRIBUTE = "data-paranormal-toolkit-roll-card-resistance";
+const ROLL_CARD_RESISTANCE_SKILL_ATTRIBUTE = "data-paranormal-toolkit-roll-card-resistance-skill";
+const ROLL_CARD_RESISTANCE_SKILL_LABEL_ATTRIBUTE = "data-paranormal-toolkit-roll-card-resistance-skill-label";
 
 export type PersistedResourceActionPayload = {
   kind: "resource-operation";
@@ -142,6 +147,13 @@ type RollDieViewModel = {
   active: boolean;
 };
 
+type RollCardTargetMode = "none" | "single" | "multi";
+
+type RollCardTargetInfo = {
+  mode: RollCardTargetMode;
+  names: string[];
+};
+
 type WorkflowRollSectionInput = {
   kind: "casting" | "effect";
   title: string;
@@ -175,6 +187,8 @@ type ParsedRollCard = ParsedRollLine & {
   resistance: string | null;
   resistanceSkill: string | null;
   resistanceSkillLabel: string | null;
+  targetMode: RollCardTargetMode;
+  targetNames: string[];
   notes: string[];
   details: string[];
   castingCheck: CastingCheckViewModel | null;
@@ -568,8 +582,20 @@ function appendRollCard(section: HTMLElement, rollCard: ParsedRollCard, prompt: 
   if (section.querySelector(`[${ROLL_CARD_ATTRIBUTE}="true"]`)) return;
 
   const article = document.createElement("article");
-  article.classList.add(PROMPT_ROLL_CARD_CLASS, `${PROMPT_ROLL_CARD_CLASS}--${rollCard.intent}`);
+  article.classList.add(
+    PROMPT_ROLL_CARD_CLASS,
+    `${PROMPT_ROLL_CARD_CLASS}--${rollCard.intent}`,
+    `${PROMPT_ROLL_CARD_CLASS}--target-${rollCard.targetMode}`,
+  );
+
+  if (rollCard.targetMode === "multi") {
+    article.classList.add(`${PROMPT_ROLL_CARD_CLASS}--multi-target`);
+  }
+
   article.setAttribute(ROLL_CARD_ATTRIBUTE, "true");
+  article.setAttribute(ROLL_CARD_TARGET_MODE_ATTRIBUTE, rollCard.targetMode);
+  article.setAttribute(ROLL_CARD_TARGET_NAMES_ATTRIBUTE, JSON.stringify(rollCard.targetNames));
+  setRollCardResistanceAttributes(article, rollCard);
 
   if (rollCard.castingCheck) {
     appendWorkflowRollSection(article, createCastingWorkflowSection(rollCard.castingCheck), prompt.pendingId, "casting");
@@ -779,8 +805,22 @@ function appendRollMeta(article: HTMLElement, rollCard: ParsedRollCard): void {
   article.append(meta);
 }
 
-function appendResistanceHint(article: HTMLElement, rollCard: ParsedRollCard, prompt: RenderableItemUseAutomationPrompt): void {
+function setRollCardResistanceAttributes(article: HTMLElement, rollCard: ParsedRollCard): void {
   if (!rollCard.resistance) return;
+
+  article.setAttribute(ROLL_CARD_RESISTANCE_ATTRIBUTE, rollCard.resistance);
+
+  if (rollCard.resistanceSkill) {
+    article.setAttribute(ROLL_CARD_RESISTANCE_SKILL_ATTRIBUTE, rollCard.resistanceSkill);
+  }
+
+  if (rollCard.resistanceSkillLabel) {
+    article.setAttribute(ROLL_CARD_RESISTANCE_SKILL_LABEL_ATTRIBUTE, rollCard.resistanceSkillLabel);
+  }
+}
+
+function appendResistanceHint(article: HTMLElement, rollCard: ParsedRollCard, prompt: RenderableItemUseAutomationPrompt): void {
+  if (!rollCard.resistance || rollCard.targetMode === "multi") return;
 
   const resistance = document.createElement("div");
   resistance.classList.add(`${PROMPT_CLASS}__resistance`);
@@ -1434,6 +1474,7 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
   const notes = findSummaryValues(summaryLines, "Observação");
   const details = summaryLines.filter((line) => isExtraDetailLine(line, rollLine));
   const castingCheck = createCastingCheckViewModel(summaryLines);
+  const targetInfo = createRollCardTargetInfo(prompt);
 
   return {
     ...rollLine,
@@ -1445,11 +1486,39 @@ function createRollCard(summaryLines: string[], prompt: RenderableItemUseAutomat
     resistance,
     resistanceSkill,
     resistanceSkillLabel,
+    targetMode: targetInfo.mode,
+    targetNames: targetInfo.names,
     notes,
     details,
     castingCheck,
     resistanceRollResult: prompt.resistanceRollResult ?? null
   };
+}
+
+function createRollCardTargetInfo(prompt: RenderableItemUseAutomationPrompt): RollCardTargetInfo {
+  const names = readPromptTargetNames(prompt);
+
+  if (names.length <= 0) return { mode: "none", names };
+  if (names.length === 1) return { mode: "single", names };
+  return { mode: "multi", names };
+}
+
+function readPromptTargetNames(prompt: RenderableItemUseAutomationPrompt): string[] {
+  const [, targetText] = prompt.summary.split("→");
+  if (!targetText) return [];
+
+  return targetText
+    .split(",")
+    .map((target) => target.trim())
+    .filter((target) => target.length > 0 && normalizeTargetNameForCard(target) !== "nenhum alvo");
+}
+
+function normalizeTargetNameForCard(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/gu, "")
+    .trim()
+    .toLocaleLowerCase();
 }
 
 function createCastingCheckViewModel(summaryLines: string[]): CastingCheckViewModel | null {
