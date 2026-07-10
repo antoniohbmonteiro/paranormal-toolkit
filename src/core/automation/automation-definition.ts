@@ -14,7 +14,11 @@ export type AutomationDefinition = {
   conditionApplications?: AutomationConditionApplicationDefinition[];
 };
 
-export type AutomationResistanceEffect = "reducesByHalf";
+export type AutomationResistanceEffect =
+  | "nullifies"
+  | "discredits"
+  | "partial"
+  | "reducesByHalf";
 
 export type AutomationResistanceSkill =
   "resilience" | "reflexes" | "will" | string;

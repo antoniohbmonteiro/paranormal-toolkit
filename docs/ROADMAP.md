@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.11`.
+Versão atual documentada: `v0.34.12`.
 
 O Toolkit já tem:
 
@@ -42,6 +42,19 @@ O Toolkit já tem:
 - bloco Paranormal Toolkit na aba Atributos do item ritual para configurar fórmula genérica por forma, tipo de rolagem e tipo de dano em flags do módulo;
 - rituais assistidos podem ser conjurados sem alvo selecionado; nesse caso o Toolkit rola e registra o resultado, mas não cria ações que alteram atores;
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos e remoção automática da área temporária.
+
+
+### Concluído em 0.34.12 — Resistência em rituais sem dano
+
+Objetivo: separar a leitura da resistência do ritual da automação de dano, permitindo exibir resistência também em rituais de utilidade, cura ou efeito manual.
+
+Entrega feita:
+
+- `system.resistance` passa a aceitar `nullifies`, `discredits`, `partial` e `reducesByHalf`;
+- `system.skillResis` continua aceitando `resilience`, `reflexes` e `will`;
+- rituais com resistência, mas sem fórmula configurada, ainda geram card assistido com custo, forma e resistência;
+- rituais de utilidade/cura com fórmula configurada também exibem resistência quando o item possuir esses campos;
+- automação de dano permanece conservadora: somente `reducesByHalf` cria opção de aplicação de dano pela metade.
 
 
 ### Concluído em 0.34.11 — Remoção da captura/enriquecimento legado de alvo

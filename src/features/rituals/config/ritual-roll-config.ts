@@ -2,6 +2,7 @@ import { MODULE_ID } from "../../../constants";
 import type {
   AutomationDefinition,
   AutomationResistanceDefinition,
+  AutomationResistanceEffect,
   AutomationRitualFormDefinition,
   AutomationRitualFormId,
   ModifyResourceStep,
@@ -14,6 +15,8 @@ export const RITUAL_ROLL_CONFIG_ROLL_ID = "ritual-roll";
 
 export type RitualRollIntent = "damage" | "healing" | "utility";
 export type RitualRollFormId = "base" | "discente" | "verdadeiro";
+
+type RitualResistanceEffectInput = AutomationResistanceEffect;
 
 export type RitualRollFormConfig = {
   formula: string;
@@ -35,6 +38,13 @@ export type RitualRollConfigInput = Partial<{
   note: unknown;
   forms: unknown;
 }>;
+
+const RESISTANCE_EFFECT_LABELS: Record<RitualResistanceEffectInput, string> = {
+  nullifies: "anula",
+  discredits: "desacredita",
+  partial: "parcial",
+  reducesByHalf: "reduz à metade",
+};
 
 export function createDefaultRitualRollConfig(): RitualRollConfig {
   return {
@@ -116,10 +126,16 @@ export function getRitualRollIntentLabel(intent: RitualRollIntent): string {
 
 export function createRitualRollAutomationDefinition(item: Item): AutomationDefinition | null {
   const config = readRitualRollConfig(item);
-  if (!config) return null;
+  const resistance = createResistanceFromRitualItem(item);
+
+  if (!config) {
+    return createManualRitualAutomationDefinition(item, resistance);
+  }
 
   const firstFormula = findFirstAvailableConfiguredFormula(item, config);
-  if (!firstFormula) return null;
+  if (!firstFormula) {
+    return createManualRitualAutomationDefinition(item, resistance);
+  }
 
   const rollStep = createConfiguredRollStep(config, firstFormula);
   const steps = [
@@ -133,7 +149,22 @@ export function createRitualRollAutomationDefinition(item: Item): AutomationDefi
     label: `Fórmula de ${item.name ?? "ritual"}`,
     steps,
     ritualForms: createConfiguredRitualForms(item, config),
-    resistance: config.intent === "damage" ? createResistanceFromRitualItem(item) : undefined,
+    resistance,
+  };
+}
+
+function createManualRitualAutomationDefinition(
+  item: Item,
+  resistance: AutomationResistanceDefinition | undefined,
+): AutomationDefinition | null {
+  if (!resistance) return null;
+
+  return {
+    version: 1,
+    label: `Conjuração de ${item.name ?? "ritual"}`,
+    steps: [{ type: "spendRitualCost" }],
+    ritualForms: createManualRitualForms(item),
+    resistance,
   };
 }
 
@@ -217,6 +248,22 @@ function createConfiguredRitualForm(
   };
 }
 
+function createManualRitualForms(item: Item): Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>> {
+  const forms: Partial<Record<AutomationRitualFormId, AutomationRitualFormDefinition>> = {
+    base: { label: "Padrão" },
+  };
+
+  if (isRitualFormAvailableInItem(item, "discente")) {
+    forms.discente = { label: "Discente", extraCost: 2 };
+  }
+
+  if (isRitualFormAvailableInItem(item, "verdadeiro")) {
+    forms.verdadeiro = { label: "Verdadeiro", extraCost: 5 };
+  }
+
+  return forms;
+}
+
 function findFirstAvailableConfiguredFormula(item: Item, config: RitualRollConfig): string | null {
   const formulas = [
     config.forms.base.formula.trim(),
@@ -230,17 +277,18 @@ function findFirstAvailableConfiguredFormula(item: Item, config: RitualRollConfi
 export function createResistanceFromRitualItem(item: Item): AutomationResistanceDefinition | undefined {
   const system = readSystemRecord(item);
   const skill = normalizeOptionalString(system.skillResis);
-  const resistance = normalizeOptionalString(system.resistance);
+  const effect = normalizeResistanceEffect(system.resistance);
 
-  if (!skill || resistance !== "reducesByHalf") return undefined;
+  if (!skill || !effect) return undefined;
 
   const label = getResistanceSkillLabel(skill);
+  const effectLabel = RESISTANCE_EFFECT_LABELS[effect];
 
   return {
     skill,
     label,
-    effect: "reducesByHalf",
-    summary: `${label} reduz à metade`,
+    effect,
+    summary: `${label} ${effectLabel}`,
   };
 }
 
@@ -257,6 +305,19 @@ function toWorkflowRollIntent(intent: RitualRollIntent): RollFormulaStep["intent
 
 function normalizeIntent(value: unknown): RitualRollIntent | null {
   return value === "damage" || value === "healing" || value === "utility" ? value : null;
+}
+
+function normalizeResistanceEffect(value: unknown): RitualResistanceEffectInput | null {
+  if (
+    value === "nullifies" ||
+    value === "discredits" ||
+    value === "partial" ||
+    value === "reducesByHalf"
+  ) {
+    return value;
+  }
+
+  return null;
 }
 
 function normalizeFormConfigs(value: unknown): Record<RitualRollFormId, RitualRollFormConfig> {
