@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.15`.
+Versão atual documentada: `v0.34.16`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,18 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos, minimização temporária de fichas abertas e remoção automática da área temporária.
 
 
+
+### Concluído em 0.34.16 — Resistência sem alvo não oferece rolagem
+
+Objetivo: impedir que cards sem alvo selecionado exibam uma ação de resistência que não pode ser executada, sem remover a informação da resistência do ritual.
+
+Entrega feita:
+
+- cards com `targetMode: none` continuam exibindo o bloco informativo de **Resistência**;
+- o botão d20 não é criado quando não existe alvo selecionado;
+- cards single-target continuam exibindo a rolagem assistida normalmente;
+- cards multi-target continuam usando uma ação de resistência por alvo;
+- a validação defensiva no handler foi mantida para cards antigos ou estados inconsistentes.
 
 ### Concluído em 0.34.15 — Card multi-target nasce pelo número real de alvos
 

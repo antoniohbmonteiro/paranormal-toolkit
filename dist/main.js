@@ -11267,7 +11267,8 @@ function uw(e, t, n) {
   l.classList.add(`${g}__resistance-description`), l.textContent = t.resistance, r.append(a, l), t.resistanceRollResult && r.append(uc(t.resistanceRollResult)), e.append(r);
 }
 function dw(e, t) {
-  if (!e.resistanceSkill || !he()) return null;
+  if (e.targetMode === "none" || !e.resistanceSkill || !he())
+    return null;
   const n = document.createElement("button");
   if (n.type = "button", n.classList.add(`${g}__resistance-roll-button`), n.setAttribute(an, t.pendingId), n.setAttribute(Zl, "true"), n.setAttribute(Xl, e.resistanceSkill), n.setAttribute(Jl, e.resistanceSkillLabel ?? e.resistanceSkill), t.resistanceTargetActorId && n.setAttribute(ec, t.resistanceTargetActorId), t.resistanceTargetName && n.setAttribute(tc, t.resistanceTargetName), e.resistanceRollResult)
     return n.classList.add(`${g}__resistance-roll-button--rolled`), n.setAttribute(nc, String(e.resistanceRollResult.total)), n.textContent = String(e.resistanceRollResult.total), n.title = `Rolar ${e.resistanceRollResult.skillLabel} novamente`, n.setAttribute("aria-label", n.title), n;

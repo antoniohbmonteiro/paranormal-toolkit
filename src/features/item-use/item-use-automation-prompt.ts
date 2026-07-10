@@ -853,7 +853,13 @@ function createResistanceRollButton(
   rollCard: ParsedRollCard,
   prompt: RenderableItemUseAutomationPrompt
 ): HTMLButtonElement | null {
-  if (!rollCard.resistanceSkill || !canCurrentUserControlAssistedActions()) return null;
+  if (
+    rollCard.targetMode === "none" ||
+    !rollCard.resistanceSkill ||
+    !canCurrentUserControlAssistedActions()
+  ) {
+    return null;
+  }
 
   const button = document.createElement("button");
   button.type = "button";
