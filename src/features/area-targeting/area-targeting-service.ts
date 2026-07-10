@@ -6,6 +6,7 @@ import { RegionCleanupService } from "./region/region-cleanup-service";
 import { RegionLinePlacementService } from "./region/region-line-placement-service";
 import { RegionTargetPreviewService } from "./region/region-target-preview-service";
 import { RegionTargetResolver } from "./region/region-target-resolver";
+import { CanvasPlacementWindowManager } from "../../ui/canvas-placement/canvas-placement-window-manager";
 
 const NO_LINE_TARGETS_MESSAGE = "Nenhum alvo encontrado na linha.";
 
@@ -16,6 +17,7 @@ export class AreaTargetingService {
     private readonly regionCleanup = new RegionCleanupService(),
     private readonly regionTargetPreview = new RegionTargetPreviewService(),
     private readonly foundryAdapter = new FoundryAreaTargetingAdapter(),
+    private readonly placementWindowManager = new CanvasPlacementWindowManager(),
   ) {}
 
   async resolvePreCastTargets(input: PreCastTargetingInput): Promise<PreCastTargetingResult> {
@@ -35,24 +37,31 @@ export class AreaTargetingService {
         this.regionTargetPreview.restorePreviousTargets(targetSnapshot);
       };
 
-      const placementResult = await this.regionLinePlacement.placeLine(
-        {
-          shape: "rectangleRay",
-          length: input.formTargeting?.template?.distance,
-          width: input.formTargeting?.template?.width,
-        },
-        {
-          onChange: (change) => {
-            placementChanges.push(change);
-            try {
-              const resolution = this.regionTargetResolver.resolvePreviewTargetTokens(change);
-              this.regionTargetPreview.previewTargets(resolution.tokens);
-            } catch {
-              this.regionTargetPreview.previewTargets([]);
-            }
-          },
-        },
-      );
+      const restoreWindows = await this.placementWindowManager.minimizeForPlacement();
+      const placementResult = await (async () => {
+        try {
+          return await this.regionLinePlacement.placeLine(
+            {
+              shape: "rectangleRay",
+              length: input.formTargeting?.template?.distance,
+              width: input.formTargeting?.template?.width,
+            },
+            {
+              onChange: (change) => {
+                placementChanges.push(change);
+                try {
+                  const resolution = this.regionTargetResolver.resolvePreviewTargetTokens(change);
+                  this.regionTargetPreview.previewTargets(resolution.tokens);
+                } catch {
+                  this.regionTargetPreview.previewTargets([]);
+                }
+              },
+            },
+          );
+        } finally {
+          await restoreWindows.restore();
+        }
+      })();
 
       if (placementResult.status === "cancelled") {
         restorePreviewTargets();
