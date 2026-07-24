@@ -14,10 +14,13 @@ import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/a
 import { registerItemSheetAbilityRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ability-roll-config-block";
 import { registerItemSheetRitualRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ritual-roll-config-block";
 import { registerToolkitUiExamplesApi } from "./ui/examples";
+import { ensureModuleStylesheet } from "./ui/styles/module-stylesheet-loader";
 
 let services: ToolkitServices | null = null;
 
 Hooks.once("init", () => {
+  ensureModuleStylesheet("styles/components/chat-card-components.css");
+  ensureModuleStylesheet("styles/components/component-gallery.css");
   registerToolkitUiExamplesApi();
   registerDebugOutputSettings();
   registerItemUseSettings();

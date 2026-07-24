@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../../constants";
-import { renderChatCardHeader, renderChatCardSection, renderChatRollDisplay, renderChatStatusBanner } from "../components";
+import { renderChatCardHeader, renderChatCardMetadata, renderChatCardSection, renderChatRollDisplay, renderChatStatusBanner } from "../components";
 import { renderComponentExampleCards } from "./component-example-cards";
 import { componentHeaderExamples, componentRollExamples, componentSectionExamples, componentStatusExamples } from "./component-example-fixtures";
 
@@ -11,6 +11,7 @@ export class ComponentGalleryApplication extends ApplicationV2 {
     root.className = "paranormal-toolkit-component-gallery";
     const groups = [
       ["Headers", componentHeaderExamples.map(renderChatCardHeader)],
+      ["Metadados", [renderChatCardMetadata({ entries: [{ label: "Execução", value: "Ação breve" }, { label: "Custo", value: "2 cargas" }, { label: "Alcance", value: "Curto" }] })]],
       ["Sections", componentSectionExamples.map((item) => renderChatCardSection({ ...item, content: renderChatStatusBanner({ tone: "info", message: item.text }) }))],
       ["Roll displays", componentRollExamples.map(renderChatRollDisplay)],
       ["Banners", componentStatusExamples.map(renderChatStatusBanner)],

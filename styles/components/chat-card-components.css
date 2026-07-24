@@ -1,1 +1,420 @@
-.paranormal-toolkit-chat-card{background:#171a20;border:1px solid #49505d;border-radius:8px;color:#eceff4;overflow:hidden;padding:12px}.paranormal-toolkit-chat-card__demo{color:#9aa4b2;font-size:10px;font-weight:800;letter-spacing:.14em;text-align:right}.paranormal-toolkit-chat-card-header{align-items:center;display:flex;gap:12px}.paranormal-toolkit-chat-card-header__image{border:1px solid #596273;border-radius:6px;height:64px;object-fit:cover;width:64px}.paranormal-toolkit-chat-card-header__body{min-width:0}.paranormal-toolkit-chat-card-header__eyebrow{color:#aeb7c4;font-size:10px;font-weight:700;letter-spacing:.12em;margin:0;text-transform:uppercase}.paranormal-toolkit-chat-card-header__title{font-size:18px;margin:2px 0;overflow-wrap:anywhere}.paranormal-toolkit-chat-card-header__subtitle{color:#bdc4ce;margin:0}.paranormal-toolkit-chat-card-header__badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.paranormal-toolkit-chat-card-header__badge{background:#424955;border-radius:999px;font-size:11px;padding:2px 7px}.paranormal-toolkit-chat-card-header__badge--info{background:#245374}.paranormal-toolkit-chat-card-header__badge--success{background:#246346}.paranormal-toolkit-chat-card-header__badge--warning{background:#76591d}.paranormal-toolkit-chat-card-header__badge--danger{background:#772f38}.paranormal-toolkit-chat-card-header__badge--resource{background:#554079}.paranormal-toolkit-chat-card-header__badge--accent{background:#704064}.paranormal-toolkit-chat-card-section{border-left:3px solid #606978;margin-top:12px;padding:8px 10px}.paranormal-toolkit-chat-card-section--test{border-color:#5083ac}.paranormal-toolkit-chat-card-section--damage{border-color:#a55050}.paranormal-toolkit-chat-card-section--healing{border-color:#4b9a6d}.paranormal-toolkit-chat-card-section--resistance{border-color:#8a6bad}.paranormal-toolkit-chat-card-section__title{font-size:14px;margin:0}.paranormal-toolkit-chat-card-section__description,.paranormal-toolkit-chat-card-section__content p{margin:4px 0}.paranormal-toolkit-chat-roll{background:#242832;border-radius:6px;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding:9px}.paranormal-toolkit-chat-roll__label{width:100%}.paranormal-toolkit-chat-roll__total{font-size:20px;margin-left:auto}.paranormal-toolkit-chat-roll__pending{color:#aeb7c4;margin-left:auto}.paranormal-toolkit-chat-roll__dice{display:flex;flex-wrap:wrap;gap:4px;width:100%}.paranormal-toolkit-chat-roll__die{border:1px solid #747e8e;border-radius:4px;padding:3px 6px}.paranormal-toolkit-chat-roll__die--active{background:#326248}.paranormal-toolkit-chat-roll__die--discarded{opacity:.45;text-decoration:line-through}.paranormal-toolkit-chat-roll__action{width:100%}.paranormal-toolkit-chat-status{border-radius:5px;margin-top:10px;padding:8px 10px}.paranormal-toolkit-chat-status--success{background:#254b38}.paranormal-toolkit-chat-status--failure{background:#572e34}.paranormal-toolkit-chat-status--info{background:#29495e}.paranormal-toolkit-chat-status--resource{background:#463a5e}.paranormal-toolkit-chat-status--warning{background:#5b4927}.paranormal-toolkit-chat-status--manual{background:#454951}.paranormal-toolkit-chat-status__message{margin:2px 0}
+.paranormal-toolkit-chat-card,
+.paranormal-toolkit-chat-card * {
+  box-sizing: border-box;
+}
+
+.paranormal-toolkit-chat-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(66, 47, 34, 0.28);
+  border-left: 4px solid rgba(89, 36, 42, 0.78);
+  border-radius: 8px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(248, 244, 237, 0.98), rgba(234, 226, 214, 0.98));
+  color: rgba(24, 19, 18, 0.96);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+  font-family: var(--font-body, inherit);
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-chat-card--narrow {
+  width: min(100%, 260px);
+}
+
+.paranormal-toolkit-chat-card__demo {
+  justify-self: end;
+  border: 1px solid rgba(89, 36, 42, 0.2);
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: rgba(89, 36, 42, 0.07);
+  color: rgba(89, 36, 42, 0.88);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-card__body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.paranormal-toolkit-chat-card__copy {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.paranormal-toolkit-chat-card-header {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 0 2px 1px;
+}
+
+.paranormal-toolkit-chat-card-header__image {
+  display: block;
+  width: 46px;
+  height: 46px;
+  max-width: 46px;
+  border: 1px solid rgba(66, 47, 34, 0.24);
+  border-radius: 7px;
+  object-fit: cover;
+  background: rgba(252, 250, 246, 0.72);
+}
+
+.paranormal-toolkit-chat-card-header__body {
+  min-width: 0;
+}
+
+.paranormal-toolkit-chat-card-header__eyebrow,
+.paranormal-toolkit-chat-card-header__title,
+.paranormal-toolkit-chat-card-header__subtitle {
+  margin: 0;
+}
+
+.paranormal-toolkit-chat-card-header__eyebrow {
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-card-header__title {
+  margin-top: 2px;
+  color: rgba(24, 19, 18, 0.96);
+  font-family: var(--font-body, inherit);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-chat-card-header__subtitle {
+  overflow: hidden;
+  margin-top: 3px;
+  color: rgba(24, 19, 18, 0.7);
+  font-size: 0.76rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-chat-card--narrow .paranormal-toolkit-chat-card-header__subtitle {
+  white-space: normal;
+}
+
+.paranormal-toolkit-chat-card-header__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-width: 0;
+  margin-top: 5px;
+}
+
+.paranormal-toolkit-chat-card-header__badge {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid rgba(66, 47, 34, 0.15);
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: rgba(66, 47, 34, 0.07);
+  color: rgba(45, 35, 32, 0.9);
+  font-size: 0.61rem;
+  font-weight: 800;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-chat-card-header__badge--neutral { border-color: rgba(66, 47, 34, 0.15); background: rgba(66, 47, 34, 0.07); color: rgba(45, 35, 32, 0.9); }
+.paranormal-toolkit-chat-card-header__badge--info { border-color: rgba(46, 91, 121, 0.25); background: rgba(46, 91, 121, 0.1); color: #294f69; }
+.paranormal-toolkit-chat-card-header__badge--success { border-color: rgba(39, 112, 72, 0.24); background: rgba(39, 112, 72, 0.1); color: #1f6843; }
+.paranormal-toolkit-chat-card-header__badge--warning { border-color: rgba(120, 92, 36, 0.25); background: rgba(120, 92, 36, 0.11); color: #75561d; }
+.paranormal-toolkit-chat-card-header__badge--danger { border-color: rgba(142, 44, 48, 0.25); background: rgba(142, 44, 48, 0.1); color: #852c31; }
+.paranormal-toolkit-chat-card-header__badge--resource { border-color: rgba(79, 72, 125, 0.25); background: rgba(79, 72, 125, 0.1); color: #504978; }
+.paranormal-toolkit-chat-card-header__badge--accent { border-color: rgba(89, 36, 42, 0.25); background: rgba(89, 36, 42, 0.1); color: #59242a; }
+
+.paranormal-toolkit-chat-card-metadata {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(90px, 100%), 1fr));
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid rgba(66, 47, 34, 0.16);
+  border-radius: 8px;
+  background: rgba(66, 47, 34, 0.08);
+}
+
+.paranormal-toolkit-chat-card-metadata__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 9px;
+  background: rgba(252, 250, 246, 0.68);
+}
+
+.paranormal-toolkit-chat-card-metadata__entry + .paranormal-toolkit-chat-card-metadata__entry {
+  border-left: 1px solid rgba(66, 47, 34, 0.13);
+}
+
+.paranormal-toolkit-chat-card-metadata__label,
+.paranormal-toolkit-chat-card-metadata__value {
+  margin: 0;
+}
+
+.paranormal-toolkit-chat-card-metadata__label {
+  color: rgba(89, 36, 42, 0.9);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-card-metadata__value {
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-chat-card-section {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid rgba(66, 47, 34, 0.16);
+  border-left: 3px solid rgba(89, 36, 42, 0.48);
+  border-radius: 7px;
+  padding: 8px 9px;
+  background: rgba(252, 250, 246, 0.64);
+}
+
+.paranormal-toolkit-chat-card-section--generic { border-left-color: rgba(89, 36, 42, 0.48); background: rgba(252, 250, 246, 0.64); }
+.paranormal-toolkit-chat-card-section--test { border-left-color: rgba(79, 72, 125, 0.58); background: rgba(241, 239, 250, 0.66); }
+.paranormal-toolkit-chat-card-section--damage { border-left-color: rgba(125, 39, 43, 0.58); background: rgba(250, 246, 241, 0.76); }
+.paranormal-toolkit-chat-card-section--healing { border-left-color: rgba(43, 109, 75, 0.58); background: rgba(238, 247, 240, 0.76); }
+.paranormal-toolkit-chat-card-section--resistance { border-left-color: rgba(91, 70, 121, 0.55); background: rgba(244, 240, 248, 0.7); }
+
+.paranormal-toolkit-chat-card-section__header {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.paranormal-toolkit-chat-card-section__title,
+.paranormal-toolkit-chat-card-section__description {
+  margin: 0;
+}
+
+.paranormal-toolkit-chat-card-section__title {
+  color: rgba(70, 43, 39, 0.92);
+  font-family: var(--font-body, inherit);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-card-section__description {
+  color: rgba(36, 27, 24, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.paranormal-toolkit-chat-card-section__content {
+  min-width: 0;
+}
+
+.paranormal-toolkit-chat-roll {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  border: 1px solid rgba(66, 47, 34, 0.16);
+  border-radius: 7px;
+  padding: 7px;
+  background: rgba(252, 250, 246, 0.7);
+}
+
+.paranormal-toolkit-chat-roll--generic { border-color: rgba(66, 47, 34, 0.16); }
+.paranormal-toolkit-chat-roll--test { border-color: rgba(79, 72, 125, 0.24); }
+.paranormal-toolkit-chat-roll--damage { border-color: rgba(125, 39, 43, 0.22); }
+.paranormal-toolkit-chat-roll--healing { border-color: rgba(43, 109, 75, 0.22); }
+.paranormal-toolkit-chat-roll--resistance { border-color: rgba(91, 70, 121, 0.22); }
+
+.paranormal-toolkit-chat-card-section__content > .paranormal-toolkit-chat-roll {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.paranormal-toolkit-chat-roll__label {
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-roll__result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px;
+  min-width: 0;
+}
+
+.paranormal-toolkit-chat-roll__formula,
+.paranormal-toolkit-chat-roll__total,
+.paranormal-toolkit-chat-roll__pending {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid rgba(66, 47, 34, 0.16);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.paranormal-toolkit-chat-roll__formula {
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 7px;
+  color: rgba(36, 27, 24, 0.82);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.paranormal-toolkit-chat-roll__total,
+.paranormal-toolkit-chat-roll__pending {
+  justify-content: center;
+  min-width: 46px;
+  max-width: 110px;
+  padding: 3px 7px;
+}
+
+.paranormal-toolkit-chat-roll__total {
+  color: rgba(24, 19, 18, 0.96);
+  font-size: 1.15rem;
+  font-weight: 950;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-chat-roll__pending {
+  color: rgba(89, 36, 42, 0.82);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-roll__dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  border-top: 1px solid rgba(66, 47, 34, 0.11);
+  padding-top: 6px;
+}
+
+.paranormal-toolkit-chat-roll__die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border: 1px solid rgba(89, 36, 42, 0.22);
+  border-radius: 999px;
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.76);
+  color: rgba(36, 27, 24, 0.9);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.paranormal-toolkit-chat-roll__die--active { border-color: rgba(39, 112, 72, 0.42); background: rgba(39, 112, 72, 0.13); color: #1b5837; }
+.paranormal-toolkit-chat-roll__die--discarded { opacity: 0.48; text-decoration: line-through; }
+.paranormal-toolkit-chat-roll__die--neutral { background: rgba(66, 47, 34, 0.07); }
+
+.paranormal-toolkit-chat-roll__action {
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  border: 1px solid rgba(89, 36, 42, 0.32);
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: rgba(89, 36, 42, 0.09);
+  color: rgba(89, 36, 42, 0.96);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.paranormal-toolkit-chat-roll__action:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.paranormal-toolkit-chat-status {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid rgba(54, 68, 84, 0.15);
+  border-radius: 7px;
+  padding: 7px 9px;
+  background: rgba(54, 68, 84, 0.07);
+  color: rgba(45, 55, 68, 0.96);
+}
+
+.paranormal-toolkit-chat-status__title,
+.paranormal-toolkit-chat-status__message {
+  margin: 0;
+}
+
+.paranormal-toolkit-chat-status__title {
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-status__message {
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.paranormal-toolkit-chat-status--success { border-color: rgba(39, 112, 72, 0.22); background: rgba(39, 112, 72, 0.1); color: #1b5837; }
+.paranormal-toolkit-chat-status--failure { border-color: rgba(142, 44, 48, 0.24); background: rgba(142, 44, 48, 0.1); color: #7d272b; }
+.paranormal-toolkit-chat-status--info { border-color: rgba(46, 91, 121, 0.2); background: rgba(46, 91, 121, 0.08); color: #294f69; }
+.paranormal-toolkit-chat-status--resource { border-color: rgba(79, 72, 125, 0.22); background: rgba(79, 72, 125, 0.09); color: #504978; }
+.paranormal-toolkit-chat-status--warning { border-color: rgba(120, 92, 36, 0.22); background: rgba(120, 92, 36, 0.1); color: #6e501c; }
+.paranormal-toolkit-chat-status--manual { border-color: rgba(66, 47, 34, 0.18); background: rgba(66, 47, 34, 0.07); color: rgba(45, 35, 32, 0.9); }
+
+@media (max-width: 360px) {
+  .paranormal-toolkit-chat-card-metadata {
+    grid-template-columns: 1fr;
+  }
+
+  .paranormal-toolkit-chat-card-metadata__entry + .paranormal-toolkit-chat-card-metadata__entry {
+    border-top: 1px solid rgba(66, 47, 34, 0.13);
+    border-left: 0;
+  }
+}
