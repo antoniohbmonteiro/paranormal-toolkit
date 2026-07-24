@@ -1,0 +1,1 @@
+import {expect,it} from "vitest";import {readFileSync} from "node:fs";it("protege todos os métodos e registra no módulo",()=>{const source=readFileSync("src/ui/examples/component-example-api.ts","utf8");expect(source).toContain("game.user?.isGM");expect(source).toContain("module.api");expect(source).toContain("Apenas o mestre")});

@@ -322,3 +322,7 @@
 - API global de debug.
 - Gasto de PE com validação.
 - Chat card simples de gasto de PE.
+# 0.39.0
+
+- Adiciona uma biblioteca interna de componentes de chat, galeria visual GM-only e cards fictícios de demonstração com limpeza segura por flag própria.
+- Registra a API `uiExamples`, estilos compartilhados e documentação dos previews, sem migrar cards ou workflows reais.

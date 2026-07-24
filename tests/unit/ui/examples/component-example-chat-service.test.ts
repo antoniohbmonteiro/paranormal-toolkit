@@ -1,0 +1,1 @@
+import {expect,it} from "vitest";import {readFileSync} from "node:fs";it("usa flag própria e não executa domínio",()=>{const source=readFileSync("src/ui/examples/component-example-chat-service.ts","utf8");expect(source).toContain('const FLAG_KEY = "uiExamples"');expect(source).not.toMatch(/new Roll|targets|workflow|abilityUse|pendingPrompts/)});

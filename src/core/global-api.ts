@@ -6,6 +6,7 @@ import {
   type ToolkitConditionApi,
 } from "../features/conditions/condition-api";
 import type { ToolkitServices } from "../toolkit-services";
+import { createToolkitUiExamplesApi, type ToolkitUiExamplesApi } from "../ui/examples";
 
 export type ParanormalToolkitApi = {
   services: ToolkitServices;
@@ -21,6 +22,7 @@ export type ParanormalToolkitApi = {
   conditions: ToolkitConditionApi;
   debug: DebugApi;
   hooks: typeof PARANORMAL_TOOLKIT_HOOKS;
+  uiExamples: ToolkitUiExamplesApi;
 };
 
 export function registerGlobalApi(
@@ -40,6 +42,7 @@ export function registerGlobalApi(
     conditions: createConditionApi(services.conditions),
     debug: createDebugApi(services),
     hooks: PARANORMAL_TOOLKIT_HOOKS,
+    uiExamples: createToolkitUiExamplesApi(),
   };
 
   const globalObject = globalThis as typeof globalThis &
@@ -49,6 +52,9 @@ export function registerGlobalApi(
 
   globalObject[MODULE_ID] = api;
   globalObject.ParanormalToolkit = api;
+
+  const installedModule = game.modules.get(MODULE_ID) as (FoundryModuleLike & { api?: ParanormalToolkitApi }) | undefined;
+  if (installedModule) installedModule.api = api;
 
   return api;
 }

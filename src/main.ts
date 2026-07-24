@@ -13,10 +13,12 @@ import { createToolkitServices, type ToolkitServices } from "./toolkit-services"
 import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/actor-sheet-ritual-preset-action";
 import { registerItemSheetAbilityRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ability-roll-config-block";
 import { registerItemSheetRitualRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ritual-roll-config-block";
+import { registerToolkitUiExamplesApi } from "./ui/examples";
 
 let services: ToolkitServices | null = null;
 
 Hooks.once("init", () => {
+  registerToolkitUiExamplesApi();
   registerDebugOutputSettings();
   registerItemUseSettings();
   registerDiceAnimationSettings();

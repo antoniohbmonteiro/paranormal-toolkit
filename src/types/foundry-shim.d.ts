@@ -175,6 +175,7 @@ type FoundryCollectionLike<T = unknown> = {
 
 type FoundryModuleLike = {
   active?: boolean;
+  api?: unknown;
 };
 
 declare const game: {
@@ -243,6 +244,7 @@ type ChatMessageDocumentLike = {
   _stats?: { modifiedTime?: unknown };
   getFlag?: (scope: string, key: string) => unknown;
   setFlag?: (scope: string, key: string, value: unknown) => Promise<unknown> | unknown;
+  delete?: () => Promise<unknown>;
 };
 
 declare const ChatMessage: {
