@@ -3,6 +3,7 @@ import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
 import { SystemGuard } from "./core/system-guard";
 import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
+import { registerAbilityUseIntegration } from "./features/abilities/ability-use-integration";
 import { registerConditionLifecycleHooks } from "./features/conditions/condition-lifecycle-hooks";
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
 import { registerItemUseSettings } from "./features/item-use/item-use-settings";
@@ -32,6 +33,7 @@ Hooks.once("ready", () => {
 
   services = createToolkitServices();
   services.itemUseIntegration.registerStrategies();
+  registerAbilityUseIntegration(services.resources, services.resourceAdapter);
   registerConditionLifecycleHooks(services.conditions);
   registerGlobalApi(services);
   registerRitualLogActionCleanup();

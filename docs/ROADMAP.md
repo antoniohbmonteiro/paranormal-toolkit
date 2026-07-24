@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.34.16`.
+Versão atual documentada: `v0.37.0`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,24 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos, minimização temporária de fichas abertas e remoção automática da área temporária.
 
 
+
+### Concluído em 0.37.0 — Uso genérico de habilidades
+
+Objetivo: iniciar o workflow estruturado de habilidades do sistema com confirmação visual e gasto opcional de PE/PD.
+
+Entrega feita:
+
+- clicar em um Item `ability` sem automação própria abre um popup em ApplicationV2;
+- o popup reutiliza a linguagem visual da conjuração de rituais;
+- o custo vem de `item.system.cost` e o recurso acompanha a regra global de PE/PD do mundo;
+- a opção de gasto automático começa marcada e mostra o recurso atual e o valor após o uso;
+- recurso insuficiente bloqueia o gasto, mas permite ao usuário desmarcar a opção e registrar o uso sem descontar;
+- habilidades passivas e de custo zero não tentam ler ou alterar recursos;
+- o uso confirmado cria um card próprio no chat ou substitui o card do sistema, conforme a configuração existente do Toolkit;
+- o card registra execução, custo, descrição e estado do gasto em flags próprias;
+- o workflow ignora habilidades com automação própria, evita execução duplicada e restaura o recurso caso a publicação do card falhe;
+- o modo de automação `Desativado` continua impedindo o workflow;
+- dano, cura, testes, alvos, condições, custo variável e sustentação permanecem fora deste primeiro incremento.
 
 ### Concluído em 0.34.16 — Resistência sem alvo não oferece rolagem
 
