@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.37.2`.
+Versão atual documentada: `v0.38.2`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,51 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos, minimização temporária de fichas abertas e remoção automática da área temporária.
 
 
+
+### Concluído em 0.38.2 — Compatibilidade de tipos do carregador de estilos
+
+Objetivo: corrigir a incompatibilidade entre o carregador de folhas de estilo da 0.38.1 e os contratos TypeScript locais do Foundry usados pelo projeto.
+
+Entrega feita:
+
+- acesso defensivo e tipado a `foundry.utils.getRoute`, preservando a rota oficial quando disponível em runtime;
+- fallback seguro para a rota relativa do módulo quando a função não estiver exposta;
+- leitura defensiva da versão instalada do módulo sem ampliar globalmente os tipos do Foundry;
+- suporte opcional a `manifest.version` como fallback;
+- nenhuma alteração no editor visual, nas flags ou no workflow de habilidades.
+
+### Concluído em 0.38.1 — Polimento visual das fórmulas de habilidade
+
+Objetivo: corrigir o carregamento visual do editor de fórmulas de habilidade e alinhar sua apresentação ao padrão já usado pelo bloco de rituais.
+
+Entrega feita:
+
+- carregador reutilizável de folhas de estilo do módulo com rota compatível com prefixos do Foundry;
+- o CSS do editor de habilidades passa a ser garantido em runtime, inclusive durante desenvolvimento sem reinício completo do Foundry;
+- cabeçalho, badge, bordas, fundo e espaçamentos alinhados ao padrão visual do editor de rituais;
+- cada rolagem agora possui card próprio, indicação de fórmula fixa ou progressão por NEX e seção de fórmula separada;
+- campos de nome, tipo e dano usam layout responsivo e compacto;
+- etapas de NEX foram reorganizadas em linhas legíveis com NEX mínimo, fórmula e ação de remoção;
+- ações de adicionar, salvar e limpar foram agrupadas em um rodapé consistente;
+- nenhuma flag, regra de resolução, gasto de recurso ou ação do chat foi alterada.
+
+### Concluído em 0.38.0 — Fórmulas de rolagem para habilidades
+
+Objetivo: permitir que habilidades genéricas tenham uma ou mais rolagens configuradas pelo mestre sem alterar os campos internos do sistema Ordem Paranormal.
+
+Entrega feita:
+
+- novo bloco **Paranormal Toolkit — Fórmulas de rolagem** na aba Atributos da habilidade;
+- suporte a uma lista de rolagens independentes por habilidade;
+- cada rolagem pode ser genérica, dano ou cura;
+- rolagens de dano aceitam tipo de dano;
+- cada rolagem pode usar fórmula fixa ou progressão por NEX;
+- progressões por NEX podem usar automaticamente a maior etapa liberada ou oferecer todas as etapas liberadas para escolha;
+- o NEX é lido do personagem no momento em que o card é criado;
+- o card de habilidade mostra apenas as ações disponíveis para aquele personagem;
+- os botões executam fórmulas com os dados de rolagem do ator e publicam o resultado no chat;
+- esta versão não aplica dano ou cura automaticamente e não altera o gasto de PE/PD já existente;
+- configuração salva em `flags.paranormal-toolkit.abilityRollConfig` com normalização e testes unitários.
 
 ### Concluído em 0.37.2 — Card de habilidade em largura total
 

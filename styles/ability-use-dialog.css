@@ -254,3 +254,118 @@ li.chat-message.paranormal-toolkit-chat-message--full-width-card > .message-head
   padding-right: 8px !important;
   padding-inline: 8px !important;
 }
+
+/* 0.38.0 — Configured ability roll actions */
+.paranormal-toolkit-ability-card__rolls {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(66, 47, 34, 0.16);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(252, 250, 246, 0.62);
+}
+
+.paranormal-toolkit-ability-card__rolls-title {
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-ability-card__rolls-list {
+  display: grid;
+  gap: 6px;
+}
+
+.paranormal-toolkit-ability-card__roll {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  margin: 0;
+  border: 1px solid rgba(66, 47, 34, 0.18);
+  border-radius: 7px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.42);
+  color: rgba(24, 19, 18, 0.96);
+  text-align: left;
+}
+
+.paranormal-toolkit-ability-card__roll:hover,
+.paranormal-toolkit-ability-card__roll:focus-visible {
+  border-color: rgba(89, 36, 42, 0.42);
+  background: rgba(89, 36, 42, 0.08);
+}
+
+.paranormal-toolkit-ability-card__roll > i {
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.paranormal-toolkit-ability-card__roll-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.paranormal-toolkit-ability-card__roll-label strong,
+.paranormal-toolkit-ability-card__roll-label small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-ability-card__roll-label strong {
+  font-size: 0.8rem;
+  line-height: 1.1;
+}
+
+.paranormal-toolkit-ability-card__roll-label small {
+  font-size: 0.69rem;
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+.paranormal-toolkit-ability-card__roll > span:last-child {
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: rgba(89, 36, 42, 0.1);
+  color: rgba(89, 36, 42, 0.96);
+  font-size: 0.65rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-ability-card__roll--healing > i {
+  color: rgba(31, 108, 66, 0.96);
+}
+
+.paranormal-toolkit-ability-card__roll--damage > i {
+  color: rgba(142, 44, 48, 0.96);
+}
+
+.paranormal-toolkit-ability-card__roll--busy {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.paranormal-toolkit-ability-roll-flavor {
+  display: grid;
+  gap: 2px;
+}
+
+.paranormal-toolkit-ability-roll-flavor strong,
+.paranormal-toolkit-ability-roll-flavor span,
+.paranormal-toolkit-ability-roll-flavor small {
+  display: block;
+}
+
+.paranormal-toolkit-ability-roll-flavor small {
+  opacity: 0.72;
+}

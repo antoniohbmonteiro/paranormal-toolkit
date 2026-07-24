@@ -11,6 +11,7 @@ import { registerItemUseWorkflowDiceToggle } from "./features/item-use/item-use-
 import { registerRitualLogActionCleanup } from "./features/item-use/chat-card/ritual-log-action-cleanup";
 import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
 import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/actor-sheet-ritual-preset-action";
+import { registerItemSheetAbilityRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ability-roll-config-block";
 import { registerItemSheetRitualRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ritual-roll-config-block";
 
 let services: ToolkitServices | null = null;
@@ -39,6 +40,7 @@ Hooks.once("ready", () => {
   registerRitualLogActionCleanup();
   registerActorSheetRitualPresetAction(services);
   registerItemSheetRitualRollConfigBlock();
+  registerItemSheetAbilityRollConfigBlock();
 
   ModuleLogger.info("Inicializado para o sistema Ordem Paranormal.");
   ModuleLogger.info(

@@ -1,4 +1,5 @@
 import type { AbilityResource, AbilityUseData } from "./ability-use-options";
+import { resolveAbilityRolls } from "./config/ability-roll-config";
 
 type AbilitySystemData = {
   activation?: unknown;
@@ -28,6 +29,7 @@ export function resolveAbilityUseData(actor: Actor, item: Item): AbilityUseData 
     cost: passive ? 0 : normalizeCost(system.cost),
     resource,
     passive,
+    rolls: resolveAbilityRolls(actor, item),
   };
 }
 
@@ -79,7 +81,6 @@ function asAbilitySystemData(value: unknown): AbilitySystemData {
 function asString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
-
 
 function resolveItemImage(item: Item): string {
   const candidate = item as unknown as { img?: unknown };

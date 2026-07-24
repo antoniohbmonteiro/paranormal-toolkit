@@ -1,7 +1,15 @@
 import { MODULE_ID } from "../../constants";
 import type { ItemUseContext } from "../item-use/item-use-context";
 import { getItemUseSystemCardMode } from "../item-use/item-use-settings";
+import {
+  ABILITY_ROLL_ACTION_ATTRIBUTE,
+  type AbilityUseMessageFlag,
+} from "./ability-roll-chat-contract";
 import type { AbilityResource, AbilityUseData } from "./ability-use-options";
+import {
+  getAbilityDamageTypeLabel,
+  type ResolvedAbilityRoll,
+} from "./config/ability-roll-config";
 
 type UpdatableChatMessage = {
   update(data: Record<string, unknown>): Promise<unknown>;
@@ -19,6 +27,7 @@ export type AbilityUseCardModel = {
   spentResource: boolean;
   resourceBefore: number;
   resourceAfter: number;
+  rolls: ResolvedAbilityRoll[];
 };
 
 export type AbilityUseCardState = {
@@ -47,23 +56,28 @@ export class AbilityUseChatCardService {
       spentResource: state.spentResource,
       resourceBefore: state.resourceBefore,
       resourceAfter: state.resourceAfter,
+      rolls: ability.rolls,
     });
+
+    const abilityUseFlag: AbilityUseMessageFlag = {
+      version: 2,
+      actorUuid: ability.actor.uuid ?? ability.actor.id ?? "",
+      itemUuid: ability.item.uuid ?? ability.item.id ?? "",
+      abilityName: ability.name,
+      rolls: ability.rolls,
+      resource: ability.resource,
+      cost: ability.cost,
+      spentResource: state.spentResource,
+      resourceBefore: state.resourceBefore,
+      resourceAfter: state.resourceAfter,
+    };
 
     const messageData = {
       speaker: ChatMessage.getSpeaker({ actor: ability.actor }),
       content,
       flags: {
         [MODULE_ID]: {
-          abilityUse: {
-            version: 1,
-            actorUuid: ability.actor.uuid,
-            itemUuid: ability.item.uuid,
-            resource: ability.resource,
-            cost: ability.cost,
-            spentResource: state.spentResource,
-            resourceBefore: state.resourceBefore,
-            resourceAfter: state.resourceAfter,
-          },
+          abilityUse: abilityUseFlag,
         },
       },
     };
@@ -92,6 +106,7 @@ export function renderAbilityUseCard(model: AbilityUseCardModel): string {
     : model.spentResource
       ? "paranormal-toolkit-ability-card__status--spent"
       : "paranormal-toolkit-ability-card__status--not-spent";
+  const rollActions = renderRollActions(model.rolls);
   const description = renderDescription(model.description);
 
   return `
@@ -110,6 +125,7 @@ export function renderAbilityUseCard(model: AbilityUseCardModel): string {
         <span><strong>Custo</strong>${escapeHtml(costText)}</span>
       </div>
 
+      ${rollActions}
       ${description}
 
       <footer class="paranormal-toolkit-ability-card__status ${spendClass}">
@@ -118,6 +134,57 @@ export function renderAbilityUseCard(model: AbilityUseCardModel): string {
       </footer>
     </article>
   `;
+}
+
+function renderRollActions(rolls: ResolvedAbilityRoll[]): string {
+  if (rolls.length === 0) return "";
+
+  const buttons = rolls
+    .map((roll) => {
+      const intentClass = `paranormal-toolkit-ability-card__roll--${roll.intent}`;
+      const intentLabel = getRollIntentLabel(roll);
+      const threshold =
+        roll.nexThreshold === null ? "" : `<span>NEX ${roll.nexThreshold}%</span>`;
+
+      return `
+        <button
+          type="button"
+          class="paranormal-toolkit-ability-card__roll ${intentClass}"
+          ${ABILITY_ROLL_ACTION_ATTRIBUTE}="${escapeAttribute(roll.id)}"
+          title="${escapeAttribute(roll.formula)}"
+        >
+          <i class="fa-solid fa-dice-d20" aria-hidden="true"></i>
+          <span class="paranormal-toolkit-ability-card__roll-label">
+            <strong>${escapeHtml(roll.label)}</strong>
+            <small>${escapeHtml(intentLabel)}</small>
+          </span>
+          ${threshold}
+        </button>
+      `;
+    })
+    .join("");
+
+  return `
+    <section class="paranormal-toolkit-ability-card__rolls">
+      <strong class="paranormal-toolkit-ability-card__rolls-title">Rolagens</strong>
+      <div class="paranormal-toolkit-ability-card__rolls-list">
+        ${buttons}
+      </div>
+    </section>
+  `;
+}
+
+function getRollIntentLabel(roll: ResolvedAbilityRoll): string {
+  switch (roll.intent) {
+    case "generic":
+      return "Rolagem genérica";
+    case "healing":
+      return "Cura";
+    case "damage":
+      return roll.damageType
+        ? `Dano · ${getAbilityDamageTypeLabel(roll.damageType)}`
+        : "Dano";
+  }
 }
 
 function renderDescription(description: string): string {
@@ -157,7 +224,6 @@ function escapeHtml(value: string): string {
 function escapeAttribute(value: string): string {
   return escapeHtml(value);
 }
-
 
 type FoundryTextEditor = {
   enrichHTML(

@@ -1,3 +1,5 @@
+import type { ResolvedAbilityRoll } from "./config/ability-roll-config";
+
 export type AbilityResource = "PE" | "PD";
 
 export type AbilityUseOptions = {
@@ -16,6 +18,7 @@ export type AbilityUseData = {
   cost: number;
   resource: AbilityResource;
   passive: boolean;
+  rolls: ResolvedAbilityRoll[];
 };
 
 export type AbilityUseResult =
