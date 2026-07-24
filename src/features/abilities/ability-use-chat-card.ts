@@ -92,6 +92,7 @@ export function renderAbilityUseCard(model: AbilityUseCardModel): string {
     : model.spentResource
       ? "paranormal-toolkit-ability-card__status--spent"
       : "paranormal-toolkit-ability-card__status--not-spent";
+  const description = renderDescription(model.description);
 
   return `
     <article class="paranormal-toolkit-ability-card">
@@ -109,13 +110,30 @@ export function renderAbilityUseCard(model: AbilityUseCardModel): string {
         <span><strong>Custo</strong>${escapeHtml(costText)}</span>
       </div>
 
-      ${model.description ? `<section class="paranormal-toolkit-ability-card__description">${model.description}</section>` : ""}
+      ${description}
 
       <footer class="paranormal-toolkit-ability-card__status ${spendClass}">
         <i class="fa-solid ${model.spentResource ? "fa-circle-check" : "fa-circle-info"}"></i>
         <span>${escapeHtml(spendText)}</span>
       </footer>
     </article>
+  `;
+}
+
+function renderDescription(description: string): string {
+  if (!description.trim()) return "";
+
+  return `
+    <details class="paranormal-toolkit-ability-card__description">
+      <summary>
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        <span class="paranormal-toolkit-ability-card__description-show">Ver descrição</span>
+        <span class="paranormal-toolkit-ability-card__description-hide">Ocultar descrição</span>
+      </summary>
+      <div class="paranormal-toolkit-ability-card__description-content">
+        ${description}
+      </div>
+    </details>
   `;
 }
 
@@ -151,10 +169,11 @@ type FoundryTextEditor = {
 async function enrichAbilityDescription(
   ability: AbilityUseData,
 ): Promise<string> {
+  const description = ability.chatDescription || ability.description;
   const textEditor = resolveTextEditor();
-  if (!textEditor || !ability.description) return ability.description;
+  if (!textEditor || !description) return description;
 
-  return textEditor.enrichHTML(ability.description, {
+  return textEditor.enrichHTML(description, {
     relativeTo: ability.item,
     rollData: resolveActorRollData(ability.actor),
   });

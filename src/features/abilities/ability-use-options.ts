@@ -12,6 +12,7 @@ export type AbilityUseData = {
   activation: string;
   activationLabel: string;
   description: string;
+  chatDescription?: string;
   cost: number;
   resource: AbilityResource;
   passive: boolean;

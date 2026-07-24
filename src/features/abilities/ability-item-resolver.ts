@@ -4,6 +4,7 @@ type AbilitySystemData = {
   activation?: unknown;
   cost?: unknown;
   description?: unknown;
+  chatDescription?: unknown;
 };
 
 export function resolveAbilityUseData(actor: Actor, item: Item): AbilityUseData {
@@ -20,10 +21,24 @@ export function resolveAbilityUseData(actor: Actor, item: Item): AbilityUseData 
     activation,
     activationLabel: resolveActivationLabel(activation),
     description: asString(system.description),
+    chatDescription: resolveAbilityChatDescription(
+      system.chatDescription,
+      system.description,
+    ),
     cost: passive ? 0 : normalizeCost(system.cost),
     resource,
     passive,
   };
+}
+
+export function resolveAbilityChatDescription(
+  chatDescription: unknown,
+  description: unknown,
+): string {
+  const conciseDescription = asString(chatDescription);
+  return conciseDescription.trim().length > 0
+    ? conciseDescription
+    : asString(description);
 }
 
 export function resolveAbilityResource(): AbilityResource {

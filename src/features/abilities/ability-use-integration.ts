@@ -5,6 +5,7 @@ import type { ResourceEngine } from "../../core/resources/resource-engine";
 import { readAutomationFlagValue } from "../automation/automation-flag-reader";
 import type { ItemUseContext } from "../item-use/item-use-context";
 import { getItemUseSettings } from "../item-use/item-use-settings";
+import { registerAbilityUseChatMessageLayout } from "./ability-use-chat-message-layout";
 import { AbilityUseWorkflow } from "./ability-use-workflow";
 
 const DUPLICATE_WINDOW_MS = 1_000;
@@ -24,6 +25,7 @@ export class AbilityUseIntegration {
 
   register(): void {
     this.strategy.register();
+    registerAbilityUseChatMessageLayout();
     ModuleLogger.info("Workflow genérico de habilidades registrado.");
   }
 

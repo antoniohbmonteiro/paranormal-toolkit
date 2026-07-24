@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.37.0`.
+Versão atual documentada: `v0.37.2`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,33 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos, minimização temporária de fichas abertas e remoção automática da área temporária.
 
 
+
+### Concluído em 0.37.2 — Card de habilidade em largura total
+
+Objetivo: aproveitar melhor a largura do chat nas mensagens de habilidade e respeitar a descrição específica para chat oferecida pelo sistema.
+
+Entrega feita:
+
+- mensagens que contêm o card genérico de habilidade recebem uma classe própria no `li.chat-message`;
+- o padding lateral do balão é removido apenas nessas mensagens, repetindo a estratégia já usada nos cards de ritual substituídos;
+- o cabeçalho da mensagem mantém 8 px de padding para preservar nome, horário e ações;
+- o card prefere `item.system.chatDescription` e usa `item.system.description` como fallback;
+- a descrição completa permanece disponível no modelo da habilidade para usos futuros;
+- nenhuma regra de gasto, popup, automação ou workflow foi alterada.
+
+### Concluído em 0.37.1 — Card compacto de habilidades
+
+Objetivo: alinhar o card genérico de habilidades à linguagem visual dos rituais sem aumentar o peso do workflow.
+
+Entrega feita:
+
+- o card passa a usar espaçamento externo e blocos internos compatíveis com o padrão visual dos rituais;
+- execução e custo permanecem em um grid de duas colunas por serem informações principais da habilidade;
+- a descrição enriquecida começa recolhida em um `details` nativo;
+- os rótulos `Ver descrição` e `Ocultar descrição` acompanham o estado do bloco sem listeners manuais;
+- habilidades sem descrição não exibem o controle expansível;
+- cabeçalho, ícone e confirmação de gasto receberam ajustes de proporção, padding e bordas;
+- nenhuma regra de gasto, publicação, automação ou workflow foi alterada.
 
 ### Concluído em 0.37.0 — Uso genérico de habilidades
 

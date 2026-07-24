@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isPassiveActivation } from "../../../../src/features/abilities/ability-item-resolver";
+import {
+  isPassiveActivation,
+  resolveAbilityChatDescription,
+} from "../../../../src/features/abilities/ability-item-resolver";
 
 describe("isPassiveActivation", () => {
   it.each(["passive", "Passiva", "Habilidade passiva"]) (
@@ -15,4 +18,22 @@ describe("isPassiveActivation", () => {
       expect(isPassiveActivation(activation)).toBe(false);
     },
   );
+});
+
+
+describe("resolveAbilityChatDescription", () => {
+  it("prefers the dedicated chat description", () => {
+    expect(
+      resolveAbilityChatDescription(
+        "<p>Resumo para o chat.</p>",
+        "<p>Descrição completa.</p>",
+      ),
+    ).toBe("<p>Resumo para o chat.</p>");
+  });
+
+  it("falls back to the full description when the chat description is blank", () => {
+    expect(
+      resolveAbilityChatDescription("   ", "<p>Descrição completa.</p>"),
+    ).toBe("<p>Descrição completa.</p>");
+  });
 });
