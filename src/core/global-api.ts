@@ -6,6 +6,14 @@ import {
   type ToolkitConditionApi,
 } from "../features/conditions/condition-api";
 import type { ToolkitServices } from "../toolkit-services";
+import { renderChatCardHeader } from "../ui/components/chat/chat-card-header";
+
+type RitualHeaderExample = "single" | "none" | "multi";
+
+type DevelopmentApi = {
+  /** @deprecated Temporary visual-validation helper; remove after header migration. */
+  postRitualHeaderExample(example: RitualHeaderExample): Promise<unknown>;
+};
 
 export type ParanormalToolkitApi = {
   services: ToolkitServices;
@@ -20,8 +28,41 @@ export type ParanormalToolkitApi = {
   itemUseIntegration: ToolkitServices["itemUseIntegration"];
   conditions: ToolkitConditionApi;
   debug: DebugApi;
+  /** Internal development helpers. Not a stable public API. */
+  dev: DevelopmentApi;
   hooks: typeof PARANORMAL_TOOLKIT_HOOKS;
 };
+
+function createDevelopmentApi(): DevelopmentApi {
+  return {
+    async postRitualHeaderExample(example) {
+      if (!game.user?.isGM) {
+        throw new Error("Apenas GMs podem publicar o exemplo de cabeçalho de ritual.");
+      }
+
+      const targets: Record<RitualHeaderExample, string> = {
+        single: "Malvadão",
+        none: "Nenhum alvo",
+        multi: "3 alvos",
+      };
+      const target = targets[example];
+      if (!target) {
+        throw new Error('Exemplo inválido. Use "single", "none" ou "multi".');
+      }
+
+      return ChatMessage.create({
+        content: renderChatCardHeader({
+          imageUrl: "icons/sundries/books/book-symbol-reverse-blue.webp",
+          imageAlt: "Ícone do ritual Eletrocussão",
+          eyebrow: "Ritual",
+          title: "Eletrocussão",
+          target,
+          badge: { label: "Energia 1", tone: "energy" },
+        }),
+      });
+    },
+  };
+}
 
 export function registerGlobalApi(
   services: ToolkitServices,
@@ -39,6 +80,7 @@ export function registerGlobalApi(
     itemUseIntegration: services.itemUseIntegration,
     conditions: createConditionApi(services.conditions),
     debug: createDebugApi(services),
+    dev: createDevelopmentApi(),
     hooks: PARANORMAL_TOOLKIT_HOOKS,
   };
 
@@ -49,6 +91,12 @@ export function registerGlobalApi(
 
   globalObject[MODULE_ID] = api;
   globalObject.ParanormalToolkit = api;
+  const module = game.modules.get(MODULE_ID) as
+    | { api?: ParanormalToolkitApi }
+    | undefined;
+  if (module) {
+    module.api = api;
+  }
 
   return api;
 }

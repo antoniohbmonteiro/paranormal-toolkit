@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.39.0
+
+### Adicionado
+
+- Componente visual isolado para o cabeçalho compacto de ritual.
+- Helper temporário e exclusivo para GMs `game.modules.get("paranormal-toolkit")?.api?.dev?.postRitualHeaderExample?.("single")` para validação pelo console. A mensagem de teste permanece no chat até ser excluída.
+
+### Decisões
+
+- Nenhum card de produção existente foi migrado.
+- A integração em produção foi intencionalmente adiada até a aprovação visual manual.
+
 ## 0.8.1
 
 ### Alterado

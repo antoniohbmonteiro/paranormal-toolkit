@@ -1,0 +1,92 @@
+.ptk-chat-card-header {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.ptk-chat-card-header__media,
+.ptk-chat-card-header__image,
+.ptk-chat-card-header__image-placeholder {
+  box-sizing: border-box;
+  width: 46px;
+  height: 46px;
+  max-width: 46px;
+}
+
+.ptk-chat-card-header__media {
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.ptk-chat-card-header__image {
+  display: block;
+  object-fit: cover;
+}
+
+.ptk-chat-card-header__image-placeholder {
+  display: block;
+  background: rgb(0 0 0 / 12%);
+}
+
+.ptk-chat-card-header__content {
+  min-width: 0;
+}
+
+.ptk-chat-card-header__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ptk-chat-card-header__eyebrow,
+.ptk-chat-card-header__badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.ptk-chat-card-header__eyebrow {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ptk-chat-card-header__badge {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ptk-chat-card-header__badge--neutral { color: #565656; }
+.ptk-chat-card-header__badge--blood { color: #8f2020; }
+.ptk-chat-card-header__badge--death { color: #4c4854; }
+.ptk-chat-card-header__badge--knowledge { color: #866a12; }
+.ptk-chat-card-header__badge--energy { color: #6b36a8; }
+.ptk-chat-card-header__badge--fear { color: #28605b; }
+
+.ptk-chat-card-header__title,
+.ptk-chat-card-header__target {
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.ptk-chat-card-header__title {
+  margin-top: 2px;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.ptk-chat-card-header__target {
+  margin-top: 1px;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
