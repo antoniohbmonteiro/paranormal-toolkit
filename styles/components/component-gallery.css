@@ -1,36 +1,6 @@
-.paranormal-toolkit-component-gallery {
-  min-height: 100%;
-  padding: 16px;
-  background: #dedbd5;
-}
-
-.paranormal-toolkit-component-gallery__group {
-  margin-bottom: 24px;
-}
-
-.paranormal-toolkit-component-gallery__group > h2 {
-  margin: 0 0 10px;
-  color: #3e3531;
-  font-size: 1rem;
-}
-
-.paranormal-toolkit-component-gallery__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-  gap: 14px;
-  align-items: start;
-}
-
-.paranormal-toolkit-component-gallery__preview {
-  min-width: 0;
-  border: 1px solid rgba(66, 47, 34, 0.14);
-  border-radius: 9px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.paranormal-toolkit-component-gallery__preview--narrow {
-  justify-self: center;
-  width: 100%;
-  max-width: 280px;
-}
+.paranormal-toolkit-component-gallery { min-height: 100%; padding: 16px; background: #dedbd5; }
+.paranormal-toolkit-component-gallery__group { display: grid; gap: 12px; justify-items: center; }
+.paranormal-toolkit-component-gallery__toolbar { width: min(100%, 320px); border: 1px solid rgba(66,47,34,.18); border-radius: 8px; padding: 8px; background: rgba(255,255,255,.7); }
+.paranormal-toolkit-component-gallery__toolbar label { display: grid; gap: 4px; color: #3e3531; font-size: .75rem; font-weight: 800; }
+.paranormal-toolkit-component-gallery__preview { min-width: 0; border: 1px solid rgba(66,47,34,.14); border-radius: 9px; padding: 10px; background: rgba(255,255,255,.5); }
+.paranormal-toolkit-component-gallery__preview--narrow { width: min(100%, 300px); }
