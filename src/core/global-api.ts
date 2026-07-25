@@ -6,6 +6,12 @@ import {
   type ToolkitConditionApi,
 } from "../features/conditions/condition-api";
 import type { ToolkitServices } from "../toolkit-services";
+import { renderChatCardHeader } from "../ui/components/chat/chat-card-header";
+
+export type ToolkitDevelopmentApi = {
+  /** Development/testing-only helper; remove before components become public API. */
+  postChatCardHeaderExample(): Promise<void>;
+};
 
 export type ParanormalToolkitApi = {
   services: ToolkitServices;
@@ -21,6 +27,7 @@ export type ParanormalToolkitApi = {
   conditions: ToolkitConditionApi;
   debug: DebugApi;
   hooks: typeof PARANORMAL_TOOLKIT_HOOKS;
+  dev: ToolkitDevelopmentApi;
 };
 
 export function registerGlobalApi(
@@ -40,6 +47,7 @@ export function registerGlobalApi(
     conditions: createConditionApi(services.conditions),
     debug: createDebugApi(services),
     hooks: PARANORMAL_TOOLKIT_HOOKS,
+    dev: createDevelopmentApi(),
   };
 
   const globalObject = globalThis as typeof globalThis &
@@ -50,5 +58,32 @@ export function registerGlobalApi(
   globalObject[MODULE_ID] = api;
   globalObject.ParanormalToolkit = api;
 
+  const installedModule = game.modules.get(MODULE_ID) as unknown as
+    | { api?: ParanormalToolkitApi }
+    | undefined;
+  if (installedModule) installedModule.api = api;
+
   return api;
+}
+
+function createDevelopmentApi(): ToolkitDevelopmentApi {
+  return {
+    async postChatCardHeaderExample(): Promise<void> {
+      if (!game.user?.isGM) {
+        ui.notifications?.warn("Paranormal Toolkit: comando de teste disponível apenas para GMs.");
+        return;
+      }
+
+      await ChatMessage.create({
+        content: renderChatCardHeader({
+          imageUrl: "icons/svg/book.svg",
+          imageAlt: "Ícone de ritual",
+          eyebrow: "Ritual · teste de desenvolvimento",
+          title: "Eletrocussão",
+          context: "Mercy → Malvadão",
+          badges: [{ label: "Energia", tone: "energy" }],
+        }),
+      });
+    },
+  };
 }

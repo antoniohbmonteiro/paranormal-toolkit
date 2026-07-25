@@ -21,6 +21,8 @@ export type ActorLike = {
 
 export type ItemLike = {
   id?: unknown;
+  name?: unknown;
+  img?: unknown;
   system?: unknown;
 };
 

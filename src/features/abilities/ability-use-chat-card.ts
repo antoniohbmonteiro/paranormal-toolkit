@@ -6,6 +6,7 @@ import {
   type AbilityUseMessageFlag,
 } from "./ability-roll-chat-contract";
 import type { AbilityResource, AbilityUseData } from "./ability-use-options";
+import { renderChatCardHeader } from "../../ui/components/chat/chat-card-header";
 import {
   getAbilityDamageTypeLabel,
   type ResolvedAbilityRoll,
@@ -111,14 +112,13 @@ export function renderAbilityUseCard(model: AbilityUseCardModel): string {
 
   return `
     <article class="paranormal-toolkit-ability-card">
-      <header class="paranormal-toolkit-ability-card__header">
-        <img src="${escapeAttribute(model.abilityImage)}" alt="">
-        <div>
-          <span>Habilidade</span>
-          <h3>${escapeHtml(model.abilityName)}</h3>
-          <p>${escapeHtml(model.actorName)}</p>
-        </div>
-      </header>
+      ${renderChatCardHeader({
+        imageUrl: model.abilityImage,
+        imageAlt: model.abilityName,
+        eyebrow: "Habilidade",
+        title: model.abilityName,
+        context: model.actorName,
+      })}
 
       <div class="paranormal-toolkit-ability-card__meta">
         <span><strong>Execução</strong>${escapeHtml(model.activationLabel)}</span>

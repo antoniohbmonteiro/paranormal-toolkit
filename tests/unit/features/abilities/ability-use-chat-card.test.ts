@@ -29,6 +29,9 @@ describe("renderAbilityUseCard", () => {
     });
 
     expect(html).toContain("data-paranormal-toolkit-ability-roll-id=\"damage--nex-40\"");
+    expect(html).toContain("paranormal-toolkit-chat-card-header");
+    expect(html).toContain(">Habilidade</span>");
+    expect(html).toContain(">Agente</p>");
     expect(html).toContain("Dano · Conhecimento");
     expect(html).toContain("NEX 40%");
   });

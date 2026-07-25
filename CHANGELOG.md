@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.39.0
+
+### Alterado
+
+- Adicionado um cabeçalho genérico e compartilhado para cards de chat, com dados exclusivamente visuais e tons de badge.
+- O card real de uso de habilidade passou a usar o cabeçalho compartilhado sem alterações de comportamento.
+- O cabeçalho do card real de ritual passou a seguir a mesma estrutura visual nos fluxos de alvo único e múltiplos alvos.
+
+### Decisão
+
+- A extração de metadados para um futuro `ChatCardMetadata` foi intencionalmente adiada; os metadados existentes permanecem abaixo do cabeçalho.
+
 ## 0.8.1
 
 ### Alterado

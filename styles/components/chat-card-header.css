@@ -1,0 +1,87 @@
+.paranormal-toolkit-chat-card-header {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  padding: 0 2px 1px;
+  color: rgba(24, 19, 18, 0.96);
+}
+
+.paranormal-toolkit-chat-card-header__image {
+  width: 46px;
+  height: 46px;
+  max-width: 46px;
+  border: 1px solid rgba(66, 47, 34, 0.24);
+  border-radius: 7px;
+  object-fit: cover;
+  background: rgba(252, 250, 246, 0.72);
+}
+
+.paranormal-toolkit-chat-card-header__content,
+.paranormal-toolkit-chat-card-header__topline {
+  min-width: 0;
+}
+
+.paranormal-toolkit-chat-card-header__topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px 8px;
+}
+
+.paranormal-toolkit-chat-card-header__eyebrow {
+  color: rgba(89, 36, 42, 0.92);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-card-header__title,
+.paranormal-toolkit-chat-card-header__context {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-chat-card-header__title {
+  margin-top: 2px;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.paranormal-toolkit-chat-card-header__context {
+  margin-top: 3px;
+  font-size: 0.78rem;
+  line-height: 1.15;
+  opacity: 0.72;
+}
+
+.paranormal-toolkit-chat-card-header__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-width: 0;
+}
+
+.paranormal-toolkit-chat-card-header__badge {
+  border: 1px solid rgba(89, 36, 42, 0.26);
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: rgba(89, 36, 42, 0.08);
+  color: rgba(89, 36, 42, 0.94);
+  font-size: 0.61rem;
+  font-weight: 900;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-chat-card-header__badge--blood { border-color: #8f1d27; background: #f2d9dc; color: #741923; }
+.paranormal-toolkit-chat-card-header__badge--death { border-color: #353535; background: #dedbd5; color: #171717; }
+.paranormal-toolkit-chat-card-header__badge--knowledge { border-color: #957700; background: #f3e8ad; color: #5f4c00; }
+.paranormal-toolkit-chat-card-header__badge--energy { border-color: #673da4; background: #e8dafa; color: #542d8d; }
+.paranormal-toolkit-chat-card-header__badge--fear { border-color: #848992; background: #e6e8eb; color: #3d424b; }

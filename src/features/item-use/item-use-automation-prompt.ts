@@ -531,7 +531,7 @@ function getOrCreateToolkitSection(root: HTMLElement, prompt: RenderableItemUseA
   const section = document.createElement("section");
   section.classList.add(ENRICHMENT_CLASS, PROMPT_CLASS);
 
-  const header = document.createElement("header");
+  const header = document.createElement("div");
   header.classList.add(`${PROMPT_CLASS}__header`);
 
   const kicker = document.createElement("span");

@@ -6,7 +6,6 @@ import {
   PROMPT_ID_ATTRIBUTE,
   PROMPT_TITLE_SELECTOR,
   RESISTANCE_DESCRIPTION_SELECTOR,
-  RITUAL_BADGE_SELECTOR,
   RITUAL_META_SELECTOR,
   ROLL_CARD_SELECTOR,
   ROLL_META_PILL_SELECTOR,
@@ -30,12 +29,17 @@ import {
   type ChatMessageLike,
   type ItemLike
 } from "./item-use-chat-card-dom";
+import {
+  renderChatCardHeader,
+  type ChatCardHeaderBadgeViewModel,
+} from "../../../ui/components/chat/chat-card-header";
 
 type PersistedPromptLike = {
   pendingId: string | null;
   actorId: string | null;
   itemId: string | null;
   summaryLines: string[];
+  summary: string | null;
 };
 
 type RitualMetadataViewModel = {
@@ -56,7 +60,7 @@ export function enhanceRitualMetadata(root: ParentNode): void {
 
     if (!metadata) continue;
 
-    renderRitualElementBadge(card, metadata);
+    renderRitualHeader(card, metadata);
     renderRitualMetadataChips(card, metadata);
   }
 }
@@ -67,31 +71,35 @@ function removeLegacyRollMetadata(card: HTMLElement): void {
   }
 }
 
-function renderRitualElementBadge(card: HTMLElement, metadata: RitualMetadataViewModel): void {
+function renderRitualHeader(card: HTMLElement, metadata: RitualMetadataViewModel): void {
   const section = card.closest<HTMLElement>(`.${PROMPT_CLASS}`);
   const header = section?.querySelector<HTMLElement>(PROMPT_HEADER_SELECTOR) ?? null;
-  const title = header?.querySelector<HTMLElement>(PROMPT_TITLE_SELECTOR) ?? null;
-  const host = header ?? card;
+  if (!header || header.querySelector(".paranormal-toolkit-chat-card-header")) return;
 
-  const existing = host.querySelector<HTMLElement>(RITUAL_BADGE_SELECTOR);
+  const prompt = findPersistedPromptForCard(card);
+  const item = prompt ? resolvePromptItem(prompt) : null;
+  const currentTitle = normalizeWhitespace(
+    header.querySelector<HTMLElement>(PROMPT_TITLE_SELECTOR)?.textContent,
+  );
+  const itemName = asStringOrNull(item?.name) ?? currentTitle ?? "Ritual";
+  const imageUrl = asStringOrNull(item?.img) ?? "";
+  const badges: ChatCardHeaderBadgeViewModel[] = metadata.elementLabel
+    ? [{
+        label: formatElementBadgeLabel(metadata),
+        tone: metadata.elementTone ?? "neutral",
+      }]
+    : [];
+  const template = document.createElement("template");
+  template.innerHTML = renderChatCardHeader({
+    imageUrl,
+    imageAlt: itemName,
+    eyebrow: "Ritual",
+    title: itemName,
+    context: prompt?.summary ?? undefined,
+    badges,
+  });
 
-  if (!metadata.elementLabel) {
-    existing?.remove();
-    return;
-  }
-
-  const badge = existing ?? document.createElement("span");
-  badge.className = createElementBadgeClassName(metadata.elementTone);
-  badge.textContent = formatElementBadgeLabel(metadata);
-
-  if (existing) return;
-
-  if (title?.parentElement === host) {
-    title.insertAdjacentElement("afterend", badge);
-    return;
-  }
-
-  host.prepend(badge);
+  header.replaceChildren(template.content);
 }
 
 function renderRitualMetadataChips(card: HTMLElement, metadata: RitualMetadataViewModel): void {
@@ -246,7 +254,8 @@ function readPersistedPrompt(value: unknown): PersistedPromptLike | null {
     pendingId: asStringOrNull(value.pendingId),
     actorId: asStringOrNull(value.actorId),
     itemId: asStringOrNull(value.itemId),
-    summaryLines: Array.isArray(value.summaryLines) ? value.summaryLines.filter(isString) : []
+    summaryLines: Array.isArray(value.summaryLines) ? value.summaryLines.filter(isString) : [],
+    summary: asStringOrNull(value.summary),
   };
 }
 
@@ -376,13 +385,6 @@ function hasAnyRitualMetadata(metadata: RitualMetadataViewModel): boolean {
 function formatElementBadgeLabel(metadata: RitualMetadataViewModel): string {
   const label = metadata.elementLabel?.toLocaleUpperCase("pt-BR") ?? "RITUAL";
   return metadata.circle ? `${label} ${metadata.circle}` : label;
-}
-
-function createElementBadgeClassName(tone: RitualElementTone | null): string {
-  return [
-    `${PROMPT_CLASS}__ritual-element-badge`,
-    tone ? `${PROMPT_CLASS}__ritual-element-badge--${tone}` : null
-  ].filter(isNonEmptyString).join(" ");
 }
 
 function normalizeElementKey(value: string | null): RitualElementTone | null {
