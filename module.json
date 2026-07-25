@@ -23,7 +23,8 @@
     "styles/ability-use-dialog.css",
     "styles/ability-roll-config.css",
     "styles/ritual-roll-config.css",
-    "styles/components/chat-card-header.css"
+    "styles/components/chat-card-header.css",
+    "styles/components/chat-card-shell.css"
   ],
   "url": "https://github.com/antoniohbmonteiro/paranormal-toolkit",
   "manifest": "https://github.com/antoniohbmonteiro/paranormal-toolkit/releases/latest/download/module.json",

@@ -7,6 +7,7 @@ import {
 } from "../features/conditions/condition-api";
 import type { ToolkitServices } from "../toolkit-services";
 import { renderChatCardHeader } from "../ui/components/chat/chat-card-header";
+import { renderChatCardShell } from "../ui/components/chat/chat-card-shell";
 
 type RitualHeaderExample = "single" | "none" | "multi";
 
@@ -51,13 +52,15 @@ function createDevelopmentApi(): DevelopmentApi {
       }
 
       return ChatMessage.create({
-        content: renderChatCardHeader({
-          imageUrl: "icons/sundries/books/book-symbol-reverse-blue.webp",
-          imageAlt: "Ícone do ritual Eletrocussão",
-          eyebrow: "Ritual",
-          title: "Eletrocussão",
-          target,
-          badge: { label: "Energia 1", tone: "energy" },
+        content: renderChatCardShell({
+          content: renderChatCardHeader({
+            imageUrl: "icons/sundries/books/book-symbol-reverse-blue.webp",
+            imageAlt: "Ícone do ritual Eletrocussão",
+            eyebrow: "Ritual",
+            title: "Eletrocussão",
+            target,
+            badge: { label: "Energia 1", tone: "energy" },
+          }),
         }),
       });
     },
