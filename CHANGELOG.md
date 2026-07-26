@@ -14,6 +14,7 @@
 - Componente visual específico `RitualResistanceSection`, com grid próprio alinhado ao topo e composição do `DiceActionButton`.
 - Componentes visuais `MetadataPill` e `RitualMetadata`, com chips de metadados compactos, flexíveis e responsivos, além de exemplos isolados no Foundry.
 - Componente genérico `MetadataDetailRow`, com barra de destaque herdável, label escapado e detalhe interno confiável para composições futuras.
+- Componente visual `RitualSingleTargetCard`, compondo as fundações aprovadas em ordem previsível, com seções opcionais controladas pelo consumidor e exemplos isolados.
 - Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
 
 ### Decisões

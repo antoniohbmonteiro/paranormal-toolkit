@@ -32,6 +32,10 @@ import {
   type RitualResistanceSectionViewModel,
 } from "../ui/components/ritual/ritual-resistance-section";
 import {
+  renderRitualSingleTargetCard,
+  type RitualSingleTargetCardViewModel,
+} from "../ui/components/ritual/ritual-single-target-card";
+import {
   renderRitualMetadata,
   type RitualMetadataViewModel,
 } from "../ui/components/ritual/ritual-metadata";
@@ -89,6 +93,8 @@ export type RitualMetadataExample = "default" | "partial" | "long" | "all";
 
 export type MetadataDetailRowExample = "short" | "long" | "generic" | "all";
 
+export type RitualSingleTargetCardExample = "success" | "failure" | "long" | "all";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
@@ -116,6 +122,10 @@ export type ChatCardDevelopmentApi = {
   postRitualMetadataExample(example: RitualMetadataExample): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postMetadataDetailRowExample(example: MetadataDetailRowExample): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postRitualSingleTargetCardExample(
+    example: RitualSingleTargetCardExample,
+  ): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
   clearChatCardHeaderExamples(): Promise<void>;
@@ -439,6 +449,79 @@ function renderMetadataDetailRowExample(
   return renderChatCardShell({ content: renderMetadataDetailRow(model) });
 }
 
+function ritualSingleTargetCardExample(
+  example: Exclude<RitualSingleTargetCardExample, "all">,
+): RitualSingleTargetCardViewModel {
+  const failure = example === "failure";
+  const long = example === "long";
+  const header: ChatCardHeaderViewModel = {
+    title: long
+      ? "Eletrocussão Extraordinariamente Prolongada para Validar Quebras Naturais"
+      : "Eletrocussão",
+    subtitle: "Padrão",
+    badges: [{ label: "ENERGIA 1" }],
+    context: long
+      ? "Mercy → Criatura paranormal com um nome excepcionalmente longo para validar o contexto"
+      : "Mercy → Malvadão",
+  };
+  const metadata: RitualMetadataViewModel = {
+    items: long
+      ? [
+          { text: "1 PE gasto em uma conjuração cuidadosamente preparada" },
+          { text: "Alvo: Uma criatura paranormal excepcionalmente distante" },
+          { text: "Duração: Enquanto a concentração do conjurador for mantida" },
+        ]
+      : [
+          { text: "1 PE gasto" },
+          { text: "Alvo: 1 Ser" },
+          { text: "Duração: Instantânea" },
+        ],
+  };
+  const conjuration: RitualConjurationSectionViewModel = {
+    status: failure ? "failure" : "success",
+    skillLabel: "Ocultismo",
+    total: failure ? 17 : 23,
+    difficultyClass: 21,
+    formula: "1d20 + 10 + 5",
+    diceResults: [failure ? 2 : 8],
+    consequence: failure ? "Dano de Sanidade" : undefined,
+  };
+
+  return {
+    header,
+    metadata,
+    detailRows: [
+      {
+        label: "Alcance:",
+        detailHtml: long
+          ? "Extremamente longo · até uma distância paranormal que exige quebra defensiva"
+          : "Curto · até 9 metros",
+      },
+    ],
+    conjuration,
+    damage: failure
+      ? undefined
+      : {
+          damageType: long
+            ? "Eletricidade paranormal prolongada e intensamente concentrada"
+            : "Eletricidade",
+          formula: long ? "3d6 + 2d8 + 5" : "3d6",
+          total: long ? 21 : 9,
+          diceResults: long ? [2, 3, 4, 5, 2] : [2, 3, 4],
+        },
+    resistance: failure
+      ? undefined
+      : {
+          skill: "Fortitude",
+          difficultyLabel: "DT 22",
+          outcome: long
+            ? "reduz o dano paranormal recebido à metade e evita efeitos adicionais prolongados"
+            : "reduz dano à metade",
+          action: { ariaLabel: "Rolar resistência de Fortitude" },
+        },
+  };
+}
+
 function createExampleMessage(
   content: string,
   kind:
@@ -451,7 +534,8 @@ function createExampleMessage(
     | "ritual-damage"
     | "ritual-resistance"
     | "ritual-metadata"
-    | "metadata-detail-row",
+    | "metadata-detail-row"
+    | "ritual-single-target-card",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -609,6 +693,19 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
           createExampleMessage(
             renderMetadataDetailRowExample(item),
             "metadata-detail-row",
+          ),
+        ),
+      );
+    },
+    async postRitualSingleTargetCardExample(example) {
+      requireGm();
+      const examples =
+        example === "all" ? (["success", "failure", "long"] as const) : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(
+            renderRitualSingleTargetCard(ritualSingleTargetCardExample(item)),
+            "ritual-single-target-card",
           ),
         ),
       );
