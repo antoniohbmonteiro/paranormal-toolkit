@@ -33,6 +33,7 @@
     "styles/components/roll-row.css",
     "styles/components/ritual-conjuration-section.css",
     "styles/components/ritual-damage-section.css",
+    "styles/components/ritual-resistance-section.css",
     "styles/components/chat-card-header.css"
   ],
   "url": "https://github.com/antoniohbmonteiro/paranormal-toolkit",

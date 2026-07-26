@@ -11,6 +11,7 @@
 - Componente visual genérico `DiceActionButton`, com ícone interno e estados habilitado e desabilitado para composições futuras.
 - Primeiro componente visual específico de ritual, `RitualConjurationSection`, composto por `SectionCard`, `SectionHeader`, `StatusBadge` e `RollRow`, com consequência opcional sem reserva de espaço.
 - Componente visual específico `RitualDamageSection`, composto por `SectionCard`, `SectionHeader` e `RollRow`, com tipo de dano opcional e estados com ou sem resultado.
+- Componente visual específico `RitualResistanceSection`, com grid próprio alinhado ao topo e composição do `DiceActionButton`.
 - Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
 
 ### Decisões

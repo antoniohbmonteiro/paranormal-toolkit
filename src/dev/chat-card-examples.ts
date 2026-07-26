@@ -26,6 +26,10 @@ import {
   renderRitualDamageSection,
   type RitualDamageSectionViewModel,
 } from "../ui/components/ritual/ritual-damage-section";
+import {
+  renderRitualResistanceSection,
+  type RitualResistanceSectionViewModel,
+} from "../ui/components/ritual/ritual-resistance-section";
 
 export type ChatCardHeaderExample =
   | "single"
@@ -70,6 +74,12 @@ export type RitualDamageSectionExample =
   | "long-type"
   | "all";
 
+export type RitualResistanceSectionExample =
+  | "enabled"
+  | "disabled"
+  | "long"
+  | "all";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
@@ -88,6 +98,10 @@ export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postRitualDamageSectionExample(
     example: RitualDamageSectionExample,
+  ): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postRitualResistanceSectionExample(
+    example: RitualResistanceSectionExample,
   ): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
@@ -326,6 +340,36 @@ function renderRitualDamageExample(
   });
 }
 
+function ritualResistanceExample(
+  example: Exclude<RitualResistanceSectionExample, "all">,
+): RitualResistanceSectionViewModel {
+  if (example === "disabled") {
+    return {
+      skill: "Reflexos",
+      difficultyLabel: "DT 18",
+      outcome: "evita o efeito",
+      action: { ariaLabel: "Resistência indisponível", disabled: true },
+    };
+  }
+  return {
+    skill: "Fortitude",
+    difficultyLabel: "DT 22",
+    outcome:
+      example === "long"
+        ? "reduz o dano paranormal recebido à metade e evita efeitos adicionais prolongados"
+        : "reduz dano à metade",
+    action: { ariaLabel: "Rolar resistência de Fortitude" },
+  };
+}
+
+function renderRitualResistanceExample(
+  example: Exclude<RitualResistanceSectionExample, "all">,
+): string {
+  return renderChatCardShell({
+    content: renderRitualResistanceSection(ritualResistanceExample(example)),
+  });
+}
+
 function createExampleMessage(
   content: string,
   kind:
@@ -335,7 +379,8 @@ function createExampleMessage(
     | "dice-action-button"
     | "roll-row"
     | "ritual-conjuration"
-    | "ritual-damage",
+    | "ritual-damage"
+    | "ritual-resistance",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -454,6 +499,19 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
           createExampleMessage(
             renderRitualDamageExample(item),
             "ritual-damage",
+          ),
+        ),
+      );
+    },
+    async postRitualResistanceSectionExample(example) {
+      requireGm();
+      const examples =
+        example === "all" ? (["enabled", "disabled", "long"] as const) : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(
+            renderRitualResistanceExample(item),
+            "ritual-resistance",
           ),
         ),
       );
