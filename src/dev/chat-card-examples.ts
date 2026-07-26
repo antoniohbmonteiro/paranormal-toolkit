@@ -30,6 +30,10 @@ import {
   renderRitualResistanceSection,
   type RitualResistanceSectionViewModel,
 } from "../ui/components/ritual/ritual-resistance-section";
+import {
+  renderRitualMetadata,
+  type RitualMetadataViewModel,
+} from "../ui/components/ritual/ritual-metadata";
 
 export type ChatCardHeaderExample =
   | "single"
@@ -80,6 +84,8 @@ export type RitualResistanceSectionExample =
   | "long"
   | "all";
 
+export type RitualMetadataExample = "default" | "partial" | "long" | "all";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
@@ -103,6 +109,8 @@ export type ChatCardDevelopmentApi = {
   postRitualResistanceSectionExample(
     example: RitualResistanceSectionExample,
   ): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postRitualMetadataExample(example: RitualMetadataExample): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
   clearChatCardHeaderExamples(): Promise<void>;
@@ -370,6 +378,44 @@ function renderRitualResistanceExample(
   });
 }
 
+function ritualMetadataExample(
+  example: Exclude<RitualMetadataExample, "all">,
+): RitualMetadataViewModel {
+  if (example === "partial") {
+    return {
+      entries: [
+        { label: "Alcance", value: "Pessoal" },
+        { label: "Duração", value: "Cena" },
+      ],
+    };
+  }
+  if (example === "long") {
+    return {
+      entries: [
+        { label: "Execução", value: "Uma ação completa cuidadosamente preparada" },
+        { label: "Alcance", value: "Uma distância paranormal excepcionalmente longa" },
+        { label: "Duração", value: "Enquanto a concentração do conjurador for mantida" },
+      ],
+    };
+  }
+  return {
+    entries: [
+      { label: "Execução", value: "Padrão" },
+      { label: "Alcance", value: "Curto" },
+      { label: "Duração", value: "Instantânea" },
+      { label: "Alvo", value: "1 criatura" },
+    ],
+  };
+}
+
+function renderRitualMetadataExample(
+  example: Exclude<RitualMetadataExample, "all">,
+): string {
+  return renderChatCardShell({
+    content: renderRitualMetadata(ritualMetadataExample(example)),
+  });
+}
+
 function createExampleMessage(
   content: string,
   kind:
@@ -380,7 +426,8 @@ function createExampleMessage(
     | "roll-row"
     | "ritual-conjuration"
     | "ritual-damage"
-    | "ritual-resistance",
+    | "ritual-resistance"
+    | "ritual-metadata",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -512,6 +559,19 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
           createExampleMessage(
             renderRitualResistanceExample(item),
             "ritual-resistance",
+          ),
+        ),
+      );
+    },
+    async postRitualMetadataExample(example) {
+      requireGm();
+      const examples =
+        example === "all" ? (["default", "partial", "long"] as const) : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(
+            renderRitualMetadataExample(item),
+            "ritual-metadata",
           ),
         ),
       );
