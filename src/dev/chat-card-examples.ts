@@ -5,6 +5,7 @@ import {
 } from "../ui/components/chat/chat-card-header";
 import { renderChatCardShell } from "../ui/components/chat/chat-card-shell";
 import { renderDiceActionButton } from "../ui/components/chat/dice-action-button";
+import { renderMetadataDetailRow } from "../ui/components/chat/metadata-detail-row";
 import {
   renderRollRow,
   type RollRowViewModel,
@@ -86,6 +87,8 @@ export type RitualResistanceSectionExample =
 
 export type RitualMetadataExample = "default" | "partial" | "long" | "all";
 
+export type MetadataDetailRowExample = "short" | "long" | "generic" | "all";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
@@ -111,6 +114,8 @@ export type ChatCardDevelopmentApi = {
   ): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postRitualMetadataExample(example: RitualMetadataExample): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postMetadataDetailRowExample(example: MetadataDetailRowExample): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
   clearChatCardHeaderExamples(): Promise<void>;
@@ -415,6 +420,25 @@ function renderRitualMetadataExample(
   });
 }
 
+function renderMetadataDetailRowExample(
+  example: Exclude<MetadataDetailRowExample, "all">,
+): string {
+  const model =
+    example === "generic"
+      ? { label: "Alcance:", detailHtml: "Médio · até 15 metros" }
+      : example === "long"
+        ? {
+            label: "Resistência:",
+            detailHtml: "Reflexos · <strong>DT 24</strong> · evita completamente os efeitos do ritual",
+          }
+        : {
+            label: "Resistência:",
+            detailHtml: "Fortitude · <strong>DT 22</strong> · reduz dano à metade",
+          };
+
+  return renderChatCardShell({ content: renderMetadataDetailRow(model) });
+}
+
 function createExampleMessage(
   content: string,
   kind:
@@ -426,7 +450,8 @@ function createExampleMessage(
     | "ritual-conjuration"
     | "ritual-damage"
     | "ritual-resistance"
-    | "ritual-metadata",
+    | "ritual-metadata"
+    | "metadata-detail-row",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -571,6 +596,19 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
           createExampleMessage(
             renderRitualMetadataExample(item),
             "ritual-metadata",
+          ),
+        ),
+      );
+    },
+    async postMetadataDetailRowExample(example) {
+      requireGm();
+      const examples =
+        example === "all" ? (["short", "long", "generic"] as const) : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(
+            renderMetadataDetailRowExample(item),
+            "metadata-detail-row",
           ),
         ),
       );

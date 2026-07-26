@@ -1,0 +1,36 @@
+.paranormal-toolkit-metadata-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ptk-chat-text-secondary);
+  font-size: 10.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-metadata-detail-row__accent {
+  align-self: stretch;
+  flex: 0 0 3px;
+  width: 3px;
+  min-height: 14px;
+  border-radius: 99px;
+  background: var(--ptk-chat-section-accent, var(--ptk-chat-wine));
+}
+
+.paranormal-toolkit-metadata-detail-row__content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-metadata-detail-row__label {
+  margin-right: 0.25em;
+  color: var(--ptk-chat-section-accent, var(--ptk-chat-wine));
+  font-weight: 700;
+}
+
+.paranormal-toolkit-metadata-detail-row__detail {
+  min-width: 0;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}

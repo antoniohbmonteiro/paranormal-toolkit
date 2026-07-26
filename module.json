@@ -35,6 +35,7 @@
     "styles/components/ritual-damage-section.css",
     "styles/components/ritual-resistance-section.css",
     "styles/components/metadata-pill.css",
+    "styles/components/metadata-detail-row.css",
     "styles/components/ritual-metadata.css",
     "styles/components/chat-card-header.css"
   ],

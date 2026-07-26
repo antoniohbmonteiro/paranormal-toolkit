@@ -13,6 +13,7 @@
 - Componente visual específico `RitualDamageSection`, composto por `SectionCard`, `SectionHeader` e `RollRow`, com tipo de dano opcional e estados com ou sem resultado.
 - Componente visual específico `RitualResistanceSection`, com grid próprio alinhado ao topo e composição do `DiceActionButton`.
 - Componentes visuais `MetadataPill` e `RitualMetadata`, com chips de metadados compactos, flexíveis e responsivos, além de exemplos isolados no Foundry.
+- Componente genérico `MetadataDetailRow`, com barra de destaque herdável, label escapado e detalhe interno confiável para composições futuras.
 - Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
 
 ### Decisões
