@@ -4,12 +4,15 @@ import {
   type ChatCardHeaderViewModel,
 } from "../ui/components/chat/chat-card-header";
 import { renderChatCardShell } from "../ui/components/chat/chat-card-shell";
-import { renderHeaderBadge } from "../ui/components/chat/header-badge";
 import {
   renderSectionCard,
   type SectionCardTone,
 } from "../ui/components/chat/section-card";
 import { renderSectionHeader } from "../ui/components/chat/section-header";
+import {
+  renderStatusBadge,
+  type StatusBadgeState,
+} from "../ui/components/chat/status-badge";
 
 export type ChatCardHeaderExample =
   | "single"
@@ -27,11 +30,15 @@ export type SectionCardExample =
   | "resistance-button"
   | "all";
 
+export type StatusBadgeExample = StatusBadgeState | "both";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postSectionCardExample(example: SectionCardExample): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postStatusBadgeExample(example: StatusBadgeExample): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
   clearChatCardHeaderExamples(): Promise<void>;
@@ -110,7 +117,7 @@ function sectionExample(example: Exclude<SectionCardExample, "all">): {
       return {
         tone: "casting",
         title: "Conjuração",
-        trailing: renderHeaderBadge({ label: "SUCESSO", tone: "neutral" }),
+        trailing: renderStatusBadge({ state: "success" }),
       };
     case "damage-text":
       return {
@@ -142,7 +149,22 @@ function renderSectionExample(example: Exclude<SectionCardExample, "all">): stri
   });
 }
 
-function createExampleMessage(content: string, kind: "header" | "section"): Promise<unknown> {
+function renderStatusExample(state: StatusBadgeState): string {
+  return renderChatCardShell({
+    content: renderSectionCard({
+      tone: "casting",
+      content: renderSectionHeader({
+        title: "Conjuração",
+        trailing: renderStatusBadge({ state }),
+      }),
+    }),
+  });
+}
+
+function createExampleMessage(
+  content: string,
+  kind: "header" | "section" | "status",
+): Promise<unknown> {
   return ChatMessage.create({
     content,
     flags: { [MODULE_ID]: { [EXAMPLE_FLAG]: kind } },
@@ -189,6 +211,16 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
       return Promise.all(
         examples.map((item) =>
           createExampleMessage(renderSectionExample(item), "section"),
+        ),
+      );
+    },
+    async postStatusBadgeExample(example) {
+      requireGm();
+      const states =
+        example === "both" ? (["success", "failure"] as const) : [example];
+      return Promise.all(
+        states.map((state) =>
+          createExampleMessage(renderStatusExample(state), "status"),
         ),
       );
     },

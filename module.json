@@ -28,6 +28,7 @@
     "styles/components/section-card.css",
     "styles/components/section-header.css",
     "styles/components/header-badge.css",
+    "styles/components/status-badge.css",
     "styles/components/chat-card-header.css"
   ],
   "url": "https://github.com/antoniohbmonteiro/paranormal-toolkit",

@@ -1,6 +1,7 @@
 .paranormal-toolkit-chat-card-shell,
 .paranormal-toolkit-chat-card-header,
-.paranormal-toolkit-header-badge {
+.paranormal-toolkit-header-badge,
+.paranormal-toolkit-status-badge {
   --ptk-chat-shell-background: linear-gradient(
     180deg,
     rgba(248, 244, 237, 0.96),
@@ -16,4 +17,12 @@
   --ptk-chat-energy: #6b36a8;
   --ptk-chat-energy-background: rgba(107, 54, 168, 0.09);
   --ptk-chat-energy-border: rgba(107, 54, 168, 0.32);
+  --ptk-chat-success-accent: #287547;
+  --ptk-chat-success-border: rgba(40, 117, 71, 0.34);
+  --ptk-chat-success-background: #e8f4eb;
+  --ptk-chat-success-text: #205d39;
+  --ptk-chat-failure-accent: #a1363b;
+  --ptk-chat-failure-border: rgba(161, 54, 59, 0.34);
+  --ptk-chat-failure-background: #f8e7e7;
+  --ptk-chat-failure-text: #842c31;
 }

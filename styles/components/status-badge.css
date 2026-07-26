@@ -1,0 +1,27 @@
+.paranormal-toolkit-status-badge {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid;
+  border-radius: 99px;
+  padding: 2px 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-status-badge--success {
+  border-color: var(--ptk-chat-success-border);
+  background: var(--ptk-chat-success-background);
+  color: var(--ptk-chat-success-text);
+}
+
+.paranormal-toolkit-status-badge--failure {
+  border-color: var(--ptk-chat-failure-border);
+  background: var(--ptk-chat-failure-background);
+  color: var(--ptk-chat-failure-text);
+}
