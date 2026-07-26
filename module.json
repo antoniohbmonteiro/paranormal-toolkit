@@ -25,6 +25,8 @@
     "styles/ritual-roll-config.css",
     "styles/components/chat-card-tokens.css",
     "styles/components/chat-card-shell.css",
+    "styles/components/section-card.css",
+    "styles/components/section-header.css",
     "styles/components/header-badge.css",
     "styles/components/chat-card-header.css"
   ],

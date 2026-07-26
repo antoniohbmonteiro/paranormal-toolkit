@@ -2,6 +2,7 @@ import {
   renderHeaderBadge,
   type HeaderBadgeViewModel,
 } from "./header-badge";
+import { escapeHtml } from "../../rendering/escape-html";
 
 export interface ChatCardHeaderImageViewModel {
   src?: string;
@@ -14,20 +15,6 @@ export interface ChatCardHeaderViewModel {
   subtitle?: string;
   badges?: readonly HeaderBadgeViewModel[];
   context?: string;
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
-      })[character] ?? character,
-  );
 }
 
 const IMAGE_PLACEHOLDER = `<svg class="paranormal-toolkit-chat-card-header__placeholder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.5A2.5 2.5 0 0 1 18 7v13H7a2 2 0 0 1-2-2V4.5Zm2 0V17a3 3 0 0 0-1 .17M9 8h6M9 11h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;

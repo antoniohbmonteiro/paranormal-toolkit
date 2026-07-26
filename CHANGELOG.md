@@ -5,7 +5,8 @@
 ### Adicionado
 
 - Fundações visuais isoladas `ChatCardShell`, `HeaderBadge` genérico e `ChatCardHeader` genérico, com tokens visuais em CSS custom properties.
-- Helpers temporários e exclusivos para GMs para publicar e limpar exemplos identificados do cabeçalho pelo console.
+- Componentes genéricos e isolados `SectionCard` e `SectionHeader` para superfícies internas e títulos com trailing opcional.
+- Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
 
 ### Decisões
 
