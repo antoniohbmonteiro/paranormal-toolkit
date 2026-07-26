@@ -35,4 +35,22 @@ describe("renderSectionHeader", () => {
     expect(css).not.toMatch(/(^|\s)height:\s*22px/);
     expect(css).not.toContain("!important");
   });
+
+  it("centers trailing content without positional adjustments", () => {
+    const css = readFileSync("styles/components/section-header.css", "utf8");
+    const trailing = css.match(
+      /\.paranormal-toolkit-section-header__trailing\s*\{[^}]+\}/,
+    )?.[0];
+    const demoText = css.match(
+      /\.paranormal-toolkit-section-header__demo-text\s*\{[^}]+\}/,
+    )?.[0];
+
+    expect(trailing).toContain("display: flex");
+    expect(trailing).toContain("align-items: center");
+    expect(trailing).toContain("justify-content: flex-end");
+    expect(demoText).toContain("line-height: 1");
+    expect(css).not.toMatch(/[;{]\s*(transform|top)\s*:/);
+    expect(css).not.toContain("position: relative");
+    expect(css).not.toContain("!important");
+  });
 });
