@@ -5,7 +5,7 @@ export interface DiceActionButtonViewModel {
   disabled?: boolean;
 }
 
-const DICE_ICON = `<svg class="paranormal-toolkit-dice-action-button__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 8v8l10 6 10-6V8L12 2Z"/><path d="m2 8 10 6 10-6M12 2v12"/></svg>`;
+const DICE_ICON = `<i class="paranormal-toolkit-dice-action-button__icon fa-solid fa-dice-d20" aria-hidden="true"></i>`;
 
 export function renderDiceActionButton(
   model: DiceActionButtonViewModel,

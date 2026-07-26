@@ -1665,7 +1665,7 @@ function hm(e) {
 function pe(e) {
   return `<article class="paranormal-toolkit-chat-card-shell">${e.content}</article>`;
 }
-const bm = '<svg class="paranormal-toolkit-dice-action-button__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 8v8l10 6 10-6V8L12 2Z"/><path d="m2 8 10 6 10-6M12 2v12"/></svg>';
+const bm = '<i class="paranormal-toolkit-dice-action-button__icon fa-solid fa-dice-d20" aria-hidden="true"></i>';
 function Ks(e) {
   const t = e.disabled ? " disabled" : "";
   return `<button class="paranormal-toolkit-dice-action-button" type="button" aria-label="${L(e.ariaLabel)}"${t}>${bm}</button>`;
