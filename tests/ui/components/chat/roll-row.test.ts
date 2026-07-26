@@ -119,7 +119,7 @@ describe("renderRollRow", () => {
       "min-height: 34px",
       "width: 44px",
       "min-width: 44px",
-      "font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      "font-family: var(--font-mono, monospace)",
       "list-style: none",
       "cursor: pointer",
       ":focus-visible",
@@ -144,7 +144,11 @@ describe("renderRollRow", () => {
     )?.[0];
     expect(formula).toContain("color: var(--ptk-chat-text-secondary)");
     expect(formula).not.toContain("color: var(--ptk-chat-text-muted)");
-    expect(formulaText).toContain("font-weight: 500");
+    expect(formulaText).toContain("font-family: var(--font-mono, monospace)");
+    expect(formulaText).toContain("font-size: 0.78rem");
+    expect(formulaText).toContain("font-weight: 700");
+    expect(formulaText).toContain("overflow-wrap: anywhere");
+    expect(formulaText).not.toContain("white-space: nowrap");
   });
 
   it("defines all six development scenarios through shared composition", () => {
