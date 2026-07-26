@@ -8,6 +8,7 @@
 - Componentes genéricos e isolados `SectionCard` e `SectionHeader` para superfícies internas e títulos com trailing opcional.
 - Componente visual genérico `StatusBadge` para os estados finais `success` e `failure`, com exemplos isolados no Foundry.
 - Componente genérico `RollRow`, com estados com/sem resultado e expansão nativa dos valores individuais dos dados em exemplos isolados.
+- Primeiro componente visual específico de ritual, `RitualConjurationSection`, composto por `SectionCard`, `SectionHeader`, `StatusBadge` e `RollRow`, com consequência opcional sem reserva de espaço.
 - Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
 
 ### Decisões

@@ -17,6 +17,10 @@ import {
   renderStatusBadge,
   type StatusBadgeState,
 } from "../ui/components/chat/status-badge";
+import {
+  renderRitualConjurationSection,
+  type RitualConjurationSectionViewModel,
+} from "../ui/components/ritual/ritual-conjuration-section";
 
 export type ChatCardHeaderExample =
   | "single"
@@ -45,6 +49,13 @@ export type RollRowExample =
   | "without-result-expanded"
   | "all";
 
+export type RitualConjurationSectionExample =
+  | "success"
+  | "failure"
+  | "failure-consequence"
+  | "expanded"
+  | "all";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
@@ -54,6 +65,10 @@ export type ChatCardDevelopmentApi = {
   postStatusBadgeExample(example: StatusBadgeExample): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postRollRowExample(example: RollRowExample): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postRitualConjurationSectionExample(
+    example: RitualConjurationSectionExample,
+  ): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
   clearChatCardHeaderExamples(): Promise<void>;
@@ -220,9 +235,39 @@ function renderRollRowExample(example: Exclude<RollRowExample, "all">): string {
   });
 }
 
+function ritualConjurationExample(
+  example: Exclude<RitualConjurationSectionExample, "all">,
+): RitualConjurationSectionViewModel {
+  const failure = example === "failure" || example === "failure-consequence";
+  return {
+    status: failure ? "failure" : "success",
+    skillLabel: "Ocultismo",
+    total: failure ? 17 : 23,
+    difficultyClass: 21,
+    formula: "1d20 + 10 + 5",
+    diceResults: [failure ? 2 : 8],
+    expanded: example === "expanded",
+    consequence:
+      example === "failure-consequence" ? "Dano de Sanidade" : undefined,
+  };
+}
+
+function renderRitualConjurationExample(
+  example: Exclude<RitualConjurationSectionExample, "all">,
+): string {
+  return renderChatCardShell({
+    content: renderRitualConjurationSection(ritualConjurationExample(example)),
+  });
+}
+
 function createExampleMessage(
   content: string,
-  kind: "header" | "section" | "status" | "roll-row",
+  kind:
+    | "header"
+    | "section"
+    | "status"
+    | "roll-row"
+    | "ritual-conjuration",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -299,6 +344,21 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
       return Promise.all(
         examples.map((item) =>
           createExampleMessage(renderRollRowExample(item), "roll-row"),
+        ),
+      );
+    },
+    async postRitualConjurationSectionExample(example) {
+      requireGm();
+      const examples =
+        example === "all"
+          ? (["success", "failure", "failure-consequence", "expanded"] as const)
+          : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(
+            renderRitualConjurationExample(item),
+            "ritual-conjuration",
+          ),
         ),
       );
     },
