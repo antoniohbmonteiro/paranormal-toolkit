@@ -38,6 +38,9 @@ describe("renderSectionHeader", () => {
 
   it("centers trailing content without positional adjustments", () => {
     const css = readFileSync("styles/components/section-header.css", "utf8");
+    const title = css.match(
+      /\.paranormal-toolkit-section-header__title\s*\{[^}]+\}/,
+    )?.[0];
     const trailing = css.match(
       /\.paranormal-toolkit-section-header__trailing\s*\{[^}]+\}/,
     )?.[0];
@@ -45,12 +48,17 @@ describe("renderSectionHeader", () => {
       /\.paranormal-toolkit-section-header__demo-text\s*\{[^}]+\}/,
     )?.[0];
 
+    expect(title).toContain("flex: 0 0 auto");
     expect(trailing).toContain("display: flex");
+    expect(trailing).toContain("flex: 1 1 auto");
     expect(trailing).toContain("align-items: center");
     expect(trailing).toContain("justify-content: flex-end");
+    expect(trailing).toContain("min-width: 0");
     expect(demoText).toContain("line-height: 1");
     expect(css).not.toMatch(/[;{]\s*(transform|top)\s*:/);
     expect(css).not.toContain("position: relative");
     expect(css).not.toContain("!important");
+    expect(title).not.toContain("white-space: nowrap");
+    expect(trailing).not.toContain("white-space: nowrap");
   });
 });

@@ -8,6 +8,7 @@
 }
 
 .paranormal-toolkit-section-header__title {
+  flex: 0 0 auto;
   min-width: 0;
   color: var(--ptk-chat-section-title);
   font-size: 10.5px;
@@ -20,7 +21,7 @@
 
 .paranormal-toolkit-section-header__trailing {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: flex-end;
   min-width: 0;

@@ -33,7 +33,7 @@
   border-radius: 5px;
   padding: 0 10px;
   background: rgba(255, 255, 255, 0.55);
-  color: var(--ptk-chat-text-muted);
+  color: var(--ptk-chat-text-secondary);
 }
 
 .paranormal-toolkit-roll-row__details > .paranormal-toolkit-roll-row__formula {

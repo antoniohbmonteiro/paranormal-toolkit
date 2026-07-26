@@ -136,6 +136,15 @@ describe("renderRollRow", () => {
     expect(css).not.toContain("!important");
     expect(css).not.toContain("300px");
     expect(css).not.toMatch(/(^|})\s*(details|summary|output|span|div)\b/m);
+    const formula = css.match(
+      /\.paranormal-toolkit-roll-row__formula\s*\{[^}]+\}/,
+    )?.[0];
+    const formulaText = css.match(
+      /\.paranormal-toolkit-roll-row__formula-text\s*\{[^}]+\}/,
+    )?.[0];
+    expect(formula).toContain("color: var(--ptk-chat-text-secondary)");
+    expect(formula).not.toContain("color: var(--ptk-chat-text-muted)");
+    expect(formulaText).toContain("font-weight: 500");
   });
 
   it("defines all six development scenarios through shared composition", () => {

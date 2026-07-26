@@ -108,6 +108,8 @@ describe("renderRitualDamageSection", () => {
     expect(css).toContain("font-size: 10.5px");
     expect(css).toContain("font-weight: 600");
     expect(css).toContain("line-height: 1");
+    expect(css).toContain("min-width: 0");
+    expect(css).toContain("text-align: right");
     expect(css).toContain("color: var(--ptk-chat-section-title)");
     expect(css).toContain("overflow-wrap: anywhere");
     expect(css).not.toContain("!important");
@@ -115,6 +117,7 @@ describe("renderRitualDamageSection", () => {
     expect(css).not.toMatch(/(^|})\s*(span|div|section|p)\b/m);
     expect(css).not.toMatch(/[;{]\s*(transform|top)\s*:/);
     expect(css).not.toContain("position: relative");
+    expect(css).not.toContain("white-space: nowrap");
     for (const selector of css.matchAll(/(^|})\s*([^@][^{]+)\{/g)) {
       expect(selector[2].trim()).toMatch(
         /^\.paranormal-toolkit-ritual-damage-section/,
