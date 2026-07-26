@@ -29,6 +29,7 @@
     "styles/components/section-header.css",
     "styles/components/header-badge.css",
     "styles/components/status-badge.css",
+    "styles/components/dice-action-button.css",
     "styles/components/roll-row.css",
     "styles/components/ritual-conjuration-section.css",
     "styles/components/ritual-damage-section.css",

@@ -4,6 +4,7 @@ import {
   type ChatCardHeaderViewModel,
 } from "../ui/components/chat/chat-card-header";
 import { renderChatCardShell } from "../ui/components/chat/chat-card-shell";
+import { renderDiceActionButton } from "../ui/components/chat/dice-action-button";
 import {
   renderRollRow,
   type RollRowViewModel,
@@ -44,6 +45,8 @@ export type SectionCardExample =
 
 export type StatusBadgeExample = StatusBadgeState | "both";
 
+export type DiceActionButtonExample = "enabled" | "disabled" | "all";
+
 export type RollRowExample =
   | "with-result-success"
   | "with-result-failure"
@@ -74,6 +77,8 @@ export type ChatCardDevelopmentApi = {
   postSectionCardExample(example: SectionCardExample): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postStatusBadgeExample(example: StatusBadgeExample): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postDiceActionButtonExample(example: DiceActionButtonExample): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postRollRowExample(example: RollRowExample): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
@@ -206,6 +211,24 @@ function renderStatusExample(state: StatusBadgeState): string {
   });
 }
 
+function renderDiceActionButtonExample(
+  example: Exclude<DiceActionButtonExample, "all">,
+): string {
+  const disabled = example === "disabled";
+  return renderChatCardShell({
+    content: renderSectionCard({
+      tone: "resistance",
+      content: renderSectionHeader({
+        title: "Resistência",
+        trailing: renderDiceActionButton({
+          ariaLabel: disabled ? "Resistência indisponível" : "Rolar resistência",
+          disabled,
+        }),
+      }),
+    }),
+  });
+}
+
 function renderRollRowExample(example: Exclude<RollRowExample, "all">): string {
   const isCasting = example.startsWith("with-result");
   const isDamage = example.startsWith("damage");
@@ -309,6 +332,7 @@ function createExampleMessage(
     | "header"
     | "section"
     | "status"
+    | "dice-action-button"
     | "roll-row"
     | "ritual-conjuration"
     | "ritual-damage",
@@ -369,6 +393,19 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
       return Promise.all(
         states.map((state) =>
           createExampleMessage(renderStatusExample(state), "status"),
+        ),
+      );
+    },
+    async postDiceActionButtonExample(example) {
+      requireGm();
+      const examples =
+        example === "all" ? (["enabled", "disabled"] as const) : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(
+            renderDiceActionButtonExample(item),
+            "dice-action-button",
+          ),
         ),
       );
     },
