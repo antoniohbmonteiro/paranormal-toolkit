@@ -7,6 +7,7 @@
 - Fundações visuais isoladas `ChatCardShell`, `HeaderBadge` genérico e `ChatCardHeader` genérico, com tokens visuais em CSS custom properties.
 - Componentes genéricos e isolados `SectionCard` e `SectionHeader` para superfícies internas e títulos com trailing opcional.
 - Componente visual genérico `StatusBadge` para os estados finais `success` e `failure`, com exemplos isolados no Foundry.
+- Componente genérico `RollRow`, com estados com/sem resultado e expansão nativa dos valores individuais dos dados em exemplos isolados.
 - Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
 
 ### Decisões

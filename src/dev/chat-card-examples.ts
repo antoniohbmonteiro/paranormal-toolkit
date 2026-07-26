@@ -5,6 +5,10 @@ import {
 } from "../ui/components/chat/chat-card-header";
 import { renderChatCardShell } from "../ui/components/chat/chat-card-shell";
 import {
+  renderRollRow,
+  type RollRowViewModel,
+} from "../ui/components/chat/roll-row";
+import {
   renderSectionCard,
   type SectionCardTone,
 } from "../ui/components/chat/section-card";
@@ -32,6 +36,15 @@ export type SectionCardExample =
 
 export type StatusBadgeExample = StatusBadgeState | "both";
 
+export type RollRowExample =
+  | "with-result-success"
+  | "with-result-failure"
+  | "damage-collapsed"
+  | "damage-expanded"
+  | "without-result-collapsed"
+  | "without-result-expanded"
+  | "all";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
@@ -39,6 +52,8 @@ export type ChatCardDevelopmentApi = {
   postSectionCardExample(example: SectionCardExample): Promise<unknown>;
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postStatusBadgeExample(example: StatusBadgeExample): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postRollRowExample(example: RollRowExample): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
   clearChatCardHeaderExamples(): Promise<void>;
@@ -161,9 +176,53 @@ function renderStatusExample(state: StatusBadgeState): string {
   });
 }
 
+function renderRollRowExample(example: Exclude<RollRowExample, "all">): string {
+  const isCasting = example.startsWith("with-result");
+  const isDamage = example.startsWith("damage");
+  const failure = example === "with-result-failure";
+  const model: RollRowViewModel = isCasting
+    ? {
+        formula: "1d20 + 10 + 5",
+        total: failure ? 17 : 23,
+        resultTone: failure ? "failure" : "success",
+        diceResults: [failure ? 2 : 8],
+      }
+    : isDamage
+      ? {
+          formula: "3d6",
+          total: 9,
+          resultTone: "section",
+          diceResults: [2, 3, 4],
+          expanded: example === "damage-expanded",
+        }
+      : {
+          formula: "1d20 + 4",
+          diceResults: [17],
+          expanded: example === "without-result-expanded",
+        };
+  const tone: SectionCardTone = isDamage
+    ? "damage"
+    : isCasting
+      ? "casting"
+      : "resistance";
+  const title = isDamage ? "Dano" : isCasting ? "Conjuração" : "Resistência";
+  const trailing = isDamage
+    ? '<span class="paranormal-toolkit-section-header__demo-text">Eletricidade</span>'
+    : isCasting
+      ? renderStatusBadge({ state: failure ? "failure" : "success" })
+      : undefined;
+  return renderChatCardShell({
+    content: renderSectionCard({
+      tone,
+      content:
+        renderSectionHeader({ title, trailing }) + renderRollRow(model),
+    }),
+  });
+}
+
 function createExampleMessage(
   content: string,
-  kind: "header" | "section" | "status",
+  kind: "header" | "section" | "status" | "roll-row",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -221,6 +280,25 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
       return Promise.all(
         states.map((state) =>
           createExampleMessage(renderStatusExample(state), "status"),
+        ),
+      );
+    },
+    async postRollRowExample(example) {
+      requireGm();
+      const examples =
+        example === "all"
+          ? ([
+              "with-result-success",
+              "with-result-failure",
+              "damage-collapsed",
+              "damage-expanded",
+              "without-result-collapsed",
+              "without-result-expanded",
+            ] as const)
+          : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(renderRollRowExample(item), "roll-row"),
         ),
       );
     },
