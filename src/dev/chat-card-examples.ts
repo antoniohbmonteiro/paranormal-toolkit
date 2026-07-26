@@ -21,6 +21,10 @@ import {
   renderRitualConjurationSection,
   type RitualConjurationSectionViewModel,
 } from "../ui/components/ritual/ritual-conjuration-section";
+import {
+  renderRitualDamageSection,
+  type RitualDamageSectionViewModel,
+} from "../ui/components/ritual/ritual-damage-section";
 
 export type ChatCardHeaderExample =
   | "single"
@@ -56,6 +60,13 @@ export type RitualConjurationSectionExample =
   | "expanded"
   | "all";
 
+export type RitualDamageSectionExample =
+  | "collapsed"
+  | "expanded"
+  | "without-result"
+  | "long-type"
+  | "all";
+
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postChatCardHeaderExample(example: ChatCardHeaderExample): Promise<unknown>;
@@ -68,6 +79,10 @@ export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
   postRitualConjurationSectionExample(
     example: RitualConjurationSectionExample,
+  ): Promise<unknown>;
+  /** @deprecated Temporary visual QA helper; remove after production migration. */
+  postRitualDamageSectionExample(
+    example: RitualDamageSectionExample,
   ): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
@@ -260,6 +275,34 @@ function renderRitualConjurationExample(
   });
 }
 
+function ritualDamageExample(
+  example: Exclude<RitualDamageSectionExample, "all">,
+): RitualDamageSectionViewModel {
+  if (example === "long-type") {
+    return {
+      damageType: "Eletricidade paranormal prolongada",
+      formula: "3d6 + 2d8 + 5",
+      total: 21,
+      diceResults: [2, 3, 4, 5, 2],
+    };
+  }
+  return {
+    damageType: "Eletricidade",
+    formula: "3d6",
+    total: example === "without-result" ? undefined : 9,
+    diceResults: [2, 3, 4],
+    expanded: example === "expanded",
+  };
+}
+
+function renderRitualDamageExample(
+  example: Exclude<RitualDamageSectionExample, "all">,
+): string {
+  return renderChatCardShell({
+    content: renderRitualDamageSection(ritualDamageExample(example)),
+  });
+}
+
 function createExampleMessage(
   content: string,
   kind:
@@ -267,7 +310,8 @@ function createExampleMessage(
     | "section"
     | "status"
     | "roll-row"
-    | "ritual-conjuration",
+    | "ritual-conjuration"
+    | "ritual-damage",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -358,6 +402,21 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
           createExampleMessage(
             renderRitualConjurationExample(item),
             "ritual-conjuration",
+          ),
+        ),
+      );
+    },
+    async postRitualDamageSectionExample(example) {
+      requireGm();
+      const examples =
+        example === "all"
+          ? (["collapsed", "expanded", "without-result", "long-type"] as const)
+          : [example];
+      return Promise.all(
+        examples.map((item) =>
+          createExampleMessage(
+            renderRitualDamageExample(item),
+            "ritual-damage",
           ),
         ),
       );
