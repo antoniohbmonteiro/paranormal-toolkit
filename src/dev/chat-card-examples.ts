@@ -383,27 +383,26 @@ function ritualMetadataExample(
 ): RitualMetadataViewModel {
   if (example === "partial") {
     return {
-      entries: [
-        { label: "Alcance", value: "Pessoal" },
-        { label: "Duração", value: "Cena" },
+      items: [
+        { text: "Alcance: Pessoal" },
+        { text: "Duração: Cena" },
       ],
     };
   }
   if (example === "long") {
     return {
-      entries: [
-        { label: "Execução", value: "Uma ação completa cuidadosamente preparada" },
-        { label: "Alcance", value: "Uma distância paranormal excepcionalmente longa" },
-        { label: "Duração", value: "Enquanto a concentração do conjurador for mantida" },
+      items: [
+        { text: "Execução: Uma ação completa cuidadosamente preparada" },
+        { text: "Alcance: Uma distância paranormal excepcionalmente longa" },
+        { text: "Duração: Enquanto a concentração do conjurador for mantida" },
       ],
     };
   }
   return {
-    entries: [
-      { label: "Execução", value: "Padrão" },
-      { label: "Alcance", value: "Curto" },
-      { label: "Duração", value: "Instantânea" },
-      { label: "Alvo", value: "1 criatura" },
+    items: [
+      { text: "1 PE gasto" },
+      { text: "Alvo: 1 Ser" },
+      { text: "Duração: Instantânea" },
     ],
   };
 }

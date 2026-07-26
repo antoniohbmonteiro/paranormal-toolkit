@@ -1,43 +1,8 @@
 .paranormal-toolkit-ritual-metadata {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.2rem 0.35rem;
-  min-width: 0;
-  margin: 0;
-  color: var(--ptk-chat-text-secondary);
-  font-size: 10.5px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.paranormal-toolkit-ritual-metadata__entry {
-  display: inline-flex;
-  flex: 0 1 auto;
-  align-items: baseline;
-  gap: 0.2rem;
+  gap: 5px;
   min-width: 0;
   max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
-.paranormal-toolkit-ritual-metadata__entry:not(:last-child)::after {
-  flex: 0 0 auto;
-  margin-left: 0.15rem;
-  color: var(--ptk-chat-text-muted);
-  content: "·";
-}
-
-.paranormal-toolkit-ritual-metadata__label {
-  flex: 0 0 auto;
-  margin: 0;
-  color: var(--ptk-chat-text-primary);
-  font-weight: 700;
-}
-
-.paranormal-toolkit-ritual-metadata__value {
-  min-width: 0;
-  margin: 0;
-  font-weight: 400;
   overflow-wrap: anywhere;
 }

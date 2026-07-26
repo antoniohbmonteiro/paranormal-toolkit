@@ -6,93 +6,94 @@ import {
 } from "../../../../src/ui/components/ritual/ritual-metadata";
 
 const model: RitualMetadataViewModel = {
-  entries: [
-    { label: "Execução", value: "Padrão" },
-    { label: "Alcance", value: "Curto" },
-    { label: "Duração", value: "Instantânea" },
-    { label: "Alvo", value: "1 criatura" },
+  items: [
+    { text: "1 PE gasto" },
+    { text: "Alvo: 1 Ser" },
+    { text: "Duração: Instantânea" },
   ],
 };
 
 describe("renderRitualMetadata", () => {
-  it("renders ordered semantic metadata with separate label and value classes", () => {
+  it("composes real MetadataPills in received order", () => {
     const html = renderRitualMetadata(model);
-    expect(html).toMatch(/^<dl class="paranormal-toolkit-ritual-metadata">/);
-    expect(html).toContain('<dt class="paranormal-toolkit-ritual-metadata__label">Execução:</dt>');
-    expect(html).toContain('<dd class="paranormal-toolkit-ritual-metadata__value">Padrão</dd>');
-    expect(html).toMatch(/Execução.*Padrão.*Alcance.*Curto.*Duração.*Instantânea.*Alvo.*1 criatura/);
-    expect(html).toMatch(/<\/dl>$/);
+    expect(html).toMatch(/^<div class="paranormal-toolkit-ritual-metadata">/);
+    expect(html.match(/paranormal-toolkit-metadata-pill/g)).toHaveLength(3);
+    expect(html).toMatch(/1 PE gasto.*Alvo: 1 Ser.*Duração: Instantânea/);
   });
 
-  it("escapes labels and values", () => {
+  it("escapes pill content through MetadataPill", () => {
     const html = renderRitualMetadata({
-      entries: [{ label: `<Label & "kind">`, value: `<Value 'safe'>` }],
+      items: [{ text: `<Alvo & "um">` }],
     });
-    expect(html).toContain("&lt;Label &amp; &quot;kind&quot;&gt;:");
-    expect(html).toContain("&lt;Value &#039;safe&#039;&gt;");
-    expect(html).not.toContain("<Label");
-    expect(html).not.toContain("<Value");
+    expect(html).toContain("&lt;Alvo &amp; &quot;um&quot;&gt;");
+    expect(html).not.toContain("<Alvo");
   });
 
-  it("omits blank entries while preserving valid-entry order", () => {
+  it("ignores empty pills while preserving valid items", () => {
     const html = renderRitualMetadata({
-      entries: [
-        { label: "First", value: "1" },
-        { label: "", value: "ignored" },
-        { label: "ignored", value: "   " },
-        { label: " Last ", value: " 2 " },
+      items: [
+        { text: "First" },
+        { text: "" },
+        { text: "   " },
+        { text: "Last" },
       ],
     });
-    expect(html).not.toContain("ignored");
-    expect(html).toMatch(/First.*1.*Last.*2/);
-    expect(html.match(/paranormal-toolkit-ritual-metadata__entry/g)).toHaveLength(2);
+    expect(html).toMatch(/First.*Last/);
+    expect(html.match(/paranormal-toolkit-metadata-pill/g)).toHaveLength(2);
   });
 
-  it("returns an empty string without valid entries", () => {
-    expect(renderRitualMetadata({ entries: [] })).toBe("");
-    expect(
-      renderRitualMetadata({ entries: [{ label: " ", value: " " }] }),
-    ).toBe("");
+  it("returns an empty string without valid pills", () => {
+    expect(renderRitualMetadata({ items: [] })).toBe("");
+    expect(renderRitualMetadata({ items: [{ text: " " }] })).toBe("");
   });
 
-  it("uses scoped, compact wrapping CSS and separators only between entries", () => {
+  it("contains no definition-list markup or dot separators", () => {
+    const html = renderRitualMetadata(model);
+    expect(html).not.toMatch(/<\/?(?:dl|dt|dd)\b/);
+    expect(html).not.toContain("·");
+  });
+
+  it("uses a compact overflow-safe wrapping container", () => {
     const css = readFileSync("styles/components/ritual-metadata.css", "utf8");
     expect(css).toContain("display: flex");
     expect(css).toContain("flex-wrap: wrap");
+    expect(css).toContain("gap: 5px");
     expect(css).toContain("min-width: 0");
+    expect(css).toContain("max-width: 100%");
     expect(css).toContain("overflow-wrap: anywhere");
-    expect(css).toContain(
-      ".paranormal-toolkit-ritual-metadata__entry:not(:last-child)::after",
-    );
-    expect(css).toContain('content: "·"');
-    expect(css).toContain("font-weight: 700");
-    expect(css).toContain("font-weight: 400");
     expect(css).not.toContain("white-space: nowrap");
     expect(css).not.toContain("!important");
     expect(css).not.toContain("300px");
-    expect(css).not.toMatch(/(^|})\s*(dl|dt|dd|div)\b/m);
   });
 
-  it("has no Foundry or production-feature integration", () => {
+  it("exclusively composes MetadataPill without Foundry integration", () => {
     const source = readFileSync(
       "src/ui/components/ritual/ritual-metadata.ts",
       "utf8",
     );
-    expect(source).toContain("escapeHtml");
+    expect(source).toContain("renderMetadataPill");
+    expect(source).not.toContain("escapeHtml");
+    expect(source).not.toMatch(/<\/?(?:span|dl|dt|dd)\b/);
     expect(source).not.toMatch(/features\/(rituals|item-use|abilities)/);
     expect(source).not.toMatch(
       /\b(game|foundry|Actor|Item|Roll|ChatMessage|TextEditor|workflow|flags|targets)\b/,
     );
   });
 
-  it("defines three shell examples and all through shared infrastructure", () => {
+  it("defines the three corrected shell examples through shared infrastructure", () => {
     const source = readFileSync("src/dev/chat-card-examples.ts", "utf8");
-    expect(source).toContain(
-      'export type RitualMetadataExample = "default" | "partial" | "long" | "all"',
-    );
-    expect(source).toContain("renderRitualMetadata");
-    expect(source).toContain('content: renderRitualMetadata(ritualMetadataExample(example))');
+    expect(source).toContain('export type RitualMetadataExample = "default" | "partial" | "long" | "all"');
+    for (const text of [
+      "1 PE gasto",
+      "Alvo: 1 Ser",
+      "Duração: Instantânea",
+      "Alcance: Pessoal",
+      "Duração: Cena",
+    ]) {
+      expect(source).toContain(`{ text: "${text}" }`);
+    }
     expect(source).toContain('["default", "partial", "long"]');
+    expect(source).toContain('content: renderRitualMetadata(ritualMetadataExample(example))');
     expect(source).toContain('"ritual-metadata"');
     expect(source.match(/function createExampleMessage/g)).toHaveLength(1);
     expect(source.match(/const clearChatCardExamples/g)).toHaveLength(1);
