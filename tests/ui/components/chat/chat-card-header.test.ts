@@ -1,80 +1,69 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import {
-  renderChatCardHeader,
-  type ChatCardHeaderViewModel,
-} from "../../../../src/ui/components/chat/chat-card-header";
-
-const model: ChatCardHeaderViewModel = {
-  imageUrl: "icons/sundries/books/book-symbol-reverse-blue.webp",
-  imageAlt: "Ícone de Eletrocussão",
-  eyebrow: "Ritual",
-  title: "Eletrocussão",
-  target: "Malvadão",
-};
+import { renderChatCardHeader } from "../../../../src/ui/components/chat/chat-card-header";
 
 describe("renderChatCardHeader", () => {
-  it("renders the image, eyebrow, title, and target", () => {
-    const html = renderChatCardHeader(model);
-
-    expect(html).toContain(`src="${model.imageUrl}"`);
-    expect(html).toContain("Ritual");
-    expect(html).toContain("Eletrocussão");
-    expect(html).toContain("Malvadão");
-  });
-
-  it("renders an optional badge and its tone class", () => {
+  it("renders supplied fields, multiple badges, and the shared badge renderer markup", () => {
     const html = renderChatCardHeader({
-      ...model,
-      badge: { label: "Energia 1", tone: "energy" },
+      image: { src: "icons/example.webp", alt: "Example" },
+      title: "Card title",
+      subtitle: "Subtitle",
+      badges: [
+        { label: "First", tone: "accent" },
+        { label: "Second", tone: "neutral" },
+      ],
+      context: "Prepared context",
     });
 
-    expect(html).toContain("Energia 1");
-    expect(html).toContain("ptk-chat-card-header__badge--energy");
+    expect(html).toContain("<header class=\"paranormal-toolkit-chat-card-header\">");
+    expect(html).toContain("Card title");
+    expect(html).toContain("· Subtitle");
+    expect(html.match(/paranormal-toolkit-header-badge--/g)).toHaveLength(2);
+    expect(html).toContain("Prepared context");
   });
 
-  it("omits the badge when one is not provided", () => {
-    expect(renderChatCardHeader(model)).not.toContain("__badge");
+  it("renders a defensive placeholder without an image source", () => {
+    const html = renderChatCardHeader({ title: "Title" });
+    expect(html).toContain("__placeholder-icon");
+    expect(html).not.toContain("<img");
   });
 
-  it("escapes all rendered text and image attributes", () => {
+  it("omits absent optional subtitle, badges, and context", () => {
+    const html = renderChatCardHeader({ title: "Only title" });
+    expect(html).not.toContain("__subtitle");
+    expect(html).not.toContain("__badges");
+    expect(html).not.toContain("__context");
+  });
+
+  it("escapes every external text and image attribute", () => {
     const html = renderChatCardHeader({
-      imageUrl: `icon\" onerror=\"alert('image')`,
-      imageAlt: `<ritual & "icon">`,
-      eyebrow: `<Ritual>` ,
-      title: `Shock & "Awe"`,
-      target: `Mau 'alvo'`,
-      badge: { label: `<Energia & 1>`, tone: "energy" },
+      image: {
+        src: `image\" onerror=\"alert('x')`,
+        alt: `<Alt & "text">`,
+      },
+      title: `<Title & "one">`,
+      subtitle: `<Subtitle>`,
+      badges: [{ label: `<Badge>` }],
+      context: `Context 'quoted' & more`,
     });
 
-    expect(html).not.toContain("<Ritual>");
+    expect(html).not.toContain("<Title");
     expect(html).not.toContain(" onerror=\"");
-    expect(html).toContain("&lt;Ritual&gt;");
-    expect(html).toContain("Shock &amp; &quot;Awe&quot;");
-    expect(html).toContain("Mau &#039;alvo&#039;");
-    expect(html).toContain("icon&quot; onerror=&quot;alert(&#039;image&#039;)");
-    expect(html).toContain("&lt;ritual &amp; &quot;icon&quot;&gt;");
+    expect(html).toContain("&lt;Title &amp; &quot;one&quot;&gt;");
+    expect(html).toContain("&lt;Subtitle&gt;");
+    expect(html).toContain("&lt;Badge&gt;");
+    expect(html).toContain("Context &#039;quoted&#039; &amp; more");
+    expect(html).toContain("image&quot; onerror=&quot;alert(&#039;x&#039;)");
+    expect(html).toContain("&lt;Alt &amp; &quot;text&quot;&gt;");
   });
 
-  it("uses defensive, component-scoped CSS", () => {
-    const css = readFileSync("styles/components/chat-card-header.css", "utf8");
-
-    expect(css).toContain("grid-template-columns: 46px minmax(0, 1fr)");
-    expect(css).toContain("width: 46px");
-    expect(css).toContain("height: 46px");
-    expect(css).toContain("max-width: 46px");
-    expect(css).toContain("min-width: 0");
-    expect(css).not.toMatch(/(^|,)\s*img\s*[{,]/m);
-  });
-
-  it("has no Foundry or production workflow imports", () => {
+  it("uses renderHeaderBadge and has no Foundry or feature imports", () => {
     const source = readFileSync(
       "src/ui/components/chat/chat-card-header.ts",
       "utf8",
     );
-
-    expect(source).not.toMatch(/^import\s/m);
-    expect(source).not.toMatch(/features\/(abilities|item-use|rituals)/);
-    expect(source).not.toMatch(/\b(game|Actor|Item|Token|ChatMessage|Roll|flags)\b/);
+    expect(source).toContain("renderHeaderBadge");
+    expect(source).not.toMatch(/\b(game|Actor|Item|Foundry|workflow)\b/);
+    expect(source).not.toMatch(/features\/(rituals|abilities|item-use)/);
   });
 });

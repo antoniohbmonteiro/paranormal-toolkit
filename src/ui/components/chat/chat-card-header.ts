@@ -1,22 +1,20 @@
-export type ChatCardHeaderTone =
-  | "neutral"
-  | "blood"
-  | "death"
-  | "knowledge"
-  | "energy"
-  | "fear";
+import {
+  renderHeaderBadge,
+  type HeaderBadgeViewModel,
+} from "./header-badge";
 
-export type ChatCardHeaderViewModel = {
-  imageUrl: string;
-  imageAlt?: string;
-  eyebrow: string;
+export interface ChatCardHeaderImageViewModel {
+  src?: string;
+  alt?: string;
+}
+
+export interface ChatCardHeaderViewModel {
+  image?: ChatCardHeaderImageViewModel;
   title: string;
-  target: string;
-  badge?: {
-    label: string;
-    tone: ChatCardHeaderTone;
-  };
-};
+  subtitle?: string;
+  badges?: readonly HeaderBadgeViewModel[];
+  context?: string;
+}
 
 function escapeHtml(value: string): string {
   return value.replace(
@@ -32,25 +30,33 @@ function escapeHtml(value: string): string {
   );
 }
 
-/** Renders visual-only header markup from prepared display strings. */
+const IMAGE_PLACEHOLDER = `<svg class="paranormal-toolkit-chat-card-header__placeholder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.5A2.5 2.5 0 0 1 18 7v13H7a2 2 0 0 1-2-2V4.5Zm2 0V17a3 3 0 0 0-1 .17M9 8h6M9 11h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function renderImage(image: ChatCardHeaderImageViewModel | undefined): string {
+  const src = image?.src?.trim();
+  if (!src) return IMAGE_PLACEHOLDER;
+  return `<img class="paranormal-toolkit-chat-card-header__image-content" src="${escapeHtml(src)}" alt="${escapeHtml(image?.alt ?? "")}">`;
+}
+
 export function renderChatCardHeader(model: ChatCardHeaderViewModel): string {
-  const imageUrl = model.imageUrl.trim();
-  const image = imageUrl
-    ? `<img class="ptk-chat-card-header__image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(model.imageAlt ?? "")}">`
-    : `<span class="ptk-chat-card-header__image-placeholder" aria-hidden="true"></span>`;
-  const badge = model.badge
-    ? `<span class="ptk-chat-card-header__badge ptk-chat-card-header__badge--${model.badge.tone}">${escapeHtml(model.badge.label)}</span>`
+  const subtitle = model.subtitle
+    ? `<span class="paranormal-toolkit-chat-card-header__subtitle">· ${escapeHtml(model.subtitle)}</span>`
+    : "";
+  const badges = model.badges?.length
+    ? `<div class="paranormal-toolkit-chat-card-header__badges">${model.badges.map(renderHeaderBadge).join("")}</div>`
+    : "";
+  const context = model.context
+    ? `<div class="paranormal-toolkit-chat-card-header__context">${escapeHtml(model.context)}</div>`
     : "";
 
-  return `<header class="ptk-chat-card-header">
-  <div class="ptk-chat-card-header__media">${image}</div>
-  <div class="ptk-chat-card-header__content">
-    <div class="ptk-chat-card-header__top-row">
-      <span class="ptk-chat-card-header__eyebrow">${escapeHtml(model.eyebrow)}</span>
-      ${badge}
-    </div>
-    <h3 class="ptk-chat-card-header__title">${escapeHtml(model.title)}</h3>
-    <p class="ptk-chat-card-header__target">${escapeHtml(model.target)}</p>
+  return `<header class="paranormal-toolkit-chat-card-header">
+  <div class="paranormal-toolkit-chat-card-header__image">${renderImage(model.image)}</div>
+  <div class="paranormal-toolkit-chat-card-header__content">
+    <div class="paranormal-toolkit-chat-card-header__heading">
+      <div class="paranormal-toolkit-chat-card-header__title-group">
+        <span class="paranormal-toolkit-chat-card-header__title">${escapeHtml(model.title)}</span>${subtitle}
+      </div>${badges}
+    </div>${context}
   </div>
 </header>`;
 }

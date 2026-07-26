@@ -4,18 +4,12 @@
 
 ### Adicionado
 
-- Componente visual isolado para o cabeçalho compacto de ritual.
-- Componente visual isolado `ChatCardShell`, que reutiliza a superfície bege, a borda vinho e o acabamento externo dos cards do Toolkit.
-- Helper temporário e exclusivo para GMs `game.modules.get("paranormal-toolkit")?.api?.dev?.postRitualHeaderExample?.("single")` para validação pelo console. A mensagem de teste permanece no chat até ser excluída.
-
-### Alterado
-
-- Os exemplos temporários do cabeçalho agora compõem somente `ChatCardShell` + `ChatCardHeader`.
+- Fundações visuais isoladas `ChatCardShell`, `HeaderBadge` genérico e `ChatCardHeader` genérico, com tokens visuais em CSS custom properties.
+- Helpers temporários e exclusivos para GMs para publicar e limpar exemplos identificados do cabeçalho pelo console.
 
 ### Decisões
 
-- Nenhum card de produção existente foi migrado.
-- A integração em produção foi intencionalmente adiada até a aprovação visual manual.
+- Nenhum card real foi integrado ou migrado; a integração em produção permanece adiada até a aprovação visual manual.
 
 ## 0.8.1
 

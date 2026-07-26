@@ -1,17 +1,16 @@
-.ptk-chat-card-shell {
+.paranormal-toolkit-chat-card-shell {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid rgba(66, 47, 34, 0.28);
-  border-left: 4px solid rgba(89, 36, 42, 0.72);
+  border: 1px solid var(--ptk-chat-shell-border);
+  border-left: 4px solid var(--ptk-chat-shell-stripe);
   border-radius: 8px;
   padding: 10px;
-  background: linear-gradient(
-    180deg,
-    rgba(248, 244, 237, 0.96),
-    rgba(234, 226, 214, 0.98)
-  );
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  background: var(--ptk-chat-shell-background);
+  box-shadow: var(--ptk-chat-shell-shadow);
 }

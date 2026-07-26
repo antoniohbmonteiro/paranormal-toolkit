@@ -1,12 +1,12 @@
-export type ChatCardShellViewModel = {
-  /** Trusted HTML produced by internal Paranormal Toolkit renderers only. */
+export interface ChatCardShellViewModel {
+  /** Trusted HTML produced exclusively by internal Paranormal Toolkit renderers. */
   content: string;
-};
+}
 
 /**
- * Wraps trusted component markup produced by internal Toolkit renderers.
- * Do not pass arbitrary or user-authored HTML to this renderer.
+ * Wraps trusted internal component markup.
+ * This contract does not accept arbitrary HTML supplied by a player or user.
  */
 export function renderChatCardShell(model: ChatCardShellViewModel): string {
-  return `<article class="ptk-chat-card-shell">${model.content}</article>`;
+  return `<article class="paranormal-toolkit-chat-card-shell">${model.content}</article>`;
 }
