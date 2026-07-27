@@ -1,0 +1,51 @@
+.paranormal-toolkit-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  min-height: 22px;
+}
+
+.paranormal-toolkit-section-header__title {
+  flex: 0 0 auto;
+  min-width: 0;
+  color: var(--ptk-chat-section-title);
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.07em;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-section-header__trailing {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--ptk-chat-section-title);
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-section-header__demo-text {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.paranormal-toolkit-section-header__demo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-height: 24px;
+  border: 1px solid currentcolor;
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--ptk-chat-section-title);
+  font: inherit;
+}

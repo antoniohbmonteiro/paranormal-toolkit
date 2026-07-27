@@ -1,0 +1,41 @@
+.paranormal-toolkit-dice-action-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(125, 39, 43, 0.42);
+  border-radius: 7px;
+  padding: 0;
+  background: rgba(125, 39, 43, 0.72);
+  box-shadow: 0 1px 2px rgba(36, 27, 24, 0.18);
+  color: rgba(255, 255, 255, 0.96);
+  cursor: pointer;
+}
+
+.paranormal-toolkit-dice-action-button:not(:disabled):hover {
+  border-color: rgba(125, 39, 43, 0.62);
+  background: rgba(125, 39, 43, 0.82);
+  box-shadow: 0 0 0 1px rgba(125, 39, 43, 0.24) inset,
+    0 1px 3px rgba(36, 27, 24, 0.22);
+}
+
+.paranormal-toolkit-dice-action-button:focus-visible {
+  outline: 2px solid rgba(125, 39, 43, 0.82);
+  outline-offset: 2px;
+}
+
+.paranormal-toolkit-dice-action-button:disabled {
+  opacity: 0.48;
+  cursor: default;
+  filter: grayscale(0.55) saturate(0.45);
+  box-shadow: none;
+}
+
+.paranormal-toolkit-dice-action-button__icon {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1rem;
+  line-height: 1;
+}

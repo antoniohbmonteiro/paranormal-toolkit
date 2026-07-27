@@ -1,0 +1,33 @@
+.paranormal-toolkit-ritual-conjuration-section__result-description {
+  margin: 0;
+  min-width: 0;
+  color: var(--ptk-chat-text-secondary);
+  font-size: 10.5px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-ritual-conjuration-section__skill {
+  color: var(--ptk-chat-text-secondary);
+  font-weight: 500;
+}
+
+.paranormal-toolkit-ritual-conjuration-section__metric {
+  color: var(--ptk-chat-section-title);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.paranormal-toolkit-ritual-conjuration-section__consequence {
+  margin: 0;
+  min-width: 0;
+  padding-top: 1px;
+  color: var(--ptk-chat-failure-text);
+  font-size: 10.5px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-ritual-conjuration-section__consequence-label {
+  font-weight: 600;
+}

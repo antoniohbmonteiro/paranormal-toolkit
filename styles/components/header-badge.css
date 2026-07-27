@@ -1,0 +1,31 @@
+.paranormal-toolkit-header-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.paranormal-toolkit-header-badge--accent {
+  border-color: var(--ptk-chat-energy-border);
+  background: var(--ptk-chat-energy-background);
+  color: var(--ptk-chat-energy);
+}
+
+.paranormal-toolkit-header-badge--neutral {
+  border-color: rgba(66, 47, 34, 0.24);
+  background: rgba(234, 226, 214, 0.62);
+  color: var(--ptk-chat-text-secondary);
+}
+
+.paranormal-toolkit-header-badge--wine {
+  border-color: rgba(89, 36, 42, 0.32);
+  background: rgba(89, 36, 42, 0.09);
+  color: var(--ptk-chat-wine);
+}

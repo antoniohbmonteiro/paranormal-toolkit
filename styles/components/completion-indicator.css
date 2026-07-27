@@ -1,0 +1,6 @@
+.paranormal-toolkit-completion-indicator {
+  display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px; min-width: 0;
+  color: var(--ptk-chat-success-text); font-size: 10.5px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere;
+}
+.paranormal-toolkit-completion-indicator__check { flex: 0 0 auto; font-weight: 700; }
+.paranormal-toolkit-completion-indicator__label { min-width: 0; }

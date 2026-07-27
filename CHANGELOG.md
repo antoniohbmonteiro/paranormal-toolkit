@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.39.0
+
+### Adicionado
+
+- Fundações visuais isoladas `ChatCardShell`, `HeaderBadge` genérico e `ChatCardHeader` genérico, com tokens visuais em CSS custom properties.
+- Componentes genéricos e isolados `SectionCard` e `SectionHeader` para superfícies internas e títulos com trailing opcional.
+- Componente visual genérico `StatusBadge` para os estados finais `success` e `failure`, com exemplos isolados no Foundry.
+- Componente genérico `RollRow`, com estados com/sem resultado e expansão nativa dos valores individuais dos dados em exemplos isolados.
+- Componente visual genérico `DiceActionButton`, com ícone interno e estados habilitado e desabilitado para composições futuras.
+- Primeiro componente visual específico de ritual, `RitualConjurationSection`, composto por `SectionCard`, `SectionHeader`, `StatusBadge` e `RollRow`, com consequência opcional sem reserva de espaço.
+- Componente visual específico `RitualDamageSection`, composto por `SectionCard`, `SectionHeader` e `RollRow`, com tipo de dano opcional e estados com ou sem resultado.
+- Componente visual específico `RitualResistanceSection`, com grid próprio alinhado ao topo e composição do `DiceActionButton`.
+- Componentes visuais `MetadataPill` e `RitualMetadata`, com chips de metadados compactos, flexíveis e responsivos, além de exemplos isolados no Foundry.
+- Componente genérico `MetadataDetailRow`, com barra de destaque herdável, label escapado e detalhe interno confiável para composições futuras.
+- Componente visual `RitualSingleTargetCard`, compondo as fundações aprovadas em ordem previsível, com seções opcionais controladas pelo consumidor e exemplos isolados.
+- Camada visual de ações assistidas com `AssistedActionButton`, `CompletionIndicator`, `AssistedActionRow` e `RitualAssistedActionsPanel`, composta opcionalmente ao final do card isolado de ritual.
+- Polimento final do card isolado: faixa externa mais discreta, alcance apresentado como metadata pill e total de conjuração exibido somente no `RollRow`.
+- Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
+
+### Decisões
+
+- Nenhum card real foi integrado ou migrado; a integração em produção permanece adiada até a aprovação visual manual.
+
 ## 0.8.1
 
 ### Alterado

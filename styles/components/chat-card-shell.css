@@ -1,0 +1,16 @@
+.paranormal-toolkit-chat-card-shell {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ptk-chat-shell-border);
+  border-left: 2px solid var(--ptk-chat-shell-stripe);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--ptk-chat-shell-background);
+  box-shadow: var(--ptk-chat-shell-shadow);
+}

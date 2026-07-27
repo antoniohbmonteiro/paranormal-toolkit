@@ -1,0 +1,33 @@
+.paranormal-toolkit-section-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  min-width: 0;
+  border: 1px solid var(--ptk-chat-section-border);
+  border-left: 3px solid var(--ptk-chat-section-accent);
+  border-radius: 7px;
+  padding: 0.5rem 0.6rem;
+  background: var(--ptk-chat-section-background);
+}
+
+.paranormal-toolkit-section-card--casting {
+  --ptk-chat-section-accent: #514a82;
+  --ptk-chat-section-border: rgba(81, 74, 130, 0.3);
+  --ptk-chat-section-background: rgba(240, 238, 250, 0.92);
+  --ptk-chat-section-title: #39345f;
+}
+
+.paranormal-toolkit-section-card--damage {
+  --ptk-chat-section-accent: #8d2f34;
+  --ptk-chat-section-border: rgba(141, 47, 52, 0.3);
+  --ptk-chat-section-background: #f8ecea;
+  --ptk-chat-section-title: #79272c;
+}
+
+.paranormal-toolkit-section-card--resistance {
+  --ptk-chat-section-accent: #a66a13;
+  --ptk-chat-section-border: rgba(166, 106, 19, 0.32);
+  --ptk-chat-section-background: #fbf2df;
+  --ptk-chat-section-title: #74490d;
+}
