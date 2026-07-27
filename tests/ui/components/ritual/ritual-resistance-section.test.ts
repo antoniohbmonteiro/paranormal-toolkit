@@ -12,13 +12,16 @@ describe("renderRitualResistanceSection", () => {
     expect(html).toContain("paranormal-toolkit-dice-action-button");
     expect(html).not.toContain("paranormal-toolkit-status-badge");
   });
-  it.each(["success", "failure"] as const)("renders %s tone, badge, roll, and no duplicate outcome text", (status) => {
+  it.each(["success", "failure"] as const)("keeps resistance tone while rendering %s badge and total tone", (status) => {
     const html = renderRitualResistanceSection({ ...pending, status, result: { formula: "1d20 + 20", total: status === "success" ? 32 : 17, diceResults: [12] } });
-    expect(html).toContain(`paranormal-toolkit-section-card--${status}`);
+    expect(html).toContain("paranormal-toolkit-section-card--resistance");
+    expect(html).not.toContain(`paranormal-toolkit-section-card--${status}`);
     expect(html).toContain(`paranormal-toolkit-status-badge--${status}`);
+    expect(html).toContain(`paranormal-toolkit-roll-row__result--${status}`);
     expect(html).toContain(status === "success" ? "SUCESSO" : "FALHA");
     expect(html).toContain("1d20 + 20");
     expect(html).not.toContain("paranormal-toolkit-dice-action-button");
+    expect(html).toContain("paranormal-toolkit-ritual-resistance-section--resolved");
     expect(html).not.toContain("reduz dano à metade");
     expect(html.match(new RegExp(status === "success" ? "SUCESSO" : "FALHA", "g"))).toHaveLength(1);
   });
@@ -32,6 +35,8 @@ describe("renderRitualResistanceSection", () => {
   it("uses an overflow-safe grid without brittle positioning", () => {
     const css = readFileSync("styles/components/ritual-resistance-section.css", "utf8").replace(/\r\n/gu, "\n");
     expect(css).toContain("grid-template-columns: minmax(0, 1fr) auto");
+    expect(css).toContain(".paranormal-toolkit-ritual-resistance-section--resolved");
+    expect(css).toContain("grid-template-columns: minmax(0, 1fr)");
     expect(css).toContain("align-items: start");
     expect(css).toContain("overflow-wrap: anywhere");
     expect(css).not.toContain("!important");

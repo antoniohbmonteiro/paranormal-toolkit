@@ -67,18 +67,32 @@ describe("ritual single target card v2", () => {
     state.actions = state.actions.map((action) => ({ ...action, state: "available" }));
     const resolved = buildRitualSingleTargetCardViewModel(state).assistedActions?.rows;
     expect(resolved).toHaveLength(1);
-    expect(resolved?.[0].description).toContain("Abalado + Fraco");
+    expect(resolved?.[0].description).toBe("Sucesso · 2 efeitos");
+    expect(resolved?.[0].details?.items).toEqual(["Abalado · duração indefinida", "Fraco · duração indefinida"]);
     expect(resolved?.[0].control).toMatchObject({ state: "active", button: { actionKind: "apply-resistance-outcome-conditions" } });
+    const html = renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state));
+    expect(html).toContain("<details");
+    expect(html).not.toContain("<details open");
+    expect(html).toContain("Ver efeitos");
+    expect(html).toContain("Ocultar efeitos");
   });
-  it("normalizes legacy check prefixes so CompletionIndicator owns the only check", () => {
+  it("uses compact disabled completed buttons", () => {
     for (const prefix of ["✓", "✔", "✓ ✓", "✔ ✔"]) expect(normalizeExecutedLabel(`${prefix} Aplicado`)).toBe("Aplicado");
     const resource: AssistedRitualAction = { kind: "resource-operation", actor: target, actorName: "Alvo", resource: "PV", operation: "heal", amount: 2, label: "Curar", executedLabel: "✓ ✔ ✓ Cura aplicada", actionSectionId: "healing", actionSectionTitle: "Cura" };
     const state = buildRitualChatCardState({ context, snapshot: { ...snapshot, resistance: null }, actions: [resource], resistanceDifficulty: null });
     state.actions[0]!.state = "completed";
     const html = renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state));
-    expect(html).toContain("Cura aplicada");
-    expect(html).not.toContain("✓ Cura aplicada");
-    expect(html.match(/completion-indicator__check/g)).toHaveLength(1);
+    expect(html).toContain("✓ Aplicado");
+    expect(html).toMatch(/<button[^>]*disabled[^>]*>✓ Aplicado<\/button>/u);
+    expect(html).not.toContain("completion-indicator__check");
+  });
+  it("uses singular effect summary and the same completed button for grouped conditions", () => {
+    const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
+    state.resistance!.result = { skill: "will", skillLabel: "Vontade", formula: "1d20", total: 20, diceResults: [20], difficulty: 15, outcome: "success", targetActorId: "target", targetActorUuid: null, targetName: "Alvo", rolledAt: "now", userId: "gm", usedFallbackBonus: false };
+    state.actions[0]!.state = "completed";
+    const model = buildRitualSingleTargetCardViewModel(state);
+    expect(model.assistedActions?.rows[0]?.description).toContain("Sucesso · 1 efeito");
+    expect(model.assistedActions?.rows[0]?.control).toMatchObject({ state: "disabled", button: { label: "✓ Aplicado", disabled: true } });
   });
   it("recognizes the discriminated v2 schema", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });

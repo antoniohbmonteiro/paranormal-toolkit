@@ -25,6 +25,7 @@ export function renderRitualResistanceSection(model: RitualResistanceSectionView
     ? `<p class="paranormal-toolkit-ritual-resistance-section__description">${escapeHtml(model.description)}</p>`
     : "";
   const result = model.result ? renderRollRow({ formula: model.result.formula, total: model.result.total, diceResults: model.result.diceResults, resultTone: resultStatus ?? "section" }) : "";
-  const content = `<div class="paranormal-toolkit-ritual-resistance-section"><div class="paranormal-toolkit-ritual-resistance-section__text">${header}${comparison}${description}${result}</div>${model.result ? "" : renderDiceActionButton(model.action)}</div>`;
-  return renderSectionCard({ tone: resultStatus ?? "resistance", content });
+  const resolvedClass = model.result ? " paranormal-toolkit-ritual-resistance-section--resolved" : "";
+  const content = `<div class="paranormal-toolkit-ritual-resistance-section${resolvedClass}"><div class="paranormal-toolkit-ritual-resistance-section__text">${header}${comparison}${description}${result}</div>${model.result ? "" : renderDiceActionButton(model.action)}</div>`;
+  return renderSectionCard({ tone: "resistance", content });
 }

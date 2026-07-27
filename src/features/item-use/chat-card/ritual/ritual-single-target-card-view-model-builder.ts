@@ -44,21 +44,26 @@ function resistanceConditionsRow(actions: RitualConditionAction[], outcome: Ritu
   const selected = actions.filter((action) => action.outcome === outcome);
   const available = selected.filter((action) => action.state === "available");
   const completed = selected.filter((action) => action.state === "completed");
-  const names = selected.map(formatConditionAction).join(" + ");
+  const effectCount = selected.length;
   const outcomeLabel = outcome === "success" ? "Sucesso" : "Falha";
+  const description = `${outcomeLabel} · ${effectCount} ${effectCount === 1 ? "efeito" : "efeitos"}`;
+  const details = { items: selected.map(formatConditionDetail) };
   if (selected.length > 0 && completed.length === selected.length) {
-    return { label: "Efeitos da resistência", description: `${outcomeLabel} · ${names}`, control: { state: "completed", indicator: { label: `Efeitos aplicados em ${targetName}` } } };
+    return { label: "Efeitos da resistência", description: `${description} · ${targetName}`, details, control: completedButton() };
   }
   const partial = completed.length > 0;
   return {
     label: "Efeitos da resistência",
-    description: partial ? `Aplicação parcial · ${names}` : `${outcomeLabel} · ${names}`,
+    description: partial ? `${description} · aplicação parcial` : description,
+    details,
     control: { state: available.length ? "active" : "disabled", button: { label: partial ? "Aplicar pendentes" : "Aplicar", disabled: !available.length, actionId: "resistance-outcome-conditions", actionKind: "apply-resistance-outcome-conditions" } },
   };
 }
 
-function formatConditionAction(action: RitualConditionAction): string {
-  return action.label.replace(/^(?:Sucesso|Falha)\s*·\s*/iu, "").replace(/:\s*/u, " por ");
+function formatConditionDetail(action: RitualConditionAction): string {
+  const label = action.label.replace(/^(?:Sucesso|Falha)\s*·\s*/iu, "");
+  const [name, duration] = label.split(/:\s*/u, 2);
+  return `${name ?? "Condição"} · ${duration ?? "duração indefinida"}`;
 }
 
 function actionRow(action: RitualCardAction): AssistedActionRowViewModel {
@@ -67,8 +72,9 @@ function actionRow(action: RitualCardAction): AssistedActionRowViewModel {
     label: action.label,
     description: action.state === "resolved" ? "Alternativa não aplicável" : action.state === "uncertain" ? "Verifique no alvo antes de tentar novamente" : action.actor.name,
     control: terminal
-      ? { state: "completed", indicator: { label: action.state === "resolved" ? "Resolvida" : action.state === "uncertain" ? "Aplicação incerta" : normalizeExecutedLabel(action.executedLabel) } }
+      ? action.state === "completed" ? completedButton() : { state: "completed", indicator: { label: action.state === "resolved" ? "Resolvida" : "Aplicação incerta" } }
       : { state: action.state === "available" ? "active" : "disabled", button: { label: isHealing(action) ? "Curar" : "Aplicar", actionId: action.id, actionKind: action.kind === "damage-application" ? "apply-damage" : action.kind === "condition-application" ? "apply-condition" : isHealing(action) ? "apply-healing" : "apply-resource" } },
   };
 }
+function completedButton(): AssistedActionRowViewModel["control"] { return { state: "disabled", button: { label: "✓ Aplicado", disabled: true } }; }
 function isHealing(action: RitualCardAction): boolean { return action.kind === "resource-operation" && (action.operation === "heal" || action.operation === "recover"); }

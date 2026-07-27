@@ -8,6 +8,11 @@
   width: 100%;
 }
 
+.paranormal-toolkit-ritual-resistance-section--resolved {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
 .paranormal-toolkit-ritual-resistance-section__text {
   display: flex;
   flex-direction: column;
