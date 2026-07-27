@@ -19,6 +19,11 @@ export function resolveOrdemRitualPresentation(item: Item): OrdemRitualPresentat
   return { elementKey, elementLabel: ELEMENT_LABELS[elementKey], circle: circle.value };
 }
 
+export function resolveOrdemRitualImage(item: Item): string | null {
+  const image = (item as Item & { img?: unknown }).img;
+  return typeof image === "string" && image.trim() ? image.trim() : null;
+}
+
 function normalizeElementKey(value: unknown): OrdemRitualElementKey | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim().toLocaleLowerCase();

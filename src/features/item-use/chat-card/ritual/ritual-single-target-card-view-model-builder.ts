@@ -9,7 +9,7 @@ export function buildRitualSingleTargetCardViewModel(state: RitualChatCardState)
   const resistanceOutcome = state.resistance?.result?.outcome ?? null;
   const rows = createActionRows(state.actions, resistanceOutcome, state.target?.name ?? "");
   return {
-    header: { title: state.item.name, subtitle: state.form.label, context: state.target ? `${state.source.name} → ${state.target.name}` : state.source.name, badges: [{ label: state.ritualIdentity ? `${state.ritualIdentity.elementLabel} ${state.ritualIdentity.circle}` : "Ritual", tone: resolveRitualBadgeTone(state.ritualIdentity?.elementKey) }] },
+    header: { image: state.itemImage?.trim() ? { src: state.itemImage, alt: state.item.name } : undefined, title: state.item.name, subtitle: state.form.label, context: state.target ? `${state.source.name} → ${state.target.name}` : state.source.name, badges: [{ label: state.ritualIdentity ? `${state.ritualIdentity.elementLabel} ${state.ritualIdentity.circle}` : "Ritual", tone: resolveRitualBadgeTone(state.ritualIdentity?.elementKey) }] },
     description: state.descriptionHtml?.trim() ? { html: state.descriptionHtml } : undefined,
     metadata: { items: [state.cost ? `${state.cost.amount} ${state.cost.resource}` : null, state.target?.name ?? null].filter((text): text is string => Boolean(text)).map((text) => ({ text })) },
     conjuration: state.conjuration ? { status: state.conjuration.success ? "success" : "failure", skillLabel: state.conjuration.skillLabel, total: state.conjuration.total, difficultyClass: state.conjuration.difficulty, formula: state.conjuration.formula, diceResults: state.conjuration.diceResults, consequence: state.conjuration.consequence ?? undefined } : undefined,

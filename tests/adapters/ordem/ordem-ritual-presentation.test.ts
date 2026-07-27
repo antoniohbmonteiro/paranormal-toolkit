@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resolveOrdemRitualPresentation } from "../../../src/adapters/ordem/ordem-ritual-presentation";
+import { resolveOrdemRitualImage, resolveOrdemRitualPresentation } from "../../../src/adapters/ordem/ordem-ritual-presentation";
 
 beforeEach(() => vi.stubGlobal("foundry", { utils: { getProperty: (value: unknown, path: string) => path.split(".").reduce<unknown>((current, key) => current && typeof current === "object" ? (current as Record<string, unknown>)[key] : undefined, value) } }));
 function ritual(element: unknown, circle: unknown): Item { return { type: "ritual", name: "Ritual", system: { element, circle } } as Item; }
@@ -15,5 +15,10 @@ describe("Ordem ritual presentation", () => {
   it("falls back when circle is absent or element is unknown", () => {
     expect(resolveOrdemRitualPresentation(ritual("energy", undefined))).toBeNull();
     expect(resolveOrdemRitualPresentation(ritual("unknown", 1))).toBeNull();
+  });
+  it("resolves and normalizes the real item image", () => {
+    expect(resolveOrdemRitualImage({ img: " icons/ritual.webp " } as Item)).toBe("icons/ritual.webp");
+    expect(resolveOrdemRitualImage({ img: "   " } as Item)).toBeNull();
+    expect(resolveOrdemRitualImage({} as Item)).toBeNull();
   });
 });

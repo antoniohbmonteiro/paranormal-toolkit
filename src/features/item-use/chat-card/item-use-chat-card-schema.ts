@@ -39,6 +39,7 @@ function isRitualState(value: unknown): value is RitualChatCardState {
   if (!isRecord(value) || value.schemaVersion !== 1 || value.renderer !== "single-target" || typeof value.castId !== "string") return false;
   if (!isDocumentRef(value.source) || !isDocumentRef(value.item) || !(value.target === null || isDocumentRef(value.target))) return false;
   if (!isRecord(value.form) || typeof value.form.id !== "string" || typeof value.form.label !== "string") return false;
+  if (!(value.itemImage === undefined || value.itemImage === null || typeof value.itemImage === "string")) return false;
   if (!(value.ritualIdentity === undefined || value.ritualIdentity === null || isRitualIdentity(value.ritualIdentity))) return false;
   if (!(value.descriptionHtml === undefined || value.descriptionHtml === null || typeof value.descriptionHtml === "string")) return false;
   if (!Array.isArray(value.actions) || !value.actions.every(isCardAction)) return false;

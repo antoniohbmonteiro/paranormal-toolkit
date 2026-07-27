@@ -23,6 +23,7 @@ export interface RitualChatCardState {
   renderer: "single-target";
   source: SerializableDocumentRef;
   item: SerializableDocumentRef;
+  itemImage?: string | null;
   form: { id: string; label: string };
   ritualIdentity?: { elementKey: string; elementLabel: string; circle: 1 | 2 | 3 | 4 } | null;
   descriptionHtml: string | null;

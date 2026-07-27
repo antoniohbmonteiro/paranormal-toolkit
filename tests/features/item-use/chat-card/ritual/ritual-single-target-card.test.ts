@@ -67,6 +67,18 @@ describe("ritual single target card v2", () => {
     expect(model.effect?.title).toBe("Dano");
     expect(model.resistance?.action.actionId).toBe("cast:resistance");
   });
+  it("persists and renders the real ritual image with a generic fallback when absent", () => {
+    const picturedItem = { ...item, img: "icons/rituals/custom.webp" } as Item;
+    const pictured = buildRitualChatCardState({ context: { ...context, item: picturedItem }, snapshot, actions, resistanceDifficulty: 15 });
+    expect(pictured.itemImage).toBe("icons/rituals/custom.webp");
+    expect(buildRitualSingleTargetCardViewModel(pictured).header.image).toEqual({ src: "icons/rituals/custom.webp", alt: "RitualCompleto" });
+    expect(renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(pictured))).toContain('src="icons/rituals/custom.webp"');
+
+    const withoutImage = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
+    expect(withoutImage.itemImage).toBeNull();
+    expect(buildRitualSingleTargetCardViewModel(withoutImage).header.image).toBeUndefined();
+    expect(renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(withoutImage))).toContain("__placeholder-icon");
+  });
   it("maps element identity to the header badge tone with legacy fallback", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
     for (const [elementKey, elementLabel, tone] of [["energy", "Energia", "energy"], ["blood", "Sangue", "blood"], ["knowledge", "Conhecimento", "knowledge"], ["death", "Morte", "death"], ["fear", "Medo", "fear"]] as const) {

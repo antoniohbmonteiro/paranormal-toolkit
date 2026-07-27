@@ -1,4 +1,4 @@
-import { resolveOrdemRitualPresentation } from "../../../../adapters/ordem/ordem-ritual-presentation";
+import { resolveOrdemRitualImage, resolveOrdemRitualPresentation } from "../../../../adapters/ordem/ordem-ritual-presentation";
 import type { ItemUseContext } from "../../item-use-context";
 import type { AssistedRitualAction, RitualCastSnapshot } from "../../../rituals/ritual-assisted-workflow";
 import { resolveSafeRitualDescription } from "../../../rituals/ritual-description-resolver";
@@ -17,6 +17,7 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     renderer: "single-target",
     source: ref(context.actor),
     item: ref(context.item),
+    itemImage: resolveOrdemRitualImage(context.item),
     form: snapshot.form,
     ritualIdentity: resolveOrdemRitualPresentation(context.item),
     descriptionHtml: resolveSafeRitualDescription(context.item),
