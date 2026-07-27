@@ -169,5 +169,24 @@ describe("renderRitualSingleTargetCard", () => {
     expect(source).toContain('"ritual-single-target-card"');
     expect(source.match(/function createExampleMessage/g)).toHaveLength(1);
     expect(source.match(/const clearChatCardExamples/g)).toHaveLength(1);
+    const exampleSource = source.slice(
+      source.indexOf("function ritualSingleTargetCardExample"),
+      source.indexOf("function createExampleMessage"),
+    );
+    expect(exampleSource).toContain('"Alcance: Curto"');
+    expect(exampleSource).toContain('"Alcance: Pessoal"');
+    expect(exampleSource).toContain("Alcance: Uma distância paranormal excepcionalmente longa");
+    expect(exampleSource).not.toContain("detailRows:");
+    expect(exampleSource).not.toContain("Curto · até 9 metros");
+  });
+
+  it("keeps generic detail-row support for exceptional prepared details", () => {
+    const html = renderRitualSingleTargetCard({
+      ...baseModel,
+      detailRows: [{ label: "Exceção:", detailHtml: "Descrição preparada" }],
+    });
+    expect(html).toContain("paranormal-toolkit-metadata-detail-row");
+    expect(html).toContain("Exceção:");
+    expect(html).toContain("Descrição preparada");
   });
 });

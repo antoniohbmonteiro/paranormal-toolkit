@@ -35,17 +35,30 @@ describe("renderRitualConjurationSection", () => {
     expect(html).not.toMatch(/remove|hide|subsequent|next-section|workflow/i);
   });
 
-  it("renders prepared skill, total, and difficulty class including zero", () => {
+  it("renders skill and difficulty while keeping total only in RollRow, including zero", () => {
     const html = renderRitualConjurationSection({
       ...successModel,
       skillLabel: "Perícia",
       total: 0,
       difficultyClass: 0,
     });
-    expect(html).toContain("Perícia:");
-    expect(html).toContain(">0</strong>");
+    const description = html.match(/__result-description[^>]*>(.*?)<\/p>/s)?.[1] ?? "";
+    expect(description).toContain("Perícia");
+    expect(description).toContain("contra");
+    expect(description).not.toContain(">0<");
     expect(html).toContain(">DT 0</strong>");
+    expect(html).toContain('aria-label="Resultado: 0">0</output>');
     expect(html.match(/\bDT\b/g)).toHaveLength(1);
+  });
+
+  it("does not duplicate a normal total in the result description", () => {
+    const html = renderRitualConjurationSection(successModel);
+    const description = html.match(/__result-description[^>]*>(.*?)<\/p>/s)?.[1] ?? "";
+    expect(description).toContain("Ocultismo");
+    expect(description).toContain("contra");
+    expect(description).toContain("DT 21");
+    expect(description).not.toContain("23");
+    expect(html).toContain('aria-label="Resultado: 23">23</output>');
   });
 
   it("escapes skill, formula, and consequence text", () => {

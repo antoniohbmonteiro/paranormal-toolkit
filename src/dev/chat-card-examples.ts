@@ -518,11 +518,13 @@ function ritualSingleTargetCardExample(
       ? [
           { text: "1 PE gasto em uma conjuração cuidadosamente preparada" },
           { text: "Alvo: Uma criatura paranormal excepcionalmente distante" },
+          { text: "Alcance: Uma distância paranormal excepcionalmente longa para validar a quebra defensiva" },
           { text: "Duração: Enquanto a concentração do conjurador for mantida" },
         ]
       : [
           { text: "1 PE gasto" },
           { text: "Alvo: 1 Ser" },
+          { text: failure ? "Alcance: Pessoal" : "Alcance: Curto" },
           { text: "Duração: Instantânea" },
         ],
   };
@@ -539,14 +541,6 @@ function ritualSingleTargetCardExample(
   return {
     header,
     metadata,
-    detailRows: [
-      {
-        label: "Alcance:",
-        detailHtml: long
-          ? "Extremamente longo · até uma distância paranormal que exige quebra defensiva"
-          : "Curto · até 9 metros",
-      },
-    ],
     conjuration,
     damage: failure
       ? undefined

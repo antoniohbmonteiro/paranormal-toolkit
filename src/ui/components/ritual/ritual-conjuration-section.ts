@@ -21,9 +21,8 @@ export interface RitualConjurationSectionViewModel {
 export function renderRitualConjurationSection(
   model: RitualConjurationSectionViewModel,
 ): string {
-  const total = escapeHtml(String(model.total));
   const difficultyClass = escapeHtml(String(model.difficultyClass));
-  const description = `<p class="paranormal-toolkit-ritual-conjuration-section__result-description"><span class="paranormal-toolkit-ritual-conjuration-section__skill">${escapeHtml(model.skillLabel)}:</span> <strong class="paranormal-toolkit-ritual-conjuration-section__metric">${total}</strong> <span class="paranormal-toolkit-ritual-conjuration-section__comparison">vs</span> <strong class="paranormal-toolkit-ritual-conjuration-section__metric">DT ${difficultyClass}</strong></p>`;
+  const description = `<p class="paranormal-toolkit-ritual-conjuration-section__result-description"><span class="paranormal-toolkit-ritual-conjuration-section__skill">${escapeHtml(model.skillLabel)}</span> <span class="paranormal-toolkit-ritual-conjuration-section__comparison">contra</span> <strong class="paranormal-toolkit-ritual-conjuration-section__metric">DT ${difficultyClass}</strong></p>`;
   const consequenceValue = model.consequence?.trim();
   const consequence = consequenceValue
     ? `<p class="paranormal-toolkit-ritual-conjuration-section__consequence"><span class="paranormal-toolkit-ritual-conjuration-section__consequence-label">Consequência:</span> ${escapeHtml(consequenceValue)}</p>`

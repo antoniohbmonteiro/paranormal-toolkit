@@ -8,7 +8,7 @@
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--ptk-chat-shell-border);
-  border-left: 4px solid var(--ptk-chat-shell-stripe);
+  border-left: 2px solid var(--ptk-chat-shell-stripe);
   border-radius: 8px;
   padding: 10px;
   background: var(--ptk-chat-shell-background);

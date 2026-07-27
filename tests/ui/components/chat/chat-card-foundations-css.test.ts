@@ -19,7 +19,7 @@ describe("chat card foundation CSS", () => {
   it("uses defensive shell and header layout rules", () => {
     const shell = readFileSync(files[1], "utf8");
     const header = readFileSync(files[3], "utf8");
-    expect(shell).toContain("border-left: 4px solid");
+    expect(shell).toContain("border-left: 2px solid");
     expect(shell).toContain("width: 100%");
     expect(shell).toContain("min-width: 0");
     expect(shell).not.toContain("max-width: 300px");

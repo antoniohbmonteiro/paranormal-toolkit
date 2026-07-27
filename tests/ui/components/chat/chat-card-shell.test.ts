@@ -31,4 +31,10 @@ describe("renderChatCardShell", () => {
     expect(source).not.toMatch(/^import\s/m);
     expect(source).not.toMatch(/\b(Foundry|Actor|Item|ritual|workflow|target)\b/i);
   });
+
+  it("uses the polished two-pixel Toolkit accent stripe", () => {
+    const css = readFileSync("styles/components/chat-card-shell.css", "utf8");
+    expect(css).toContain("border-left: 2px solid var(--ptk-chat-shell-stripe)");
+    expect(css).not.toContain("border-left: 4px solid");
+  });
 });
