@@ -1,4 +1,4 @@
-const d = "paranormal-toolkit", xl = "Paranormal Toolkit", gm = "ordemparanormal";
+const d = "paranormal-toolkit", xl = "Paranormal Toolkit", bm = "ordemparanormal";
 class Ct {
   static getSelectedActor() {
     return (canvas?.tokens?.controlled ?? [])[0]?.actor ?? game.user?.character ?? null;
@@ -34,76 +34,76 @@ function g(e) {
   return { ok: !1, error: e };
 }
 function St(e) {
-  const t = Sr(e);
+  const t = Ir(e);
   return t.ok ? y(t.value.definition) : t;
 }
-function Sr(e) {
+function Ir(e) {
   const t = e.getFlag(d, "automation");
   return t == null ? g({
     reason: "missing-automation",
     message: `Item ${e.name} não possui automação do Paranormal Toolkit.`
-  }) : Ir(t) ? y(t) : g({
+  }) : Lr(t) ? y(t) : g({
     reason: "invalid-automation",
     message: `Automação do item ${e.name} usa formato inválido ou antigo. Reaplique um preset do Paranormal Toolkit.`,
     value: t
   });
 }
-function hm(e) {
-  return Ir(e.getFlag(d, "automation"));
-}
-function Ir(e) {
-  if (!e || typeof e != "object") return !1;
-  const t = e;
-  return t.schemaVersion === 1 && ym(t.source) && bm(t.definition);
-}
-function bm(e) {
-  if (!e || typeof e != "object") return !1;
-  const t = e;
-  return t.version === 1 && w(t.label) && Array.isArray(t.steps) && t.steps.every(_m) && (t.ritualForms === void 0 || $m(t.ritualForms)) && (t.conditionApplications === void 0 || Lm(t.conditionApplications));
-}
 function ym(e) {
+  return Lr(e.getFlag(d, "automation"));
+}
+function Lr(e) {
   if (!e || typeof e != "object") return !1;
   const t = e;
-  return t.type === "preset" ? w(t.presetId) && w(t.presetVersion) && w(t.appliedAt) : t.type === "manual" ? w(t.label) && w(t.appliedAt) : !1;
+  return t.schemaVersion === 1 && Am(t.source) && _m(t.definition);
 }
 function _m(e) {
   if (!e || typeof e != "object") return !1;
   const t = e;
+  return t.version === 1 && w(t.label) && Array.isArray(t.steps) && t.steps.every(Tm) && (t.ritualForms === void 0 || Cm(t.ritualForms)) && (t.conditionApplications === void 0 || Dm(t.conditionApplications));
+}
+function Am(e) {
+  if (!e || typeof e != "object") return !1;
+  const t = e;
+  return t.type === "preset" ? w(t.presetId) && w(t.presetVersion) && w(t.appliedAt) : t.type === "manual" ? w(t.label) && w(t.appliedAt) : !1;
+}
+function Tm(e) {
+  if (!e || typeof e != "object") return !1;
+  const t = e;
   switch (t.type) {
     case "spendResource":
-      return Am(t);
-    case "spendRitualCost":
-      return Tm(t);
-    case "rollFormula":
       return Rm(t);
-    case "modifyResource":
+    case "spendRitualCost":
       return km(t);
-    case "chatCard":
+    case "rollFormula":
       return Em(t);
+    case "modifyResource":
+      return $m(t);
+    case "chatCard":
+      return wm(t);
     default:
       return !1;
   }
 }
-function Am(e) {
+function Rm(e) {
   const t = e;
   return t.type === "spendResource" && t.actor === "self" && (t.resource === "PE" || t.resource === "PD") && Nl(t);
 }
-function Tm(e) {
-  return e.type === "spendRitualCost";
-}
-function Rm(e) {
-  const t = e;
-  return t.type === "rollFormula" && w(t.id) && w(t.formula) && (t.intent === void 0 || Mm(t.intent)) && (t.damageType === void 0 || w(t.damageType));
-}
 function km(e) {
-  const t = e;
-  return t.type === "modifyResource" && Pl(t.actor) && Pm(t.resource) && Om(t.operation) && Nl(t) && (t.damageType === void 0 || t.damageType === null || w(t.damageType)) && (t.ignoreResistance === void 0 || typeof t.ignoreResistance == "boolean");
+  return e.type === "spendRitualCost";
 }
 function Em(e) {
   const t = e;
-  return t.type === "chatCard" && (t.title === void 0 || typeof t.title == "string") && (t.message === void 0 || typeof t.message == "string");
+  return t.type === "rollFormula" && w(t.id) && w(t.formula) && (t.intent === void 0 || Bm(t.intent)) && (t.damageType === void 0 || w(t.damageType));
 }
 function $m(e) {
+  const t = e;
+  return t.type === "modifyResource" && Pl(t.actor) && Mm(t.resource) && Fm(t.operation) && Nl(t) && (t.damageType === void 0 || t.damageType === null || w(t.damageType)) && (t.ignoreResistance === void 0 || typeof t.ignoreResistance == "boolean");
+}
+function wm(e) {
+  const t = e;
+  return t.type === "chatCard" && (t.title === void 0 || typeof t.title == "string") && (t.message === void 0 || typeof t.message == "string");
+}
+function Cm(e) {
   if (!e || typeof e != "object" || Array.isArray(e)) return !1;
   const t = e, n = /* @__PURE__ */ new Set([
     "base",
@@ -111,44 +111,44 @@ function $m(e) {
     "verdadeiro"
   ]);
   return Object.entries(t).every(
-    ([a, r]) => n.has(a) && wm(r)
+    ([a, r]) => n.has(a) && Sm(r)
   );
-}
-function wm(e) {
-  if (!e || typeof e != "object" || Array.isArray(e)) return !1;
-  const t = e;
-  return (t.label === void 0 || w(t.label)) && (t.extraCost === void 0 || Bm(t.extraCost)) && (t.rollFormulaOverrides === void 0 || qm(t.rollFormulaOverrides)) && (t.notes === void 0 || Um(t.notes)) && (t.targeting === void 0 || Cm(t.targeting));
-}
-function Cm(e) {
-  if (!e || typeof e != "object" || Array.isArray(e)) return !1;
-  const t = e;
-  return Im(t.mode) && w(t.label) && (t.optionLabel === void 0 || w(t.optionLabel)) && (t.optional === void 0 || typeof t.optional == "boolean") && (t.defaultEnabled === void 0 || typeof t.defaultEnabled == "boolean") && (t.template === void 0 || Sm(t.template));
 }
 function Sm(e) {
   if (!e || typeof e != "object" || Array.isArray(e)) return !1;
   const t = e;
-  return t.shape === "ray" && (t.distance === void 0 || t.distance === null || Yo(t.distance)) && (t.width === void 0 || t.width === null || Yo(t.width));
+  return (t.label === void 0 || w(t.label)) && (t.extraCost === void 0 || qm(t.extraCost)) && (t.rollFormulaOverrides === void 0 || zm(t.rollFormulaOverrides)) && (t.notes === void 0 || jm(t.notes)) && (t.targeting === void 0 || Im(t.targeting));
 }
 function Im(e) {
-  return e === "selectedTokens" || e === "lineArea";
+  if (!e || typeof e != "object" || Array.isArray(e)) return !1;
+  const t = e;
+  return vm(t.mode) && w(t.label) && (t.optionLabel === void 0 || w(t.optionLabel)) && (t.optional === void 0 || typeof t.optional == "boolean") && (t.defaultEnabled === void 0 || typeof t.defaultEnabled == "boolean") && (t.template === void 0 || Lm(t.template));
 }
 function Lm(e) {
-  return Array.isArray(e) && e.every(vm);
+  if (!e || typeof e != "object" || Array.isArray(e)) return !1;
+  const t = e;
+  return t.shape === "ray" && (t.distance === void 0 || t.distance === null || Yo(t.distance)) && (t.width === void 0 || t.width === null || Yo(t.width));
 }
 function vm(e) {
-  if (!e || typeof e != "object") return !1;
-  const t = e;
-  return w(t.id) && Pl(t.actor) && w(t.conditionId) && (t.label === void 0 || w(t.label)) && (t.duration === void 0 || t.duration === null || xm(t.duration)) && (t.source === void 0 || w(t.source)) && (t.actionSectionId === void 0 || w(t.actionSectionId)) && (t.actionSectionTitle === void 0 || w(t.actionSectionTitle)) && (t.executedLabel === void 0 || w(t.executedLabel)) && (t.applyOnResistance === void 0 || Dm(t.applyOnResistance));
+  return e === "selectedTokens" || e === "lineArea";
 }
 function Dm(e) {
-  return e === "failure" || e === "success" || e === "always";
+  return Array.isArray(e) && e.every(xm);
 }
 function xm(e) {
   if (!e || typeof e != "object") return !1;
   const t = e;
-  return (t.rounds === void 0 || t.rounds === null || Fm(t.rounds)) && (t.expiry === void 0 || t.expiry === null || Nm(t.expiry));
+  return w(t.id) && Pl(t.actor) && w(t.conditionId) && (t.label === void 0 || w(t.label)) && (t.duration === void 0 || t.duration === null || Pm(t.duration)) && (t.source === void 0 || w(t.source)) && (t.actionSectionId === void 0 || w(t.actionSectionId)) && (t.actionSectionTitle === void 0 || w(t.actionSectionTitle)) && (t.executedLabel === void 0 || w(t.executedLabel)) && (t.applyOnResistance === void 0 || Nm(t.applyOnResistance));
 }
 function Nm(e) {
+  return e === "failure" || e === "success" || e === "always";
+}
+function Pm(e) {
+  if (!e || typeof e != "object") return !1;
+  const t = e;
+  return (t.rounds === void 0 || t.rounds === null || Um(t.rounds)) && (t.expiry === void 0 || t.expiry === null || Om(t.expiry));
+}
+function Om(e) {
   return e === "turnStart" || e === "turnEnd";
 }
 function Nl(e) {
@@ -157,19 +157,19 @@ function Nl(e) {
 function Pl(e) {
   return e === "self" || e === "target";
 }
-function Pm(e) {
+function Mm(e) {
   return e === "PV" || e === "SAN" || e === "PE" || e === "PD";
 }
-function Om(e) {
+function Fm(e) {
   return e === "spend" || e === "damage" || e === "heal" || e === "recover";
 }
-function Mm(e) {
+function Bm(e) {
   return e === "attack" || e === "damage" || e === "healing" || e === "resistance" || e === "skill" || e === "ritual" || e === "generic";
 }
-function Fm(e) {
+function Um(e) {
   return typeof e == "number" && Number.isInteger(e) && e > 0;
 }
-function Bm(e) {
+function qm(e) {
   return typeof e == "number" && Number.isInteger(e) && e >= 0;
 }
 function Yo(e) {
@@ -178,15 +178,15 @@ function Yo(e) {
 function w(e) {
   return typeof e == "string" && e.length > 0;
 }
-function Um(e) {
+function jm(e) {
   return Array.isArray(e) && e.every(w);
 }
-function qm(e) {
+function zm(e) {
   return !e || typeof e != "object" || Array.isArray(e) ? !1 : Object.entries(e).every(
     ([t, n]) => w(t) && w(n)
   );
 }
-function Lr(e) {
+function vr(e) {
   const t = e.items;
   if (Array.isArray(t))
     return t;
@@ -194,30 +194,30 @@ function Lr(e) {
     const n = t;
     if (Array.isArray(n.contents))
       return n.contents.filter(Xo);
-    if (Gm(t))
+    if (Hm(t))
       return Array.from(t).filter(Xo);
   }
   return [];
 }
-function jm(e) {
-  return Lr(e)[0] ?? null;
-}
-function zm(e) {
-  return Lr(e).find(hm) ?? null;
-}
 function Gm(e) {
+  return vr(e)[0] ?? null;
+}
+function Vm(e) {
+  return vr(e).find(ym) ?? null;
+}
+function Hm(e) {
   return !!(e && typeof e == "object" && Symbol.iterator in e);
 }
 function Xo(e) {
   return !!(e && typeof e == "object" && "getFlag" in e && "setFlag" in e);
 }
 function It(e) {
-  return Lr(e).filter((t) => t.type === "ritual");
+  return vr(e).filter((t) => t.type === "ritual");
 }
 function Ol(e) {
   return It(e)[0] ?? null;
 }
-function Vm(e) {
+function Wm(e) {
   return {
     listPresets() {
       const t = e.automationRegistry.list().map(In);
@@ -241,7 +241,7 @@ function Vm(e) {
         f.warn(r.error.message, r.error), ui.notifications?.warn(`Paranormal Toolkit: ${r.error.message}`);
         return;
       }
-      const o = await La(e, a, r.value);
+      const o = await va(e, a, r.value);
       f.info(`Preset ${r.value.id} aplicado em ${a.name}.`, { itemPatch: o }), ui.notifications?.info(`Paranormal Toolkit: preset ${r.value.label} aplicado em ${a.name}.`);
     },
     async applyBestPresetToFirstRitual() {
@@ -254,7 +254,7 @@ function Vm(e) {
         f.warn(`Nenhum preset compatível encontrado para ${n.name}.`), ui.notifications?.warn(`Paranormal Toolkit: nenhum preset compatível encontrado para ${n.name}.`);
         return;
       }
-      const r = await La(e, n, a.preset);
+      const r = await va(e, n, a.preset);
       f.info(`Melhor preset aplicado em ${n.name}.`, { match: Jo(a), itemPatch: r }), ui.notifications?.info(`Paranormal Toolkit: preset ${a.preset.label} aplicado em ${n.name}.`);
     },
     async applyBestPresetToAllRituals() {
@@ -288,15 +288,15 @@ async function Qo(e) {
       });
       continue;
     }
-    const i = await La(e, r, o.preset);
-    a.applied.push(Hm(r, o, i));
+    const i = await va(e, r, o.preset);
+    a.applied.push(Km(r, o, i));
   }
-  return f.info(`Presets aplicados em rituais de ${t.name ?? "ator sem nome"}.`, a), Wm(a), a;
+  return f.info(`Presets aplicados em rituais de ${t.name ?? "ator sem nome"}.`, a), Ym(a), a;
 }
-async function La(e, t, n) {
+async function va(e, t, n) {
   return await e.automationBinder.applyPreset(t, n), e.itemPatches.applyPresetItemPatch(t, n);
 }
-function Hm(e, t, n) {
+function Km(e, t, n) {
   return {
     itemId: e.id ?? null,
     itemName: e.name ?? "Ritual sem nome",
@@ -317,7 +317,7 @@ function Zo(e, t = 0) {
     skipped: []
   };
 }
-function Wm(e) {
+function Ym(e) {
   const t = e.skipped.length > 0 ? `, ${e.skipped.length} sem preset compatível` : "", n = e.applied.some((a) => a.itemPatchApplied) ? " com dados visíveis atualizados" : "";
   ui.notifications?.info(
     `Paranormal Toolkit: ${e.applied.length}/${e.total} presets aplicados em rituais${n}${t}.`
@@ -342,23 +342,23 @@ function je(e) {
   return e ? {
     id: e.id,
     source: {
-      ...Km(e.sourceActor),
+      ...Xm(e.sourceActor),
       token: e.sourceToken
     },
-    item: Ym(e.item),
-    targets: e.targets.map(Xm),
+    item: Qm(e.item),
+    targets: e.targets.map(Zm),
     phases: [...e.phases],
     lifecycleEvents: e.lifecycleEvents.map((t) => ({ ...t })),
     rollRequests: ei(e.rollRequests, Ml),
-    rolls: ei(e.rolls, Qm),
+    rolls: ei(e.rolls, Jm),
     ritualCosts: e.ritualCosts.map((t) => ({ ...t })),
     damageInstances: e.damageInstances.map((t) => ({ ...t, tags: [...t.tags] })),
     healingInstances: e.healingInstances.map((t) => ({ ...t, tags: [...t.tags] })),
-    resourceTransactions: e.resourceTransactions.map(vr),
+    resourceTransactions: e.resourceTransactions.map(Dr),
     flagKeys: Object.keys(e.flags)
   } : null;
 }
-function vr(e) {
+function Dr(e) {
   return {
     actorId: e.actorId,
     actorName: e.actorName,
@@ -376,14 +376,14 @@ function vr(e) {
     }
   };
 }
-function Km(e) {
+function Xm(e) {
   return {
     actorId: e.id ?? null,
     actorName: e.name ?? "Ator sem nome",
     actorType: e.type ?? "unknown"
   };
 }
-function Ym(e) {
+function Qm(e) {
   return {
     itemId: e.id ?? null,
     itemName: e.name ?? "Item sem nome",
@@ -391,7 +391,7 @@ function Ym(e) {
     itemUuid: e.uuid ?? null
   };
 }
-function Xm(e) {
+function Zm(e) {
   return {
     tokenId: e.tokenId,
     actorId: e.actorId,
@@ -410,7 +410,7 @@ function Ml(e) {
     sourceStepIndex: e.sourceStepIndex
   };
 }
-function Qm(e) {
+function Jm(e) {
   return {
     ...Ml(e),
     total: e.total
@@ -419,7 +419,7 @@ function Qm(e) {
 function ei(e, t) {
   return Object.fromEntries(Object.entries(e).map(([n, a]) => [n, t(a)]));
 }
-function Zm(e) {
+function ef(e) {
   return {
     getSelected() {
       return Ct.getSelectedActor();
@@ -486,7 +486,7 @@ async function Fe(e, t, n, a) {
   if (!n) return;
   const r = await a(n);
   if (!r.ok) {
-    Jm(r.error);
+    tf(r.error);
     return;
   }
   const o = r.value;
@@ -495,13 +495,13 @@ async function Fe(e, t, n, a) {
   } catch (i) {
     f.error(`${t} realizado, mas falhou ao criar o chat card.`, i), ui.notifications?.error("Paranormal Toolkit: recurso alterado, mas falhou ao criar mensagem no chat.");
   }
-  f.info(`${t} realizado:`, vr(o));
+  f.info(`${t} realizado:`, Dr(o));
 }
 function ke(e) {
   const t = Ct.getSelectedActor();
   return t || (f.warn(e), ui.notifications?.warn("Paranormal Toolkit: nenhum ator selecionado."), null);
 }
-function Jm(e) {
+function tf(e) {
   if (e.reason === "update-failed") {
     f.error(e.message, e.cause ?? e), ui.notifications?.error(`Paranormal Toolkit: ${e.message}`);
     return;
@@ -518,7 +518,7 @@ const ie = {
   ui: "debug.output.ui",
   chat: "debug.output.chat"
 };
-function ef() {
+function nf() {
   Bt(ie.enabled, {
     name: "Ativar debug do Paranormal Toolkit",
     hint: "Liga ou desliga as saídas de debug do módulo. Não afeta logs técnicos críticos.",
@@ -537,7 +537,7 @@ function ef() {
     default: !1
   });
 }
-function va() {
+function Da() {
   return {
     enabled: Ut(ie.enabled),
     console: Ut(ie.console),
@@ -561,10 +561,10 @@ function Bt(e, t) {
 function Ut(e) {
   return game.settings.get(d, e) === !0;
 }
-function tf() {
+function af() {
   return {
     status() {
-      return va();
+      return Da();
     },
     async enable() {
       await de("enabled", !0);
@@ -592,26 +592,26 @@ function tf() {
     }
   };
 }
-const Fl = "ritual.costOnly", Bl = "ritual.simpleHealing", nf = "ritual.eletrocussao", af = "ritual.definhar", Ul = "ritual.simpleDamage", ql = "generic.simpleHealing", jl = {
+const Fl = "ritual.costOnly", Bl = "ritual.simpleHealing", rf = "ritual.eletrocussao", of = "ritual.definhar", Ul = "ritual.simpleDamage", ql = "generic.simpleHealing", jl = {
   base: "3d8+3",
   discente: "5d8+5",
   verdadeiro: "7d8+7"
-}, Dr = `
+}, xr = `
 <p><strong>Paranormal Toolkit</strong></p>
 <p>A descrição original foi substituída ao aplicar este preset de automação.</p>
 <p>Você pode editar este campo livremente; a automação continua sendo controlada pelo módulo.</p>
 `;
-function rf() {
+function sf() {
   return [
-    of(),
-    sf(),
     lf(),
     cf(),
     uf(),
-    df()
+    df(),
+    mf(),
+    ff()
   ];
 }
-function of() {
+function lf() {
   return {
     id: Fl,
     version: "1.0.0",
@@ -641,7 +641,7 @@ function of() {
     }
   };
 }
-function sf() {
+function cf() {
   return {
     id: Bl,
     version: "1.1.0",
@@ -656,12 +656,12 @@ function sf() {
       }
     ],
     automation: zl(),
-    itemPatch: gf()
+    itemPatch: bf()
   };
 }
-function lf() {
+function uf() {
   return {
-    id: nf,
+    id: rf,
     version: "1.4.1",
     label: "Eletrocussão",
     description: "Preset inicial de dano de eletricidade. Gasta o custo do ritual, rola 3d6/6d6/8d6 conforme a forma escolhida e prepara ações assistidas para aplicar dano via adapter do sistema e Vulnerável por 1 rodada no alvo.",
@@ -673,13 +673,13 @@ function lf() {
         names: ["eletrocussao", "eletrocucao"]
       }
     ],
-    automation: ff(),
-    itemPatch: bf()
+    automation: gf(),
+    itemPatch: _f()
   };
 }
-function cf() {
+function df() {
   return {
-    id: af,
+    id: of,
     version: "1.0.0",
     label: "Definhar",
     description: "Preset assistido da forma Padrão: gasta o custo do ritual, rola Fortitude e aplica Fatigado na falha ou Vulnerável no sucesso.",
@@ -691,11 +691,11 @@ function cf() {
         names: ["definhar"]
       }
     ],
-    automation: pf(),
-    itemPatch: hf()
+    automation: hf(),
+    itemPatch: yf()
   };
 }
-function uf() {
+function mf() {
   return {
     id: Ul,
     version: "1.0.0",
@@ -704,10 +704,10 @@ function uf() {
     category: "ritual",
     itemTypes: ["ritual"],
     matchers: [],
-    automation: xr()
+    automation: Nr()
   };
 }
-function df() {
+function ff() {
   return {
     id: ql,
     version: "1.0.0",
@@ -749,7 +749,7 @@ function df() {
   };
 }
 function zl(e = jl) {
-  const t = mf(e);
+  const t = pf(e);
   return Gl(
     {
       version: 1,
@@ -804,7 +804,7 @@ function zl(e = jl) {
     t.base
   );
 }
-function mf(e) {
+function pf(e) {
   return typeof e == "string" ? {
     base: e,
     discente: e,
@@ -814,9 +814,9 @@ function mf(e) {
     ...e
   };
 }
-function ff() {
+function gf() {
   return {
-    ...xr("3d6", {
+    ...Nr("3d6", {
       label: "Eletrocussão",
       title: "Eletrocussão",
       damageType: "electric",
@@ -894,7 +894,7 @@ function ff() {
     }
   };
 }
-function pf() {
+function hf() {
   return {
     version: 1,
     label: "Definhar",
@@ -945,7 +945,7 @@ function pf() {
     ]
   };
 }
-function xr(e = "1d8", t = {}) {
+function Nr(e = "1d8", t = {}) {
   const n = t.label ?? "Ritual de dano simples", a = t.title ?? "Ritual de dano simples", r = t.damageType ?? "generic", o = t.message ?? "Gasta o custo do ritual, rola a fórmula de dano e causa dano em PV do alvo.";
   return Gl(
     {
@@ -988,11 +988,11 @@ function xr(e = "1d8", t = {}) {
     e
   );
 }
-function gf() {
+function bf() {
   return {
     kind: "ritual",
     name: "Cicatrização",
-    descriptionHtml: Dr,
+    descriptionHtml: xr,
     ritual: {
       circle: 1,
       element: "death",
@@ -1008,11 +1008,11 @@ function gf() {
     }
   };
 }
-function hf() {
+function yf() {
   return {
     kind: "ritual",
     name: "Definhar",
-    descriptionHtml: Dr,
+    descriptionHtml: xr,
     ritual: {
       circle: 1,
       element: "death",
@@ -1028,11 +1028,11 @@ function hf() {
     }
   };
 }
-function bf() {
+function _f() {
   return {
     kind: "ritual",
     name: "Eletrocussão",
-    descriptionHtml: Dr,
+    descriptionHtml: xr,
     ritual: {
       circle: 1,
       element: "energy",
@@ -1057,7 +1057,7 @@ function Gl(e, t, n) {
     })
   };
 }
-function Nr() {
+function Pr() {
   return Array.from(game.user?.targets ?? []).map(Vl);
 }
 function Vl(e) {
@@ -1083,7 +1083,7 @@ function Hl() {
 function ze(e) {
   return typeof e == "string" && e.length > 0 ? e : null;
 }
-function yf(e) {
+function Af(e) {
   return {
     logFirstRitualCost() {
       const t = Ee("Nenhum ator encontrado para consultar custo de ritual.");
@@ -1108,7 +1108,7 @@ function yf(e) {
       if (!a) return;
       const r = $e(a);
       if (r) {
-        if (!Tf(t, n)) {
+        if (!kf(t, n)) {
           ui.notifications?.warn("Paranormal Toolkit: custo customizado precisa ser inteiro positivo e recurso PE ou PD.");
           return;
         }
@@ -1169,18 +1169,18 @@ function yf(e) {
         return;
       }
       await e.automationBinder.applyPreset(a, r.value, {
-        definition: xr(t)
+        definition: Nr(t)
       }), f.info(`Preset de dano simples aplicado ao ritual: ${a.name}.`, { formula: t }), ui.notifications?.info(`Paranormal Toolkit: ritual de dano simples aplicado em ${a.name}.`);
     },
     async runFirstRitualAutomation() {
       const t = Ee("Nenhum ator encontrado para executar automação de ritual.");
       if (!t) return;
       const n = $e(t);
-      n && await _f(e, t, n);
+      n && await Tf(e, t, n);
     }
   };
 }
-async function _f(e, t, n) {
+async function Tf(e, t, n) {
   const a = St(n);
   if (!a.ok) {
     f.warn(a.error.message, a.error), ui.notifications?.warn(`Paranormal Toolkit: ${a.error.message}`);
@@ -1190,15 +1190,15 @@ async function _f(e, t, n) {
     sourceActor: t,
     sourceToken: Hl(),
     item: n,
-    targets: Nr()
+    targets: Pr()
   });
   if (!r.ok) {
-    Af(r.error);
+    Rf(r.error);
     return;
   }
   f.info("Automação de ritual executada com sucesso.", je(r.value.context));
 }
-function Af(e) {
+function Rf(e) {
   const t = `Automação de ritual falhou: ${e.message}`;
   if (e.reason === "resource-operation-failed") {
     f.warn(t, e.cause ?? e), ui.notifications?.warn(`Paranormal Toolkit: ${e.message}`);
@@ -1218,17 +1218,17 @@ function $e(e) {
   const t = Ol(e);
   return t || (f.warn(`Ator ${e.name ?? "sem nome"} não possui rituais.`), ui.notifications?.warn("Paranormal Toolkit: ator selecionado não possui rituais."), null);
 }
-function Tf(e, t) {
+function kf(e, t) {
   return Number.isInteger(e) && e > 0 && (t === "PE" || t === "PD");
 }
 function ti(e) {
   return typeof e == "string" && e.trim().length > 0;
 }
-const Rf = ["strict", "open"], Wl = "strict";
-function kf(e) {
-  return Rf.includes(e) ? e : Wl;
+const Ef = ["strict", "open"], Wl = "strict";
+function $f(e) {
+  return Ef.includes(e) ? e : Wl;
 }
-function Ef(e) {
+function wf(e) {
   return !e.hasResistance || e.difficulty === null ? { kind: "none" } : e.resistanceTotal === null ? {
     kind: "pending",
     difficulty: e.difficulty
@@ -1245,17 +1245,17 @@ function Ef(e) {
 function Ln(e, t) {
   return e === "strict" && t.kind === "pending";
 }
-const $f = ["disabled", "ask", "automatic"], wf = ["buttons", "confirm"], Kl = "ask";
-function Cf(e) {
-  return typeof e == "string" && $f.includes(e);
-}
-function Sf(e) {
-  return typeof e == "string" && wf.includes(e);
-}
+const Cf = ["disabled", "ask", "automatic"], Sf = ["buttons", "confirm"], Kl = "ask";
 function If(e) {
-  return Cf(e) ? e : Sf(e) ? "ask" : Kl;
+  return typeof e == "string" && Cf.includes(e);
 }
-const Lf = ["keep", "replace"], vf = ["manual", "assisted"], Df = ["auto", "legacy"], Yl = "keep", Xl = "assisted", xf = !0, N = {
+function Lf(e) {
+  return typeof e == "string" && Sf.includes(e);
+}
+function vf(e) {
+  return If(e) ? e : Lf(e) ? "ask" : Kl;
+}
+const Df = ["keep", "replace"], xf = ["manual", "assisted"], Nf = ["auto", "legacy"], Yl = "keep", Xl = "assisted", Pf = !0, N = {
   executionMode: "itemUse.executionMode",
   systemCardMode: "itemUse.systemCardMode",
   damageResolutionMode: "itemUse.damageResolutionMode",
@@ -1264,7 +1264,7 @@ const Lf = ["keep", "replace"], vf = ["manual", "assisted"], Df = ["auto", "lega
   ritualCastingCheckEnabled: "ritual.castingCheck.enabled",
   ritualChatCardMode: "ritual.chatCard.mode"
 };
-function Nf() {
+function Of() {
   game.settings.register(d, N.executionMode, {
     name: "Modo de automação ao usar item",
     hint: "Controla como o Paranormal Toolkit reage quando um item com automação é usado pela ficha.",
@@ -1316,7 +1316,7 @@ function Nf() {
     scope: "world",
     config: !0,
     type: Boolean,
-    default: xf
+    default: Pf
   }), game.settings.register(d, N.ritualChatCardMode, {
     name: "Card de ritual do Paranormal Toolkit",
     hint: "Tenta usar o novo card para rituais com um alvo ou mantém sempre o card legado.",
@@ -1334,8 +1334,8 @@ function Nf() {
     default: !1
   });
 }
-function Da() {
-  const e = If(game.settings.get(d, N.executionMode)), t = Jl(game.settings.get(d, N.systemCardMode)), n = ec(game.settings.get(d, N.damageResolutionMode)), a = Or();
+function xa() {
+  const e = vf(game.settings.get(d, N.executionMode)), t = Jl(game.settings.get(d, N.systemCardMode)), n = ec(game.settings.get(d, N.damageResolutionMode)), a = Mr();
   return {
     executionMode: e,
     systemCardMode: t,
@@ -1347,16 +1347,16 @@ function Da() {
 }
 function Ql() {
   const e = game.settings.get(d, N.ritualChatCardMode);
-  return Df.includes(e) ? e : "auto";
-}
-function Pr() {
-  return Jl(game.settings.get(d, N.systemCardMode));
-}
-function Pf() {
-  return ec(game.settings.get(d, N.damageResolutionMode));
+  return Nf.includes(e) ? e : "auto";
 }
 function Or() {
-  return kf(game.settings.get(d, N.resistanceGateMode));
+  return Jl(game.settings.get(d, N.systemCardMode));
+}
+function Mf() {
+  return ec(game.settings.get(d, N.damageResolutionMode));
+}
+function Mr() {
+  return $f(game.settings.get(d, N.resistanceGateMode));
 }
 function Zl() {
   return game.settings.get(d, N.ritualCastingCheckEnabled) === !0;
@@ -1365,12 +1365,12 @@ async function we(e) {
   await game.settings.set(d, N.executionMode, e);
 }
 function Jl(e) {
-  return Lf.includes(e) ? e : Yl;
+  return Df.includes(e) ? e : Yl;
 }
 function ec(e) {
-  return vf.includes(e) ? e : Xl;
+  return xf.includes(e) ? e : Xl;
 }
-function Of(e) {
+function Ff(e) {
   return {
     status() {
       return e.itemUseIntegration.status();
@@ -1398,7 +1398,7 @@ function Of(e) {
     }
   };
 }
-const Mf = [
+const Bf = [
   "created",
   "beforeItemUse",
   "resolveTargets",
@@ -1431,18 +1431,18 @@ const Mf = [
   "completed",
   "failed"
 ];
-function Ff(e) {
+function Uf(e) {
   return {
     phases() {
-      return Mf;
+      return Bf;
     },
     lastContext() {
       return e.workflow.getLastDebugSnapshot();
     },
     async runFirstAutomation() {
-      const t = ea("Nenhum ator encontrado para executar automação.");
+      const t = ta("Nenhum ator encontrado para executar automação.");
       if (!t) return;
-      const n = zm(t);
+      const n = Vm(t);
       if (!n) {
         f.warn("Nenhum item com automação encontrado no ator selecionado."), ui.notifications?.warn("Paranormal Toolkit: nenhum item com automação encontrado.");
         return;
@@ -1458,17 +1458,17 @@ function Ff(e) {
         return;
       }
       const n = await fromUuid(t);
-      if (!qf(n)) {
+      if (!zf(n)) {
         f.warn(`UUID não resolveu para um Item: ${t}`, n), ui.notifications?.warn("Paranormal Toolkit: UUID não é de um item.");
         return;
       }
-      const a = Uf(n) ?? ea("Nenhum ator encontrado para executar automação do item.");
+      const a = jf(n) ?? ta("Nenhum ator encontrado para executar automação do item.");
       a && await ni(e, a, n);
     },
     async setTestHealingAutomationOnFirstItem() {
-      const t = ea("Nenhum ator encontrado para configurar automação de teste.");
+      const t = ta("Nenhum ator encontrado para configurar automação de teste.");
       if (!t) return;
-      const n = jm(t);
+      const n = Gm(t);
       if (!n) {
         f.warn("Ator selecionado não possui itens."), ui.notifications?.warn("Paranormal Toolkit: ator selecionado não possui itens.");
         return;
@@ -1496,15 +1496,15 @@ async function ni(e, t, n) {
     sourceActor: t,
     sourceToken: Hl(),
     item: n,
-    targets: Nr()
+    targets: Pr()
   });
   if (!r.ok) {
-    Bf(r.error);
+    qf(r.error);
     return;
   }
   f.info("Automação executada com sucesso.", je(r.value.context));
 }
-function Bf(e) {
+function qf(e) {
   const t = `Automação falhou: ${e.message}`;
   if (e.reason === "resource-operation-failed") {
     f.warn(t, e.cause ?? e), ui.notifications?.warn(`Paranormal Toolkit: ${e.message}`);
@@ -1516,19 +1516,19 @@ function Bf(e) {
   }
   f.warn(t, e), ui.notifications?.warn(`Paranormal Toolkit: ${e.message}`);
 }
-function ea(e) {
+function ta(e) {
   const t = Ct.getSelectedActor();
   return t || (f.warn(e), ui.notifications?.warn("Paranormal Toolkit: nenhum ator selecionado."), null);
 }
-function Uf(e) {
+function jf(e) {
   const t = e.parent;
   return t instanceof Actor ? t : null;
 }
-function qf(e) {
+function zf(e) {
   return !!(e && typeof e == "object" && "getFlag" in e && "setFlag" in e);
 }
-function jf(e) {
-  const t = Zm(e), n = Vm(e), a = yf(e), r = Ff(e), o = tf(), i = Of(e);
+function Gf(e) {
+  const t = ef(e), n = Wm(e), a = Af(e), r = Uf(e), o = af(), i = Ff(e);
   return {
     actor: t,
     automation: n,
@@ -1554,7 +1554,7 @@ const Xt = {
     castFinished: "paranormal-toolkit.ritual.cast.finished"
   }
 };
-function zf(e) {
+function Vf(e) {
   return {
     list: () => e.listConditions(),
     get: (t) => {
@@ -1589,7 +1589,7 @@ function zf(e) {
           })
         )
       );
-      return Gf(r), r;
+      return Hf(r), r;
     },
     removeFromSelectedTokens: async (t) => {
       const n = ai();
@@ -1603,7 +1603,7 @@ function zf(e) {
           })
         )
       );
-      return Vf(a), a;
+      return Wf(a), a;
     },
     cleanupExpired: (t = {}) => e.cleanupExpiredConditions({
       ...t,
@@ -1621,7 +1621,7 @@ function ai() {
   }
   return Array.from(t.values());
 }
-function Gf(e) {
+function Hf(e) {
   let t = 0;
   for (const n of e) {
     if (n.ok) {
@@ -1632,7 +1632,7 @@ function Gf(e) {
   }
   t > 0 && ui.notifications?.info(`Paranormal Toolkit: condição aplicada em ${t} ator(es).`);
 }
-function Vf(e) {
+function Wf(e) {
   let t = 0;
   for (const n of e) {
     if (n.ok) {
@@ -1655,18 +1655,18 @@ function R(e) {
     })[t] ?? t
   );
 }
-function Hf(e) {
+function Kf(e) {
   return `<span class="paranormal-toolkit-header-badge paranormal-toolkit-header-badge--${e.tone ?? "accent"}">${R(e.label)}</span>`;
 }
-const Wf = '<svg class="paranormal-toolkit-chat-card-header__placeholder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.5A2.5 2.5 0 0 1 18 7v13H7a2 2 0 0 1-2-2V4.5Zm2 0V17a3 3 0 0 0-1 .17M9 8h6M9 11h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function Kf(e) {
+const Yf = '<svg class="paranormal-toolkit-chat-card-header__placeholder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.5A2.5 2.5 0 0 1 18 7v13H7a2 2 0 0 1-2-2V4.5Zm2 0V17a3 3 0 0 0-1 .17M9 8h6M9 11h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function Xf(e) {
   const t = e?.src?.trim();
-  return t ? `<img class="paranormal-toolkit-chat-card-header__image-content" src="${R(t)}" alt="${R(e?.alt ?? "")}">` : Wf;
+  return t ? `<img class="paranormal-toolkit-chat-card-header__image-content" src="${R(t)}" alt="${R(e?.alt ?? "")}">` : Yf;
 }
 function tc(e) {
-  const t = e.subtitle ? `<span class="paranormal-toolkit-chat-card-header__subtitle">· ${R(e.subtitle)}</span>` : "", n = e.badges?.length ? `<div class="paranormal-toolkit-chat-card-header__badges">${e.badges.map(Hf).join("")}</div>` : "", a = e.context ? `<div class="paranormal-toolkit-chat-card-header__context">${R(e.context)}</div>` : "";
+  const t = e.subtitle ? `<span class="paranormal-toolkit-chat-card-header__subtitle">· ${R(e.subtitle)}</span>` : "", n = e.badges?.length ? `<div class="paranormal-toolkit-chat-card-header__badges">${e.badges.map(Kf).join("")}</div>` : "", a = e.context ? `<div class="paranormal-toolkit-chat-card-header__context">${R(e.context)}</div>` : "";
   return `<header class="paranormal-toolkit-chat-card-header">
-  <div class="paranormal-toolkit-chat-card-header__image">${Kf(e.image)}</div>
+  <div class="paranormal-toolkit-chat-card-header__image">${Xf(e.image)}</div>
   <div class="paranormal-toolkit-chat-card-header__content">
     <div class="paranormal-toolkit-chat-card-header__heading">
       <div class="paranormal-toolkit-chat-card-header__title-group">
@@ -1679,28 +1679,28 @@ function tc(e) {
 function U(e) {
   return `<article class="paranormal-toolkit-chat-card-shell">${e.content}</article>`;
 }
-const Yf = '<i class="paranormal-toolkit-dice-action-button__icon fa-solid fa-dice-d20" aria-hidden="true"></i>';
+const Qf = '<i class="paranormal-toolkit-dice-action-button__icon fa-solid fa-dice-d20" aria-hidden="true"></i>';
 function nc(e) {
   const t = e.disabled ? " disabled" : "", n = e.actionId ? ` data-paranormal-toolkit-card-action="roll-resistance" data-paranormal-toolkit-action-id="${R(e.actionId)}"` : "";
-  return `<button class="paranormal-toolkit-dice-action-button" type="button" aria-label="${R(e.ariaLabel)}"${n}${t}>${Yf}</button>`;
+  return `<button class="paranormal-toolkit-dice-action-button" type="button" aria-label="${R(e.ariaLabel)}"${n}${t}>${Qf}</button>`;
 }
 function ac(e) {
   const t = e.label.trim();
   return t ? `<button class="paranormal-toolkit-assisted-action-button" type="button"${e.actionId && e.actionKind ? ` data-paranormal-toolkit-card-action="${R(e.actionKind)}" data-paranormal-toolkit-action-id="${R(e.actionId)}"` : ""}${e.disabled ? " disabled" : ""}>${R(t)}</button>` : "";
 }
-function Xf(e) {
+function Zf(e) {
   const t = e.label.trim();
   return t ? `<span class="paranormal-toolkit-completion-indicator"><span class="paranormal-toolkit-completion-indicator__check" aria-hidden="true">✓</span><span class="paranormal-toolkit-completion-indicator__label">${R(t)}</span></span>` : "";
 }
 function rc(e) {
   const t = e.label.trim(), n = e.description.trim();
   if (!t || !n) return "";
-  const a = e.control.state === "completed" ? Xf(e.control.indicator) : ac({ ...e.control.button, disabled: e.control.state === "disabled" });
+  const a = e.control.state === "completed" ? Zf(e.control.indicator) : ac({ ...e.control.button, disabled: e.control.state === "disabled" });
   if (!a) return "";
-  const r = Qf(e.details);
+  const r = Jf(e.details);
   return `<div class="paranormal-toolkit-assisted-action-row"><div class="paranormal-toolkit-assisted-action-row__content"><span class="paranormal-toolkit-assisted-action-row__label">${R(t)}</span><span class="paranormal-toolkit-assisted-action-row__description">${R(n)}</span>${r}</div><div class="paranormal-toolkit-assisted-action-row__control">${a}</div></div>`;
 }
-function Qf(e) {
+function Jf(e) {
   const t = e?.items.map((a) => a.trim()).filter(Boolean) ?? [];
   return t.length ? `<details class="paranormal-toolkit-assisted-action-row__details"><summary><span class="paranormal-toolkit-assisted-action-row__details-show">Ver efeitos</span><span class="paranormal-toolkit-assisted-action-row__details-hide">Ocultar efeitos</span></summary><ul>${t.map((a) => `<li>${R(a)}</li>`).join("")}</ul></details>` : "";
 }
@@ -1713,10 +1713,10 @@ const ri = {
   success: "paranormal-toolkit-roll-row__result--success",
   failure: "paranormal-toolkit-roll-row__result--failure"
 };
-function Zf(e) {
+function ep(e) {
   return ri[e ?? "section"] ?? ri.section;
 }
-function Jf(e) {
+function tp(e) {
   const t = `<span class="paranormal-toolkit-roll-row__formula-text">${R(e.formula)}</span>`;
   if (!e.diceResults?.length)
     return `<div class="paranormal-toolkit-roll-row__formula paranormal-toolkit-roll-row__formula--static">${t}</div>`;
@@ -1729,8 +1729,8 @@ function Jf(e) {
 </details>`;
 }
 function Lt(e) {
-  const t = e.total !== void 0, n = t ? "with-result" : "without-result", a = t ? R(String(e.total)) : "", r = t ? `<output class="paranormal-toolkit-roll-row__result ${Zf(e.resultTone)}" aria-label="Resultado: ${a}">${a}</output>` : "";
-  return `<div class="paranormal-toolkit-roll-row paranormal-toolkit-roll-row--${n}">${Jf(e)}${r}</div>`;
+  const t = e.total !== void 0, n = t ? "with-result" : "without-result", a = t ? R(String(e.total)) : "", r = t ? `<output class="paranormal-toolkit-roll-row__result ${ep(e.resultTone)}" aria-label="Resultado: ${a}">${a}</output>` : "";
+  return `<div class="paranormal-toolkit-roll-row paranormal-toolkit-roll-row--${n}">${tp(e)}${r}</div>`;
 }
 const oi = {
   casting: "paranormal-toolkit-section-card--casting",
@@ -1740,11 +1740,11 @@ const oi = {
   success: "paranormal-toolkit-section-card--success",
   failure: "paranormal-toolkit-section-card--failure"
 };
-function ep(e) {
+function np(e) {
   return oi[e] ?? oi.casting;
 }
 function _e(e) {
-  return `<section class="paranormal-toolkit-section-card ${ep(e.tone)}">${e.content}</section>`;
+  return `<section class="paranormal-toolkit-section-card ${np(e.tone)}">${e.content}</section>`;
 }
 function Ae(e) {
   const t = e.trailing ? `<div class="paranormal-toolkit-section-header__trailing">${e.trailing}</div>` : "";
@@ -1753,13 +1753,13 @@ function Ae(e) {
 const ii = {
   success: "paranormal-toolkit-status-badge--success",
   failure: "paranormal-toolkit-status-badge--failure"
-}, tp = {
+}, ap = {
   success: "✓ SUCESSO",
   failure: "✕ FALHA"
 };
 function vt(e) {
   const t = ii[e.state] ? e.state : "failure";
-  return `<span class="paranormal-toolkit-status-badge ${ii[t]}">${tp[t]}</span>`;
+  return `<span class="paranormal-toolkit-status-badge ${ii[t]}">${ap[t]}</span>`;
 }
 function ic(e) {
   const t = R(String(e.difficultyClass)), n = `<p class="paranormal-toolkit-ritual-conjuration-section__result-description"><span class="paranormal-toolkit-ritual-conjuration-section__skill">${R(e.skillLabel)}</span> <span class="paranormal-toolkit-ritual-conjuration-section__comparison">contra</span> <strong class="paranormal-toolkit-ritual-conjuration-section__metric">DT ${t}</strong></p>`, a = e.consequence?.trim(), r = a ? `<p class="paranormal-toolkit-ritual-conjuration-section__consequence"><span class="paranormal-toolkit-ritual-conjuration-section__consequence-label">Consequência:</span> ${R(a)}</p>` : "", o = Ae({
@@ -1791,38 +1791,38 @@ function lc(e) {
   }), a = `<p class="paranormal-toolkit-ritual-resistance-section__summary"><strong class="paranormal-toolkit-ritual-resistance-section__metric">${R(e.skill)}</strong> <span>contra</span> <strong class="paranormal-toolkit-ritual-resistance-section__metric">${R(e.difficultyLabel)}</strong></p>`, r = e.status === "pending" && e.description?.trim() ? `<p class="paranormal-toolkit-ritual-resistance-section__description">${R(e.description)}</p>` : "", o = e.result ? Lt({ formula: e.result.formula, total: e.result.total, diceResults: e.result.diceResults, resultTone: t ?? "section" }) : "", l = `<div class="paranormal-toolkit-ritual-resistance-section${e.result ? " paranormal-toolkit-ritual-resistance-section--resolved" : ""}"><div class="paranormal-toolkit-ritual-resistance-section__text">${n}${a}${r}${o}</div>${e.result ? "" : nc(e.action)}</div>`;
   return _e({ tone: "resistance", content: l });
 }
-function np(e) {
+function rp(e) {
   const t = e.typeLabel?.trim() ? `<span class="paranormal-toolkit-ritual-damage-section__damage-type">${R(e.typeLabel)}</span>` : void 0;
   return _e({
     tone: e.title === "Dano" ? "damage" : e.title === "Cura" ? "healing" : "casting",
     content: Ae({ title: e.title, trailing: t }) + Lt(e)
   });
 }
-function ap(e) {
+function op(e) {
   const t = e.text.trim();
   return t ? `<span class="paranormal-toolkit-metadata-pill">${R(t)}</span>` : "";
 }
 function cc(e) {
-  const t = e.items.map(ap).filter(Boolean);
+  const t = e.items.map(op).filter(Boolean);
   return t.length === 0 ? "" : `<div class="paranormal-toolkit-ritual-metadata">${t.join("")}</div>`;
 }
 function uc(e) {
   const t = e.rows.map(rc).filter(Boolean);
   return t.length ? `<section class="paranormal-toolkit-ritual-assisted-actions-panel"><h4 class="paranormal-toolkit-ritual-assisted-actions-panel__title">AÇÕES ASSISTIDAS</h4><div class="paranormal-toolkit-ritual-assisted-actions-panel__rows">${t.join("")}</div></section>` : "";
 }
-function rp(e) {
+function ip(e) {
   const t = e.html.trim();
   return t ? `<details class="paranormal-toolkit-ritual-description-section"><summary class="paranormal-toolkit-ritual-description-section__summary">Descrição</summary><div class="paranormal-toolkit-ritual-description-section__content">${t}</div></details>` : "";
 }
 function dc(e) {
   const t = [
     tc(e.header),
-    e.description ? rp(e.description) : "",
+    e.description ? ip(e.description) : "",
     e.metadata ? cc(e.metadata) : "",
     ...e.detailRows?.map(oc) ?? [],
     e.conjuration ? ic(e.conjuration) : "",
     e.damage ? sc(e.damage) : "",
-    e.effect ? np(e.effect) : "",
+    e.effect ? rp(e.effect) : "",
     e.resistance ? lc(e.resistance) : "",
     e.assistedActions ? uc(e.assistedActions) : ""
   ].filter(Boolean).join("");
@@ -1830,12 +1830,12 @@ function dc(e) {
     content: `<div class="paranormal-toolkit-ritual-single-target-card">${t}</div>`
   });
 }
-const mc = "devChatCardExample", op = "devChatCardHeaderExample";
+const mc = "devChatCardExample", sp = "devChatCardHeaderExample";
 function M() {
   if (!game.user?.isGM)
     throw new Error("Apenas GMs podem gerenciar exemplos de chat card.");
 }
-function ip() {
+function lp() {
   const e = canvas?.tokens?.controlled?.[0], t = [...game.user?.targets ?? []], n = e?.name || e?.actor?.name || "Mercy", a = t.length > 1 ? `${t.length} alvos` : t[0]?.name || t[0]?.actor?.name || "Nenhum alvo", r = foundry.utils.getProperty(e, "document.texture.src") ?? foundry.utils.getProperty(e, "actor.img");
   return {
     image: typeof r == "string" ? { src: r, alt: `Imagem de ${n}` } : void 0,
@@ -1845,8 +1845,8 @@ function ip() {
     context: `${n} → ${a}`
   };
 }
-function sp(e) {
-  return e === "runtime" ? ip() : e === "ability" ? {
+function cp(e) {
+  return e === "runtime" ? lp() : e === "ability" ? {
     title: "Habilidade Genérica",
     subtitle: "Habilidade",
     badges: [{ label: "HABILIDADE", tone: "wine" }],
@@ -1864,7 +1864,7 @@ function sp(e) {
     }[e]
   };
 }
-function lp(e) {
+function up(e) {
   switch (e) {
     case "casting-title":
       return { tone: "casting", title: "Conjuração" };
@@ -1888,8 +1888,8 @@ function lp(e) {
       };
   }
 }
-function cp(e) {
-  const t = lp(e);
+function dp(e) {
+  const t = up(e);
   return U({
     content: _e({
       tone: t.tone,
@@ -1900,7 +1900,7 @@ function cp(e) {
     })
   });
 }
-function up(e) {
+function mp(e) {
   return U({
     content: _e({
       tone: "casting",
@@ -1911,7 +1911,7 @@ function up(e) {
     })
   });
 }
-function dp(e) {
+function fp(e) {
   const t = e === "disabled";
   return U({
     content: _e({
@@ -1926,7 +1926,7 @@ function dp(e) {
     })
   });
 }
-function mp(e) {
+function pp(e) {
   const t = e.startsWith("with-result"), n = e.startsWith("damage"), a = e === "with-result-failure", r = t ? {
     formula: "1d20 + 10 + 5",
     total: a ? 17 : 23,
@@ -1950,7 +1950,7 @@ function mp(e) {
     })
   });
 }
-function fp(e) {
+function gp(e) {
   const t = e === "failure" || e === "failure-consequence";
   return {
     status: t ? "failure" : "success",
@@ -1963,12 +1963,12 @@ function fp(e) {
     consequence: e === "failure-consequence" ? "Dano de Sanidade" : void 0
   };
 }
-function pp(e) {
+function hp(e) {
   return U({
-    content: ic(fp(e))
+    content: ic(gp(e))
   });
 }
-function gp(e) {
+function bp(e) {
   return e === "long-type" ? {
     damageType: "Eletricidade paranormal prolongada",
     formula: "3d6 + 2d8 + 5",
@@ -1982,12 +1982,12 @@ function gp(e) {
     expanded: e === "expanded"
   };
 }
-function hp(e) {
+function yp(e) {
   return U({
-    content: sc(gp(e))
+    content: sc(bp(e))
   });
 }
-function bp(e) {
+function _p(e) {
   return e === "disabled" ? {
     skill: "Reflexos",
     difficultyLabel: "DT 18",
@@ -2002,12 +2002,12 @@ function bp(e) {
     action: { ariaLabel: "Rolar resistência de Fortitude" }
   };
 }
-function yp(e) {
+function Ap(e) {
   return U({
-    content: lc(bp(e))
+    content: lc(_p(e))
   });
 }
-function _p(e) {
+function Tp(e) {
   return e === "partial" ? {
     items: [
       { text: "Alcance: Pessoal" },
@@ -2027,12 +2027,12 @@ function _p(e) {
     ]
   };
 }
-function Ap(e) {
+function Rp(e) {
   return U({
-    content: cc(_p(e))
+    content: cc(Tp(e))
   });
 }
-function Tp(e) {
+function kp(e) {
   return U({ content: oc(e === "generic" ? { label: "Alcance:", detailHtml: "Médio · até 15 metros" } : e === "long" ? {
     label: "Resistência:",
     detailHtml: "Reflexos · <strong>DT 24</strong> · evita completamente os efeitos do ritual"
@@ -2066,17 +2066,17 @@ function fc(e) {
     }
   ] };
 }
-function Rp(e) {
+function Ep(e) {
   const t = e === "disabled";
   return U({ content: ac({ label: t ? "Aguardando resistência" : "Aplicar 9 de dano", disabled: t }) });
 }
-function kp(e) {
+function $p(e) {
   return U({ content: rc(Qt(e)) });
 }
-function Ep(e) {
+function wp(e) {
   return U({ content: uc(fc(e)) });
 }
-function $p(e) {
+function Cp(e) {
   const t = e === "failure", n = e === "long";
   return {
     header: {
@@ -2129,11 +2129,11 @@ function F(e, t) {
     flags: { [d]: { [mc]: t } }
   });
 }
-function wp() {
+function Sp() {
   const e = async () => {
     M();
     const n = (game.messages.contents ?? []).filter(
-      (a) => typeof a.getFlag?.(d, mc) == "string" || a.getFlag?.(d, op) === !0
+      (a) => typeof a.getFlag?.(d, mc) == "string" || a.getFlag?.(d, sp) === !0
     );
     await Promise.all(
       n.map(
@@ -2145,7 +2145,7 @@ function wp() {
     async postChatCardHeaderExample(t) {
       return M(), F(
         U({
-          content: tc(sp(t))
+          content: tc(cp(t))
         }),
         "header"
       );
@@ -2160,7 +2160,7 @@ function wp() {
       ] : [t];
       return Promise.all(
         n.map(
-          (a) => F(cp(a), "section")
+          (a) => F(dp(a), "section")
         )
       );
     },
@@ -2169,7 +2169,7 @@ function wp() {
       const n = t === "both" ? ["success", "failure"] : [t];
       return Promise.all(
         n.map(
-          (a) => F(up(a), "status")
+          (a) => F(mp(a), "status")
         )
       );
     },
@@ -2179,7 +2179,7 @@ function wp() {
       return Promise.all(
         n.map(
           (a) => F(
-            dp(a),
+            fp(a),
             "dice-action-button"
           )
         )
@@ -2197,7 +2197,7 @@ function wp() {
       ] : [t];
       return Promise.all(
         n.map(
-          (a) => F(mp(a), "roll-row")
+          (a) => F(pp(a), "roll-row")
         )
       );
     },
@@ -2207,7 +2207,7 @@ function wp() {
       return Promise.all(
         n.map(
           (a) => F(
-            pp(a),
+            hp(a),
             "ritual-conjuration"
           )
         )
@@ -2219,7 +2219,7 @@ function wp() {
       return Promise.all(
         n.map(
           (a) => F(
-            hp(a),
+            yp(a),
             "ritual-damage"
           )
         )
@@ -2231,7 +2231,7 @@ function wp() {
       return Promise.all(
         n.map(
           (a) => F(
-            yp(a),
+            Ap(a),
             "ritual-resistance"
           )
         )
@@ -2243,7 +2243,7 @@ function wp() {
       return Promise.all(
         n.map(
           (a) => F(
-            Ap(a),
+            Rp(a),
             "ritual-metadata"
           )
         )
@@ -2255,7 +2255,7 @@ function wp() {
       return Promise.all(
         n.map(
           (a) => F(
-            Tp(a),
+            kp(a),
             "metadata-detail-row"
           )
         )
@@ -2267,7 +2267,7 @@ function wp() {
       return Promise.all(
         n.map(
           (a) => F(
-            dc($p(a)),
+            dc(Cp(a)),
             "ritual-single-target-card"
           )
         )
@@ -2276,23 +2276,23 @@ function wp() {
     async postAssistedActionButtonExample(t) {
       M();
       const n = t === "all" ? ["active", "disabled"] : [t];
-      return Promise.all(n.map((a) => F(Rp(a), "assisted-action-button")));
+      return Promise.all(n.map((a) => F(Ep(a), "assisted-action-button")));
     },
     async postAssistedActionRowExample(t) {
       M();
       const n = t === "all" ? ["active", "disabled", "completed"] : [t];
-      return Promise.all(n.map((a) => F(kp(a), "assisted-action-row")));
+      return Promise.all(n.map((a) => F($p(a), "assisted-action-row")));
     },
     async postRitualAssistedActionsPanelExample(t) {
       M();
       const n = t === "all" ? ["pending", "available", "completed", "damage-only"] : [t];
-      return Promise.all(n.map((a) => F(Ep(a), "ritual-assisted-actions-panel")));
+      return Promise.all(n.map((a) => F(wp(a), "ritual-assisted-actions-panel")));
     },
     clearChatCardExamples: e,
     clearChatCardHeaderExamples: e
   };
 }
-function Cp(e) {
+function Ip(e) {
   const t = {
     services: e,
     ordem: e.ordem,
@@ -2304,9 +2304,9 @@ function Cp(e) {
     automationBinder: e.automationBinder,
     workflow: e.workflow,
     itemUseIntegration: e.itemUseIntegration,
-    conditions: zf(e.conditions),
-    debug: jf(e),
-    dev: wp(),
+    conditions: Vf(e.conditions),
+    debug: Gf(e),
+    dev: Sp(),
     hooks: Xt
   }, n = globalThis;
   n[d] = t, n.ParanormalToolkit = t;
@@ -2315,66 +2315,66 @@ function Cp(e) {
 }
 class si {
   static isSupportedSystem() {
-    return game.system.id === gm;
+    return game.system.id === bm;
   }
   static getCurrentSystemId() {
     return game.system.id;
   }
 }
-const ta = {
+const na = {
   ITEM_USED: "ordemparanormal.itemUsed"
 };
-function Sp(e) {
-  if (!Np(e.item)) return null;
-  const t = xa(e.actor) ? e.actor : Ip(e.item);
+function Lp(e) {
+  if (!Op(e.item)) return null;
+  const t = Na(e.actor) ? e.actor : vp(e.item);
   return {
     source: "ordem-item-used-hook",
     actor: t,
     item: e.item,
-    token: vp(e.token) ?? Lp(t),
-    targets: Nr(),
+    token: xp(e.token) ?? Dp(t),
+    targets: Pr(),
     message: e.message,
     chatMessageData: e.chatMessageData
   };
 }
-function Ip(e) {
-  const t = e;
-  return xa(t.actor) ? t.actor : xa(e.parent) ? e.parent : null;
-}
-function Lp(e) {
-  const t = Dp(e) ?? xp(e);
-  return t ? pc(t) : null;
-}
 function vp(e) {
-  return Na(e) ? pc(e) : null;
+  const t = e;
+  return Na(t.actor) ? t.actor : Na(e.parent) ? e.parent : null;
 }
 function Dp(e) {
-  if (!e) return null;
-  const t = e, n = t.token;
-  return Na(n) ? n : (t.getActiveTokens?.() ?? []).find(Na) ?? null;
+  const t = Np(e) ?? Pp(e);
+  return t ? pc(t) : null;
 }
 function xp(e) {
+  return Pa(e) ? pc(e) : null;
+}
+function Np(e) {
+  if (!e) return null;
+  const t = e, n = t.token;
+  return Pa(n) ? n : (t.getActiveTokens?.() ?? []).find(Pa) ?? null;
+}
+function Pp(e) {
   return e ? canvas?.tokens?.controlled?.find((t) => t.actor?.id === e.id) ?? null : null;
 }
 function pc(e) {
   const t = e.actor ?? null;
   return {
-    tokenId: na(e.id),
-    actorId: na(t?.id),
-    sceneId: na(e.scene?.id),
+    tokenId: aa(e.id),
+    actorId: aa(t?.id),
+    sceneId: aa(e.scene?.id),
     name: e.name ?? t?.name ?? "Origem sem nome"
   };
 }
-function Np(e) {
+function Op(e) {
   return !!(e && typeof e == "object" && "getFlag" in e && "setFlag" in e);
 }
-function xa(e) {
+function Na(e) {
   return !!(e && typeof e == "object" && "update" in e && "items" in e);
 }
-function Na(e) {
+function Pa(e) {
   return !!(e && typeof e == "object" && ("actor" in e || "id" in e || "name" in e));
 }
-function na(e) {
+function aa(e) {
   return typeof e == "string" && e.length > 0 ? e : null;
 }
 class gc {
@@ -2385,9 +2385,9 @@ class gc {
   id = "ordem-item-used-hook";
   registered = !1;
   register() {
-    this.registered || (Hooks.on(ta.ITEM_USED, (t) => {
+    this.registered || (Hooks.on(na.ITEM_USED, (t) => {
       this.handleHook(t);
-    }), this.registered = !0, f.info(`${ta.ITEM_USED} registrado como fonte de uso de item.`));
+    }), this.registered = !0, f.info(`${na.ITEM_USED} registrado como fonte de uso de item.`));
   }
   status() {
     return {
@@ -2396,15 +2396,15 @@ class gc {
     };
   }
   async handleHook(t) {
-    const n = Sp(Pp(t));
+    const n = Lp(Mp(t));
     if (!n) {
-      f.warn(`${ta.ITEM_USED} disparou sem payload de item válido.`, t);
+      f.warn(`${na.ITEM_USED} disparou sem payload de item válido.`, t);
       return;
     }
     await this.onItemUsed(n);
   }
 }
-function Pp(e) {
+function Mp(e) {
   return e && typeof e == "object" ? e : {};
 }
 function cn(e) {
@@ -2414,18 +2414,18 @@ function cn(e) {
   const t = e;
   return t[0] instanceof HTMLElement ? t[0] : null;
 }
-function Mr() {
+function Fr() {
   const e = globalThis.game;
   return vn(e) ? e : null;
 }
 function Q(e, t) {
-  const n = Op(e, t);
+  const n = Fp(e, t);
   return Zt(n);
 }
-function Op(e, t) {
+function Fp(e, t) {
   return t.split(".").reduce((n, a) => vn(n) ? n[a] : null, e);
 }
-function Mp(e, t) {
+function Bp(e, t) {
   const n = e.indexOf(":");
   return n < 0 || Tt(e.slice(0, n)) !== Tt(t) ? null : rt(e.slice(n + 1));
 }
@@ -2435,7 +2435,7 @@ function Zt(e) {
 function vn(e) {
   return !!e && typeof e == "object";
 }
-function Fp(e) {
+function Up(e) {
   return typeof e == "string";
 }
 function Dn(e) {
@@ -2449,7 +2449,7 @@ function rt(e) {
 function Tt(e) {
   return (e ?? "").normalize("NFD").replace(/[\u0300-\u036f]/gu, "").replace(/[^a-z0-9]+/giu, "").toLowerCase();
 }
-function Pa(e) {
+function Oa(e) {
   return e.length === 0 ? e : e[0].toLocaleLowerCase("pt-BR") + e.slice(1);
 }
 function be(e) {
@@ -2473,7 +2473,7 @@ const un = "abilityRollConfig", bc = [
   { value: "electric", label: "Eletricidade" },
   { value: "chemical", label: "Químico" },
   { value: "mental", label: "Mental" }
-], Oa = 20, Ma = 20, Bp = [10, 40, 65, 99];
+], Ma = 20, Fa = 20, qp = [10, 40, 65, 99];
 function yc() {
   return {
     schemaVersion: 1,
@@ -2482,7 +2482,7 @@ function yc() {
 }
 function _c(e) {
   return {
-    id: qp(),
+    id: zp(),
     label: e === 1 ? "Rolagem" : `Rolagem ${e}`,
     intent: "generic",
     damageType: null,
@@ -2492,28 +2492,28 @@ function _c(e) {
     }
   };
 }
-function Up() {
-  return Bp.map((e) => ({ minNex: e, formula: "" }));
+function jp() {
+  return qp.map((e) => ({ minNex: e, formula: "" }));
 }
-function qp() {
+function zp() {
   const t = globalThis.crypto?.randomUUID?.();
   return t ? `roll-${t}` : `roll-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 function Ac(e) {
-  return Fr(
+  return Br(
     e.getFlag(d, un)
   );
 }
-function jp(e) {
+function Gp(e) {
   return Ac(e) ?? yc();
 }
-async function zp(e, t) {
-  const n = Fr(t);
+async function Vp(e, t) {
+  const n = Br(t);
   if (!n)
     throw new Error("Configuração de rolagens da habilidade inválida.");
   return await e.setFlag(d, un, n), n;
 }
-async function Gp(e) {
+async function Hp(e) {
   const t = e.unsetFlag;
   if (typeof t == "function") {
     await Promise.resolve(
@@ -2523,19 +2523,19 @@ async function Gp(e) {
   }
   await e.setFlag(d, un, null);
 }
-function Fr(e) {
+function Br(e) {
   if (!Xe(e) || !Array.isArray(e.rolls)) return null;
   const t = /* @__PURE__ */ new Set();
   return {
     schemaVersion: 1,
-    rolls: e.rolls.slice(0, Oa).map((a, r) => Xp(a, r, t)).filter((a) => a !== null)
+    rolls: e.rolls.slice(0, Ma).map((a, r) => Zp(a, r, t)).filter((a) => a !== null)
   };
 }
-function Vp(e, t) {
+function Wp(e, t) {
   const n = Ac(t);
-  return n ? Hp(n, Wp(e)) : [];
+  return n ? Kp(n, Yp(e)) : [];
 }
-function Hp(e, t) {
+function Kp(e, t) {
   const n = [];
   for (const a of e.rolls) {
     if (a.formula.mode === "fixed") {
@@ -2572,14 +2572,14 @@ function Hp(e, t) {
   }
   return n;
 }
-function Wp(e) {
+function Yp(e) {
   const t = Xe(e.system) ? e.system : {}, n = t.NEX ?? t.nex, a = Xe(n) ? n.value : n, r = typeof a == "number" ? a : Number(a);
   return Number.isFinite(r) ? Rc(r) : 0;
 }
 function Tc(e) {
   return bc.find((t) => t.value === e)?.label ?? e;
 }
-function Kp(e) {
+function Xp(e) {
   switch (e) {
     case "generic":
       return "Rolagem genérica";
@@ -2589,21 +2589,21 @@ function Kp(e) {
       return "Cura";
   }
 }
-function Yp(e) {
+function Qp(e) {
   return e.rolls.some((t) => t.formula.mode === "fixed" ? t.formula.formula.trim().length > 0 : t.formula.steps.some((n) => n.formula.trim().length > 0));
 }
-function Xp(e, t, n) {
+function Zp(e, t, n) {
   if (!Xe(e)) return null;
-  const a = `roll-${t + 1}`, r = ng(tg(e.id, a), n), o = Jp(e.intent), i = Qp(e.formula);
+  const a = `roll-${t + 1}`, r = rg(ag(e.id, a), n), o = tg(e.intent), i = Jp(e.formula);
   return !o || !i ? null : {
     id: r,
     label: xn(e.label) || `Rolagem ${t + 1}`,
     intent: o,
-    damageType: o === "damage" ? ag(e.damageType) : null,
+    damageType: o === "damage" ? og(e.damageType) : null,
     formula: i
   };
 }
-function Qp(e) {
+function Jp(e) {
   if (!Xe(e)) return null;
   if (e.mode === "fixed")
     return {
@@ -2611,17 +2611,17 @@ function Qp(e) {
       formula: xn(e.formula)
     };
   if (e.mode !== "nex") return null;
-  const t = Array.isArray(e.steps) ? e.steps.slice(0, Ma).map(Zp).filter((a) => a !== null) : [];
+  const t = Array.isArray(e.steps) ? e.steps.slice(0, Fa).map(eg).filter((a) => a !== null) : [];
   t.sort((a, r) => a.minNex - r.minNex);
   const n = /* @__PURE__ */ new Map();
   for (const a of t) n.set(a.minNex, a);
   return {
     mode: "nex",
-    resolution: eg(e.resolution),
+    resolution: ng(e.resolution),
     steps: [...n.values()]
   };
 }
-function Zp(e) {
+function eg(e) {
   if (!Xe(e)) return null;
   const t = typeof e.minNex == "number" ? e.minNex : Number(e.minNex);
   return Number.isFinite(t) ? {
@@ -2629,16 +2629,16 @@ function Zp(e) {
     formula: xn(e.formula)
   } : null;
 }
-function Jp(e) {
+function tg(e) {
   return e === "generic" || e === "damage" || e === "healing" ? e : null;
 }
-function eg(e) {
+function ng(e) {
   return e === "choose-unlocked" ? "choose-unlocked" : "highest-unlocked";
 }
-function tg(e, t) {
+function ag(e, t) {
   return typeof e != "string" ? t : e.trim().replace(/[^a-z0-9_-]+/giu, "-").replace(/^-+|-+$/gu, "").slice(0, 80) || t;
 }
-function ng(e, t) {
+function rg(e, t) {
   let n = e, a = 2;
   for (; t.has(n); )
     n = `${e}-${a}`, a += 1;
@@ -2650,20 +2650,20 @@ function Rc(e) {
 function xn(e) {
   return typeof e == "string" ? e.trim() : "";
 }
-function ag(e) {
+function og(e) {
   const t = xn(e);
   return t.length > 0 ? t : null;
 }
 function Xe(e) {
   return e !== null && typeof e == "object" && !Array.isArray(e);
 }
-const Br = "data-paranormal-toolkit-ability-roll-id";
-function rg(e) {
+const Ur = "data-paranormal-toolkit-ability-roll-id";
+function ig(e) {
   if (!kc(e) || e.version !== 2 || !Array.isArray(e.rolls))
     return null;
   const t = pe(e.actorUuid), n = pe(e.itemUuid), a = pe(e.abilityName);
   if (!t) return null;
-  const r = e.rolls.map(og).filter((o) => o !== null);
+  const r = e.rolls.map(sg).filter((o) => o !== null);
   return {
     version: 2,
     actorUuid: t,
@@ -2671,15 +2671,15 @@ function rg(e) {
     abilityName: a || "Habilidade",
     rolls: r,
     resource: e.resource === "PD" ? "PD" : "PE",
-    cost: aa(e.cost),
+    cost: ra(e.cost),
     spentResource: e.spentResource === !0,
-    resourceBefore: aa(e.resourceBefore),
-    resourceAfter: aa(e.resourceAfter)
+    resourceBefore: ra(e.resourceBefore),
+    resourceAfter: ra(e.resourceAfter)
   };
 }
-function og(e) {
+function sg(e) {
   if (!kc(e)) return null;
-  const t = pe(e.id), n = pe(e.sourceRollId), a = pe(e.label), r = pe(e.formula), o = ig(e.intent);
+  const t = pe(e.id), n = pe(e.sourceRollId), a = pe(e.label), r = pe(e.formula), o = lg(e.intent);
   if (!t || !n || !a || !r || !o) return null;
   const i = typeof e.nexThreshold == "number" && Number.isFinite(e.nexThreshold) ? Math.max(0, Math.min(99, Math.trunc(e.nexThreshold))) : null;
   return {
@@ -2688,21 +2688,21 @@ function og(e) {
     label: a,
     formula: r,
     intent: o,
-    damageType: o === "damage" ? sg(e.damageType) : null,
+    damageType: o === "damage" ? cg(e.damageType) : null,
     nexThreshold: i
   };
 }
-function ig(e) {
+function lg(e) {
   return e === "generic" || e === "damage" || e === "healing" ? e : null;
 }
 function pe(e) {
   return typeof e == "string" ? e.trim() : "";
 }
-function sg(e) {
+function cg(e) {
   const t = pe(e);
   return t.length > 0 ? t : null;
 }
-function aa(e) {
+function ra(e) {
   const t = typeof e == "number" ? e : Number(e);
   return Number.isFinite(t) ? t : 0;
 }
@@ -2711,48 +2711,48 @@ function kc(e) {
 }
 const li = "paranormalToolkitAbilityRollBound";
 let ci = !1;
-function lg() {
+function ug() {
   if (ci) return;
   ci = !0;
   const e = (t, n) => {
-    cg(t, cn(n));
+    dg(t, cn(n));
   };
   Hooks.on("renderChatMessageHTML", e), Hooks.on("renderChatMessage", e), f.info("Ações de rolagem de habilidades registradas no chat.");
 }
-function cg(e, t) {
+function dg(e, t) {
   if (!t) return 0;
-  const n = `[${Br}]`, a = yg(t, n);
+  const n = `[${Ur}]`, a = Ag(t, n);
   let r = 0;
   for (const o of a)
     o.dataset[li] !== "true" && (o.dataset[li] = "true", o.addEventListener("click", () => {
-      ug(e, o);
+      mg(e, o);
     }), r += 1);
   return r;
 }
-async function ug(e, t) {
-  const n = t.getAttribute(Br)?.trim();
+async function mg(e, t) {
+  const n = t.getAttribute(Ur)?.trim();
   if (!n) return;
-  const a = dg(e), r = a?.rolls.find((l) => l.id === n);
+  const a = fg(e), r = a?.rolls.find((l) => l.id === n);
   if (!a || !r) {
     ui.notifications?.warn(
       "Paranormal Toolkit: esta rolagem não está mais disponível no card."
     );
     return;
   }
-  const o = await mg(a.actorUuid);
+  const o = await pg(a.actorUuid);
   if (!o) {
     ui.notifications?.warn(
       "Paranormal Toolkit: não foi possível localizar o personagem desta habilidade."
     );
     return;
   }
-  if (!gg(o)) {
+  if (!bg(o)) {
     ui.notifications?.warn(
       "Paranormal Toolkit: você não possui permissão para fazer esta rolagem."
     );
     return;
   }
-  const i = fg();
+  const i = gg();
   if (!i) {
     ui.notifications?.warn(
       "Paranormal Toolkit: a API de rolagem do Foundry não está disponível."
@@ -2763,12 +2763,12 @@ async function ug(e, t) {
   try {
     const l = new i(
       r.formula,
-      pg(o)
+      hg(o)
     ), c = await Promise.resolve(l.evaluate());
     await Promise.resolve(
       c.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: o }),
-        flavor: hg(a.abilityName, r)
+        flavor: yg(a.abilityName, r)
       })
     );
   } catch (l) {
@@ -2782,13 +2782,13 @@ async function ug(e, t) {
     di(t, !1);
   }
 }
-function dg(e) {
+function fg(e) {
   const t = e;
-  return typeof t?.getFlag != "function" ? null : rg(
+  return typeof t?.getFlag != "function" ? null : ig(
     t.getFlag(d, "abilityUse")
   );
 }
-async function mg(e) {
+async function pg(e) {
   const t = globalThis;
   if (typeof t.fromUuid == "function")
     try {
@@ -2803,28 +2803,28 @@ async function mg(e) {
   const n = e.startsWith("Actor.") ? e.slice(6) : e, r = game.actors?.get?.(n);
   return mi(r) ? r : null;
 }
-function fg() {
+function gg() {
   const e = globalThis.Roll;
   return typeof e == "function" ? e : null;
 }
-function pg(e) {
+function hg(e) {
   const n = e.getRollData?.();
   return n && typeof n == "object" ? n : {};
 }
-function gg(e) {
+function bg(e) {
   return game.user?.isGM ? !0 : e.isOwner === !0;
 }
-function hg(e, t) {
-  const n = [bg(t)];
+function yg(e, t) {
+  const n = [_g(t)];
   return t.nexThreshold !== null && n.push(`NEX ${t.nexThreshold}%`), `
     <div class="paranormal-toolkit-ability-roll-flavor">
-      <strong>${ra(e)}</strong>
-      <span>${ra(t.label)}</span>
-      <small>${ra(n.join(" · "))}</small>
+      <strong>${oa(e)}</strong>
+      <span>${oa(t.label)}</span>
+      <small>${oa(n.join(" · "))}</small>
     </div>
   `;
 }
-function bg(e) {
+function _g(e) {
   switch (e.intent) {
     case "generic":
       return "Rolagem genérica";
@@ -2834,7 +2834,7 @@ function bg(e) {
       return e.damageType ? `Dano · ${Tc(e.damageType)}` : "Dano";
   }
 }
-function yg(e, t) {
+function Ag(e, t) {
   const n = [];
   return e instanceof HTMLButtonElement && e.matches(t) && n.push(e), "querySelectorAll" in e && n.push(
     ...Array.from(e.querySelectorAll(t))
@@ -2851,12 +2851,12 @@ function di(e, t) {
 function mi(e) {
   return !!(e && typeof e == "object" && "system" in e && ("uuid" in e || "id" in e));
 }
-function ra(e) {
+function oa(e) {
   return e.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
-const _g = "paranormal-toolkit-chat-message--full-width-card", fi = ".paranormal-toolkit-ability-card", pi = "li.chat-message";
+const Tg = "paranormal-toolkit-chat-message--full-width-card", fi = ".paranormal-toolkit-ability-card", pi = "li.chat-message";
 let gi = !1;
-function Ag() {
+function Rg() {
   if (gi) return;
   gi = !0;
   const e = Hooks, t = (n, a) => {
@@ -2866,36 +2866,36 @@ function Ag() {
 }
 function hi(e) {
   if (!e) return 0;
-  const t = Ur(e), n = Tg(t), a = /* @__PURE__ */ new Set();
+  const t = qr(e), n = kg(t), a = /* @__PURE__ */ new Set();
   for (const r of n) {
-    const o = Rg(t, r);
+    const o = Eg(t, r);
     o?.classList && a.add(o);
   }
   for (const r of a)
-    r.classList?.add(_g);
+    r.classList?.add(Tg);
   return a.size;
 }
-function Tg(e) {
+function kg(e) {
   const t = [];
   e.matches?.(fi) && t.push(e);
   const n = e.querySelectorAll?.(fi);
   if (!n) return t;
   for (const a of Array.from(n)) {
-    const r = Ur(a);
+    const r = qr(a);
     t.includes(r) || t.push(r);
   }
   return t;
 }
-function Rg(e, t) {
+function Eg(e, t) {
   if (e.matches?.(pi)) return e;
   const n = t.closest?.(pi);
-  return n ? Ur(n) : null;
+  return n ? qr(n) : null;
 }
-function Ur(e) {
+function qr(e) {
   return e && typeof e == "object" ? e : {};
 }
-function kg(e) {
-  const t = Eg(e.cost), n = $g(e.currentResource), a = t > 0 && !e.passive, r = n >= t;
+function $g(e) {
+  const t = wg(e.cost), n = Cg(e.currentResource), a = t > 0 && !e.passive, r = n >= t;
   return {
     header: {
       eyebrow: e.passive ? "Habilidade passiva" : "Usar habilidade",
@@ -2921,21 +2921,21 @@ function kg(e) {
     primaryActionLabel: e.passive ? "Enviar ao chat" : "Usar habilidade"
   };
 }
-function Eg(e) {
+function wg(e) {
   return Number.isFinite(e) ? Math.max(0, Math.trunc(e)) : 0;
 }
-function $g(e) {
+function Cg(e) {
   return Number.isFinite(e) ? Math.max(0, e) : 0;
 }
-const { ApplicationV2: wg } = foundry.applications.api;
-class yt extends wg {
+const { ApplicationV2: Sg } = foundry.applications.api;
+class yt extends Sg {
   constructor(t, n) {
     super({
       id: `${d}-ability-use-${foundry.utils.randomID()}`,
       window: {
         title: `Usar ${t.abilityName}`
       }
-    }), this.resolveRequest = n, this.model = kg(t), this.spendResource = this.model.cost.spendResourceChecked;
+    }), this.resolveRequest = n, this.model = $g(t), this.spendResource = this.model.cost.spendResourceChecked;
   }
   resolveRequest;
   model;
@@ -2986,7 +2986,7 @@ class yt extends wg {
       <header class="paranormal-toolkit-ritual-cast__header paranormal-toolkit-ability-use__header">
         <img
           class="paranormal-toolkit-ability-use__image"
-          src="${Cg(this.model.header.image)}"
+          src="${Ig(this.model.header.image)}"
           alt=""
         >
         <div>
@@ -3092,66 +3092,66 @@ class yt extends wg {
 function V(e) {
   return e.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
-function Cg(e) {
+function Ig(e) {
   return V(e);
 }
-function Sg(e, t) {
-  const n = Ng(t.system), a = dn(n.activation), r = Dg(a), o = Lg();
+function Lg(e, t) {
+  const n = Og(t.system), a = dn(n.activation), r = Ng(a), o = Dg();
   return {
     actor: e,
     item: t,
     name: t.name ?? "Habilidade sem nome",
-    image: Pg(t),
+    image: Mg(t),
     activation: a,
-    activationLabel: vg(a),
+    activationLabel: xg(a),
     description: dn(n.description),
-    chatDescription: Ig(
+    chatDescription: vg(
       n.chatDescription,
       n.description
     ),
-    cost: r ? 0 : xg(n.cost),
+    cost: r ? 0 : Pg(n.cost),
     resource: o,
     passive: r,
-    rolls: Vp(e, t)
+    rolls: Wp(e, t)
   };
 }
-function Ig(e, t) {
+function vg(e, t) {
   const n = dn(e);
   return n.trim().length > 0 ? n : dn(t);
 }
-function Lg() {
+function Dg() {
   return game.settings.get("ordemparanormal", "globalPlayingWithoutSanity") === !0 ? "PD" : "PE";
 }
-function vg(e) {
+function xg(e) {
   if (!e) return "—";
-  const t = `op.executionChoices.${e}`, a = Og()?.(t) ?? t;
+  const t = `op.executionChoices.${e}`, a = Fg()?.(t) ?? t;
   return a === t ? e : a;
 }
-function Dg(e) {
+function Ng(e) {
   const t = e.trim().toLocaleLowerCase("pt-BR");
   return t === "passive" || t === "passiva" || t.includes("passiv");
 }
-function xg(e) {
+function Pg(e) {
   const t = typeof e == "number" ? e : Number(e);
   return Number.isFinite(t) ? Math.max(0, Math.trunc(t)) : 0;
 }
-function Ng(e) {
+function Og(e) {
   return e && typeof e == "object" ? e : {};
 }
 function dn(e) {
   return typeof e == "string" ? e : "";
 }
-function Pg(e) {
+function Mg(e) {
   const t = e;
   return typeof t.img == "string" && t.img.length > 0 ? t.img : "icons/svg/item-bag.svg";
 }
-function Og() {
+function Fg() {
   const e = game;
   return typeof e.i18n?.localize == "function" ? e.i18n.localize.bind(e.i18n) : null;
 }
-class Mg {
+class Bg {
   async publish(t, n, a) {
-    const r = await zg(n), o = Fg({
+    const r = await Vg(n), o = Ug({
       abilityName: n.name,
       abilityImage: n.image,
       actorName: n.actor.name ?? "Personagem sem nome",
@@ -3183,20 +3183,20 @@ class Mg {
           abilityUse: i
         }
       }
-    }, c = jg(t.message);
-    if (Pr() === "replace" && c) {
+    }, c = Gg(t.message);
+    if (Or() === "replace" && c) {
       await c.update(l);
       return;
     }
     await ChatMessage.create(l);
   }
 }
-function Fg(e) {
-  const t = e.cost > 0 ? `${e.cost} ${e.resource}` : "Nenhum", n = e.cost <= 0 || e.passive ? "Sem gasto de recurso" : e.spentResource ? `${e.cost} ${e.resource} gastos (${e.resourceBefore} → ${e.resourceAfter})` : `${e.cost} ${e.resource} não descontados`, a = e.cost <= 0 || e.passive ? "paranormal-toolkit-ability-card__status--neutral" : e.spentResource ? "paranormal-toolkit-ability-card__status--spent" : "paranormal-toolkit-ability-card__status--not-spent", r = Bg(e.rolls), o = qg(e.description);
+function Ug(e) {
+  const t = e.cost > 0 ? `${e.cost} ${e.resource}` : "Nenhum", n = e.cost <= 0 || e.passive ? "Sem gasto de recurso" : e.spentResource ? `${e.cost} ${e.resource} gastos (${e.resourceBefore} → ${e.resourceAfter})` : `${e.cost} ${e.resource} não descontados`, a = e.cost <= 0 || e.passive ? "paranormal-toolkit-ability-card__status--neutral" : e.spentResource ? "paranormal-toolkit-ability-card__status--spent" : "paranormal-toolkit-ability-card__status--not-spent", r = qg(e.rolls), o = zg(e.description);
   return `
     <article class="paranormal-toolkit-ability-card">
       <header class="paranormal-toolkit-ability-card__header">
-        <img src="${Fa(e.abilityImage)}" alt="">
+        <img src="${Ba(e.abilityImage)}" alt="">
         <div>
           <span>Habilidade</span>
           <h3>${fe(e.abilityName)}</h3>
@@ -3219,19 +3219,19 @@ function Fg(e) {
     </article>
   `;
 }
-function Bg(e) {
+function qg(e) {
   return e.length === 0 ? "" : `
     <section class="paranormal-toolkit-ability-card__rolls">
       <strong class="paranormal-toolkit-ability-card__rolls-title">Rolagens</strong>
       <div class="paranormal-toolkit-ability-card__rolls-list">
         ${e.map((n) => {
-    const a = `paranormal-toolkit-ability-card__roll--${n.intent}`, r = Ug(n), o = n.nexThreshold === null ? "" : `<span>NEX ${n.nexThreshold}%</span>`;
+    const a = `paranormal-toolkit-ability-card__roll--${n.intent}`, r = jg(n), o = n.nexThreshold === null ? "" : `<span>NEX ${n.nexThreshold}%</span>`;
     return `
         <button
           type="button"
           class="paranormal-toolkit-ability-card__roll ${a}"
-          ${Br}="${Fa(n.id)}"
-          title="${Fa(n.formula)}"
+          ${Ur}="${Ba(n.id)}"
+          title="${Ba(n.formula)}"
         >
           <i class="fa-solid fa-dice-d20" aria-hidden="true"></i>
           <span class="paranormal-toolkit-ability-card__roll-label">
@@ -3246,7 +3246,7 @@ function Bg(e) {
     </section>
   `;
 }
-function Ug(e) {
+function jg(e) {
   switch (e.intent) {
     case "generic":
       return "Rolagem genérica";
@@ -3256,7 +3256,7 @@ function Ug(e) {
       return e.damageType ? `Dano · ${Tc(e.damageType)}` : "Dano";
   }
 }
-function qg(e) {
+function zg(e) {
   return e.trim() ? `
     <details class="paranormal-toolkit-ability-card__description">
       <summary>
@@ -3270,7 +3270,7 @@ function qg(e) {
     </details>
   ` : "";
 }
-function jg(e) {
+function Gg(e) {
   if (!e || typeof e != "object") return null;
   const t = e;
   return typeof t.update == "function" ? t : null;
@@ -3278,26 +3278,26 @@ function jg(e) {
 function fe(e) {
   return e.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
-function Fa(e) {
+function Ba(e) {
   return fe(e);
 }
-async function zg(e) {
-  const t = e.chatDescription || e.description, n = Gg();
+async function Vg(e) {
+  const t = e.chatDescription || e.description, n = Hg();
   return !n || !t ? t : n.enrichHTML(t, {
     relativeTo: e.item,
-    rollData: Vg(e.actor)
+    rollData: Wg(e.actor)
   });
 }
-function Gg() {
+function Hg() {
   const t = foundry.applications?.ux?.TextEditor?.implementation;
   return typeof t?.enrichHTML == "function" ? t : null;
 }
-function Vg(e) {
+function Wg(e) {
   const n = e.getRollData?.();
   return n && typeof n == "object" ? n : {};
 }
-class Hg {
-  constructor(t, n, a = new Mg()) {
+class Kg {
+  constructor(t, n, a = new Bg()) {
     this.resources = t, this.resourceAdapter = n, this.chatCards = a;
   }
   resources;
@@ -3310,12 +3310,12 @@ class Hg {
         "missing-actor",
         "Não foi possível identificar o personagem desta habilidade."
       );
-    if (!Wg(n))
+    if (!Yg(n))
       return this.fail(
         "missing-permission",
         "Você não possui permissão para usar esta habilidade."
       );
-    const a = Sg(n, t.item), r = this.readCurrentResource(a);
+    const a = Lg(n, t.item), r = this.readCurrentResource(a);
     if (!r.ok)
       return this.fail(
         "resource-unavailable",
@@ -3397,26 +3397,26 @@ class Hg {
     return ui.notifications?.warn(n), { status: "failed", reason: t, message: n };
   }
 }
-function Wg(e) {
+function Yg(e) {
   return game.user?.isGM ? !0 : e.isOwner === !0;
 }
 const bi = 1e3;
-class Kg {
+class Xg {
   workflow;
   strategy;
   inFlight = /* @__PURE__ */ new Set();
   recentExecutions = /* @__PURE__ */ new Map();
   constructor(t, n) {
-    this.workflow = new Hg(t, n), this.strategy = new gc(
+    this.workflow = new Kg(t, n), this.strategy = new gc(
       (a) => this.handleItemUsed(a)
     );
   }
   register() {
-    this.strategy.register(), Ag(), lg(), f.info("Workflow genérico de habilidades registrado.");
+    this.strategy.register(), Rg(), ug(), f.info("Workflow genérico de habilidades registrado.");
   }
   async handleItemUsed(t) {
-    if (Da().executionMode === "disabled" || !Xg(t.item)) return;
-    const n = Qg(t);
+    if (xa().executionMode === "disabled" || !Zg(t.item)) return;
+    const n = Jg(t);
     if (!this.isDuplicate(n)) {
       this.inFlight.add(n);
       try {
@@ -3441,44 +3441,44 @@ class Kg {
       a < t && this.recentExecutions.delete(n);
   }
 }
-function Yg(e, t) {
-  const n = new Kg(e, t);
+function Qg(e, t) {
+  const n = new Xg(e, t);
   return n.register(), n;
 }
-function Xg(e) {
+function Zg(e) {
   if (e.type !== "ability") return !1;
-  const t = Sr(e);
+  const t = Ir(e);
   return !t.ok && t.error.reason === "missing-automation";
 }
-function Qg(e) {
+function Jg(e) {
   const t = e.actor?.uuid ?? e.actor?.id ?? "missing-actor", n = e.item.uuid ?? e.item.id ?? e.item.name ?? "missing-item";
   return `${t}|${n}`;
 }
-let yi = !1, oa = !1, ia = !1, qt = null;
-const Zg = 1e3, Jg = 750, eh = 1e3;
-function th(e) {
+let yi = !1, ia = !1, sa = !1, qt = null;
+const eh = 1e3, th = 750, nh = 1e3;
+function ah(e) {
   yi || (Hooks.on("combatTurnChange", (t) => {
-    ah(e, _i(t));
+    oh(e, _i(t));
   }), Hooks.on("deleteCombat", (t) => {
-    rh(e, _i(t));
-  }), yi = !0, nh(e));
+    ih(e, _i(t));
+  }), yi = !0, rh(e));
 }
-function nh(e) {
-  Nn() && (oa || (oa = !0, globalThis.setTimeout(() => {
-    oa = !1, qr(e, "ready");
-  }, Zg)));
-}
-function ah(e, t) {
-  Nn() && t && (qt && globalThis.clearTimeout(qt), qt = globalThis.setTimeout(() => {
-    qt = null, qr(e, "combat-turn-change", t);
-  }, Jg));
-}
-function rh(e, t) {
-  Nn() && t && (ia || (ia = !0, globalThis.setTimeout(() => {
-    ia = !1, qr(e, "combat-deleted", t);
+function rh(e) {
+  Nn() && (ia || (ia = !0, globalThis.setTimeout(() => {
+    ia = !1, jr(e, "ready");
   }, eh)));
 }
-async function qr(e, t, n) {
+function oh(e, t) {
+  Nn() && t && (qt && globalThis.clearTimeout(qt), qt = globalThis.setTimeout(() => {
+    qt = null, jr(e, "combat-turn-change", t);
+  }, th));
+}
+function ih(e, t) {
+  Nn() && t && (sa || (sa = !0, globalThis.setTimeout(() => {
+    sa = !1, jr(e, "combat-deleted", t);
+  }, nh)));
+}
+async function jr(e, t, n) {
   if (Nn())
     try {
       const a = await e.cleanupExpiredConditions({
@@ -3506,7 +3506,7 @@ function _i(e) {
 const Ec = {
   enabled: "dice.animations.enabled"
 };
-function oh() {
+function sh() {
   game.settings.register(d, Ec.enabled, {
     name: "Animar rolagens com Dice So Nice",
     hint: "Quando o Dice So Nice estiver ativo, anima as rolagens feitas pelo Paranormal Toolkit sem criar mensagens extras no chat.",
@@ -3516,37 +3516,37 @@ function oh() {
     default: !0
   });
 }
-function ih() {
+function lh() {
   return {
     enabled: game.settings.get(d, Ec.enabled) === !0
   };
 }
-const Pn = "chatCard", Ai = "data-paranormal-toolkit-prompt-id", s = `${d}-item-use-prompt`, sh = `.${s}__title`, $c = `.${s}__header`, lh = `.${s}__roll-card`, ch = `.${s}__roll-meta`, uh = `.${s}__roll-meta-pill`, jr = `.${s}__resistance`, dh = `.${s}__resistance-header`, wc = `.${s}__resistance-description`, On = `.${s}__resistance-roll-button`, Cc = `.${s}__resistance-roll-result`, Ti = `${s}__resistance-content`, Sc = `.${s}__workflow-section`, Ic = `.${s}__workflow-roll`, zr = `${s}__workflow-roll--dice-open`, Gr = `.${s}__workflow-roll-formula`, Vr = `${s}__workflow-roll-formula--toggle`, Mn = `.${s}__workflow-dice-tray`, mh = `.${s}__roll-detail-toggle`, fh = `.${s}__roll-detail-list`, ph = `.${s}__ritual-element-badge`, gh = `.${s}__ritual-metadata`, hh = "casting-backlash", bh = "data-paranormal-toolkit-action-section", yh = "data-paranormal-toolkit-prompt-id", _h = "data-paranormal-toolkit-pending-id", Ri = "data-paranormal-toolkit-casting-backlash-enhanced", ki = `.${s}`, Ah = `.${s}__workflow-section--casting`, Th = `.${s}__workflow-section-header`, Rh = `.${s}__workflow-notes`, kh = `[${bh}="${hh}"]`, Ei = `${s}__workflow-section-title-row`, Eh = `${s}__workflow-section-header--casting-backlash`, Lc = `${s}__casting-backlash-button`;
-function $h(e) {
-  for (const t of wh(e))
-    Ch(t), Dh(t);
+const Pn = "chatCard", Ai = "data-paranormal-toolkit-prompt-id", s = `${d}-item-use-prompt`, ch = `.${s}__title`, $c = `.${s}__header`, uh = `.${s}__roll-card`, dh = `.${s}__roll-meta`, mh = `.${s}__roll-meta-pill`, zr = `.${s}__resistance`, fh = `.${s}__resistance-header`, wc = `.${s}__resistance-description`, On = `.${s}__resistance-roll-button`, Cc = `.${s}__resistance-roll-result`, Ti = `${s}__resistance-content`, Sc = `.${s}__workflow-section`, Ic = `.${s}__workflow-roll`, Gr = `${s}__workflow-roll--dice-open`, Vr = `.${s}__workflow-roll-formula`, Hr = `${s}__workflow-roll-formula--toggle`, Mn = `.${s}__workflow-dice-tray`, ph = `.${s}__roll-detail-toggle`, gh = `.${s}__roll-detail-list`, hh = `.${s}__ritual-element-badge`, bh = `.${s}__ritual-metadata`, yh = "casting-backlash", _h = "data-paranormal-toolkit-action-section", Ah = "data-paranormal-toolkit-prompt-id", Th = "data-paranormal-toolkit-pending-id", Ri = "data-paranormal-toolkit-casting-backlash-enhanced", ki = `.${s}`, Rh = `.${s}__workflow-section--casting`, kh = `.${s}__workflow-section-header`, Eh = `.${s}__workflow-notes`, $h = `[${_h}="${yh}"]`, Ei = `${s}__workflow-section-title-row`, wh = `${s}__workflow-section-header--casting-backlash`, Lc = `${s}__casting-backlash-button`;
+function Ch(e) {
+  for (const t of Sh(e))
+    Ih(t), Nh(t);
 }
-function wh(e) {
+function Sh(e) {
   const t = /* @__PURE__ */ new Set();
   e instanceof HTMLElement && e.matches(ki) && t.add(e);
   for (const n of e.querySelectorAll(ki))
     t.add(n);
   return Array.from(t);
 }
-function Ch(e) {
-  const t = e.querySelector(kh);
+function Ih(e) {
+  const t = e.querySelector($h);
   if (!t) return;
-  const n = Sh(t);
+  const n = Lh(t);
   if (!n) return;
-  const a = e.querySelector(`${Ah} ${Th}`);
-  a && (a.classList.add(Eh), Ih(a), Lh(n), a.append(n), t.remove());
+  const a = e.querySelector(`${Rh} ${kh}`);
+  a && (a.classList.add(wh), vh(a), Dh(n), a.append(n), t.remove());
 }
-function Sh(e) {
+function Lh(e) {
   return e.querySelector(
-    `button[${_h}], button[${yh}]`
+    `button[${Th}], button[${Ah}]`
   );
 }
-function Ih(e) {
+function vh(e) {
   const t = e.querySelector(`:scope > .${Ei}`);
   if (t) return t;
   const n = document.createElement("div");
@@ -3557,27 +3557,27 @@ function Ih(e) {
     r !== n && (r instanceof HTMLButtonElement && r.classList.contains(Lc) || n.append(r));
   return n;
 }
-function Lh(e) {
+function Dh(e) {
   if (e.getAttribute(Ri) === "true") return;
-  const t = e.textContent?.trim() || "Aplicar dano na SAN", n = vh(t, e.disabled);
+  const t = e.textContent?.trim() || "Aplicar dano na SAN", n = xh(t, e.disabled);
   e.classList.add(Lc), e.setAttribute(Ri, "true"), e.setAttribute("title", n), e.setAttribute("aria-label", n);
 }
-function vh(e, t) {
+function xh(e, t) {
   return t ? "Dano na SAN já aplicado" : `${e.toLocaleLowerCase().includes("san") ? e : `${e} na SAN`} no conjurador`;
 }
-function Dh(e) {
-  for (const t of e.querySelectorAll(Rh)) {
+function Nh(e) {
+  for (const t of e.querySelectorAll(Eh)) {
     for (const n of Array.from(t.children))
       (n.textContent?.trim() ?? "").startsWith("Falha de conjuração:") && n.remove();
     t.children.length === 0 && t.remove();
   }
 }
-function xh(e) {
+function Ph(e) {
   for (const t of Array.from(e.querySelectorAll(Sc)))
-    for (const n of Array.from(t.querySelectorAll(`${mh}, ${fh}`)))
+    for (const n of Array.from(t.querySelectorAll(`${ph}, ${gh}`)))
       n.remove();
 }
-const Nh = {
+const Oh = {
   cutting: "cuttingDamage",
   impact: "impactDamage",
   piercing: "piercingDamage",
@@ -3592,9 +3592,9 @@ const Nh = {
   electric: "eletricDamage",
   chemical: "chemicalDamage",
   mental: "mentalDamage"
-}, Ph = new Set(
-  Object.values(Nh)
-), Oh = {
+}, Mh = new Set(
+  Object.values(Oh)
+), Fh = {
   generic: null,
   none: null,
   indefinido: null,
@@ -3655,14 +3655,14 @@ const Nh = {
   ment: "mentalDamage",
   mentaldamage: "mentalDamage"
 };
-function Mh(e) {
+function Bh(e) {
   if (e == null)
     return { ok: !0, value: null, normalized: null };
-  const t = Fh(e);
+  const t = Uh(e);
   if (!t)
     return { ok: !0, value: null, normalized: null };
-  const n = Oh[t];
-  return n !== void 0 ? { ok: !0, value: n, normalized: t } : Ph.has(e) ? { ok: !0, value: e, normalized: t } : { ok: !1, input: e, normalized: t };
+  const n = Fh[t];
+  return n !== void 0 ? { ok: !0, value: n, normalized: t } : Mh.has(e) ? { ok: !0, value: e, normalized: t } : { ok: !1, input: e, normalized: t };
 }
 function vc(e) {
   switch (e) {
@@ -3698,7 +3698,7 @@ function vc(e) {
       return "Sem tipo";
   }
 }
-function Fh(e) {
+function Uh(e) {
   const t = e.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/gu, "").replace(/[^a-z0-9]/gu, "");
   return t.length > 0 ? t : null;
 }
@@ -3725,7 +3725,7 @@ class Dc {
     const i = [], l = /* @__PURE__ */ new Set();
     let c = null;
     for (const [u, m] of t.instances.entries()) {
-      const p = Bh(m, u);
+      const p = qh(m, u);
       if (!p.ok)
         return g({
           actor: n,
@@ -3735,7 +3735,7 @@ class Dc {
           message: "A quantidade de dano deve ser um inteiro maior ou igual a zero.",
           instance: m
         });
-      const _ = Mh(m.damageType);
+      const _ = Bh(m.damageType);
       if (!_.ok)
         return g({
           actor: n,
@@ -3748,7 +3748,7 @@ class Dc {
         });
       if (p.amount === 0) {
         i.push(
-          Uh(p.id, m, _.value)
+          jh(p.id, m, _.value)
         );
         continue;
       }
@@ -3760,9 +3760,9 @@ class Dc {
             nonLethal: m.nonLethal === !0
           })
         );
-        for (const k of jh($.conditions))
+        for (const k of Gh($.conditions))
           l.add(k);
-        const T = qh($.newPV);
+        const T = zh($.newPV);
         T !== null && (c = T), i.push({
           id: p.id,
           label: m.label ?? vc(_.value),
@@ -3811,7 +3811,7 @@ class Dc {
     });
   }
 }
-function Bh(e, t) {
+function qh(e, t) {
   if (!Number.isFinite(e.amount)) return { ok: !1 };
   const n = Math.max(0, Math.trunc(e.amount));
   return n < 0 ? { ok: !1 } : {
@@ -3820,7 +3820,7 @@ function Bh(e, t) {
     amount: n
   };
 }
-function Uh(e, t, n) {
+function jh(e, t, n) {
   return {
     id: e,
     label: t.label ?? vc(n),
@@ -3837,33 +3837,33 @@ function Uh(e, t, n) {
 function $i(e, t) {
   return typeof e == "number" && Number.isFinite(e) ? e : t;
 }
-function qh(e) {
+function zh(e) {
   return typeof e == "number" && Number.isFinite(e) ? e : null;
 }
-function jh(e) {
+function Gh(e) {
   return Array.isArray(e) ? e.filter(
     (t) => typeof t == "string" && t.length > 0
   ) : [];
 }
 class Fn {
   async rollResistance(t) {
-    const n = await Gh(t.actor, t.skill);
+    const n = await Hh(t.actor, t.skill);
     if (!n)
       throw new Error(`Não foi possível rolar a resistência ${t.skill} pelo sistema Ordem.`);
     return {
       skill: t.skill,
       skillLabel: t.skillLabel ?? De(t.skill),
       roll: n,
-      formula: Hh(n),
-      total: Wh(n),
-      diceBreakdown: Kh(n)
+      formula: Kh(n),
+      total: Yh(n),
+      diceBreakdown: Xh(n)
     };
   }
   getSkillLabel(t) {
     return De(t);
   }
 }
-async function zh(e, t) {
+async function Vh(e, t) {
   return new Fn().rollResistance({ actor: e, skill: t });
 }
 function De(e) {
@@ -3878,7 +3878,7 @@ function De(e) {
       return e;
   }
 }
-async function Gh(e, t) {
+async function Hh(e, t) {
   const n = e;
   if (typeof n.rollSkill != "function")
     return null;
@@ -3892,26 +3892,26 @@ async function Gh(e, t) {
       }
     )
   );
-  return Vh(a);
+  return Wh(a);
 }
-function Vh(e) {
+function Wh(e) {
   return wi(e) ? e : Array.isArray(e) ? e.find(wi) ?? null : null;
 }
 function wi(e) {
   return !!(e && typeof e == "object" && "evaluate" in e && "total" in e);
 }
-function Hh(e) {
+function Kh(e) {
   const t = e.formula;
   return typeof t == "string" && t.trim().length > 0 ? t : "rolagem";
 }
-function Wh(e) {
+function Yh(e) {
   const t = e.total;
   return typeof t == "number" && Number.isFinite(t) ? Math.trunc(t) : 0;
 }
-function Kh(e) {
+function Xh(e) {
   const t = e.dice;
   if (!Array.isArray(t)) return null;
-  const n = t.find(Yh);
+  const n = t.find(Qh);
   if (!n) return null;
   const r = (Array.isArray(n.results) ? n.results : []).flatMap((o) => {
     if (!o || typeof o != "object") return [];
@@ -3920,7 +3920,7 @@ function Kh(e) {
   });
   return r.length > 0 ? `(${r.join(", ")})` : null;
 }
-function Yh(e) {
+function Qh(e) {
   return !!(e && typeof e == "object" && e.faces === 20);
 }
 class xc {
@@ -3932,7 +3932,7 @@ class xc {
     return this.adapter.applyDamage(t);
   }
 }
-class Hr {
+class Wr {
   constructor(t) {
     this.adapter = t;
   }
@@ -3949,8 +3949,8 @@ class Hr {
     return this.adapter.getSkillLabel?.(t) ?? t;
   }
 }
-function Xh(e, t) {
-  const n = ab(e?.rounds);
+function Zh(e, t) {
+  const n = ob(e?.rounds);
   if (!n)
     return Ci(null);
   const a = e?.anchor ?? Nc(t);
@@ -3965,7 +3965,7 @@ function Xh(e, t) {
     // Não damos uma duração finita nem evento de expiração nativo para o Foundry,
     // porque o registry de ActiveEffect do Foundry pode marcar o efeito como expirado
     // na virada da rodada antes do turno correto do combatente afetado.
-    duration: Qh(),
+    duration: Jh(),
     start: {
       combat: a.combatId,
       combatant: a.combatantId,
@@ -3987,9 +3987,9 @@ function Xh(e, t) {
   };
 }
 function Nc(e) {
-  const t = rb();
+  const t = ib();
   if (!t?.id || !Pc(t.round)) return null;
-  const n = tb(t), a = Zh(e, n) ?? eb(t), r = me(a?.id), o = ib(a?.initiative), i = Jh(t, a, n);
+  const n = ab(t), a = eb(e, n) ?? nb(t), r = me(a?.id), o = lb(a?.initiative), i = tb(t, a, n);
   return {
     mode: "combatantTurn",
     combatId: t.id,
@@ -3997,10 +3997,10 @@ function Nc(e) {
     round: t.round,
     turn: i,
     initiative: o,
-    time: ob()
+    time: sb()
   };
 }
-function Qh() {
+function Jh() {
   return {
     value: null,
     units: "seconds",
@@ -4023,21 +4023,21 @@ function Ci(e) {
     warning: null
   };
 }
-function Zh(e, t) {
-  return e?.id ? t.find((n) => nb(n) === e.id) ?? null : null;
+function eb(e, t) {
+  return e?.id ? t.find((n) => rb(n) === e.id) ?? null : null;
 }
-function Jh(e, t, n) {
+function tb(e, t, n) {
   const a = me(t?.id);
   if (a) {
     const r = n.findIndex((o) => o.id === a);
     if (r >= 0) return r;
   }
-  return sb(e.turn) ? e.turn : null;
+  return cb(e.turn) ? e.turn : null;
 }
-function eb(e) {
+function nb(e) {
   return Jt(e.combatant) ? e.combatant : null;
 }
-function tb(e) {
+function ab(e) {
   const t = e.combatants;
   if (Array.isArray(t)) return t.filter(Jt);
   if (t && typeof t == "object") {
@@ -4049,16 +4049,16 @@ function tb(e) {
   }
   return [];
 }
-function nb(e) {
+function rb(e) {
   return me(e.actor?.id) ?? me(e.actorId) ?? me(e.token?.actor?.id) ?? me(e.token?.actorId) ?? me(e.document?.actor?.id) ?? me(e.document?.actorId);
 }
-function ab(e) {
+function ob(e) {
   return Pc(e) ? Math.trunc(e) : null;
 }
-function rb() {
+function ib() {
   return game.combat ?? null;
 }
-function ob() {
+function sb() {
   const e = game.time?.worldTime;
   return typeof e == "number" && Number.isFinite(e) ? e : 0;
 }
@@ -4068,13 +4068,13 @@ function Jt(e) {
 function me(e) {
   return typeof e == "string" && e.length > 0 ? e : null;
 }
-function ib(e) {
+function lb(e) {
   return typeof e == "number" && Number.isFinite(e) ? e : null;
 }
 function Pc(e) {
   return typeof e == "number" && Number.isInteger(e) && e > 0;
 }
-function sb(e) {
+function cb(e) {
   return typeof e == "number" && Number.isInteger(e) && e >= 0;
 }
 class Oc {
@@ -4105,7 +4105,7 @@ class Oc {
         message: n.error.message
       });
     const a = t.actor;
-    if (!bb(a))
+    if (!_b(a))
       return g({
         actor: t.actor,
         actorId: t.actor?.id ?? null,
@@ -4114,7 +4114,7 @@ class Oc {
         reason: "invalid-actor",
         message: `Ator inválido para aplicar condição: ${t.actor?.name ?? "sem nome"}.`
       });
-    const r = n.value, o = Xh(t.duration, a), i = lb(r, t, o), c = t.refreshExisting ?? !0 ? yb(a, r.id) : null;
+    const r = n.value, o = Zh(t.duration, a), i = ub(r, t, o), c = t.refreshExisting ?? !0 ? Ab(a, r.id) : null;
     if (c)
       try {
         return await Promise.resolve(c.update?.(i)), y(Si(a, r, c.id ?? null, !1, !0, o));
@@ -4184,13 +4184,13 @@ class Oc {
     return n.ok ? n.value.id : t;
   }
   async cleanupExpiredConditions(t = {}) {
-    const n = Tb(), a = [];
+    const n = kb(), a = [];
     let r = 0, o = 0;
     for (const i of n) {
-      const l = Wr(i);
+      const l = Kr(i);
       r += l.length;
       for (const c of l) {
-        if (!db(c, t)) continue;
+        if (!fb(c, t)) continue;
         const u = Mc(c);
         try {
           await Ii(i, c) === "deleted" && (o += 1);
@@ -4215,7 +4215,7 @@ class Oc {
     };
   }
 }
-function lb(e, t, n) {
+function ub(e, t, n) {
   const a = {
     schemaVersion: 1,
     conditionId: e.id,
@@ -4224,7 +4224,7 @@ function lb(e, t, n) {
     source: t.source ?? null,
     originUuid: t.originUuid ?? null,
     appliedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    appliedByUserId: vb(),
+    appliedByUserId: xb(),
     requestedRounds: n.requestedRounds,
     combatDurationApplied: n.combatDurationApplied,
     combatId: n.combatId,
@@ -4246,8 +4246,8 @@ function lb(e, t, n) {
     disabled: !1,
     transfer: !1,
     changes: e.changes.map((r) => ({ ...r })),
-    duration: cb(n.duration),
-    start: ub(n.start),
+    duration: db(n.duration),
+    start: mb(n.start),
     showIcon: 2,
     statuses: [e.id],
     flags: {
@@ -4255,7 +4255,7 @@ function lb(e, t, n) {
     }
   };
 }
-function cb(e) {
+function db(e) {
   return {
     value: null,
     units: "rounds",
@@ -4263,14 +4263,14 @@ function cb(e) {
     ...e
   };
 }
-function ub(e) {
+function mb(e) {
   return {
     combat: null,
     combatant: null,
     initiative: null,
     round: null,
     turn: null,
-    time: Lb(),
+    time: Db(),
     ...e
   };
 }
@@ -4289,36 +4289,36 @@ function Si(e, t, n, a, r, o) {
     warning: o.warning
   };
 }
-function db(e, t) {
+function fb(e, t) {
   const n = Mc(e);
-  if (!n.conditionId || !mb(n)) return !1;
+  if (!n.conditionId || !pb(n)) return !1;
   if (t.removeAllForCombat === !0)
     return !!(t.combatId && n.combatId === t.combatId);
-  const a = Ib();
-  return n.durationMode === "combatantTurn" || fb(n) ? gb(n, a) : pb(e) || !a?.id || n.combatId && n.combatId !== a.id ? !0 : !Z(n.startRound) || !Z(n.requestedRounds) || !Z(a.round) ? !1 : a.round >= n.startRound + n.requestedRounds;
-}
-function mb(e) {
-  return e.deleteOnExpire || e.expiresWithCombat ? !0 : e.combatDurationApplied && Z(e.requestedRounds);
-}
-function fb(e) {
-  return !!(e.combatDurationApplied && Z(e.requestedRounds) && Z(e.startRound) && (e.startCombatantId || mn(e.startTurn)));
+  const a = vb();
+  return n.durationMode === "combatantTurn" || gb(n) ? bb(n, a) : hb(e) || !a?.id || n.combatId && n.combatId !== a.id ? !0 : !Z(n.startRound) || !Z(n.requestedRounds) || !Z(a.round) ? !1 : a.round >= n.startRound + n.requestedRounds;
 }
 function pb(e) {
+  return e.deleteOnExpire || e.expiresWithCombat ? !0 : e.combatDurationApplied && Z(e.requestedRounds);
+}
+function gb(e) {
+  return !!(e.combatDurationApplied && Z(e.requestedRounds) && Z(e.startRound) && (e.startCombatantId || mn(e.startTurn)));
+}
+function hb(e) {
   const t = e.duration;
   if (!t || typeof t != "object") return !1;
   if (t.expired === !0) return !0;
   const n = t.remaining;
   return typeof n == "number" && Number.isFinite(n) && n <= 0;
 }
-function gb(e, t) {
+function bb(e, t) {
   if (!t?.id || e.combatId && e.combatId !== t.id || !Z(e.startRound) || !Z(e.requestedRounds) || !Z(t.round)) return !1;
   const n = e.startRound + e.requestedRounds;
   if (t.round < n) return !1;
   if (t.round > n) return !0;
-  const a = hb(t);
+  const a = yb(t);
   return e.startCombatantId ? a === e.startCombatantId : mn(e.startTurn) && mn(t.turn) ? t.turn === e.startTurn : !1;
 }
-function hb(e) {
+function yb(e) {
   return Ge(e.combatant?.id);
 }
 function Mc(e) {
@@ -4326,45 +4326,45 @@ function Mc(e) {
   return {
     conditionId: en(e, "conditionId"),
     requestedRounds: Li(e, "requestedRounds") ?? pt(t.value) ?? pt(t.rounds),
-    combatDurationApplied: sa(e, "combatDurationApplied"),
+    combatDurationApplied: la(e, "combatDurationApplied"),
     combatId: en(e, "combatId") ?? Ge(n.combat) ?? Ge(t.combat),
     startCombatantId: en(e, "startCombatantId") ?? Ge(n.combatant),
-    startInitiative: $b(e, "startInitiative") ?? Bc(n.initiative),
+    startInitiative: Cb(e, "startInitiative") ?? Bc(n.initiative),
     startRound: Li(e, "startRound") ?? pt(n.round) ?? pt(t.startRound),
-    startTurn: Eb(e, "startTurn") ?? Ba(n.turn) ?? Ba(t.startTurn),
-    expiryEvent: wb(e, "expiryEvent") ?? Uc(t.expiry),
-    durationMode: Cb(e, "durationMode"),
-    deleteOnExpire: sa(e, "deleteOnExpire"),
-    expiresWithCombat: sa(e, "expiresWithCombat")
+    startTurn: wb(e, "startTurn") ?? Ua(n.turn) ?? Ua(t.startTurn),
+    expiryEvent: Sb(e, "expiryEvent") ?? Uc(t.expiry),
+    durationMode: Ib(e, "durationMode"),
+    deleteOnExpire: la(e, "deleteOnExpire"),
+    expiresWithCombat: la(e, "expiresWithCombat")
   };
 }
-function bb(e) {
+function _b(e) {
   return !!(e && typeof e.createEmbeddedDocuments == "function");
 }
-function yb(e, t) {
+function Ab(e, t) {
   return Fc(e, t)[0] ?? null;
 }
 function Fc(e, t) {
-  return Wr(e).filter((n) => kb(n) === t);
+  return Kr(e).filter((n) => $b(n) === t);
 }
 async function Ii(e, t) {
-  const n = t.id ?? null, a = n ? _b(e, n) : t;
+  const n = t.id ?? null, a = n ? Tb(e, n) : t;
   if (!a) return "missing";
   try {
     return await Promise.resolve(a.delete?.()), "deleted";
   } catch (r) {
-    if (Ab(r)) return "missing";
+    if (Rb(r)) return "missing";
     throw r;
   }
 }
-function _b(e, t) {
-  return Wr(e).find((n) => n.id === t) ?? null;
+function Tb(e, t) {
+  return Kr(e).find((n) => n.id === t) ?? null;
 }
-function Ab(e) {
+function Rb(e) {
   const t = e instanceof Error ? e.message : String(e);
   return t.includes("does not exist in the EmbeddedCollectionDelta collection") || t.includes("does not exist in the EmbeddedCollection collection");
 }
-function Tb() {
+function kb() {
   const e = /* @__PURE__ */ new Map(), t = game.actors;
   if (Array.isArray(t?.contents))
     for (const n of t.contents)
@@ -4372,24 +4372,24 @@ function Tb() {
   typeof t?.forEach == "function" && t.forEach((n) => {
     jt(e, n);
   });
-  for (const n of Rb())
+  for (const n of Eb())
     jt(e, n.actor), jt(e, n.document?.actor);
   return Array.from(e.values());
 }
 function jt(e, t) {
-  if (!Sb(t)) return;
+  if (!Lb(t)) return;
   const a = Ge(t.uuid) ?? t.id ?? t.name ?? `actor-${e.size}`;
   e.set(a, t);
 }
-function Rb() {
+function Eb() {
   const e = canvas?.tokens?.placeables;
   return Array.isArray(e) ? e : [];
 }
-function Wr(e) {
+function Kr(e) {
   const t = e.effects;
   return t ? Array.isArray(t) ? t : Array.isArray(t.contents) ? t.contents : typeof t.filter == "function" ? t.filter(() => !0) : [] : [];
 }
-function kb(e) {
+function $b(e) {
   return en(e, "conditionId");
 }
 function en(e, t) {
@@ -4398,20 +4398,20 @@ function en(e, t) {
 function Li(e, t) {
   return pt(Ne(e, t));
 }
-function Eb(e, t) {
-  return Ba(Ne(e, t));
-}
-function $b(e, t) {
-  return Bc(Ne(e, t));
-}
 function wb(e, t) {
-  return Uc(Ne(e, t));
+  return Ua(Ne(e, t));
 }
 function Cb(e, t) {
+  return Bc(Ne(e, t));
+}
+function Sb(e, t) {
+  return Uc(Ne(e, t));
+}
+function Ib(e, t) {
   const n = Ne(e, t);
   return n === "combatantTurn" || n === "sourceTurn" ? "combatantTurn" : "none";
 }
-function sa(e, t) {
+function la(e, t) {
   return Ne(e, t) === !0;
 }
 function Ne(e, t) {
@@ -4429,7 +4429,7 @@ function Ge(e) {
 function pt(e) {
   return Z(e) ? Math.trunc(e) : null;
 }
-function Ba(e) {
+function Ua(e) {
   return mn(e) ? Math.trunc(e) : null;
 }
 function Bc(e) {
@@ -4438,13 +4438,13 @@ function Bc(e) {
 function Uc(e) {
   return e === "turnStart" || e === "turnEnd" ? e : null;
 }
-function Sb(e) {
+function Lb(e) {
   return !!(e && typeof e == "object" && "effects" in e);
 }
-function Ib() {
+function vb() {
   return game.combat ?? null;
 }
-function Lb() {
+function Db() {
   const e = game.time?.worldTime;
   return typeof e == "number" && Number.isFinite(e) ? e : 0;
 }
@@ -4454,160 +4454,158 @@ function Z(e) {
 function mn(e) {
   return typeof e == "number" && Number.isInteger(e) && e >= 0;
 }
-function vb() {
+function xb() {
   return game.user?.id ?? null;
 }
-const Db = "icons/svg/downgrade.svg", xb = "Condição informativa gerenciada pelo Paranormal Toolkit. A automação mecânica será adicionada em versão futura.";
+const Nb = "icons/svg/downgrade.svg", Pb = "Condição informativa gerenciada pelo Paranormal Toolkit. A automação mecânica será adicionada em versão futura.";
 function A(e) {
   return {
     id: e.id,
     aliases: e.aliases ?? [],
     label: e.label,
-    icon: e.icon ?? Db,
-    description: xb,
+    icon: e.icon ?? Nb,
+    description: Pb,
     definitionVersion: e.definitionVersion ?? "1.0.0",
     changes: []
   };
 }
-const Nb = A({
+const Ob = A({
   id: "shaken",
   label: "Abalado",
   aliases: ["abalado"]
-}), Pb = A({
+}), Mb = A({
   id: "frightened",
   label: "Apavorado",
   aliases: ["apavorado"]
-}), Ob = A({
+}), Fb = A({
   id: "confused",
   label: "Confuso",
   aliases: ["confuso"]
-}), Mb = A({
+}), Bb = A({
   id: "insane",
   label: "Enlouquecido",
   aliases: ["enlouquecido"]
-}), Fb = A({
+}), Ub = A({
   id: "exhausted",
   label: "Exausto",
   aliases: ["exausto"]
-}), Bb = A({
+}), qb = A({
   id: "fatigued",
   label: "Fatigado",
   aliases: ["fatigado"]
-}), Ub = A({
+}), jb = A({
   id: "frustrated",
   label: "Frustrado",
   aliases: ["frustrado"]
-}), qb = A({
+}), zb = A({
   id: "dazed",
   label: "Pasmo",
   aliases: ["pasmo"]
-}), jb = A({
+}), Gb = A({
   id: "blinded",
   label: "Cego",
   aliases: ["cego"]
-}), zb = A({
+}), Vb = A({
   id: "debilitated",
   label: "Debilitado",
   aliases: ["debilitado"]
-}), Gb = A({
+}), Hb = A({
   id: "dehydrated",
   label: "Desidratado",
   aliases: ["desidratado"]
-}), Vb = A({
+}), Wb = A({
   id: "diseased",
   label: "Doente",
   aliases: ["doente"]
-}), Hb = A({
+}), Kb = A({
   id: "poisoned",
   label: "Envenenado",
   aliases: ["envenenado"]
-}), Wb = A({
+}), Yb = A({
   id: "starving",
   label: "Esfomeado",
   aliases: ["esfomeado"]
-}), Kb = A({
+}), Xb = A({
   id: "stabbed",
   label: "Esfaqueado",
   aliases: ["esfaqueado"]
-}), Yb = A({
+}), Qb = A({
   id: "weakened",
   label: "Fraco",
   aliases: ["fraco"]
-}), Xb = A({
+}), Zb = A({
   id: "bleeding",
   label: "Sangrando",
   aliases: ["sangrando"]
-}), Qb = A({
+}), Jb = A({
   id: "deafened",
   label: "Surdo",
   aliases: ["surdo"]
-}), Zb = A({
+}), ey = A({
   id: "grabbed",
   label: "Agarrado",
   aliases: ["agarrado"]
-}), Jb = A({
+}), ty = A({
   id: "prone",
   label: "Caído",
   aliases: ["caido", "caído"]
-}), ey = A({
+}), ny = A({
   id: "flatFooted",
   label: "Desprevenido",
   aliases: ["desprevenido"]
-}), ty = A({
+}), ay = A({
   id: "entangled",
   label: "Enredado",
   aliases: ["enredado"]
-}), ny = A({
+}), ry = A({
   id: "flanked",
   label: "Flanqueado",
   aliases: ["flanqueado"]
-}), ay = A({
+}), oy = A({
   id: "immobilized",
   label: "Imóvel",
   aliases: ["imovel", "imóvel"]
-}), ry = A({
+}), iy = A({
   id: "slowed",
   label: "Lento",
   aliases: ["lento"]
-}), oy = A({
+}), sy = A({
   id: "dazzled",
   label: "Ofuscado",
   aliases: ["ofuscado"]
-}), iy = A({
+}), ly = A({
   id: "paralyzed",
   label: "Paralisado",
   aliases: ["paralisado"]
-}), sy = A({
+}), cy = A({
   id: "restrained",
   label: "Preso",
   aliases: ["preso"]
-}), ly = A({
+}), uy = A({
   id: "vulnerable",
   label: "Vulnerável",
   aliases: ["vulneravel", "vulnerável"]
-}), cy = A({
+}), dy = A({
   id: "suffocating",
   label: "Asfixiado",
   aliases: ["asfixiado"]
-}), uy = A({
+}), my = A({
   id: "unconscious",
   label: "Inconsciente",
   aliases: ["inconsciente"]
-}), dy = A({
+}), fy = A({
   id: "helpless",
   label: "Indefeso",
   aliases: ["indefeso"]
-}), my = A({
+}), py = A({
   id: "dying",
   label: "Morrendo",
   aliases: ["morrendo"]
-}), fy = A({
+}), gy = A({
   id: "petrified",
   label: "Petrificado",
   aliases: ["petrificado"]
-}), Kr = [
-  Nb,
-  Pb,
+}), Yr = [
   Ob,
   Mb,
   Fb,
@@ -4639,9 +4637,11 @@ const Nb = A({
   uy,
   dy,
   my,
-  fy
+  fy,
+  py,
+  gy
 ];
-class py {
+class hy {
   definitions = /* @__PURE__ */ new Map();
   lookup = /* @__PURE__ */ new Map();
   constructor(t) {
@@ -4668,7 +4668,7 @@ class py {
   }
 }
 function qc() {
-  return new py(Kr);
+  return new hy(Yr);
 }
 function vi(e) {
   return {
@@ -4694,7 +4694,7 @@ function Gc(e) {
   const t = Qe(e);
   return t === "failure" || t === "success";
 }
-function gy(e, t, n, a) {
+function by(e, t, n, a) {
   const r = e.filter((c) => zc(c, t));
   if (r.length === 0)
     return t ? null : e[0] ?? null;
@@ -4703,7 +4703,7 @@ function gy(e, t, n, a) {
   const l = a(n);
   return l ? i.find((c) => [c.label, c.conditionId].some((u) => a(u) === l)) ?? i[0] ?? null : i[0] ?? null;
 }
-const hy = {
+const yy = {
   available: "Aplicar dano",
   availableCompact: "Dano",
   waitingResistance: "Role resistência",
@@ -4714,7 +4714,7 @@ const hy = {
   appliedCompact: "Aplicado",
   unavailable: "Dano indisponível",
   unavailableCompact: "Sem dano"
-}, by = {
+}, _y = {
   available: "Aplicar efeito",
   availableCompact: "Efeito",
   waitingResistance: "Role resistência",
@@ -4726,11 +4726,11 @@ const hy = {
   unavailable: "Efeito indisponível",
   unavailableCompact: "Sem efeito"
 };
-function yy(e) {
-  return Hc(e, hy, !1);
+function Ay(e) {
+  return Hc(e, yy, !1);
 }
-function _y(e) {
-  return Hc(e, by, !e.allowsSuccessfulResistance);
+function Ty(e) {
+  return Hc(e, _y, !e.allowsSuccessfulResistance);
 }
 function ot(e) {
   return e.kind === "waiting-resistance";
@@ -4757,28 +4757,28 @@ function Be(e, t, n, a, r) {
     reason: r
   };
 }
-const gt = "data-paranormal-toolkit-prompt-id", Ay = "data-paranormal-toolkit-resistance-roll-result", Ty = "Conjuração DT";
-function Ry(e) {
-  const t = e.querySelector(On)?.getAttribute(Ay), n = Rt(t);
+const gt = "data-paranormal-toolkit-prompt-id", Ry = "data-paranormal-toolkit-resistance-roll-result", ky = "Conjuração DT";
+function Ey(e) {
+  const t = e.querySelector(On)?.getAttribute(Ry), n = Rt(t);
   if (n !== null) return n;
   const a = e.querySelector(Cc)?.textContent ?? null, r = a ? /=\s*(-?\d+)\s*$/u.exec(a) : null;
   return Rt(r?.[1] ?? null);
 }
-function Yr(e) {
-  const t = Wc(e), n = wy(t);
+function Xr(e) {
+  const t = Wc(e), n = Sy(t);
   if (n !== null) return n;
-  const a = $y(t);
-  return a !== null ? a : Cy(e);
+  const a = Cy(t);
+  return a !== null ? a : Iy(e);
 }
-function ky(e) {
+function $y(e) {
   const t = Wc(e);
   return t ? {
-    actorId: la(t.actorId),
-    itemId: la(t.itemId),
-    itemName: la(t.itemName)
+    actorId: ca(t.actorId),
+    itemId: ca(t.itemId),
+    itemName: ca(t.itemName)
   } : null;
 }
-function Ey(e) {
+function wy(e) {
   const t = e.getAttribute(gt);
   if (!t) return null;
   const n = Kc(e), a = Yc(n), i = (Array.isArray(a?.prompts) ? a.prompts : []).find((l) => Bn(l) ? l.pendingId === t : !1)?.buttonLabel;
@@ -4787,48 +4787,48 @@ function Ey(e) {
 function ye(e) {
   return e?.trim().toLocaleLowerCase() ?? "";
 }
-function Ua(e) {
+function qa(e) {
   return ye(e).normalize("NFD").replace(new RegExp("\\p{Diacritic}", "gu"), "");
 }
-function $y(e) {
-  const t = Iy(e);
-  return t.length === 0 ? null : Rt(Ly(t, Ty));
+function Cy(e) {
+  const t = vy(e);
+  return t.length === 0 ? null : Rt(Dy(t, ky));
 }
-function wy(e) {
+function Sy(e) {
   const t = typeof e?.actorId == "string" ? e.actorId : null;
   if (!t) return null;
   const a = game.actors?.get?.(t);
   return !a || typeof a != "object" ? null : xi(a, ["system", "ritual", "DT"]) ?? xi(a, ["system", "ritual", "dt"]);
 }
-function Cy(e) {
+function Iy(e) {
   const t = Array.from(e.querySelectorAll(`.${s}__workflow-section--casting .${s}__workflow-section-description`)).map((a) => a.textContent).find((a) => typeof a == "string" && a.includes("DT"));
   if (!t) return null;
   const n = /\bDT\s*(-?\d+)\b/iu.exec(t);
   return Rt(n?.[1] ?? null);
 }
 function Wc(e) {
-  const t = Sy(e);
+  const t = Ly(e);
   if (!t) return null;
   const n = Kc(e), a = Yc(n);
   return (Array.isArray(a?.prompts) ? a.prompts : []).find((o) => Bn(o) ? o.pendingId === t : !1) ?? null;
 }
-function Sy(e) {
+function Ly(e) {
   return (e.closest(`[${gt}]`) ?? e.querySelector(`[${gt}]`) ?? e.parentElement?.querySelector(`[${gt}]`) ?? null)?.getAttribute(gt) ?? null;
 }
 function Kc(e) {
   const n = e.closest("[data-message-id]")?.dataset.messageId ?? null;
   if (!n) return null;
   const r = game.messages?.get?.(n);
-  return vy(r) ? r : null;
+  return xy(r) ? r : null;
 }
 function Yc(e) {
   const t = e?.getFlag?.(d, Pn);
   return Bn(t) ? t : null;
 }
-function Iy(e) {
+function vy(e) {
   return Array.isArray(e?.summaryLines) ? e.summaryLines.filter((t) => typeof t == "string") : [];
 }
-function Ly(e, t) {
+function Dy(e, t) {
   const n = `${t}:`;
   for (const a of e) {
     if (!a.startsWith(n)) continue;
@@ -4850,23 +4850,23 @@ function Rt(e) {
   const t = Number(e);
   return Number.isFinite(t) ? Math.trunc(t) : null;
 }
-function vy(e) {
+function xy(e) {
   return !!(e && typeof e == "object" && typeof e.getFlag == "function");
 }
 function Bn(e) {
   return !!(e && typeof e == "object");
 }
-function la(e) {
+function ca(e) {
   return typeof e == "string" && e.trim().length > 0 ? e : null;
 }
 function Un(e) {
   return Xc({
-    hasResistance: !!e.querySelector(jr),
-    difficulty: Yr(e),
-    resistanceTotal: Ry(e)
+    hasResistance: !!e.querySelector(zr),
+    difficulty: Xr(e),
+    resistanceTotal: Ey(e)
   });
 }
-function Dy(e) {
+function Ny(e) {
   if (!e.hasResistance || e.difficulty === null)
     return Xc({
       hasResistance: e.hasResistance,
@@ -4900,7 +4900,7 @@ function Xc(e) {
     hasResistance: e.hasResistance,
     difficulty: e.difficulty,
     total: e.resistanceTotal,
-    state: Ef(e)
+    state: wf(e)
   };
 }
 function Te() {
@@ -4909,13 +4909,13 @@ function Te() {
 function he() {
   return Te();
 }
-function xy(e) {
-  const t = Ln(e.resistanceGateMode, e.resistanceState), n = Ny(e.resistanceState, e.hasDamage), a = Py(e.resistanceState, e.hasEffect, !!e.effectCanApplyOnSuccessfulResistance), r = yy({
+function Py(e) {
+  const t = Ln(e.resistanceGateMode, e.resistanceState), n = Oy(e.resistanceState, e.hasDamage), a = My(e.resistanceState, e.hasEffect, !!e.effectCanApplyOnSuccessfulResistance), r = Ay({
     resistanceGateMode: e.resistanceGateMode,
     resistanceState: e.resistanceState,
     alreadyApplied: e.damageAlreadyApplied,
     unavailable: !e.hasDamage
-  }), o = _y({
+  }), o = Ty({
     resistanceGateMode: e.resistanceGateMode,
     resistanceState: e.resistanceState,
     alreadyApplied: e.effectAlreadyApplied,
@@ -4933,13 +4933,13 @@ function xy(e) {
     blocksPendingResistance: t
   };
 }
-function Ny(e, t) {
+function Oy(e, t) {
   return t ? e.kind === "succeeded" ? "half" : "normal" : null;
 }
-function Py(e, t, n = !1) {
+function My(e, t, n = !1) {
   return t ? e.kind === "succeeded" && !n ? "resisted" : "applicable" : "unavailable";
 }
-function Xr(e) {
+function Qr(e) {
   const t = e.isGM ?? he();
   return {
     targetId: e.targetId,
@@ -4947,7 +4947,7 @@ function Xr(e) {
     resistanceState: e.resistanceState,
     damage: e.damage,
     effect: e.effect,
-    policy: xy({
+    policy: Py({
       isGM: t,
       resistanceGateMode: e.resistanceGateMode,
       resistanceState: e.resistanceState,
@@ -4960,35 +4960,35 @@ function Xr(e) {
     })
   };
 }
-function Oy(e) {
+function Fy(e) {
   const t = document.createElement("div");
   t.classList.add(`${s}__workflow-roll`, ...e.classNames ?? []);
   const n = document.createElement("span");
   n.classList.add(`${s}__workflow-roll-formula`), n.textContent = e.formula;
   const a = document.createElement("strong");
   a.classList.add(`${s}__workflow-roll-total`), a.textContent = e.total === null ? "—" : String(e.total), t.append(n, a);
-  const r = Fy(e.formula, e.diceBreakdown ?? null);
+  const r = Uy(e.formula, e.diceBreakdown ?? null);
   return r && t.append(r), t;
 }
-function My(e) {
+function By(e) {
   const t = Array.from(e?.querySelectorAll(`.${s}__workflow-die`) ?? []).map((n) => n.textContent?.trim() ?? "").filter((n) => n.length > 0);
   return t.length > 0 ? `(${t.join(", ")})` : null;
 }
-function Fy(e, t) {
-  const n = By(t);
+function Uy(e, t) {
+  const n = qy(t);
   if (n.length === 0) return null;
   const a = document.createElement("div");
   a.classList.add(`${s}__workflow-dice-tray`);
-  for (const r of Uy(n, e)) {
+  for (const r of jy(n, e)) {
     const o = document.createElement("span");
     o.classList.add(`${s}__workflow-die`), r.active || o.classList.add(`${s}__workflow-die--inactive`), o.textContent = String(r.value), a.append(o);
   }
   return a;
 }
-function By(e) {
+function qy(e) {
   return e ? (/\(([^)]+)\)/u.exec(e)?.[1] ?? e).split(",").map((a) => Number(a.trim())).filter((a) => Number.isFinite(a)).map((a) => Math.trunc(a)) : [];
 }
-function Uy(e, t) {
+function jy(e, t) {
   if (e.length <= 1) return e.map((a) => ({ value: a, active: !0 }));
   const n = t.toLowerCase();
   return n.includes("kh") ? Ni(e, "highest") : n.includes("kl") ? Ni(e, "lowest") : e.map((a) => ({ value: a, active: !0 }));
@@ -5001,18 +5001,18 @@ function Ni(e, t) {
     return o && (a = !0), { value: r, active: o };
   });
 }
-const qy = "data-paranormal-toolkit-resistance-skill", jy = "data-paranormal-toolkit-resistance-skill-label", zy = "data-paranormal-toolkit-roll-card-target-names", Gy = "data-paranormal-toolkit-roll-card-resistance", Vy = "data-paranormal-toolkit-roll-card-resistance-skill", Hy = "data-paranormal-toolkit-roll-card-resistance-skill-label", Qc = "pending", Qr = "success", Zr = "failure", Zc = "rolled";
-function Wy(e) {
-  const t = Zy(e.rollCard, [
+const zy = "data-paranormal-toolkit-resistance-skill", Gy = "data-paranormal-toolkit-resistance-skill-label", Vy = "data-paranormal-toolkit-roll-card-target-names", Hy = "data-paranormal-toolkit-roll-card-resistance", Wy = "data-paranormal-toolkit-roll-card-resistance-skill", Ky = "data-paranormal-toolkit-roll-card-resistance-skill-label", Qc = "pending", Zr = "success", Jr = "failure", Zc = "rolled";
+function Yy(e) {
+  const t = e_(e.rollCard, [
     e.damageSection,
     e.effectSection,
     e.rollCard
-  ]), n = e.damageSection ? Xy(e.damageSection) : null, a = Pi(e.rollCard, e.effectSection, e.resolveTargetConditionApplication, null), r = Ky(e.rollCard).map((o, i) => {
-    const l = Yy(o, i), c = e.resistanceResults.get(l) ?? null, u = r_(c, t?.difficulty ?? null), m = e.damageApplications.get(l) ?? null, p = e.effectApplications.get(l) ?? null, _ = Dy({
+  ]), n = e.damageSection ? Zy(e.damageSection) : null, a = Pi(e.rollCard, e.effectSection, e.resolveTargetConditionApplication, null), r = Xy(e.rollCard).map((o, i) => {
+    const l = Qy(o, i), c = e.resistanceResults.get(l) ?? null, u = i_(c, t?.difficulty ?? null), m = e.damageApplications.get(l) ?? null, p = e.effectApplications.get(l) ?? null, _ = Ny({
       hasResistance: !!t,
       difficulty: t?.difficulty ?? null,
       total: c?.total ?? null,
-      status: c_(u)
+      status: d_(u)
     }).state, $ = Pi(
       e.rollCard,
       e.effectSection,
@@ -5027,7 +5027,7 @@ function Wy(e) {
       damageApplication: m,
       effectApplication: p,
       effect: $,
-      assistedActions: Xr({
+      assistedActions: Qr({
         targetId: l,
         targetName: o,
         resistanceGateMode: e.resistanceGateMode,
@@ -5049,22 +5049,22 @@ function Wy(e) {
     resistance: t
   };
 }
-function Ky(e) {
-  const t = e.getAttribute(zy), n = t ? l_(t) : [];
+function Xy(e) {
+  const t = e.getAttribute(Vy), n = t ? u_(t) : [];
   if (n.length > 0) return n;
   const r = e.closest(`.${s}`)?.querySelector(`.${s}__summary`)?.textContent ?? "", [, o] = r.split("→");
   return o ? o.split(",").map((i) => i.trim()).filter((i) => i.length > 0 && Jc(i) !== "nenhum alvo") : [];
 }
-function Yy(e, t) {
+function Qy(e, t) {
   return `${Jc(e)}:${t}`;
 }
-function Xy(e) {
-  const t = o_(e), n = t !== null ? Math.floor(t / 2) : null;
+function Zy(e) {
+  const t = s_(e), n = t !== null ? Math.floor(t / 2) : null;
   return {
-    typeLabel: s_(e),
-    formula: i_(e) ?? "—",
+    typeLabel: c_(e),
+    formula: l_(e) ?? "—",
     total: t,
-    diceBreakdown: My(e),
+    diceBreakdown: By(e),
     normalAmount: t,
     halfAmount: n,
     normalLabel: t !== null ? `Normal: ${t} PV` : "Normal: —",
@@ -5079,78 +5079,78 @@ function Pi(e, t, n, a) {
     label: r && r.length > 0 ? r : o.conditionLabel,
     conditionId: o.conditionId,
     conditionLabel: o.conditionLabel,
-    duration: Qy(o.duration),
+    duration: Jy(o.duration),
     source: o.source,
     originUuid: o.originUuid,
     applyOnResistance: Qe(o)
   } : null;
 }
-function Qy(e) {
+function Jy(e) {
   return e ? {
     rounds: e.rounds ?? null,
     expiry: e.expiry ?? null
   } : null;
 }
-function Zy(e, t) {
-  const n = e_(t), a = Jy(e), r = a.description ?? t_(n)?.textContent?.trim(), o = n_(n), i = a.skill ?? o?.getAttribute(qy) ?? null, l = a.skillLabel ?? o?.getAttribute(jy) ?? (i ? De(i) : null);
+function e_(e, t) {
+  const n = n_(t), a = t_(e), r = a.description ?? a_(n)?.textContent?.trim(), o = r_(n), i = a.skill ?? o?.getAttribute(zy) ?? null, l = a.skillLabel ?? o?.getAttribute(Gy) ?? (i ? De(i) : null);
   return !r && !i ? null : {
     description: r ?? "Resistência do alvo.",
-    formula: a_(n)?.textContent?.trim() ?? null,
+    formula: o_(n)?.textContent?.trim() ?? null,
     skill: i,
     skillLabel: l,
-    difficulty: Yr(e)
+    difficulty: Xr(e)
   };
 }
-function Jy(e) {
+function t_(e) {
   return {
-    description: ca(e, Gy),
-    skill: ca(e, Vy),
-    skillLabel: ca(e, Hy)
+    description: ua(e, Hy),
+    skill: ua(e, Wy),
+    skillLabel: ua(e, Ky)
   };
 }
-function e_(e) {
+function n_(e) {
   const t = [];
   for (const n of e)
     !n || t.includes(n) || t.push(n);
   return t;
 }
-function t_(e) {
-  return Jr(e, `.${s}__resistance-description`);
-}
-function n_(e) {
-  return Jr(e, On);
-}
 function a_(e) {
-  return Jr(
+  return eo(e, `.${s}__resistance-description`);
+}
+function r_(e) {
+  return eo(e, On);
+}
+function o_(e) {
+  return eo(
     e,
     `.${s}__resistance .${s}__workflow-roll-formula`
   );
 }
-function Jr(e, t) {
+function eo(e, t) {
   for (const n of e) {
     const a = n.querySelector(t);
     if (a) return a;
   }
   return null;
 }
-function r_(e, t) {
-  return e ? t === null ? Zc : e.total >= t ? Qr : Zr : Qc;
+function i_(e, t) {
+  return e ? t === null ? Zc : e.total >= t ? Zr : Jr : Qc;
 }
-function o_(e) {
+function s_(e) {
   const t = e?.querySelector(`.${s}__workflow-roll-total`)?.textContent?.trim();
   if (!t) return null;
   const n = Number(t.replace(/[^\d-]/gu, ""));
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
-function i_(e) {
+function l_(e) {
   const t = e?.querySelector(`.${s}__workflow-roll-formula`)?.textContent?.trim();
   return t && t.length > 0 ? t : null;
 }
-function s_(e) {
+function c_(e) {
   const t = e?.querySelector(`.${s}__workflow-section-description`)?.textContent?.trim();
   return t && t.length > 0 ? t : null;
 }
-function l_(e) {
+function u_(e) {
   try {
     const t = JSON.parse(e);
     return Array.isArray(t) ? t.filter((n) => typeof n == "string").map((n) => n.trim()).filter((n) => n.length > 0) : [];
@@ -5158,22 +5158,22 @@ function l_(e) {
     return [];
   }
 }
-function ca(e, t) {
+function ua(e, t) {
   const n = e.getAttribute(t)?.trim();
   return n && n.length > 0 ? n : null;
 }
 function Jc(e) {
   return e?.normalize("NFD").replace(/[\u0300-\u036f]/gu, "").trim().toLocaleLowerCase() ?? "";
 }
-function c_(e) {
-  return e === Qr ? "succeeded" : e === Zr ? "failed" : "pending";
+function d_(e) {
+  return e === Zr ? "succeeded" : e === Jr ? "failed" : "pending";
 }
 function eu(e) {
   if (!e) return null;
-  const t = e.actorId ? m_(e.actorId) : null, n = t ? u_(t, e.itemId, e.itemName) : null;
-  return n || d_(e.itemId, e.itemName);
+  const t = e.actorId ? p_(e.actorId) : null, n = t ? m_(t, e.itemId, e.itemName) : null;
+  return n || f_(e.itemId, e.itemName);
 }
-function u_(e, t, n) {
+function m_(e, t, n) {
   const a = e.items;
   if (t) {
     const o = a?.get?.(t);
@@ -5186,7 +5186,7 @@ function u_(e, t, n) {
   }
   return null;
 }
-function d_(e, t) {
+function f_(e, t) {
   const n = game.items;
   if (e) {
     const r = n?.get?.(e);
@@ -5199,11 +5199,11 @@ function d_(e, t) {
   }
   return null;
 }
-function m_(e) {
+function p_(e) {
   const n = game.actors?.get?.(e);
-  return f_(n) ? n : null;
+  return g_(n) ? n : null;
 }
-function f_(e) {
+function g_(e) {
   return !!(e && typeof e == "object" && "system" in e);
 }
 function Ve(e) {
@@ -5213,19 +5213,19 @@ function fn(e) {
   const t = e?.trim().toLocaleLowerCase();
   return t && t.length > 0 ? t : null;
 }
-function eo(e) {
-  const t = ua(e);
+function to(e) {
+  const t = da(e);
   if (!t) return null;
-  const n = p_().filter((o) => ua(g_(o)) === t).map((o) => tu(o)).find(_t) ?? null;
+  const n = h_().filter((o) => da(b_(o)) === t).map((o) => tu(o)).find(_t) ?? null;
   if (n) return n;
-  const r = game.actors?.find?.((o) => _t(o) && ua(o.name) === t);
+  const r = game.actors?.find?.((o) => _t(o) && da(o.name) === t);
   return _t(r) ? r : null;
 }
-function p_() {
+function h_() {
   const t = globalThis.canvas?.tokens?.placeables;
   return Array.isArray(t) ? t : [];
 }
-function g_(e) {
+function b_(e) {
   if (!e || typeof e != "object") return null;
   const t = e.name;
   if (typeof t == "string") return t;
@@ -5242,23 +5242,23 @@ function tu(e) {
 function _t(e) {
   return !!(e && typeof e == "object" && "system" in e);
 }
-function ua(e) {
+function da(e) {
   const t = e?.trim().toLocaleLowerCase();
   return t && t.length > 0 ? t : null;
 }
-async function qa(e) {
-  const t = __();
+async function ja(e) {
+  const t = T_();
   t.length !== 0 && await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: e.actor }),
     whisper: t,
-    content: h_(e)
+    content: y_(e)
   });
 }
-function h_(e) {
+function y_(e) {
   const t = e.instances.map((i) => {
     const l = i.blocked > 0 ? ` <span class="muted">(RD ${i.blocked})</span>` : "";
     return `<li><strong>${tn(i.label ?? "Dano")}</strong>: ${i.inputAmount} → ${i.finalDamage} PV${l}</li>`;
-  }).join(""), n = e.instances.length > 1 ? `<li><strong>Total aplicado</strong>: ${e.totalFinalDamage} PV</li>` : "", a = e.totalBlocked > 0 ? `<li><strong>RD bloqueou</strong>: ${e.totalBlocked}</li>` : "", r = b_(e), o = e.conditions.length > 0 ? `<li><strong>Condições sugeridas</strong>: ${tn(e.conditions.join(", "))}</li>` : "";
+  }).join(""), n = e.instances.length > 1 ? `<li><strong>Total aplicado</strong>: ${e.totalFinalDamage} PV</li>` : "", a = e.totalBlocked > 0 ? `<li><strong>RD bloqueou</strong>: ${e.totalBlocked}</li>` : "", r = __(e), o = e.conditions.length > 0 ? `<li><strong>Condições sugeridas</strong>: ${tn(e.conditions.join(", "))}</li>` : "";
   return `
     <div class="paranormal-toolkit-damage-feedback">
       <strong>Paranormal Toolkit</strong>
@@ -5273,13 +5273,13 @@ function h_(e) {
     </div>
   `;
 }
-function b_(e) {
-  const t = y_(e.actor), n = e.newPV ?? t?.value ?? null, a = t?.max ?? null;
+function __(e) {
+  const t = A_(e.actor), n = e.newPV ?? t?.value ?? null, a = t?.max ?? null;
   if (n === null) return "";
   const r = a === null ? `${n}` : `${n}/${a}`;
   return `<li><strong>PV atual</strong>: ${tn(r)}</li>`;
 }
-function y_(e) {
+function A_(e) {
   const t = e.system, n = e.type === "threat" ? t.attributes?.hp : t.PV, a = Oi(n?.value);
   return a === null ? null : {
     value: a,
@@ -5289,7 +5289,7 @@ function y_(e) {
 function Oi(e) {
   return typeof e == "number" && Number.isFinite(e) ? e : null;
 }
-function __() {
+function T_() {
   return game.users.filter((e) => e.isGM).map((e) => e.id).filter((e) => typeof e == "string" && e.length > 0);
 }
 function tn(e) {
@@ -5302,11 +5302,11 @@ function tn(e) {
   };
   return e.replace(/[&<>"']/gu, (n) => t[n] ?? n);
 }
-async function A_(e) {
-  await qa(T_(e));
+async function R_(e) {
+  await ja(k_(e));
 }
-function T_(e) {
-  if (R_(e)) return e;
+function k_(e) {
+  if (E_(e)) return e;
   const t = e.finalDamage + e.blocked;
   return {
     actor: e.actor,
@@ -5335,20 +5335,20 @@ function T_(e) {
     originUuid: null
   };
 }
-function R_(e) {
+function E_(e) {
   return "instances" in e && Array.isArray(e.instances) && "totalFinalDamage" in e && "totalBlocked" in e;
 }
 function nu(e) {
   return e.mode, `✓ ${au(e.inputAmount)} PV`;
 }
-function k_(e) {
+function $_(e) {
   const t = au(e.inputAmount);
   return e.compact ? e.mode === "half" ? `½ ${t} PV` : `${t} PV` : e.mode === "half" ? `Metade: ${t} PV` : `Normal: ${t} PV`;
 }
 function au(e) {
   return Number.isFinite(e) ? Math.max(0, Math.trunc(e)) : 0;
 }
-class E_ {
+class w_ {
   constructor(t) {
     this.damage = t;
   }
@@ -5388,7 +5388,7 @@ class E_ {
     });
   }
 }
-class $_ {
+class C_ {
   constructor(t) {
     this.conditions = t;
   }
@@ -5433,12 +5433,12 @@ class ru {
     });
   }
 }
-const w_ = `.${s}__actions`, to = `.${s}__actions-title`, Ze = `.${s}__button`, C_ = "data-paranormal-toolkit-action-section", S_ = `${s}__button--executed`, I_ = "data-paranormal-toolkit-executed-label";
+const S_ = `.${s}__actions`, no = `.${s}__actions-title`, Ze = `.${s}__button`, I_ = "data-paranormal-toolkit-action-section", L_ = `${s}__button--executed`, v_ = "data-paranormal-toolkit-executed-label";
 function ou(e) {
-  return ye(e.querySelector(to)?.textContent);
+  return ye(e.querySelector(no)?.textContent);
 }
-function L_(e, t) {
-  const n = e.querySelector(to);
+function D_(e, t) {
+  const n = e.querySelector(no);
   n && (n.textContent = t);
 }
 function Dt(e, t) {
@@ -5448,7 +5448,7 @@ function Dt(e, t) {
     return ye(r) === n;
   }) ?? null;
 }
-function no(e, t) {
+function ao(e, t) {
   const n = document.createElement("span");
   return n.classList.add(`${s}__button-icon`, t), n.setAttribute("aria-hidden", "true"), n.textContent = e, n;
 }
@@ -5457,9 +5457,9 @@ function Pe(e) {
   return t.classList.add(`${s}__button-label`), t.textContent = e, t;
 }
 function iu(e) {
-  const t = v_(e.difficulty);
+  const t = x_(e.difficulty);
   if (t === null) return null;
-  const n = Mi(e.skillLabel) ?? "Resistência", a = Mi(e.description), r = D_(a, n), o = x_(r, t);
+  const n = Mi(e.skillLabel) ?? "Resistência", a = Mi(e.description), r = N_(a, n), o = P_(r, t);
   return {
     skillLabel: n,
     difficulty: t,
@@ -5467,21 +5467,21 @@ function iu(e) {
     description: o
   };
 }
-function v_(e) {
+function x_(e) {
   return typeof e != "number" || !Number.isFinite(e) ? null : Math.trunc(e);
 }
 function Mi(e) {
   const t = e?.replace(/\s+/gu, " ").trim();
   return t ? t.replace(/[.]$/u, "") : null;
 }
-function D_(e, t) {
+function N_(e, t) {
   if (!e) return null;
   const n = Fi(e), a = Fi(t);
   if (!n.startsWith(a)) return e;
   const r = e.slice(t.length).replace(/^\s*[:·,;\-–—]?\s*/u, "").trim();
   return r.length > 0 ? r : null;
 }
-function x_(e, t) {
+function P_(e, t) {
   if (!e) return null;
   const n = /^DT\s*(-?\d+)\b\s*[:·,;\-–—]?\s*/iu.exec(e);
   if (!n) return e;
@@ -5494,55 +5494,55 @@ function Fi(e) {
   return e.normalize("NFD").replace(new RegExp("\\p{Diacritic}", "gu"), "").trim().toLocaleLowerCase();
 }
 const zt = "data-paranormal-toolkit-prompt-id", su = "multiTargetResistanceResults", lu = "multiTargetDamageApplications", cu = "multiTargetEffectApplications";
-function N_(e) {
+function O_(e) {
   const t = /* @__PURE__ */ new Map(), a = qn(e)?.[su];
   if (!J(a)) return t;
   for (const [r, o] of Object.entries(a))
-    q_(o) && o.targetId === r && t.set(r, o);
-  return t;
-}
-async function P_(e, t) {
-  await ao(e, su, t.targetId, t);
-}
-function O_(e) {
-  const t = /* @__PURE__ */ new Map(), a = qn(e)?.[lu];
-  if (!J(a)) return t;
-  for (const [r, o] of Object.entries(a))
-    j_(o) && o.targetId === r && t.set(r, o);
+    z_(o) && o.targetId === r && t.set(r, o);
   return t;
 }
 async function M_(e, t) {
-  await ao(
-    e,
-    lu,
-    t.targetId,
-    t
-  );
+  await ro(e, su, t.targetId, t);
 }
 function F_(e) {
-  const t = /* @__PURE__ */ new Map(), a = qn(e)?.[cu];
+  const t = /* @__PURE__ */ new Map(), a = qn(e)?.[lu];
   if (!J(a)) return t;
   for (const [r, o] of Object.entries(a))
     G_(o) && o.targetId === r && t.set(r, o);
   return t;
 }
 async function B_(e, t) {
-  await ao(
+  await ro(
+    e,
+    lu,
+    t.targetId,
+    t
+  );
+}
+function U_(e) {
+  const t = /* @__PURE__ */ new Map(), a = qn(e)?.[cu];
+  if (!J(a)) return t;
+  for (const [r, o] of Object.entries(a))
+    H_(o) && o.targetId === r && t.set(r, o);
+  return t;
+}
+async function q_(e, t) {
+  await ro(
     e,
     cu,
     t.targetId,
     t
   );
 }
-function U_(e) {
+function j_(e) {
   const t = qn(e);
   return t ? {
-    actorId: da(t.actorId),
-    itemId: da(t.itemId),
-    itemName: da(t.itemName)
+    actorId: ma(t.actorId),
+    itemId: ma(t.itemId),
+    itemName: ma(t.itemName)
   } : null;
 }
-async function ao(e, t, n, a) {
+async function ro(e, t, n, a) {
   const r = uu(e);
   if (!r) return;
   const o = du(e), i = mu(o);
@@ -5577,69 +5577,69 @@ function du(e) {
   const n = e.closest("[data-message-id]")?.dataset.messageId ?? null;
   if (!n) return null;
   const r = game.messages?.get?.(n);
-  return V_(r) ? r : null;
+  return W_(r) ? r : null;
 }
 function mu(e) {
   const t = e?.getFlag?.(d, Pn);
   return J(t) ? t : null;
 }
-function q_(e) {
+function z_(e) {
   return J(e) ? typeof e.targetId == "string" && typeof e.targetName == "string" && typeof e.skill == "string" && typeof e.skillLabel == "string" && typeof e.formula == "string" && typeof e.total == "number" && Number.isFinite(e.total) && (typeof e.diceBreakdown == "string" || e.diceBreakdown === null) && typeof e.rolledAt == "string" : !1;
 }
-function j_(e) {
-  return J(e) ? typeof e.targetId == "string" && typeof e.targetName == "string" && z_(e.mode) && typeof e.inputAmount == "number" && Number.isFinite(e.inputAmount) && typeof e.appliedAt == "string" : !1;
-}
-function z_(e) {
-  return e === "normal" || e === "half";
-}
 function G_(e) {
-  return J(e) ? typeof e.targetId == "string" && typeof e.targetName == "string" && typeof e.conditionId == "string" && typeof e.conditionLabel == "string" && (typeof e.effectId == "string" || e.effectId === null) && typeof e.created == "boolean" && typeof e.refreshed == "boolean" && typeof e.appliedAt == "string" : !1;
-}
-function da(e) {
-  return typeof e == "string" && e.length > 0 ? e : null;
+  return J(e) ? typeof e.targetId == "string" && typeof e.targetName == "string" && V_(e.mode) && typeof e.inputAmount == "number" && Number.isFinite(e.inputAmount) && typeof e.appliedAt == "string" : !1;
 }
 function V_(e) {
+  return e === "normal" || e === "half";
+}
+function H_(e) {
+  return J(e) ? typeof e.targetId == "string" && typeof e.targetName == "string" && typeof e.conditionId == "string" && typeof e.conditionLabel == "string" && (typeof e.effectId == "string" || e.effectId === null) && typeof e.created == "boolean" && typeof e.refreshed == "boolean" && typeof e.appliedAt == "string" : !1;
+}
+function ma(e) {
+  return typeof e == "string" && e.length > 0 ? e : null;
+}
+function W_(e) {
   return !!(e && typeof e == "object" && typeof e.getFlag == "function");
 }
 function J(e) {
   return !!(e && typeof e == "object");
 }
-const H_ = "data-paranormal-toolkit-resistance-skill", W_ = "data-paranormal-toolkit-resistance-skill-label", ja = "data-paranormal-toolkit-multi-target-section", ro = "data-paranormal-toolkit-multi-target-damage-info", fu = "data-paranormal-toolkit-multi-target-effect-info", pu = "data-paranormal-toolkit-multi-target-toggle", gu = "data-paranormal-toolkit-multi-target-details", Y = "data-paranormal-toolkit-multi-target-target", K_ = "data-paranormal-toolkit-multi-target-state", za = "data-paranormal-toolkit-multi-target-roll-total", Ga = "data-paranormal-toolkit-multi-target-roll-formula", nn = "data-paranormal-toolkit-multi-target-roll-dice", Va = "data-paranormal-toolkit-multi-target-roll-skill", Ha = "data-paranormal-toolkit-multi-target-roll-skill-label", Wa = "data-paranormal-toolkit-multi-target-roll-target-name", Ka = "data-paranormal-toolkit-multi-target-roll-rolled-at", Ya = "data-paranormal-toolkit-multi-target-damage-mode", Xa = "data-paranormal-toolkit-multi-target-damage-input-amount", Bi = "data-paranormal-toolkit-multi-target-damage-final-amount", Ui = "data-paranormal-toolkit-multi-target-damage-blocked", Qa = "data-paranormal-toolkit-multi-target-damage-target-name", Za = "data-paranormal-toolkit-multi-target-damage-applied-at", Ja = "data-paranormal-toolkit-multi-target-effect-condition-id", er = "data-paranormal-toolkit-multi-target-effect-condition-label", tr = "data-paranormal-toolkit-multi-target-effect-effect-id", nr = "data-paranormal-toolkit-multi-target-effect-created", ar = "data-paranormal-toolkit-multi-target-effect-refreshed", rr = "data-paranormal-toolkit-multi-target-effect-target-name", or = "data-paranormal-toolkit-multi-target-effect-applied-at", Y_ = new Oc(qc()), X_ = new xc(new Dc()), Q_ = new Hr(new Fn()), Z_ = new ru(Q_), J_ = new E_(X_), eA = new $_(Y_), tA = Qc, it = Qr, xt = Zr, nA = Zc;
-function aA(e) {
+const K_ = "data-paranormal-toolkit-resistance-skill", Y_ = "data-paranormal-toolkit-resistance-skill-label", za = "data-paranormal-toolkit-multi-target-section", oo = "data-paranormal-toolkit-multi-target-damage-info", fu = "data-paranormal-toolkit-multi-target-effect-info", pu = "data-paranormal-toolkit-multi-target-toggle", gu = "data-paranormal-toolkit-multi-target-details", X = "data-paranormal-toolkit-multi-target-target", X_ = "data-paranormal-toolkit-multi-target-state", Ga = "data-paranormal-toolkit-multi-target-roll-total", Va = "data-paranormal-toolkit-multi-target-roll-formula", nn = "data-paranormal-toolkit-multi-target-roll-dice", Ha = "data-paranormal-toolkit-multi-target-roll-skill", Wa = "data-paranormal-toolkit-multi-target-roll-skill-label", Ka = "data-paranormal-toolkit-multi-target-roll-target-name", Ya = "data-paranormal-toolkit-multi-target-roll-rolled-at", Xa = "data-paranormal-toolkit-multi-target-damage-mode", Qa = "data-paranormal-toolkit-multi-target-damage-input-amount", Bi = "data-paranormal-toolkit-multi-target-damage-final-amount", Ui = "data-paranormal-toolkit-multi-target-damage-blocked", Za = "data-paranormal-toolkit-multi-target-damage-target-name", Ja = "data-paranormal-toolkit-multi-target-damage-applied-at", er = "data-paranormal-toolkit-multi-target-effect-condition-id", tr = "data-paranormal-toolkit-multi-target-effect-condition-label", nr = "data-paranormal-toolkit-multi-target-effect-effect-id", ar = "data-paranormal-toolkit-multi-target-effect-created", rr = "data-paranormal-toolkit-multi-target-effect-refreshed", or = "data-paranormal-toolkit-multi-target-effect-target-name", ir = "data-paranormal-toolkit-multi-target-effect-applied-at", Q_ = new Oc(qc()), Z_ = new xc(new Dc()), J_ = new Wr(new Fn()), eA = new ru(J_), tA = new w_(Z_), nA = new C_(Q_), aA = Qc, it = Zr, xt = Jr, rA = Zc;
+function oA(e) {
   const t = hu(e);
   if (!t) return !1;
-  e.rollCard.classList.add(`${s}__roll-card--multi-target`), mA(e);
-  const n = fA(e.rollCard, t), a = pA(e.rollCard, t);
-  !n && a && XA(e.rollCard, a, e.effectSection);
-  const r = AA(e.rollCard);
-  return _u(r, t), WA(
+  e.rollCard.classList.add(`${s}__roll-card--multi-target`), pA(e);
+  const n = gA(e.rollCard, t), a = hA(e.rollCard, t);
+  !n && a && ZA(e.rollCard, a, e.effectSection);
+  const r = RA(e.rollCard);
+  return _u(r, t), YA(
     e.rollCard,
     r,
-    gA(e.rollCard, {
+    bA(e.rollCard, {
       damageInfo: n,
       effectInfo: a,
       effectSection: e.effectSection
     })
-  ), n && a && QA(e.rollCard, a, r), !0;
+  ), n && a && JA(e.rollCard, a, r), !0;
 }
 function hu(e) {
-  return Wy({
+  return Yy({
     ...e,
-    resistanceResults: iA(e.rollCard),
-    damageApplications: sA(e.rollCard),
-    effectApplications: lA(e.rollCard),
-    resolveTargetConditionApplication: rA,
-    resistanceGateMode: io()
+    resistanceResults: lA(e.rollCard),
+    damageApplications: cA(e.rollCard),
+    effectApplications: uA(e.rollCard),
+    resolveTargetConditionApplication: iA,
+    resistanceGateMode: so()
   });
 }
-function rA(e, t, n) {
-  const a = U_(e), r = eu(a);
+function iA(e, t, n) {
+  const a = j_(e), r = eu(a);
   if (!r) return null;
   const o = St(r);
   if (!o.ok) return null;
   const i = (o.value.conditionApplications ?? []).filter((c) => c.actor === "target");
   if (i.length === 0) return null;
-  const l = oA(i, t, n);
+  const l = sA(i, t, n);
   return l ? {
     conditionId: l.conditionId,
     conditionLabel: l.label ?? l.conditionId,
@@ -5649,44 +5649,44 @@ function rA(e, t, n) {
     applyOnResistance: l.applyOnResistance ?? "failure"
   } : null;
 }
-function oA(e, t, n) {
-  const a = gy(
+function sA(e, t, n) {
+  const a = by(
     e,
     n,
     t,
-    ma
+    fa
   );
   if (a) return a;
   if (e.length === 1) return e[0] ?? null;
   if (!t) return null;
-  const r = ma(t);
+  const r = fa(t);
   return r ? e.find((o) => [
     o.label,
     o.conditionId
-  ].some((i) => ma(i) === r)) ?? null : null;
-}
-function iA(e) {
-  const t = N_(e);
-  for (const [n, a] of dA(e))
-    t.set(n, a);
-  return t;
-}
-function sA(e) {
-  const t = O_(e);
-  for (const [n, a] of uA(e))
-    t.set(n, a);
-  return t;
+  ].some((i) => fa(i) === r)) ?? null : null;
 }
 function lA(e) {
-  const t = F_(e);
-  for (const [n, a] of cA(e))
+  const t = O_(e);
+  for (const [n, a] of fA(e))
     t.set(n, a);
   return t;
 }
 function cA(e) {
+  const t = F_(e);
+  for (const [n, a] of mA(e))
+    t.set(n, a);
+  return t;
+}
+function uA(e) {
+  const t = U_(e);
+  for (const [n, a] of dA(e))
+    t.set(n, a);
+  return t;
+}
+function dA(e) {
   const t = /* @__PURE__ */ new Map();
-  for (const n of e.querySelectorAll(`[${Y}]`)) {
-    const a = n.getAttribute(Y), r = n.getAttribute(Ja), o = n.getAttribute(er), i = n.getAttribute(tr), l = zi(n.getAttribute(nr)), c = zi(n.getAttribute(ar)), u = n.getAttribute(rr), m = n.getAttribute(or);
+  for (const n of e.querySelectorAll(`[${X}]`)) {
+    const a = n.getAttribute(X), r = n.getAttribute(er), o = n.getAttribute(tr), i = n.getAttribute(nr), l = zi(n.getAttribute(ar)), c = zi(n.getAttribute(rr)), u = n.getAttribute(or), m = n.getAttribute(ir);
     !a || !r || !o || l === null || c === null || !u || !m || t.set(a, {
       targetId: a,
       targetName: u,
@@ -5700,11 +5700,11 @@ function cA(e) {
   }
   return t;
 }
-function uA(e) {
+function mA(e) {
   const t = /* @__PURE__ */ new Map();
-  for (const n of e.querySelectorAll(`[${Y}]`)) {
-    const a = n.getAttribute(Y), r = n.getAttribute(Ya), o = Iu(n.getAttribute(Xa)), i = n.getAttribute(Qa), l = n.getAttribute(Za);
-    !a || !eT(r) || o === null || !i || !l || t.set(a, {
+  for (const n of e.querySelectorAll(`[${X}]`)) {
+    const a = n.getAttribute(X), r = n.getAttribute(Xa), o = Iu(n.getAttribute(Qa)), i = n.getAttribute(Za), l = n.getAttribute(Ja);
+    !a || !nT(r) || o === null || !i || !l || t.set(a, {
       targetId: a,
       targetName: i,
       mode: r,
@@ -5714,10 +5714,10 @@ function uA(e) {
   }
   return t;
 }
-function dA(e) {
+function fA(e) {
   const t = /* @__PURE__ */ new Map();
-  for (const n of e.querySelectorAll(`[${Y}]`)) {
-    const a = n.getAttribute(Y), r = Iu(n.getAttribute(za)), o = n.getAttribute(Ga), i = n.getAttribute(Va), l = n.getAttribute(Ha), c = n.getAttribute(Wa), u = n.getAttribute(Ka);
+  for (const n of e.querySelectorAll(`[${X}]`)) {
+    const a = n.getAttribute(X), r = Iu(n.getAttribute(Ga)), o = n.getAttribute(Va), i = n.getAttribute(Ha), l = n.getAttribute(Wa), c = n.getAttribute(Ka), u = n.getAttribute(Ya);
     !a || r === null || !o || !i || !l || !c || !u || t.set(a, {
       targetId: a,
       targetName: c,
@@ -5731,25 +5731,25 @@ function dA(e) {
   }
   return t;
 }
-function mA(e) {
+function pA(e) {
   e.damageSection?.classList.add(`${s}__workflow-section--multi-target-source`), e.effectSection?.classList.add(`${s}__workflow-section--multi-target-effect-source`);
 }
-function fA(e, t) {
+function gA(e, t) {
   if (!t.damage)
     return bu(e)?.remove(), null;
-  const n = hA(e);
-  return bA(n, t.damage), _A(e, n), n;
+  const n = yA(e);
+  return _A(n, t.damage), TA(e, n), n;
 }
-function pA(e, t) {
+function hA(e, t) {
   if (!t.effect)
     return Su(e)?.remove(), null;
-  const n = KA(e);
-  return YA(n, t.effect), n;
+  const n = XA(e);
+  return QA(n, t.effect), n;
 }
-function gA(e, t) {
+function bA(e, t) {
   return t.damageInfo?.parentElement === e ? t.damageInfo : t.effectInfo?.parentElement === e ? t.effectInfo : t.effectSection?.parentElement === e ? t.effectSection : Dt(e, "Conjuração");
 }
-function hA(e) {
+function yA(e) {
   const t = bu(e);
   if (t) return t;
   const n = document.createElement("section");
@@ -5757,12 +5757,12 @@ function hA(e) {
     `${s}__workflow-section`,
     `${s}__workflow-section--effect`,
     `${s}__workflow-section--damage-info`
-  ), n.setAttribute(ro, "true"), n;
+  ), n.setAttribute(oo, "true"), n;
 }
 function bu(e) {
-  return e.querySelector(`[${ro}="true"]`);
+  return e.querySelector(`[${oo}="true"]`);
 }
-function bA(e, t) {
+function _A(e, t) {
   e.replaceChildren();
   const n = document.createElement("div");
   n.classList.add(`${s}__workflow-section-header`);
@@ -5774,22 +5774,22 @@ function bA(e, t) {
   e.append(yu(t.formula, t.total, t.diceBreakdown));
 }
 function yu(e, t, n, a = !1) {
-  const r = Oy({
+  const r = Fy({
     formula: e,
     total: t,
     diceBreakdown: n,
     classNames: [`${s}__workflow-roll--compact-info`]
   });
-  return yA(r, a), r;
+  return AA(r, a), r;
 }
-function yA(e, t) {
-  const n = e.querySelector(Mn), a = e.querySelector(Gr);
+function AA(e, t) {
+  const n = e.querySelector(Mn), a = e.querySelector(Vr);
   if (!n || !a) return;
-  e.classList.toggle(zr, t), n.hidden = !t, a.classList.add(Vr), a.setAttribute("role", "button"), a.setAttribute("tabindex", "0"), a.setAttribute("aria-expanded", t ? "true" : "false"), a.title = t ? "Ocultar dados da rolagem" : "Mostrar dados da rolagem", a.setAttribute("aria-label", a.title);
+  e.classList.toggle(Gr, t), n.hidden = !t, a.classList.add(Hr), a.setAttribute("role", "button"), a.setAttribute("tabindex", "0"), a.setAttribute("aria-expanded", t ? "true" : "false"), a.title = t ? "Ocultar dados da rolagem" : "Mostrar dados da rolagem", a.setAttribute("aria-label", a.title);
   const r = a.querySelector("i") ?? document.createElement("i");
   r.classList.add("fa-solid"), r.classList.toggle("fa-chevron-down", !t), r.classList.toggle("fa-chevron-up", t), r.setAttribute("aria-hidden", "true"), r.parentElement || a.append(r);
 }
-function _A(e, t) {
+function TA(e, t) {
   const n = Dt(e, "Conjuração");
   if (!n) {
     e.prepend(t);
@@ -5797,33 +5797,33 @@ function _A(e, t) {
   }
   t.parentElement === e && t.previousElementSibling === n || e.insertBefore(t, n.nextElementSibling);
 }
-function AA(e) {
-  const t = e.querySelector(`[${ja}="true"]`);
+function RA(e) {
+  const t = e.querySelector(`[${za}="true"]`);
   if (t) return t;
   const n = document.createElement("section");
   return n.classList.add(
     `${s}__workflow-section`,
     `${s}__workflow-section--targets`
-  ), n.setAttribute(ja, "true"), n;
+  ), n.setAttribute(za, "true"), n;
 }
 function _u(e, t) {
-  const n = TA(e), a = kA(t.resistance), r = [RA(t)];
-  a && r.push(a), r.push(wA(t, n)), e.replaceChildren(...r);
+  const n = kA(e), a = $A(t.resistance), r = [EA(t)];
+  a && r.push(a), r.push(SA(t, n)), e.replaceChildren(...r);
 }
-function TA(e) {
+function kA(e) {
   return new Set(
-    Array.from(e.querySelectorAll(`[${Y}]`)).filter((t) => t.getAttribute("aria-expanded") === "true").map((t) => t.getAttribute(Y)).filter(JA)
+    Array.from(e.querySelectorAll(`[${X}]`)).filter((t) => t.getAttribute("aria-expanded") === "true").map((t) => t.getAttribute(X)).filter(tT)
   );
 }
-function RA(e) {
+function EA(e) {
   const t = document.createElement("div");
   t.classList.add(`${s}__workflow-section-header`, `${s}__targets-header`);
   const n = document.createElement("strong");
   n.textContent = "Alvos";
   const a = document.createElement("span");
-  return a.classList.add(`${s}__targets-status`), a.textContent = $A(e.targets), t.append(n, a), t;
+  return a.classList.add(`${s}__targets-status`), a.textContent = CA(e.targets), t.append(n, a), t;
 }
-function kA(e) {
+function $A(e) {
   const t = iu({
     description: e?.description,
     skillLabel: e?.skillLabel ?? e?.skill,
@@ -5831,9 +5831,9 @@ function kA(e) {
   });
   if (!t) return null;
   const n = document.createElement("div");
-  return n.classList.add(`${s}__targets-resistance-info`), EA(n, t), n;
+  return n.classList.add(`${s}__targets-resistance-info`), wA(n, t), n;
 }
-function EA(e, t) {
+function wA(e, t) {
   const n = document.createElement("span");
   n.classList.add(`${s}__resistance-label-skill`), n.textContent = t.skillLabel;
   const a = document.createElement("strong");
@@ -5845,21 +5845,21 @@ function EA(e, t) {
   }
   e.replaceChildren(...r);
 }
-function $A(e) {
-  const t = e.length, n = e.filter((l) => l.state === xt).length, a = e.filter((l) => l.state === it).length, r = e.filter((l) => l.state === tA).length, o = e.filter((l) => l.state === nA).length, i = [`${t} ${t === 1 ? "alvo" : "alvos"}`];
+function CA(e) {
+  const t = e.length, n = e.filter((l) => l.state === xt).length, a = e.filter((l) => l.state === it).length, r = e.filter((l) => l.state === aA).length, o = e.filter((l) => l.state === rA).length, i = [`${t} ${t === 1 ? "alvo" : "alvos"}`];
   return n > 0 && i.push(`${n} ${n === 1 ? "falha" : "falhas"}`), a > 0 && i.push(`${a} ${a === 1 ? "sucesso" : "sucessos"}`), r > 0 && i.push(`${r} ${r === 1 ? "pendente" : "pendentes"}`), o > 0 && i.push(`${o} ${o === 1 ? "rolado" : "rolados"}`), i.join(" • ");
 }
-function wA(e, t) {
+function SA(e, t) {
   const n = document.createElement("div");
   n.classList.add(`${s}__targets-list`);
   for (const a of e.targets)
-    n.append(CA(a, e, t.has(a.id)));
+    n.append(IA(a, e, t.has(a.id)));
   return n;
 }
-function CA(e, t, n) {
+function IA(e, t, n) {
   const a = document.createElement("article");
-  a.classList.add(`${s}__target-row`, `${s}__target-row--${e.state}`), e.damageApplication && a.classList.add(`${s}__target-row--damage-applied`), e.effectApplication && a.classList.add(`${s}__target-row--effect-applied`), a.setAttribute(Y, e.id), a.setAttribute(K_, e.state), a.setAttribute("aria-expanded", n ? "true" : "false"), a.setAttribute("role", "button"), a.setAttribute("tabindex", "0"), a.setAttribute("aria-label", `${n ? "Fechar" : "Abrir"} detalhes de ${e.name}`), Au(a, e.resistanceResult), Tu(a, e.damageApplication), Ru(a, e.effectApplication);
-  const r = SA(e, t, a), o = zA(e, t);
+  a.classList.add(`${s}__target-row`, `${s}__target-row--${e.state}`), e.damageApplication && a.classList.add(`${s}__target-row--damage-applied`), e.effectApplication && a.classList.add(`${s}__target-row--effect-applied`), a.setAttribute(X, e.id), a.setAttribute(X_, e.state), a.setAttribute("aria-expanded", n ? "true" : "false"), a.setAttribute("role", "button"), a.setAttribute("tabindex", "0"), a.setAttribute("aria-label", `${n ? "Fechar" : "Abrir"} detalhes de ${e.name}`), Au(a, e.resistanceResult), Tu(a, e.damageApplication), Ru(a, e.effectApplication);
+  const r = LA(e, t, a), o = VA(e, t);
   return o.hidden = !n, a.addEventListener("click", (i) => {
     ji(i.target) || qi(a);
   }), a.addEventListener("keydown", (i) => {
@@ -5868,35 +5868,35 @@ function CA(e, t, n) {
 }
 function Au(e, t) {
   if (!t) {
-    e.removeAttribute(za), e.removeAttribute(Ga), e.removeAttribute(nn), e.removeAttribute(Va), e.removeAttribute(Ha), e.removeAttribute(Wa), e.removeAttribute(Ka);
+    e.removeAttribute(Ga), e.removeAttribute(Va), e.removeAttribute(nn), e.removeAttribute(Ha), e.removeAttribute(Wa), e.removeAttribute(Ka), e.removeAttribute(Ya);
     return;
   }
-  e.setAttribute(za, String(t.total)), e.setAttribute(Ga, t.formula), e.setAttribute(Va, t.skill), e.setAttribute(Ha, t.skillLabel), e.setAttribute(Wa, t.targetName), e.setAttribute(Ka, t.rolledAt), t.diceBreakdown ? e.setAttribute(nn, t.diceBreakdown) : e.removeAttribute(nn);
+  e.setAttribute(Ga, String(t.total)), e.setAttribute(Va, t.formula), e.setAttribute(Ha, t.skill), e.setAttribute(Wa, t.skillLabel), e.setAttribute(Ka, t.targetName), e.setAttribute(Ya, t.rolledAt), t.diceBreakdown ? e.setAttribute(nn, t.diceBreakdown) : e.removeAttribute(nn);
 }
 function Tu(e, t) {
   if (!t) {
-    e.removeAttribute(Ya), e.removeAttribute(Xa), e.removeAttribute(Bi), e.removeAttribute(Ui), e.removeAttribute(Qa), e.removeAttribute(Za);
+    e.removeAttribute(Xa), e.removeAttribute(Qa), e.removeAttribute(Bi), e.removeAttribute(Ui), e.removeAttribute(Za), e.removeAttribute(Ja);
     return;
   }
-  e.setAttribute(Ya, t.mode), e.setAttribute(Xa, String(t.inputAmount)), e.removeAttribute(Bi), e.removeAttribute(Ui), e.setAttribute(Qa, t.targetName), e.setAttribute(Za, t.appliedAt);
+  e.setAttribute(Xa, t.mode), e.setAttribute(Qa, String(t.inputAmount)), e.removeAttribute(Bi), e.removeAttribute(Ui), e.setAttribute(Za, t.targetName), e.setAttribute(Ja, t.appliedAt);
 }
 function Ru(e, t) {
   if (!t) {
-    e.removeAttribute(Ja), e.removeAttribute(er), e.removeAttribute(tr), e.removeAttribute(nr), e.removeAttribute(ar), e.removeAttribute(rr), e.removeAttribute(or);
+    e.removeAttribute(er), e.removeAttribute(tr), e.removeAttribute(nr), e.removeAttribute(ar), e.removeAttribute(rr), e.removeAttribute(or), e.removeAttribute(ir);
     return;
   }
-  e.setAttribute(Ja, t.conditionId), e.setAttribute(er, t.conditionLabel), e.setAttribute(tr, t.effectId ?? ""), e.setAttribute(nr, String(t.created)), e.setAttribute(ar, String(t.refreshed)), e.setAttribute(rr, t.targetName), e.setAttribute(or, t.appliedAt);
+  e.setAttribute(er, t.conditionId), e.setAttribute(tr, t.conditionLabel), e.setAttribute(nr, t.effectId ?? ""), e.setAttribute(ar, String(t.created)), e.setAttribute(rr, String(t.refreshed)), e.setAttribute(or, t.targetName), e.setAttribute(ir, t.appliedAt);
 }
-function SA(e, t, n) {
+function LA(e, t, n) {
   const a = document.createElement("div");
   a.classList.add(`${s}__target-summary`);
   const r = document.createElement("div");
   r.classList.add(`${s}__target-summary-main`);
-  const o = IA(e), i = document.createElement("strong");
+  const o = vA(e), i = document.createElement("strong");
   i.classList.add(`${s}__target-name`), i.textContent = e.name;
-  const l = LA(e, t.resistance);
-  NA(l, n, e, t);
-  const c = jA(n);
+  const l = DA(e, t.resistance);
+  OA(l, n, e, t);
+  const c = GA(n);
   r.append(o, i, l, c);
   const u = document.createElement("div");
   return u.classList.add(`${s}__target-summary-actions`), wu(u, [
@@ -5904,15 +5904,15 @@ function SA(e, t, n) {
     $u(e, t, "compact")
   ]), a.append(r, u), a;
 }
-function IA(e) {
+function vA(e) {
   const t = document.createElement("span");
   return t.classList.add(`${s}__target-avatar`), t.setAttribute("aria-hidden", "true"), t.textContent = e.name.trim().charAt(0).toLocaleUpperCase() || "?", t;
 }
-function LA(e, t) {
+function DA(e, t) {
   if (!Te())
-    return vA(e, t);
+    return xA(e, t);
   const n = document.createElement("button");
-  if (n.type = "button", n.classList.add(`${s}__target-resistance-button`, `${s}__target-resistance-button--${e.state}`), n.setAttribute("aria-label", xA(e, t)), t?.skill && (n.setAttribute(H_, t.skill), n.setAttribute(W_, t.skillLabel ?? De(t.skill))), !t?.skill)
+  if (n.type = "button", n.classList.add(`${s}__target-resistance-button`, `${s}__target-resistance-button--${e.state}`), n.setAttribute("aria-label", PA(e, t)), t?.skill && (n.setAttribute(K_, t.skill), n.setAttribute(Y_, t.skillLabel ?? De(t.skill))), !t?.skill)
     return n.disabled = !0, n.title = "Resistência não configurada", n.textContent = "—", n;
   if (n.title = e.resistanceResult ? `Rolar ${t.skillLabel ?? t.skill} novamente` : `Rolar ${t.skillLabel ?? t.skill} de ${e.name}`, !e.resistanceResult) {
     const o = document.createElement("i");
@@ -5925,33 +5925,33 @@ function LA(e, t) {
   const r = document.createElement("span");
   return r.classList.add(`${s}__target-resistance-mark`), r.setAttribute("aria-hidden", "true"), r.textContent = e.state === it ? "✓" : e.state === xt ? "✕" : "", n.append(a, r), n;
 }
-function vA(e, t) {
+function xA(e, t) {
   const n = document.createElement("span");
-  if (n.classList.add(`${s}__target-resistance-button`, `${s}__target-resistance-button--${e.state}`), n.setAttribute("aria-label", DA(e, t)), !e.resistanceResult)
+  if (n.classList.add(`${s}__target-resistance-button`, `${s}__target-resistance-button--${e.state}`), n.setAttribute("aria-label", NA(e, t)), !e.resistanceResult)
     return n.textContent = "—", n;
   const a = document.createElement("span");
   a.classList.add(`${s}__target-resistance-total`), a.textContent = String(e.resistanceResult.total);
   const r = document.createElement("span");
   return r.classList.add(`${s}__target-resistance-mark`), r.setAttribute("aria-hidden", "true"), r.textContent = e.state === it ? "✓" : e.state === xt ? "✕" : "", n.append(a, r), n;
 }
-function DA(e, t) {
+function NA(e, t) {
   const n = t?.skillLabel ?? t?.skill ?? "resistência";
   if (!e.resistanceResult) return `${n} de ${e.name}: pendente.`;
   const a = e.state === it ? "sucesso" : e.state === xt ? "falha" : "resultado";
   return `${n} de ${e.name}: ${e.resistanceResult.total}, ${a}.`;
 }
-function xA(e, t) {
+function PA(e, t) {
   const n = t?.skillLabel ?? t?.skill ?? "resistência";
   if (!e.resistanceResult) return `Rolar ${n} de ${e.name}`;
   const a = e.state === it ? "sucesso" : e.state === xt ? "falha" : "resultado";
   return `${n} de ${e.name}: ${e.resistanceResult.total}, ${a}. Rolar novamente`;
 }
-function NA(e, t, n, a) {
+function OA(e, t, n, a) {
   !(e instanceof HTMLButtonElement) || !Te() || e.addEventListener("click", (r) => {
-    r.stopPropagation(), PA(t, e, n, a);
+    r.stopPropagation(), MA(t, e, n, a);
   });
 }
-async function PA(e, t, n, a) {
+async function MA(e, t, n, a) {
   if (!Te()) {
     ui.notifications?.warn?.("Paranormal Toolkit: apenas o Mestre pode rolar resistência assistida.");
     return;
@@ -5961,7 +5961,7 @@ async function PA(e, t, n, a) {
     ui.notifications?.warn?.("Paranormal Toolkit: este card não tem perícia de resistência configurada.");
     return;
   }
-  const l = eo(n.name);
+  const l = to(n.name);
   if (!l) {
     ui.notifications?.warn?.(`Paranormal Toolkit: não consegui encontrar o alvo ${n.name} para rolar resistência.`);
     return;
@@ -5970,8 +5970,8 @@ async function PA(e, t, n, a) {
   const c = t.innerHTML;
   t.textContent = "...";
   try {
-    const u = await Z_.execute({ actor: l, skill: o, skillLabel: i });
-    await ZA(u.roll);
+    const u = await eA.execute({ actor: l, skill: o, skillLabel: i });
+    await eT(u.roll);
     const m = {
       targetId: n.id,
       targetName: l.name ?? n.name,
@@ -5984,42 +5984,42 @@ async function PA(e, t, n, a) {
     };
     Au(e, m);
     try {
-      await P_(a.rollCard, m);
+      await M_(a.rollCard, m);
     } catch (p) {
       console.warn("Paranormal Toolkit: não foi possível persistir resistência multi-target.", p);
     }
-    oo(e);
+    io(e);
   } catch (u) {
     console.warn("Paranormal Toolkit: não foi possível rolar resistência multi-target.", u), ui.notifications?.warn?.(`Paranormal Toolkit: não foi possível rolar ${i} de ${n.name}.`), t.innerHTML = c;
   } finally {
     t.disabled = !1, t.classList.remove(`${s}__target-resistance-button--rolling`);
   }
 }
-function oo(e) {
-  const t = e.closest(`[${ja}="true"]`), n = e.closest(`.${s}__roll-card`);
+function io(e) {
+  const t = e.closest(`[${za}="true"]`), n = e.closest(`.${s}__roll-card`);
   if (!t || !n) return;
   const a = hu({
     rollCard: n,
-    damageSection: OA(n) ?? Dt(n, "Dano"),
-    effectSection: MA(n)
+    damageSection: FA(n) ?? Dt(n, "Dano"),
+    effectSection: BA(n)
   });
   a && _u(t, a);
 }
-function OA(e) {
-  return Array.from(e.querySelectorAll(`.${s}__workflow-section--multi-target-source`)).find((t) => t.getAttribute(ro) !== "true") ?? null;
-}
-function MA(e) {
-  return e.querySelector(`.${s}__workflow-section--multi-target-effect-source`);
-}
 function FA(e) {
-  return ot(e.assistedActions.policy.damageActionState);
+  return Array.from(e.querySelectorAll(`.${s}__workflow-section--multi-target-source`)).find((t) => t.getAttribute(oo) !== "true") ?? null;
 }
 function BA(e) {
+  return e.querySelector(`.${s}__workflow-section--multi-target-effect-source`);
+}
+function UA(e) {
+  return ot(e.assistedActions.policy.damageActionState);
+}
+function qA(e) {
   return ot(e.assistedActions.policy.effectActionState);
 }
-function io() {
+function so() {
   try {
-    return Or();
+    return Mr();
   } catch {
     return "strict";
   }
@@ -6052,7 +6052,7 @@ function ku(e, t, n) {
       [`${s}__target-action--damage`, `${s}__target-action--disabled`],
       !0
     );
-  const i = k_({ inputAmount: o, mode: r, compact: n === "compact" }), l = r === "half" ? "🛡️" : "⚡", c = r === "half" ? `${s}__target-action--half-damage` : `${s}__target-action--normal-damage`, u = ge(
+  const i = $_({ inputAmount: o, mode: r, compact: n === "compact" }), l = r === "half" ? "🛡️" : "⚡", c = r === "half" ? `${s}__target-action--half-damage` : `${s}__target-action--normal-damage`, u = ge(
     l,
     i,
     [`${s}__target-action--damage`, c],
@@ -6060,16 +6060,16 @@ function ku(e, t, n) {
   );
   return u.title = `Aplicar ${i} em ${e.name}`, u.setAttribute("aria-label", u.title), u.addEventListener("click", (m) => {
     m.stopPropagation();
-    const p = u.closest(`[${Y}]`);
-    p && UA(p, u, e, t);
+    const p = u.closest(`[${X}]`);
+    p && jA(p, u, e, t);
   }), u;
 }
 function Eu(e, t) {
   return e === "half" ? t.halfAmount : t.normalAmount;
 }
-async function UA(e, t, n, a) {
+async function jA(e, t, n, a) {
   if (n.damageApplication) return;
-  if (FA(n)) {
+  if (UA(n)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar dano.");
     return;
   }
@@ -6083,7 +6083,7 @@ async function UA(e, t, n, a) {
     ui.notifications?.warn?.("Paranormal Toolkit: não consegui resolver o dano deste card.");
     return;
   }
-  const l = eo(n.name);
+  const l = to(n.name);
   if (!l) {
     ui.notifications?.warn?.(`Paranormal Toolkit: não consegui encontrar o alvo ${n.name} para aplicar dano.`);
     return;
@@ -6092,7 +6092,7 @@ async function UA(e, t, n, a) {
   const c = t.innerHTML;
   t.textContent = "Aplicando...";
   try {
-    const u = await J_.execute({
+    const u = await tA.execute({
       actor: l,
       amount: i,
       damageType: r.typeLabel,
@@ -6100,7 +6100,7 @@ async function UA(e, t, n, a) {
       sourceRollId: "damage",
       source: "item-use.multi-target-damage",
       originUuid: null,
-      resistanceGateMode: io(),
+      resistanceGateMode: so(),
       resistanceState: n.assistedActions.resistanceState
     });
     if (!u.ok) {
@@ -6116,16 +6116,16 @@ async function UA(e, t, n, a) {
     };
     Tu(e, m);
     try {
-      await M_(a.rollCard, m);
+      await B_(a.rollCard, m);
     } catch (p) {
       console.warn("Paranormal Toolkit: não foi possível persistir dano multi-target.", p);
     }
     try {
-      await A_(u.value);
+      await R_(u.value);
     } catch (p) {
       console.warn("Paranormal Toolkit: não foi possível criar mensagem privada de dano multi-target.", p);
     }
-    oo(e);
+    io(e);
   } catch (u) {
     console.warn("Paranormal Toolkit: não foi possível aplicar dano multi-target.", u), ui.notifications?.warn?.(`Paranormal Toolkit: não foi possível aplicar dano em ${n.name}.`), t.innerHTML = c;
   } finally {
@@ -6166,13 +6166,13 @@ function $u(e, t, n) {
   );
   return o.title = `Aplicar ${r.conditionLabel} em ${e.name}`, o.setAttribute("aria-label", o.title), o.addEventListener("click", (i) => {
     i.stopPropagation();
-    const l = o.closest(`[${Y}]`);
-    l && qA(l, o, e, t);
+    const l = o.closest(`[${X}]`);
+    l && zA(l, o, e, t);
   }), o;
 }
-async function qA(e, t, n, a) {
+async function zA(e, t, n, a) {
   if (n.effectApplication) return;
-  if (BA(n)) {
+  if (qA(n)) {
     ui.notifications?.warn?.("Paranormal Toolkit: role a resistência do alvo antes de aplicar efeito.");
     return;
   }
@@ -6185,7 +6185,7 @@ async function qA(e, t, n, a) {
     ui.notifications?.warn?.("Paranormal Toolkit: este card não possui efeito estruturado para aplicar.");
     return;
   }
-  const o = eo(n.name);
+  const o = to(n.name);
   if (!o) {
     ui.notifications?.warn?.(`Paranormal Toolkit: não consegui encontrar o alvo ${n.name} para aplicar efeito.`);
     return;
@@ -6194,13 +6194,13 @@ async function qA(e, t, n, a) {
   const i = t.innerHTML;
   t.textContent = "Aplicando...";
   try {
-    const l = await eA.execute({
+    const l = await nA.execute({
       actor: o,
       conditionId: r.conditionId,
       duration: r.duration,
       originUuid: r.originUuid,
       source: r.source,
-      resistanceGateMode: io(),
+      resistanceGateMode: so(),
       resistanceState: n.assistedActions.resistanceState,
       allowSuccessfulResistance: r.applyOnResistance === "success" || r.applyOnResistance === "always",
       requiredResistanceOutcome: r.applyOnResistance === "success" ? "succeeded" : r.applyOnResistance === "failure" ? "failed" : null
@@ -6221,11 +6221,11 @@ async function qA(e, t, n, a) {
     };
     Ru(e, c);
     try {
-      await B_(a.rollCard, c);
+      await q_(a.rollCard, c);
     } catch (u) {
       console.warn("Paranormal Toolkit: não foi possível persistir efeito multi-target.", u);
     }
-    l.value.warning && ui.notifications?.warn?.(`Paranormal Toolkit: ${l.value.warning}`), oo(e);
+    l.value.warning && ui.notifications?.warn?.(`Paranormal Toolkit: ${l.value.warning}`), io(e);
   } catch (l) {
     console.warn("Paranormal Toolkit: não foi possível aplicar efeito multi-target.", l), ui.notifications?.warn?.(`Paranormal Toolkit: não foi possível aplicar efeito em ${n.name}.`), t.innerHTML = i;
   } finally {
@@ -6244,7 +6244,7 @@ function ge(e, t, n, a) {
   const i = document.createElement("span");
   return i.classList.add(`${s}__target-action-label`), i.textContent = t, r.append(o, i), r;
 }
-function jA(e) {
+function GA(e) {
   const t = document.createElement("span");
   return t.classList.add(`${s}__target-toggle`), t.setAttribute(pu, "true"), t.setAttribute("aria-hidden", "true"), Cu(e, t), t;
 }
@@ -6272,7 +6272,7 @@ function ji(e) {
     `.${s}__workflow-dice-tray`
   ].join(", ")) : !1;
 }
-function zA(e, t) {
+function VA(e, t) {
   const n = document.createElement("div");
   n.classList.add(`${s}__target-details`), n.setAttribute(gu, "true");
   const a = document.createElement("div");
@@ -6281,12 +6281,12 @@ function zA(e, t) {
   r.textContent = "Resistência";
   const o = document.createElement("span");
   o.textContent = t.resistance?.description ?? "Resistência pendente.", a.append(r, o);
-  const i = GA(e, t.resistance);
+  const i = HA(e, t.resistance);
   i && a.append(i);
-  const l = VA(e, t.resistance), c = HA(e, t);
+  const l = WA(e, t.resistance), c = KA(e, t);
   return n.append(a, l, c), n.setAttribute("aria-label", `Detalhes de ${e.name}`), n;
 }
-function GA(e, t) {
+function HA(e, t) {
   if (!e.resistanceResult) return null;
   const n = document.createElement("span");
   if (n.classList.add(`${s}__target-resistance-outcome`), t?.difficulty === null || t?.difficulty === void 0)
@@ -6294,7 +6294,7 @@ function GA(e, t) {
   const a = e.state === it ? "sucesso" : "falha";
   return n.textContent = `${e.resistanceResult.skillLabel}: ${e.resistanceResult.total} vs DT ${t.difficulty} — ${a}`, n;
 }
-function VA(e, t) {
+function WA(e, t) {
   const n = document.createElement("div");
   n.classList.add(`${s}__target-resistance-roll`);
   const a = e.resistanceResult?.formula ?? t?.formula ?? "—", r = e.resistanceResult?.total ?? null, o = yu(
@@ -6305,21 +6305,21 @@ function VA(e, t) {
   );
   return n.append(o), n;
 }
-function HA(e, t) {
+function KA(e, t) {
   const n = document.createElement("div");
   return n.classList.add(`${s}__target-details-actions`), wu(n, [
     ku(e, t, "full"),
     $u(e, t, "full")
   ]), n;
 }
-function WA(e, t, n) {
+function YA(e, t, n) {
   if (!n) {
     e.prepend(t);
     return;
   }
   t.parentElement === e && t.previousElementSibling === n || e.insertBefore(t, n.nextElementSibling);
 }
-function KA(e) {
+function XA(e) {
   const t = Su(e);
   if (t) return t;
   const n = document.createElement("section");
@@ -6331,7 +6331,7 @@ function KA(e) {
 function Su(e) {
   return e.querySelector(`[${fu}="true"]`);
 }
-function YA(e, t) {
+function QA(e, t) {
   e.replaceChildren();
   const n = document.createElement("div");
   n.classList.add(`${s}__workflow-section-header`);
@@ -6344,7 +6344,7 @@ function YA(e, t) {
   const i = document.createElement("span");
   i.classList.add(`${s}__effect-info-hint`), i.textContent = "Aplicação por alvo", r.append(o, i), e.append(n, r);
 }
-function XA(e, t, n) {
+function ZA(e, t, n) {
   const a = n?.parentElement === e ? n : Dt(e, "Conjuração");
   if (!a) {
     e.prepend(t);
@@ -6352,21 +6352,21 @@ function XA(e, t, n) {
   }
   t.parentElement === e && t.previousElementSibling === a || e.insertBefore(t, a.nextElementSibling);
 }
-function QA(e, t, n) {
+function JA(e, t, n) {
   t.parentElement === e && t.previousElementSibling === n || e.insertBefore(t, n.nextElementSibling);
 }
-function ma(e) {
+function fa(e) {
   const t = e?.trim().toLocaleLowerCase();
   return t && t.length > 0 ? t : null;
 }
-async function ZA(e) {
+async function eT(e) {
   const t = game.dice3d;
   typeof t?.showForRoll == "function" && await Promise.resolve(t.showForRoll(e, game.user, !0));
 }
-function JA(e) {
+function tT(e) {
   return typeof e == "string" && e.length > 0;
 }
-function eT(e) {
+function nT(e) {
   return e === "normal" || e === "half";
 }
 function zi(e) {
@@ -6378,24 +6378,24 @@ function Iu(e) {
   return Number.isFinite(t) ? Math.trunc(t) : null;
 }
 const Gi = "data-paranormal-toolkit-card-layout-refresh-bound";
-function tT(e) {
+function aT(e) {
   const t = e.rollCard.querySelector(On);
   t && t.getAttribute(Gi) !== "true" && (t.setAttribute(Gi, "true"), t.addEventListener("click", () => {
     for (const n of e.refreshDelaysMs)
       globalThis.setTimeout(e.onRefresh, n);
   }));
 }
-const He = "data-paranormal-toolkit-prompt-id", nT = "apply-damage", aT = "data-paranormal-toolkit-multi-target-damage-info";
-function rT(e) {
-  return Array.from(e.querySelectorAll(`.${s}__workflow-section`)).find((t) => t.getAttribute(aT) === "true" ? !1 : t.querySelector(`.${s}__workflow-section-header strong`)?.textContent?.trim().toLocaleLowerCase() === "dano") ?? null;
-}
-function oT(e) {
-  const t = sT(e);
-  return t.find((n) => n.getAttribute(C_) === nT) ?? t.find((n) => ou(n) === "aplicar danos") ?? null;
-}
+const He = "data-paranormal-toolkit-prompt-id", rT = "apply-damage", oT = "data-paranormal-toolkit-multi-target-damage-info";
 function iT(e) {
+  return Array.from(e.querySelectorAll(`.${s}__workflow-section`)).find((t) => t.getAttribute(oT) === "true" ? !1 : t.querySelector(`.${s}__workflow-section-header strong`)?.textContent?.trim().toLocaleLowerCase() === "dano") ?? null;
+}
+function sT(e) {
+  const t = cT(e);
+  return t.find((n) => n.getAttribute(I_) === rT) ?? t.find((n) => ou(n) === "aplicar danos") ?? null;
+}
+function lT(e) {
   const t = Lu(e), n = Vi(t);
-  return n || Vi(lT(e));
+  return n || Vi(uT(e));
 }
 function Vi(e) {
   return e.find((t) => {
@@ -6403,44 +6403,44 @@ function Vi(e) {
     return n === "aplicar efeito" || n === "efeito";
   }) ?? null;
 }
-function sT(e) {
+function cT(e) {
   const t = Lu(e);
-  return t.length > 0 ? t : so(e);
+  return t.length > 0 ? t : lo(e);
 }
 function Lu(e) {
-  const t = dT(e);
-  return t ? so(e).filter((n) => uT(n, t)) : [];
+  const t = fT(e);
+  return t ? lo(e).filter((n) => mT(n, t)) : [];
 }
-function lT(e) {
+function uT(e) {
   const t = vu(e);
   if (!t) return [];
-  const n = cT(e, t);
-  return so(e).filter((a) => !a.closest(`.${s}__roll-card`)).filter((a) => Du(e, a)).filter((a) => !n || mT(a, n));
+  const n = dT(e, t);
+  return lo(e).filter((a) => !a.closest(`.${s}__roll-card`)).filter((a) => Du(e, a)).filter((a) => !n || pT(a, n));
 }
-function so(e) {
+function lo(e) {
   const t = vu(e);
-  return t ? Array.from(t.querySelectorAll(w_)) : [];
+  return t ? Array.from(t.querySelectorAll(S_)) : [];
 }
 function vu(e) {
   return e.closest(`.${s}`) ?? e.parentElement;
 }
-function cT(e, t) {
+function dT(e, t) {
   return Array.from(t.querySelectorAll(`.${s}__roll-card`)).find((n) => n !== e && Du(e, n)) ?? null;
 }
-function uT(e, t) {
+function mT(e, t) {
   return e.getAttribute(He) === t ? !0 : Array.from(e.querySelectorAll(`[${He}]`)).some((n) => n.getAttribute(He) === t);
 }
-function dT(e) {
+function fT(e) {
   return e.getAttribute(He) ?? e.querySelector(`[${He}]`)?.getAttribute(He) ?? null;
 }
 function Du(e, t) {
   return !!(e.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
-function mT(e, t) {
+function pT(e, t) {
   return !!(e.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
-function fT(e) {
-  const t = xu(), n = Un(e.rollCard).state, a = Xr({
+function gT(e) {
+  const t = xu(), n = Un(e.rollCard).state, a = Qr({
     targetId: "single-target",
     targetName: "Alvo",
     resistanceGateMode: t,
@@ -6516,15 +6516,15 @@ function ut(e) {
     reason: e.actionState.reason
   };
 }
-function pT(e) {
-  const { rollCard: t } = e, n = bT(), a = xu(), r = Un(t).state, o = Xr({
+function hT(e) {
+  const { rollCard: t } = e, n = _T(), a = xu(), r = Un(t).state, o = Qr({
     targetId: "single-target",
     targetName: "Alvo",
     resistanceGateMode: a,
     resistanceState: r,
     damage: { normalAmount: null, halfAmount: null },
     effect: null
-  }), i = o.policy.damageActionState, l = ot(i), c = hT(e);
+  }), i = o.policy.damageActionState, l = ot(i), c = yT(e);
   if (c)
     return {
       mode: n,
@@ -6546,7 +6546,7 @@ function pT(e) {
         c === "half",
         !!e.halfButtonSkipped
       ),
-      summary: gT(r)
+      summary: bT(r)
     };
   if (!o.policy.canShowApplyDamage)
     return {
@@ -6633,7 +6633,7 @@ function pT(e) {
     }
   };
 }
-function gT(e) {
+function bT(e) {
   return e.kind === "succeeded" ? {
     state: "resisted",
     message: `Resistiu: ${e.total} vs DT ${e.difficulty}.`
@@ -6655,43 +6655,43 @@ function B(e, t, n, a, r, o) {
     waitingLabel: o
   };
 }
-function hT(e) {
+function yT(e) {
   return e.normalButtonApplied ? "normal" : e.halfButtonApplied ? "half" : null;
 }
-function bT() {
+function _T() {
   try {
-    return Pf();
+    return Mf();
   } catch {
     return "assisted";
   }
 }
 function xu() {
   try {
-    return Or();
+    return Mr();
   } catch {
     return "strict";
   }
 }
-const yT = "data-paranormal-toolkit-damage-resolution-state", Hi = "data-paranormal-toolkit-damage-icon-enhanced", lo = "data-paranormal-toolkit-damage-original-label", _T = {
+const AT = "data-paranormal-toolkit-damage-resolution-state", Hi = "data-paranormal-toolkit-damage-icon-enhanced", co = "data-paranormal-toolkit-damage-original-label", TT = {
   normal: /\bnormal\b|\bcheio\b/iu,
   half: /\bmetade\b|\bmeio\b|1\/2/iu
 }, Nu = "Outra opção escolhida";
-function AT(e, t) {
-  t.classList.add(`${s}__actions--embedded`, `${s}__actions--damage-resolution`), L_(t, "Aplicar dano"), TT(e, t);
+function RT(e, t) {
+  t.classList.add(`${s}__actions--embedded`, `${s}__actions--damage-resolution`), D_(t, "Aplicar dano"), kT(e, t);
 }
-function TT(e, t) {
+function kT(e, t) {
   const n = Array.from(t.querySelectorAll(Ze)), a = Ki(n, "normal"), r = Ki(n, "half");
   if (!a || !r) {
-    RT(n), t.classList.add(`${s}__actions--compact`);
+    ET(n), t.classList.add(`${s}__actions--compact`);
     return;
   }
   Yi(a, "normal"), Yi(r, "half");
-  const o = pT({
+  const o = hT({
     rollCard: e,
     normalButtonApplied: pn(a),
     halfButtonApplied: pn(r),
-    normalButtonSkipped: ir(a),
-    halfButtonSkipped: ir(r)
+    normalButtonSkipped: sr(a),
+    halfButtonSkipped: sr(r)
   });
   if (!o.canShowApplyDamage) {
     Xi(a), Xi(r), Qi(t, o.summary.state, o.summary.message);
@@ -6705,27 +6705,27 @@ function Wi(e, t) {
       e.remove();
       return;
     }
-    ET(e, t.visible), $T(e, t.enabled, t.kind, t.waitingLabel);
+    wT(e, t.visible), CT(e, t.enabled, t.kind, t.waitingLabel);
   }
 }
-function RT(e) {
+function ET(e) {
   for (const t of e)
-    ir(t) && t.remove();
+    sr(t) && t.remove();
 }
 function pn(e) {
   const t = e.textContent?.trim() ?? "";
   return t.startsWith("✓") && !t.includes(Nu);
 }
-function ir(e) {
+function sr(e) {
   return e.textContent?.includes(Nu) ?? !1;
 }
 function Ki(e, t) {
-  const n = _T[t];
-  return e.find((a) => n.test(kT(a))) ?? null;
+  const n = TT[t];
+  return e.find((a) => n.test($T(a))) ?? null;
 }
-function kT(e) {
+function $T(e) {
   return [
-    e.getAttribute(lo),
+    e.getAttribute(co),
     e.getAttribute("aria-label"),
     e.textContent
   ].filter((t) => !!t).join(" ");
@@ -6742,28 +6742,28 @@ function Yi(e, t) {
   ), a.setAttribute("aria-hidden", "true"), e.classList.add(
     `${s}__button--damage-resolution-action`,
     `${s}__button--damage-resolution-${t}`
-  ), e.setAttribute(Hi, "true"), e.setAttribute(lo, n), e.setAttribute("aria-label", n), e.replaceChildren(a, Pe(n));
+  ), e.setAttribute(Hi, "true"), e.setAttribute(co, n), e.setAttribute("aria-label", n), e.replaceChildren(a, Pe(n));
 }
 function Xi(e) {
   pn(e) || e.remove();
 }
-function ET(e, t) {
+function wT(e, t) {
   e.hidden = !t, e.classList.toggle(`${s}__button--damage-resolution-selected`, t);
 }
-function $T(e, t, n, a = "Role resistência") {
+function CT(e, t, n, a = "Role resistência") {
   if (!pn(e)) {
     if (e.disabled = !t, e.classList.toggle(`${s}__button--damage-resolution-waiting`, !t), !t) {
       e.setAttribute("aria-disabled", "true"), e.setAttribute("aria-label", a), e.replaceChildren(Pe(a));
       return;
     }
-    e.removeAttribute("aria-disabled"), wT(e, n);
+    e.removeAttribute("aria-disabled"), ST(e, n);
   }
 }
-function wT(e, t) {
-  const n = e.getAttribute(lo) ?? e.getAttribute("aria-label") ?? e.textContent?.trim() ?? "";
-  !n || n === "Role resistência" || (e.setAttribute("aria-label", n), e.replaceChildren(CT(t), Pe(n)));
+function ST(e, t) {
+  const n = e.getAttribute(co) ?? e.getAttribute("aria-label") ?? e.textContent?.trim() ?? "";
+  !n || n === "Role resistência" || (e.setAttribute("aria-label", n), e.replaceChildren(IT(t), Pe(n)));
 }
-function CT(e) {
+function IT(e) {
   const t = document.createElement("i");
   return t.classList.add(
     "fa-solid",
@@ -6772,58 +6772,58 @@ function CT(e) {
   ), t.setAttribute("aria-hidden", "true"), t;
 }
 function Qi(e, t, n) {
-  e.setAttribute(yT, t);
+  e.setAttribute(AT, t);
   const a = e.querySelector(`.${s}__damage-resolution-summary`);
   if (!n) {
     a?.remove();
     return;
   }
   const r = a ?? document.createElement("span");
-  r.classList.add(`${s}__damage-resolution-summary`), r.textContent = n, a || e.querySelector(to)?.after(r);
+  r.classList.add(`${s}__damage-resolution-summary`), r.textContent = n, a || e.querySelector(no)?.after(r);
 }
-const kt = "data-paranormal-toolkit-effect-icon-enhanced", Je = "data-paranormal-toolkit-effect-action-compacted", jn = "data-paranormal-toolkit-effect-resistance-gate", co = "data-paranormal-toolkit-effect-section", uo = "data-paranormal-toolkit-effect-label";
-function ST(e) {
-  return e.querySelector(`[${co}="true"]`);
+const kt = "data-paranormal-toolkit-effect-icon-enhanced", Je = "data-paranormal-toolkit-effect-action-compacted", jn = "data-paranormal-toolkit-effect-resistance-gate", uo = "data-paranormal-toolkit-effect-section", mo = "data-paranormal-toolkit-effect-label";
+function LT(e) {
+  return e.querySelector(`[${uo}="true"]`);
 }
-function IT(e) {
-  const t = vT(e);
+function vT(e) {
+  const t = xT(e);
   if (!t) return e.existingSection;
-  const n = e.existingSection ?? xT(), a = jT(n, e.sourceActions, t);
-  return a && n.setAttribute(uo, a), NT(n, t, a), UT(e.rollCard, n, e.after ?? e.fallbackAfter), qT(e.sourceActions, n), n;
+  const n = e.existingSection ?? PT(), a = GT(n, e.sourceActions, t);
+  return a && n.setAttribute(mo, a), OT(n, t, a), jT(e.rollCard, n, e.after ?? e.fallbackAfter), zT(e.sourceActions, n), n;
 }
-function LT(e, t) {
+function DT(e, t) {
   const n = t.querySelector(Ze);
   if (!n) return;
-  const a = n.textContent?.trim() ?? "", r = Fu(t, n, a), o = Pu(e, n), i = fT({
+  const a = n.textContent?.trim() ?? "", r = Fu(t, n, a), o = Pu(e, n), i = gT({
     rollCard: e,
     effectLabel: r,
-    applied: fo(n, a),
+    applied: po(n, a),
     effectCanApplyOnSuccessfulResistance: o ? Qe(o) === "success" || Qe(o) === "always" : !1,
     effectRequiresResolvedResistance: o ? Gc(o) : !1
   });
   if (i.applied) {
-    GT(n);
+    HT(n);
     return;
   }
   if (!i.visible) {
-    VT(n);
+    WT(n);
     return;
   }
   if (i.waitingForResistance) {
-    HT(n, i.actionLabel);
+    KT(n, i.actionLabel);
     return;
   }
   if (i.resisted) {
-    WT(n, i.compactLabel);
+    YT(n, i.compactLabel);
     return;
   }
-  KT(n), Mu(n, i.displayLabel);
+  XT(n), Mu(n, i.displayLabel);
 }
-function vT(e) {
+function xT(e) {
   const t = Array.from(e.sourceActions?.querySelectorAll(Ze) ?? []), n = Array.from(e.existingSection?.querySelectorAll(Ze) ?? []), a = [...t, ...n];
-  return a.length === 0 ? null : DT(e.rollCard, a) ?? a[0] ?? null;
+  return a.length === 0 ? null : NT(e.rollCard, a) ?? a[0] ?? null;
 }
-function DT(e, t) {
+function NT(e, t) {
   const n = Un(e).state, a = jc(n), r = Ou(e);
   if (r.length === 0) return null;
   for (const o of t) {
@@ -6833,70 +6833,70 @@ function DT(e, t) {
   return null;
 }
 function Pu(e, t, n = Ou(e)) {
-  const a = mo(t, t.textContent?.trim() ?? ""), r = Ua(a);
-  return r ? n.find((o) => [o.label, o.conditionId].some((i) => Ua(i) === r)) ?? null : null;
+  const a = fo(t, t.textContent?.trim() ?? ""), r = qa(a);
+  return r ? n.find((o) => [o.label, o.conditionId].some((i) => qa(i) === r)) ?? null : null;
 }
 function Ou(e) {
-  const t = eu(ky(e));
+  const t = eu($y(e));
   if (!t) return [];
   const n = St(t);
   return n.ok ? (n.value.conditionApplications ?? []).filter((a) => a.actor === "target") : [];
 }
-function xT() {
+function PT() {
   const e = document.createElement("section");
   return e.classList.add(
     `${s}__workflow-section`,
     `${s}__workflow-section--effect-action`
-  ), e.setAttribute(co, "true"), e;
+  ), e.setAttribute(uo, "true"), e;
 }
-function NT(e, t, n) {
-  e.setAttribute(co, "true"), e.classList.add(
+function OT(e, t, n) {
+  e.setAttribute(uo, "true"), e.classList.add(
     `${s}__workflow-section`,
     `${s}__workflow-section--effect-action`
   ), e.classList.remove(`${s}__actions`, `${s}__actions--effect-resolution`);
-  const a = PT(e), r = OT(a);
+  const a = MT(e), r = FT(a);
   r.textContent = "Efeito";
-  const o = MT(e, a), i = FT(o);
-  i.textContent = YT(n ?? Fu(e, t, t.textContent?.trim() ?? ""));
-  const l = BT(o);
+  const o = BT(e, a), i = UT(o);
+  i.textContent = QT(n ?? Fu(e, t, t.textContent?.trim() ?? ""));
+  const l = qT(o);
   t.parentElement !== l && l.append(t);
   for (const u of Array.from(l.querySelectorAll(Ze)))
     u.hidden = u !== t;
   t.hidden = !1;
   const c = t.textContent?.trim() ?? "";
-  !fo(t, c) && !zT(t, c) && Mu(t, n ?? c);
+  !po(t, c) && !VT(t, c) && Mu(t, n ?? c);
 }
-function PT(e) {
+function MT(e) {
   const t = e.querySelector(`:scope > .${s}__workflow-section-header`);
   if (t) return t;
   const n = document.createElement("div");
   return n.classList.add(`${s}__workflow-section-header`), e.prepend(n), n;
 }
-function OT(e) {
+function FT(e) {
   const t = e.querySelector("strong");
   if (t) return t;
   const n = document.createElement("strong");
   return e.append(n), n;
 }
-function MT(e, t) {
+function BT(e, t) {
   const n = e.querySelector(`:scope > .${s}__effect-section-body`);
   if (n) return n;
   const a = document.createElement("div");
   return a.classList.add(`${s}__effect-section-body`), t.after(a), a;
 }
-function FT(e) {
+function UT(e) {
   const t = e.querySelector(`:scope > .${s}__effect-section-label`);
   if (t) return t;
   const n = document.createElement("span");
   return n.classList.add(`${s}__effect-section-label`), e.prepend(n), n;
 }
-function BT(e) {
+function qT(e) {
   const t = e.querySelector(`:scope > .${s}__effect-section-action`);
   if (t) return t;
   const n = document.createElement("div");
   return n.classList.add(`${s}__effect-section-action`), e.append(n), n;
 }
-function UT(e, t, n) {
+function jT(e, t, n) {
   if (!n) {
     if (t.parentElement === e && t.nextElementSibling === null) return;
     e.append(t);
@@ -6904,7 +6904,7 @@ function UT(e, t, n) {
   }
   t.parentElement === e && t.previousElementSibling === n || e.insertBefore(t, n.nextElementSibling);
 }
-function qT(e, t) {
+function zT(e, t) {
   if (!(!e || e === t)) {
     if (e.querySelector(Ze)) {
       e.hidden = !0, e.setAttribute("aria-hidden", "true");
@@ -6913,27 +6913,27 @@ function qT(e, t) {
     e.remove();
   }
 }
-function jT(e, t, n) {
-  const a = e.getAttribute(uo);
+function GT(e, t, n) {
+  const a = e.getAttribute(mo);
   if (a && a.trim().length > 0) return a.trim();
   const r = t?.querySelector(`.${s}__effect-resolution-label`)?.textContent?.trim();
-  return r || mo(n, n.textContent?.trim() ?? "");
+  return r || fo(n, n.textContent?.trim() ?? "");
 }
-function mo(e, t) {
+function fo(e, t) {
   const n = e.getAttribute("aria-label")?.replace(/^Aplicar\s+/iu, "").trim();
   if (n && ye(n) !== "efeito aplicado") return n;
-  const a = Ey(e);
+  const a = wy(e);
   if (a) return a;
   const r = t.replace(/^✓\s*/u, "").replace(/\s+aplicad[oa]$/iu, "").trim();
   return r.length > 0 && ye(r) !== "aplicado" ? r : null;
 }
-function fo(e, t) {
-  return e.classList.contains(S_) || ye(t).includes("aplicado");
+function po(e, t) {
+  return e.classList.contains(L_) || ye(t).includes("aplicado");
 }
-function zT(e, t) {
+function VT(e, t) {
   const n = e.getAttribute(jn);
   if (n === "pending" || n === "resisted") return !0;
-  const a = Ua(t);
+  const a = qa(t);
   return a.includes("resistiu") || a.includes("role resistencia");
 }
 function Mu(e, t) {
@@ -6941,55 +6941,55 @@ function Mu(e, t) {
     `${s}__button--effect-resolution-applied`,
     `${s}__button--effect-resolution-waiting`,
     `${s}__button--effect-resolution-resisted`
-  ), e.setAttribute(Je, "true"), e.setAttribute(kt, "true"), e.setAttribute(I_, "✓ Aplicado"), e.setAttribute("aria-label", `Aplicar ${t}`), e.replaceChildren(
-    no("✦", `${s}__button-icon--effect`),
+  ), e.setAttribute(Je, "true"), e.setAttribute(kt, "true"), e.setAttribute(v_, "✓ Aplicado"), e.setAttribute("aria-label", `Aplicar ${t}`), e.replaceChildren(
+    ao("✦", `${s}__button-icon--effect`),
     Pe("Aplicar")
   ));
 }
-function GT(e) {
+function HT(e) {
   e.getAttribute(Je) === "true" && ye(e.textContent) === "✓ aplicado" || (e.classList.add(`${s}__button--effect-resolution-action`, `${s}__button--effect-resolution-applied`), e.classList.remove(
     `${s}__button--effect-resolution-waiting`,
     `${s}__button--effect-resolution-resisted`
   ), e.setAttribute(Je, "true"), e.setAttribute(kt, "true"), e.setAttribute("aria-label", "Efeito aplicado"), e.replaceChildren(
-    no("✓", `${s}__button-icon--effect-applied`),
+    ao("✓", `${s}__button-icon--effect-applied`),
     Pe("Aplicado")
   ));
 }
 function Fu(e, t, n) {
-  const a = e.getAttribute(uo) ?? e.querySelector(`.${s}__effect-section-label`)?.textContent?.trim();
-  return a && a.trim().length > 0 ? a.trim() : mo(t, n) ?? n;
+  const a = e.getAttribute(mo) ?? e.querySelector(`.${s}__effect-section-label`)?.textContent?.trim();
+  return a && a.trim().length > 0 ? a.trim() : fo(t, n) ?? n;
 }
-function VT(e) {
-  fo(e, e.textContent?.trim() ?? "") || e.remove();
+function WT(e) {
+  po(e, e.textContent?.trim() ?? "") || e.remove();
 }
-function HT(e, t = "Role resistência") {
+function KT(e, t = "Role resistência") {
   e.disabled = !0, e.setAttribute("aria-disabled", "true"), e.removeAttribute(Je), e.removeAttribute(kt), e.classList.remove(
     `${s}__button--effect-resolution-applied`,
     `${s}__button--effect-resolution-resisted`
   ), e.classList.add(`${s}__button--effect-resolution-action`, `${s}__button--effect-resolution-waiting`), e.setAttribute(jn, "pending"), e.setAttribute("aria-label", "Role a resistência antes de aplicar o efeito"), e.replaceChildren(Pe(t));
 }
-function WT(e, t = "Resistiu") {
+function YT(e, t = "Resistiu") {
   e.disabled = !0, e.removeAttribute(Je), e.removeAttribute(kt), e.classList.remove(
     `${s}__button--effect-resolution-applied`,
     `${s}__button--effect-resolution-waiting`
   ), e.classList.add(`${s}__button--effect-resolution-action`, `${s}__button--effect-resolution-resisted`), e.setAttribute(jn, "resisted"), e.setAttribute("aria-label", "O alvo resistiu ao efeito"), e.replaceChildren(
-    no("✓", `${s}__button-icon--effect-resisted`),
+    ao("✓", `${s}__button-icon--effect-resisted`),
     Pe(t)
   );
 }
-function KT(e) {
+function XT(e) {
   e.classList.remove(
     `${s}__button--effect-resolution-waiting`,
     `${s}__button--effect-resolution-resisted`
   ), e.removeAttribute(jn), e.removeAttribute("aria-disabled");
 }
-function YT(e) {
+function QT(e) {
   return e.replace(/\s*:\s*/u, " · ");
 }
-const XT = "data-paranormal-toolkit-card-layout-normalized";
-function QT(e) {
-  const t = ZT(e.rollCard), n = JT(t);
-  return tT({
+const ZT = "data-paranormal-toolkit-card-layout-normalized";
+function JT(e) {
+  const t = eR(e.rollCard), n = tR(t);
+  return aT({
     rollCard: e.rollCard,
     refreshDelaysMs: e.refreshDelaysMs,
     onRefresh: e.onRefresh
@@ -6998,17 +6998,17 @@ function QT(e) {
     effectSection: n ?? t.effectSection
   };
 }
-function ZT(e) {
+function eR(e) {
   return {
     rollCard: e,
-    damageSection: rT(e),
-    resistance: e.querySelector(jr),
-    damageActions: oT(e),
-    effectActionSource: iT(e),
-    effectSection: ST(e)
+    damageSection: iT(e),
+    resistance: e.querySelector(zr),
+    damageActions: sT(e),
+    effectActionSource: lT(e),
+    effectSection: LT(e)
   };
 }
-function JT(e) {
+function tR(e) {
   const {
     rollCard: t,
     damageSection: n,
@@ -7017,39 +7017,39 @@ function JT(e) {
     effectActionSource: o,
     effectSection: i
   } = e;
-  t.setAttribute(XT, "true"), t.classList.add(`${s}__roll-card--structured`);
-  const l = Dt(t, "Conjuração"), c = eR({
+  t.setAttribute(ZT, "true"), t.classList.add(`${s}__roll-card--structured`);
+  const l = Dt(t, "Conjuração"), c = nR({
     rollCard: t,
     damageSection: n,
     resistance: a,
     fallbackAfter: l
   });
-  n && r && (r.parentElement !== n && n.append(r), AT(t, r));
-  const u = IT({
+  n && r && (r.parentElement !== n && n.append(r), RT(t, r));
+  const u = vT({
     rollCard: t,
     existingSection: i,
     sourceActions: o,
-    after: tR(n, c),
+    after: aR(n, c),
     fallbackAfter: l
   });
-  return u && LT(t, u), u;
+  return u && DT(t, u), u;
 }
-function eR(e) {
+function nR(e) {
   const { rollCard: t, damageSection: n, resistance: a, fallbackAfter: r } = e;
   return a ? n ? (a.parentElement !== n && n.append(a), n) : r ? (a.parentElement === t && a.previousElementSibling === r || t.insertBefore(a, r.nextElementSibling), a) : ((a.parentElement !== t || a.previousElementSibling !== null) && t.prepend(a), a) : null;
 }
-function tR(e, t) {
+function aR(e, t) {
   return e ?? t;
 }
 const Bu = [0, 80, 180, 400, 900, 1600, 3e3], Zi = /* @__PURE__ */ new WeakSet();
-function nR(e) {
-  Uu(e), aR(e);
+function rR(e) {
+  Uu(e), oR(e);
 }
 function Uu(e) {
   for (const t of Array.from(e.querySelectorAll(`.${s}__roll-card`)))
     qu(t);
 }
-function aR(e) {
+function oR(e) {
   if (!Zi.has(e)) {
     Zi.add(e);
     for (const t of Bu)
@@ -7059,46 +7059,46 @@ function aR(e) {
   }
 }
 function qu(e) {
-  const t = QT({
+  const t = JT({
     rollCard: e,
     refreshDelaysMs: Bu,
     onRefresh: () => qu(e)
   });
-  aA({
+  oA({
     rollCard: e,
     damageSection: t.damageSection,
     effectSection: t.effectSection
   });
 }
-const rR = "data-paranormal-toolkit-resistance-roll-result-enhanced", Ji = "data-paranormal-toolkit-resistance-original-description", oR = "data-paranormal-toolkit-resistance-skill", iR = "data-paranormal-toolkit-resistance-skill-label", sR = `${s}__resistance--without-roll-button`, lR = ["Fortitude", "Reflexos", "Vontade"];
-function cR(e) {
-  for (const t of Array.from(e.querySelectorAll(jr)))
-    uR(t);
-  nR(e);
+const iR = "data-paranormal-toolkit-resistance-roll-result-enhanced", Ji = "data-paranormal-toolkit-resistance-original-description", sR = "data-paranormal-toolkit-resistance-skill", lR = "data-paranormal-toolkit-resistance-skill-label", cR = `${s}__resistance--without-roll-button`, uR = ["Fortitude", "Reflexos", "Vontade"];
+function dR(e) {
+  for (const t of Array.from(e.querySelectorAll(zr)))
+    mR(t);
+  rR(e);
 }
-function uR(e) {
-  const t = e.querySelector(dh), n = e.querySelector(wc), a = e.querySelector(On), r = gR(a) ? a : null, o = e.querySelector(Cc);
+function mR(e) {
+  const t = e.querySelector(fh), n = e.querySelector(wc), a = e.querySelector(On), r = bR(a) ? a : null, o = e.querySelector(Cc);
   if (!t && !n && !o && !a) return;
-  e.classList.toggle(sR, !r);
-  const i = pR(e, a);
-  t && t.parentElement !== i && i.append(t), n && n.parentElement !== i && i.append(n), o && (o.parentElement !== e && (!a || !a.contains(o)) && e.append(o), yR(o)), dR(e, a, n), r && (kR(r), r.parentElement !== e && e.append(r));
+  e.classList.toggle(cR, !r);
+  const i = hR(e, a);
+  t && t.parentElement !== i && i.append(t), n && n.parentElement !== i && i.append(n), o && (o.parentElement !== e && (!a || !a.contains(o)) && e.append(o), AR(o)), fR(e, a, n), r && ($R(r), r.parentElement !== e && e.append(r));
 }
-function dR(e, t, n) {
+function fR(e, t, n) {
   if (!n) return;
   const a = e.closest(`.${s}__roll-card`);
   if (!a) return;
-  const r = fR(n), o = iu({
+  const r = gR(n), o = iu({
     description: r,
-    skillLabel: hR(t, r),
-    difficulty: Yr(a)
+    skillLabel: yR(t, r),
+    difficulty: Xr(a)
   });
   if (!o) {
     n.textContent = r, n.classList.remove(`${s}__resistance-description--difficulty`);
     return;
   }
-  mR(n, o), n.classList.add(`${s}__resistance-description--difficulty`);
+  pR(n, o), n.classList.add(`${s}__resistance-description--difficulty`);
 }
-function mR(e, t) {
+function pR(e, t) {
   const n = document.createElement("span");
   n.classList.add(`${s}__resistance-label-skill`), n.textContent = t.skillLabel;
   const a = document.createElement("strong");
@@ -7110,42 +7110,42 @@ function mR(e, t) {
   }
   e.replaceChildren(...r);
 }
-function fR(e) {
+function gR(e) {
   const t = e.getAttribute(Ji);
   if (t !== null) return t;
   const n = e.textContent?.trim() ?? "";
   return e.setAttribute(Ji, n), n;
 }
-function pR(e, t) {
+function hR(e, t) {
   const n = e.querySelector(`.${Ti}`);
   if (n) return n;
   const a = document.createElement("div");
   return a.classList.add(Ti), e.insertBefore(a, t?.parentElement === e ? t : e.firstChild), a;
 }
-function gR(e) {
+function bR(e) {
   return !e || e.hidden ? !1 : e.getAttribute("aria-hidden") !== "true";
 }
-function hR(e, t) {
-  const n = e?.getAttribute(iR) ?? e?.getAttribute(oR) ?? null;
-  return n || bR(t);
+function yR(e, t) {
+  const n = e?.getAttribute(lR) ?? e?.getAttribute(sR) ?? null;
+  return n || _R(t);
 }
-function bR(e) {
+function _R(e) {
   const t = es(e);
-  return lR.find((n) => t.startsWith(es(n))) ?? null;
+  return uR.find((n) => t.startsWith(es(n))) ?? null;
 }
 function es(e) {
   return e.normalize("NFD").replace(new RegExp("\\p{Diacritic}", "gu"), "").replace(/\s+/gu, " ").trim().toLocaleLowerCase();
 }
-function yR(e) {
-  const t = _R(e.textContent ?? "");
-  t && (e.setAttribute(rR, "true"), e.replaceChildren(RR(t)));
+function AR(e) {
+  const t = TR(e.textContent ?? "");
+  t && (e.setAttribute(iR, "true"), e.replaceChildren(ER(t)));
 }
-function _R(e) {
+function TR(e) {
   const t = /^\s*([^:]+):\s*(.+?)\s*=\s*(-?\d+)\s*$/u.exec(e);
   if (!t) return null;
   const [, n, a, r] = t, o = n?.trim() ?? "Resistência", i = Number(r);
   if (!Number.isFinite(i)) return null;
-  const { formula: l, diceValues: c } = AR(a ?? "");
+  const { formula: l, diceValues: c } = RR(a ?? "");
   return l ? {
     skillLabel: o,
     formula: l,
@@ -7153,17 +7153,17 @@ function _R(e) {
     diceValues: c
   } : null;
 }
-function AR(e) {
+function RR(e) {
   const t = e.trim(), n = /^(.*?)\s+\(([^)]*)\)\s*$/u.exec(t);
   return n ? {
     formula: n[1]?.trim() ?? t,
-    diceValues: TR(n[2] ?? "")
+    diceValues: kR(n[2] ?? "")
   } : { formula: t, diceValues: [] };
 }
-function TR(e) {
+function kR(e) {
   return e.split(",").map((t) => Number(t.trim())).filter((t) => Number.isFinite(t)).map((t) => Math.trunc(t));
 }
-function RR(e) {
+function ER(e) {
   const t = document.createElement("div");
   t.classList.add(
     `${s}__workflow-roll`,
@@ -7171,10 +7171,10 @@ function RR(e) {
   ), t.setAttribute("data-paranormal-toolkit-resistance-total", String(e.total));
   const n = document.createElement("span");
   n.classList.add(`${s}__workflow-roll-formula`), n.textContent = e.formula, n.title = `${e.skillLabel}: ${e.formula}`, t.append(n);
-  const a = ER(e);
+  const a = wR(e);
   return a && t.append(a), t;
 }
-function kR(e) {
+function $R(e) {
   e.classList.remove(
     `${s}__resistance-roll-button--succeeded`,
     `${s}__resistance-roll-button--failed`
@@ -7186,17 +7186,17 @@ function kR(e) {
   const a = n.kind === "succeeded" ? "succeeded" : "failed", r = a === "succeeded" ? "✓" : "✕", o = a === "succeeded" ? "sucesso" : "falha";
   e.classList.add(`${s}__resistance-roll-button--${a}`), e.textContent = `${n.total} ${r}`, e.title = `${e.getAttribute("data-paranormal-toolkit-resistance-skill-label") ?? "Resistência"}: ${n.total}, ${o}. Rolar novamente`, e.setAttribute("aria-label", e.title);
 }
-function ER(e) {
+function wR(e) {
   if (e.diceValues.length === 0) return null;
   const t = document.createElement("div");
   t.classList.add(`${s}__workflow-dice-tray`);
-  for (const n of $R(e.diceValues, e.formula)) {
+  for (const n of CR(e.diceValues, e.formula)) {
     const a = document.createElement("span");
     a.classList.add(`${s}__workflow-die`), n.active || a.classList.add(`${s}__workflow-die--inactive`), a.textContent = String(n.value), t.append(a);
   }
   return t;
 }
-function $R(e, t) {
+function CR(e, t) {
   if (e.length <= 1) return e.map((a) => ({ value: a, active: !0 }));
   const n = t.toLowerCase();
   return n.includes("kh") ? ts(e, "highest") : n.includes("kl") ? ts(e, "lowest") : e.map((a) => ({ value: a, active: !0 }));
@@ -7209,24 +7209,24 @@ function ts(e, t) {
     return o && (a = !0), { value: r, active: o };
   });
 }
-function wR(e) {
-  for (const t of Array.from(e.querySelectorAll(lh))) {
-    const n = xR(t);
-    CR(t), n && (SR(t, n), IR(t, n));
+function SR(e) {
+  for (const t of Array.from(e.querySelectorAll(uh))) {
+    const n = PR(t);
+    IR(t), n && (LR(t, n), vR(t, n));
   }
 }
-function CR(e) {
-  for (const t of Array.from(e.querySelectorAll(ch)))
+function IR(e) {
+  for (const t of Array.from(e.querySelectorAll(dh)))
     t.remove();
 }
-function SR(e, t) {
-  const a = e.closest(`.${s}`)?.querySelector($c) ?? null, r = a?.querySelector(sh) ?? null, o = a ?? e, i = o.querySelector(ph);
+function LR(e, t) {
+  const a = e.closest(`.${s}`)?.querySelector($c) ?? null, r = a?.querySelector(ch) ?? null, o = a ?? e, i = o.querySelector(hh);
   if (!t.elementLabel) {
     i?.remove();
     return;
   }
   const l = i ?? document.createElement("span");
-  if (l.className = XR(t.elementTone), l.textContent = YR(t), !i) {
+  if (l.className = ZR(t.elementTone), l.textContent = QR(t), !i) {
     if (r?.parentElement === o) {
       r.insertAdjacentElement("afterend", l);
       return;
@@ -7234,10 +7234,10 @@ function SR(e, t) {
     o.prepend(l);
   }
 }
-function IR(e, t) {
-  const n = LR(e);
-  vR(e, n);
-  const a = DR(t);
+function vR(e, t) {
+  const n = DR(e);
+  xR(e, n);
+  const a = NR(t);
   if (a.length === 0) return;
   const r = document.createElement("div");
   r.classList.add(`${s}__ritual-metadata`);
@@ -7261,25 +7261,25 @@ function IR(e, t) {
   }
   e.prepend(r);
 }
-function LR(e) {
+function DR(e) {
   return e.closest(`.${s}`)?.querySelector($c) ?? null;
 }
-function vR(e, t) {
+function xR(e, t) {
   const n = [e, t].filter((a) => a !== null);
   for (const a of n)
-    for (const r of Array.from(a.querySelectorAll(gh)))
+    for (const r of Array.from(a.querySelectorAll(bh)))
       r.remove();
 }
-function DR(e) {
+function NR(e) {
   return [
     e.cost,
-    e.target ? `Alvo: ${Pa(e.target)}` : null,
-    e.duration ? `Duração: ${Pa(e.duration)}` : null,
+    e.target ? `Alvo: ${Oa(e.target)}` : null,
+    e.duration ? `Duração: ${Oa(e.duration)}` : null,
     e.resistance ? `Resistência: ${hc(e.resistance)}` : null
   ].filter(Dn);
 }
-function xR(e) {
-  const t = NR(e), n = UR(e), r = (t ? BR(t) : null)?.system ?? null, o = t?.summaryLines ?? [], i = po(Q(r, "element")), l = le("op.elementChoices", i) ?? ns(Se(o, "Elemento")) ?? ns(n.damageType), c = i ?? QR(l), u = Q(r, "circle") ?? Se(o, "Círculo"), m = zR(r) ?? Se(o, "Alvo"), p = WR(r, "duration", "op.durationChoices") ?? Se(o, "Duração"), _ = qR(e) ?? VR(r) ?? Se(o, "Resistência"), $ = jR(o) ?? n.cost, T = {
+function PR(e) {
+  const t = OR(e), n = jR(e), r = (t ? qR(t) : null)?.system ?? null, o = t?.summaryLines ?? [], i = go(Q(r, "element")), l = le("op.elementChoices", i) ?? ns(Se(o, "Elemento")) ?? ns(n.damageType), c = i ?? JR(l), u = Q(r, "circle") ?? Se(o, "Círculo"), m = VR(r) ?? Se(o, "Alvo"), p = YR(r, "duration", "op.durationChoices") ?? Se(o, "Duração"), _ = zR(e) ?? WR(r) ?? Se(o, "Resistência"), $ = GR(o) ?? n.cost, T = {
     elementLabel: l,
     elementTone: c,
     circle: u,
@@ -7288,25 +7288,25 @@ function xR(e) {
     duration: p,
     resistance: _
   };
-  return KR(T) ? T : null;
+  return XR(T) ? T : null;
 }
-function NR(e) {
-  const t = PR(e);
+function OR(e) {
+  const t = MR(e);
   if (!t) return null;
-  const n = t.getFlag?.(d, Pn), a = MR(n);
+  const n = t.getFlag?.(d, Pn), a = BR(n);
   if (a.length === 0) return null;
-  const r = OR(e);
+  const r = FR(e);
   if (r.size > 0) {
     const o = a.find((i) => i.pendingId && r.has(i.pendingId));
     if (o) return o;
   }
   return a.find((o) => o.itemId || o.summaryLines.length > 0) ?? null;
 }
-function PR(e) {
+function MR(e) {
   const n = e.closest(".chat-message[data-message-id], [data-message-id]")?.dataset.messageId;
-  return n ? Mr()?.messages?.get?.(n) ?? null : null;
+  return n ? Fr()?.messages?.get?.(n) ?? null : null;
 }
-function OR(e) {
+function FR(e) {
   const t = e.closest(`.${s}`) ?? e, n = /* @__PURE__ */ new Set();
   for (const a of Array.from(t.querySelectorAll(`[${Ai}]`))) {
     const r = a.getAttribute(Ai)?.trim();
@@ -7314,35 +7314,35 @@ function OR(e) {
   }
   return n;
 }
-function MR(e) {
+function BR(e) {
   if (!vn(e)) return [];
   const t = e.prompts;
-  return Array.isArray(t) ? t.map(FR).filter((n) => n !== null) : [];
+  return Array.isArray(t) ? t.map(UR).filter((n) => n !== null) : [];
 }
-function FR(e) {
+function UR(e) {
   return vn(e) ? {
     pendingId: Zt(e.pendingId),
     actorId: Zt(e.actorId),
     itemId: Zt(e.itemId),
-    summaryLines: Array.isArray(e.summaryLines) ? e.summaryLines.filter(Fp) : []
+    summaryLines: Array.isArray(e.summaryLines) ? e.summaryLines.filter(Up) : []
   } : null;
 }
-function BR(e) {
+function qR(e) {
   if (!e.itemId) return null;
-  const t = Mr(), a = (e.actorId ? t?.actors?.get?.(e.actorId) : null)?.items?.get?.(e.itemId);
+  const t = Fr(), a = (e.actorId ? t?.actors?.get?.(e.actorId) : null)?.items?.get?.(e.itemId);
   return a || (t?.items?.get?.(e.itemId) ?? null);
 }
-function UR(e) {
+function jR(e) {
   let t = null, n = null;
-  for (const a of Array.from(e.querySelectorAll(uh))) {
+  for (const a of Array.from(e.querySelectorAll(mh))) {
     const r = rt(a.textContent);
     if (!r) continue;
-    const o = Mp(r, "Tipo");
+    const o = Bp(r, "Tipo");
     o && (n = o), !t && /\b(P[ED]|PE|PD)\b/iu.test(r) && (t = r);
   }
   return { cost: t, damageType: n };
 }
-function qR(e) {
+function zR(e) {
   const t = rt(e.querySelector(wc)?.textContent);
   return t ? hc(t) : null;
 }
@@ -7355,29 +7355,29 @@ function Se(e, t) {
   }
   return null;
 }
-function jR(e) {
+function GR(e) {
   const t = Se(e, "Custo") ?? Se(e, "PE");
   return t || (e.map(rt).find((n) => typeof n == "string" && /\b(P[ED]|PE|PD)\b/iu.test(n)) ?? null);
 }
-function zR(e) {
+function VR(e) {
   const t = Q(e, "target");
   if (!t) return null;
   if (t === "area")
-    return GR(e) ?? le("op.targetChoices", t) ?? "Área";
+    return HR(e) ?? le("op.targetChoices", t) ?? "Área";
   const n = le("op.targetChoices", t) ?? be(t);
   return [t === "people" || t === "creatures" ? Q(e, "targetQtd") : null, n].filter(Dn).join(" ");
 }
-function GR(e) {
+function HR(e) {
   const t = Q(e, "area.name"), n = Q(e, "area.size"), a = Q(e, "area.type"), r = t ? le("op.areaChoices", t) ?? be(t) : null, o = a ? le("op.areaTypeChoices", a) ?? be(a) : null;
-  return r ? n ? o ? `${r} ${n}m ${Pa(o)}` : `${r} ${n}m` : r : null;
+  return r ? n ? o ? `${r} ${n}m ${Oa(o)}` : `${r} ${n}m` : r : null;
 }
-function VR(e) {
+function WR(e) {
   const t = Q(e, "skillResis"), n = Q(e, "resistance");
   if (!t || !n) return null;
-  const a = le("op.skill", t) ?? be(t), r = HR(n);
+  const a = le("op.skill", t) ?? be(t), r = KR(n);
   return [a, r].filter(Dn).join(" ");
 }
-function HR(e) {
+function KR(e) {
   switch (e) {
     case "reducesByHalf":
       return "reduz à metade";
@@ -7391,62 +7391,62 @@ function HR(e) {
       return le("op.resistanceChoices", e) ?? be(e);
   }
 }
-function WR(e, t, n) {
+function YR(e, t, n) {
   const a = Q(e, t);
   return a ? le(n, a) ?? be(a) : null;
 }
-function KR(e) {
+function XR(e) {
   return !!(e.elementLabel || e.cost || e.target || e.duration || e.resistance);
 }
-function YR(e) {
+function QR(e) {
   const t = e.elementLabel?.toLocaleUpperCase("pt-BR") ?? "RITUAL";
   return e.circle ? `${t} ${e.circle}` : t;
 }
-function XR(e) {
+function ZR(e) {
   return [
     `${s}__ritual-element-badge`,
     e ? `${s}__ritual-element-badge--${e}` : null
   ].filter(Dn).join(" ");
 }
-function po(e) {
+function go(e) {
   const t = Tt(e);
   return t === "sangue" || t === "blood" || t === "blooddamage" ? "blood" : t === "morte" || t === "death" || t === "deathdamage" ? "death" : t === "conhecimento" || t === "knowledge" || t === "knowledgedamage" ? "knowledge" : t === "energia" || t === "energy" || t === "energydamage" ? "energy" : t === "medo" || t === "fear" || t === "feardamage" ? "fear" : null;
 }
 function ns(e) {
-  const t = po(e);
+  const t = go(e);
   return t ? le("op.elementChoices", t) ?? be(t) : e ? be(e) : null;
 }
-function QR(e) {
-  return po(e);
+function JR(e) {
+  return go(e);
 }
 function le(e, t) {
   if (!t) return null;
-  const n = `${e}.${t}`, a = Mr()?.i18n?.localize?.(n);
+  const n = `${e}.${t}`, a = Fr()?.i18n?.localize?.(n);
   return !a || a === n ? null : a;
 }
 const as = "data-paranormal-toolkit-dice-toggle-enhanced";
-function ZR(e) {
+function ek(e) {
   for (const t of Array.from(e.querySelectorAll(Ic)))
     ju(t);
 }
-function JR(e) {
+function tk(e) {
   const t = Gu(e.target);
   if (!t) return;
-  const n = go(t);
+  const n = ho(t);
   n && (e.preventDefault(), zu(n, t));
 }
-function ek(e) {
+function nk(e) {
   if (e.key !== "Enter" && e.key !== " ") return;
   const t = Gu(e.target);
   if (!t) return;
-  const n = go(t);
+  const n = ho(t);
   n && (e.preventDefault(), zu(n, t));
 }
 function ju(e) {
   const t = e.querySelector(Mn);
   if (!t) return;
-  const n = e.querySelector(Gr);
-  if (n && n.getAttribute(as) !== "true" && (n.setAttribute(as, "true"), n.classList.add(Vr), n.setAttribute("role", "button"), n.setAttribute("tabindex", "0"), n.setAttribute("aria-expanded", "false"), n.title = "Mostrar dados da rolagem", n.setAttribute("aria-label", n.title), t.hidden = !0, !n.querySelector("i"))) {
+  const n = e.querySelector(Vr);
+  if (n && n.getAttribute(as) !== "true" && (n.setAttribute(as, "true"), n.classList.add(Hr), n.setAttribute("role", "button"), n.setAttribute("tabindex", "0"), n.setAttribute("aria-expanded", "false"), n.title = "Mostrar dados da rolagem", n.setAttribute("aria-label", n.title), t.hidden = !0, !n.querySelector("i"))) {
     const a = document.createElement("i");
     a.classList.add("fa-solid", "fa-chevron-down"), a.setAttribute("aria-hidden", "true"), n.append(a);
   }
@@ -7454,27 +7454,27 @@ function ju(e) {
 function zu(e, t) {
   const n = e.querySelector(Mn);
   if (!n) return;
-  const a = !e.classList.contains(zr);
-  tk(e, t, n, a);
+  const a = !e.classList.contains(Gr);
+  ak(e, t, n, a);
 }
-function tk(e, t, n, a) {
-  e.classList.toggle(zr, a), n.hidden = !a, t.setAttribute("aria-expanded", a ? "true" : "false"), t.title = a ? "Ocultar dados da rolagem" : "Mostrar dados da rolagem", t.setAttribute("aria-label", t.title);
+function ak(e, t, n, a) {
+  e.classList.toggle(Gr, a), n.hidden = !a, t.setAttribute("aria-expanded", a ? "true" : "false"), t.title = a ? "Ocultar dados da rolagem" : "Mostrar dados da rolagem", t.setAttribute("aria-label", t.title);
   const r = t.querySelector("i");
   r && (r.classList.toggle("fa-chevron-down", !a), r.classList.toggle("fa-chevron-up", a));
 }
 function Gu(e) {
   if (!(e instanceof Element)) return null;
-  const t = e.closest(Gr);
+  const t = e.closest(Vr);
   if (!t) return null;
-  const n = go(t);
-  return n ? (ju(n), t.classList.contains(Vr) ? t : null) : null;
+  const n = ho(t);
+  return n ? (ju(n), t.classList.contains(Hr) ? t : null) : null;
 }
-function go(e) {
+function ho(e) {
   const t = e.closest(Ic);
   return t && t.querySelector(Mn) ? t : null;
 }
 const rs = `${d}-workflow-dice-toggle-styles`;
-function nk() {
+function rk() {
   if (document.getElementById(rs)) return;
   const e = document.createElement("style");
   e.id = rs, e.textContent = `
@@ -8603,78 +8603,78 @@ function nk() {
 
 `, document.head.append(e);
 }
-const ak = [0, 100, 500, 1500, 3e3];
-let os = !1, fa = null;
-function rk() {
+const ok = [0, 100, 500, 1500, 3e3];
+let os = !1, pa = null;
+function ik() {
   if (!os) {
-    os = !0, nk(), Hooks.on("renderChatMessageHTML", (e, t) => {
+    os = !0, rk(), Hooks.on("renderChatMessageHTML", (e, t) => {
       ht(cn(t));
     }), Hooks.on("renderChatMessage", (e, t) => {
       ht(cn(t));
     }), Hooks.once("ready", () => {
-      ht(document), ok();
-    }), document.addEventListener("click", JR), document.addEventListener("keydown", ek);
-    for (const e of ak)
+      ht(document), sk();
+    }), document.addEventListener("click", tk), document.addEventListener("keydown", nk);
+    for (const e of ok)
       globalThis.setTimeout(() => ht(document), e);
   }
 }
-function ok() {
-  fa || !document.body || (fa = new MutationObserver((e) => {
+function sk() {
+  pa || !document.body || (pa = new MutationObserver((e) => {
     for (const t of e)
       for (const n of Array.from(t.addedNodes))
         (n instanceof HTMLElement || n instanceof DocumentFragment) && ht(n);
-  }), fa.observe(document.body, { childList: !0, subtree: !0 }));
+  }), pa.observe(document.body, { childList: !0, subtree: !0 }));
 }
 function ht(e) {
-  e && (e instanceof Element && (e.matches('[data-paranormal-toolkit-card-renderer="ritual-single-target"]') || e.querySelector('[data-paranormal-toolkit-card-renderer="ritual-single-target"]')) || (xh(e), wR(e), cR(e), ZR(e), $h(e)));
+  e && (e instanceof Element && (e.matches('[data-paranormal-toolkit-card-renderer="ritual-single-target"]') || e.querySelector('[data-paranormal-toolkit-card-renderer="ritual-single-target"]')) || (Ph(e), SR(e), dR(e), ek(e), Ch(e)));
 }
-function ik() {
-  rk();
+function lk() {
+  ik();
 }
-const sk = "data-paranormal-toolkit-action-section", lk = "ritual-log", ck = ".paranormal-toolkit-item-use-prompt__actions", uk = ".paranormal-toolkit-item-use-prompt__actions-title", dk = [0, 100, 500, 1500];
+const ck = "data-paranormal-toolkit-action-section", uk = "ritual-log", dk = ".paranormal-toolkit-item-use-prompt__actions", mk = ".paranormal-toolkit-item-use-prompt__actions-title", fk = [0, 100, 500, 1500];
 let is = !1;
-function mk() {
+function pk() {
   if (is) return;
   const e = (t, n) => {
-    ss(hk(n) ?? document);
+    ss(yk(n) ?? document);
   };
   Hooks.on("renderChatMessageHTML", e), Hooks.on("renderChatMessage", e), ss(document), is = !0;
 }
 function ss(e) {
-  for (const t of dk)
-    globalThis.setTimeout(() => fk(e), t);
+  for (const t of fk)
+    globalThis.setTimeout(() => gk(e), t);
 }
-function fk(e) {
-  pk(e), gk(e);
+function gk(e) {
+  hk(e), bk(e);
 }
-function pk(e) {
+function hk(e) {
   for (const t of e.querySelectorAll(
-    `[${sk}="${lk}"]`
+    `[${ck}="${uk}"]`
   ))
     t.remove();
 }
-function gk(e) {
-  for (const t of e.querySelectorAll(ck)) {
-    if (ls(t.querySelector(uk)?.textContent ?? "") !== "registro") continue;
+function bk(e) {
+  for (const t of e.querySelectorAll(dk)) {
+    if (ls(t.querySelector(mk)?.textContent ?? "") !== "registro") continue;
     Array.from(
       t.querySelectorAll("button"),
       (o) => ls(o.textContent ?? "")
     ).some((o) => o.includes("ritual conjurado")) && t.remove();
   }
 }
-function hk(e) {
-  if (e instanceof HTMLElement || bk(e))
+function yk(e) {
+  if (e instanceof HTMLElement || _k(e))
     return e;
-  if (yk(e)) {
+  if (Ak(e)) {
     const t = e[0];
     return t instanceof HTMLElement ? t : null;
   }
   return null;
 }
-function bk(e) {
+function _k(e) {
   return e instanceof HTMLElement;
 }
-function yk(e) {
+function Ak(e) {
   return typeof e == "object" && e !== null && 0 in e;
 }
 function ls(e) {
@@ -8687,12 +8687,12 @@ const bt = {
   PD: "system.PD"
 }, Vu = {
   PV: "system.attributes.hp"
-}, sr = {
+}, lr = {
   PV: [bt.PV, Vu.PV],
   SAN: [bt.SAN],
   PE: [bt.PE],
   PD: [bt.PD]
-}, lr = {
+}, cr = {
   ritual: {
     dt: "system.ritual.DT"
   },
@@ -8700,7 +8700,7 @@ const bt = {
     circleCandidates: ["system.circle", "system.ritual.circle"]
   }
 };
-class _k {
+class Tk {
   getResource(t, n) {
     const a = cs(t, n);
     if (!a.ok)
@@ -8721,10 +8721,10 @@ class _k {
   }
 }
 function cs(e, t) {
-  const n = Ak(e.type, t);
+  const n = Rk(e.type, t);
   if (n && us(e, n))
     return y(n);
-  const a = sr[t].find(
+  const a = lr[t].find(
     (r) => us(e, r)
   );
   return a ? y(a) : g({
@@ -8734,19 +8734,19 @@ function cs(e, t) {
     actorType: e.type ?? "unknown",
     resource: t,
     reason: "resource-path-not-found",
-    message: Tk(e, t),
-    path: sr[t].join(" | ")
+    message: kk(e, t),
+    path: lr[t].join(" | ")
   });
 }
-function Ak(e, t) {
+function Rk(e, t) {
   return e === "threat" ? Vu[t] ?? null : e === "agent" ? bt[t] : null;
 }
 function us(e, t) {
   const n = foundry.utils.getProperty(e, `${t}.value`), a = foundry.utils.getProperty(e, `${t}.max`);
   return typeof n == "number" && Number.isFinite(n) && typeof a == "number" && Number.isFinite(a);
 }
-function Tk(e, t) {
-  const n = e.type ?? "unknown", a = sr[t].join(", ");
+function kk(e, t) {
+  const n = e.type ?? "unknown", a = lr[t].join(", ");
   return `${t} não encontrado no ator ${e.name ?? "sem nome"} (${n}). Paths testados: ${a}.`;
 }
 function ds(e, t, n, a, r) {
@@ -8772,7 +8772,7 @@ function ds(e, t, n, a, r) {
     value: a
   } : null;
 }
-class Rk {
+class Hu {
   isRitual(t) {
     return t.type === "ritual";
   }
@@ -8785,7 +8785,7 @@ class Rk {
       });
     const n = this.readCircleFromKnownPaths(t);
     if (!n) {
-      const i = lr.ritualItem.circleCandidates;
+      const i = cr.ritualItem.circleCandidates;
       return g({
         reason: "ritual-circle-not-found",
         message: `Círculo do ritual não encontrado. Paths testados: ${i.join(", ")}.`,
@@ -8793,7 +8793,7 @@ class Rk {
         paths: [...i]
       });
     }
-    const { path: a, value: r } = n, o = kk(r);
+    const { path: a, value: r } = n, o = Ek(r);
     return o ? y(o) : g({
       reason: "invalid-ritual-circle",
       message: `Círculo do ritual inválido em ${a}: ${String(r)}. Esperado 1, 2, 3 ou 4.`,
@@ -8803,7 +8803,7 @@ class Rk {
     });
   }
   readCircleFromKnownPaths(t) {
-    for (const n of lr.ritualItem.circleCandidates) {
+    for (const n of cr.ritualItem.circleCandidates) {
       const a = foundry.utils.getProperty(t, n);
       if (a != null)
         return { path: n, value: a };
@@ -8811,7 +8811,7 @@ class Rk {
     return null;
   }
 }
-function kk(e) {
+function Ek(e) {
   if (ms(e))
     return e;
   if (typeof e == "string") {
@@ -8827,10 +8827,10 @@ function kk(e) {
 function ms(e) {
   return e === 1 || e === 2 || e === 3 || e === 4;
 }
-const Ek = "dice-so-nice";
-async function ho(e) {
-  if (!$k() || !wk()) return;
-  const t = Ck();
+const $k = "dice-so-nice";
+async function bo(e) {
+  if (!wk() || !Ck()) return;
+  const t = Sk();
   if (t?.showForRoll)
     try {
       await Promise.resolve(t.showForRoll(e, game.user, !0));
@@ -8838,54 +8838,54 @@ async function ho(e) {
       f.warn("Não foi possível animar a rolagem com Dice So Nice.", n);
     }
 }
-function $k() {
+function wk() {
   try {
-    return ih().enabled;
+    return lh().enabled;
   } catch {
     return !1;
   }
 }
-function wk() {
-  return game.modules?.get?.(Ek)?.active === !0;
-}
 function Ck() {
+  return game.modules?.get?.($k)?.active === !0;
+}
+function Sk() {
   const t = game.dice3d;
   return !t || typeof t != "object" ? null : t;
 }
 const fs = "occultism";
-class Hu {
+class Wu {
   getDifficulty(t) {
-    return Wu(t);
+    return Ku(t);
   }
   async rollCastingCheck(t) {
     const n = this.getDifficulty(t);
     if (n === null)
       throw new Error("Não foi possível ler a DT de ritual do conjurador.");
-    const a = await Ik(t, fs);
+    const a = await Lk(t, fs);
     if (!a)
       throw new Error("Não foi possível rolar Ocultismo pelo sistema Ordem.");
-    await ho(a);
-    const r = Dk(a);
+    await bo(a);
+    const r = xk(a);
     return {
       skill: fs,
       skillLabel: "Ocultismo",
       roll: a,
-      formula: vk(a),
+      formula: Dk(a),
       total: r,
       difficulty: n,
       success: r >= n,
-      diceBreakdown: xk(a)
+      diceBreakdown: Nk(a)
     };
   }
 }
-function Wu(e) {
+function Ku(e) {
   const t = e.system?.ritual?.DT;
   return typeof t == "number" && Number.isFinite(t) ? Math.trunc(t) : null;
 }
-async function Sk(e) {
-  return new Hu().rollCastingCheck(e);
+async function Ik(e) {
+  return new Wu().rollCastingCheck(e);
 }
-async function Ik(e, t) {
+async function Lk(e, t) {
   const n = e;
   if (typeof n.rollSkill != "function")
     return null;
@@ -8899,26 +8899,26 @@ async function Ik(e, t) {
       }
     )
   );
-  return Lk(a);
+  return vk(a);
 }
-function Lk(e) {
+function vk(e) {
   return ps(e) ? e : Array.isArray(e) ? e.find(ps) ?? null : null;
 }
 function ps(e) {
   return !!(e && typeof e == "object" && "evaluate" in e && "total" in e);
 }
-function vk(e) {
+function Dk(e) {
   const t = e.formula;
   return typeof t == "string" && t.trim().length > 0 ? t : "rolagem";
 }
-function Dk(e) {
+function xk(e) {
   const t = e.total;
   return typeof t == "number" && Number.isFinite(t) ? Math.trunc(t) : 0;
 }
-function xk(e) {
+function Nk(e) {
   const t = e.dice;
   if (!Array.isArray(t)) return null;
-  const n = t.find(Nk);
+  const n = t.find(Pk);
   if (!n) return null;
   const r = (Array.isArray(n.results) ? n.results : []).flatMap((o) => {
     if (!o || typeof o != "object") return [];
@@ -8927,16 +8927,16 @@ function xk(e) {
   });
   return r.length > 0 ? `(${r.join(", ")})` : null;
 }
-function Nk(e) {
+function Pk(e) {
   return !!(e && typeof e == "object" && e.faces === 20);
 }
-const Pk = {
+const Ok = {
   1: 1,
   2: 3,
   3: 6,
   4: 10
 };
-class Ok {
+class Mk {
   constructor(t) {
     this.ritualAdapter = t;
   }
@@ -8948,18 +8948,18 @@ class Ok {
         ...n.error,
         actor: t.actor
       });
-    const a = n.value, r = Mk(t.ritual, a);
+    const a = n.value, r = Fk(t.ritual, a);
     return r.ok ? r.value ? y(r.value) : y({
       resource: "PE",
-      amount: Pk[a],
+      amount: Ok[a],
       source: "default-by-circle",
       circle: a
     }) : g(r.error);
   }
 }
-function Mk(e, t) {
+function Fk(e, t) {
   const n = e.getFlag(d, "ritual.cost");
-  return n == null ? { ok: !0, value: null } : Fk(n) ? {
+  return n == null ? { ok: !0, value: null } : Bk(n) ? {
     ok: !0,
     value: {
       resource: n.resource,
@@ -8977,24 +8977,24 @@ function Mk(e, t) {
     }
   };
 }
-function Fk(e) {
+function Bk(e) {
   if (!e || typeof e != "object") return !1;
   const t = e;
   return (t.resource === "PE" || t.resource === "PD") && typeof t.amount == "number" && Number.isInteger(t.amount) && t.amount > 0;
 }
-class Bk {
+class Uk {
   async applyPresetItemPatch(t, n) {
     const a = n.itemPatch;
-    if (!a) return pa("missing-item-patch");
-    if (t.type !== "ritual") return pa("unsupported-item-type");
-    const r = Uk(a);
-    return Object.keys(r).length === 0 ? pa("empty-update") : (await t.update(r), {
+    if (!a) return ga("missing-item-patch");
+    if (t.type !== "ritual") return ga("unsupported-item-type");
+    const r = qk(a);
+    return Object.keys(r).length === 0 ? ga("empty-update") : (await t.update(r), {
       applied: !0,
       updateData: r
     });
   }
 }
-function Uk(e) {
+function qk(e) {
   const t = {};
   j(t, "name", e.name), j(t, "system.description", e.descriptionHtml);
   const n = e.ritual;
@@ -9003,14 +9003,14 @@ function Uk(e) {
 function j(e, t, n) {
   n !== void 0 && (e[t] = n);
 }
-function pa(e) {
+function ga(e) {
   return {
     applied: !1,
     reason: e,
     updateData: {}
   };
 }
-class qk {
+class jk {
   constructor(t) {
     this.resourceAdapter = t;
   }
@@ -9027,7 +9027,7 @@ class qk {
     };
   }
   getRitualDT(t) {
-    return this.getNumber(t, lr.ritual.dt, 0);
+    return this.getNumber(t, cr.ritual.dt, 0);
   }
   getResources(t) {
     const n = {
@@ -9047,7 +9047,7 @@ class qk {
     return typeof r == "number" && Number.isFinite(r) ? r : a;
   }
 }
-class jk {
+class zk {
   async applyPreset(t, n, a = {}) {
     const r = {
       schemaVersion: 1,
@@ -9082,15 +9082,15 @@ class jk {
     await this.clear(t), await t.setFlag(d, "automation", n);
   }
 }
-class zk {
+class Gk {
   presets = /* @__PURE__ */ new Map();
   register(t) {
-    const n = Gk(t);
+    const n = Vk(t);
     return n.ok ? this.presets.has(t.id) ? g({
       reason: "duplicate-preset",
       message: `Preset de automação duplicado: ${t.id}.`,
       presetId: t.id
-    }) : (this.presets.set(t.id, ga(t)), y(t)) : n;
+    }) : (this.presets.set(t.id, ha(t)), y(t)) : n;
   }
   registerMany(t) {
     const n = [];
@@ -9104,7 +9104,7 @@ class zk {
   }
   get(t) {
     const n = this.presets.get(t);
-    return n ? ga(n) : null;
+    return n ? ha(n) : null;
   }
   require(t) {
     const n = this.get(t);
@@ -9115,14 +9115,14 @@ class zk {
     });
   }
   list() {
-    return Array.from(this.presets.values()).map(ga);
+    return Array.from(this.presets.values()).map(ha);
   }
   findForItem(t) {
-    return this.list().map((n) => Vk(n, t)).filter((n) => n !== null).sort((n, a) => a.score - n.score || n.preset.id.localeCompare(a.preset.id));
+    return this.list().map((n) => Hk(n, t)).filter((n) => n !== null).sort((n, a) => a.score - n.score || n.preset.id.localeCompare(a.preset.id));
   }
 }
-function Gk(e) {
-  return !ha(e.id) || !ha(e.version) || !ha(e.label) ? g({
+function Vk(e) {
+  return !ba(e.id) || !ba(e.version) || !ba(e.label) ? g({
     reason: "invalid-preset",
     message: "Preset de automação precisa de id, version e label válidos.",
     presetId: e.id
@@ -9132,7 +9132,7 @@ function Gk(e) {
     presetId: e.id
   }) : y(e);
 }
-function Vk(e, t) {
+function Hk(e, t) {
   if (e.matchers.length === 0)
     return null;
   const n = [];
@@ -9142,7 +9142,7 @@ function Vk(e, t) {
     a += 10, n.push(`itemType:${t.type}`);
   }
   for (const r of e.matchers) {
-    const o = Hk(r, t);
+    const o = Wk(r, t);
     if (!o.matches)
       return null;
     a += o.score, n.push(o.reason);
@@ -9153,7 +9153,7 @@ function Vk(e, t) {
     reasons: n
   };
 }
-function Hk(e, t) {
+function Wk(e, t) {
   switch (e.type) {
     case "itemType": {
       const n = e.itemTypes.includes(t.type);
@@ -9172,7 +9172,7 @@ function Hk(e, t) {
       };
     }
     case "ritualCircle": {
-      const n = Wk(t), a = n !== null && e.circles.includes(n);
+      const n = Kk(t), a = n !== null && e.circles.includes(n);
       return {
         matches: a,
         score: a ? 20 : 0,
@@ -9184,14 +9184,14 @@ function Hk(e, t) {
 function gs(e) {
   return e.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 }
-function Wk(e) {
+function Kk(e) {
   const t = foundry.utils.getProperty(e, "system.circle"), n = typeof t == "string" ? Number(t) : t;
   return n === 1 || n === 2 || n === 3 || n === 4 ? n : null;
 }
-function ga(e) {
+function ha(e) {
   return structuredClone(e);
 }
-function ha(e) {
+function ba(e) {
   return typeof e == "string" && e.length > 0;
 }
 function gn(e, t) {
@@ -9227,7 +9227,7 @@ function gn(e, t) {
 function zn(e) {
   return e ? /^(?<rollId>[A-Za-z0-9_-]+)\.total$/.exec(e)?.groups?.rollId ?? null : null;
 }
-async function Kk(e, t, n) {
+async function Yk(e, t, n) {
   if (!hs(e.id) || !hs(e.formula))
     return g({
       reason: "invalid-step",
@@ -9240,9 +9240,9 @@ async function Kk(e, t, n) {
         reason: "roll-failed",
         message: `A rolagem ${e.id} não retornou um total numérico válido.`
       });
-    await ho(r);
+    await bo(r);
     const l = {
-      ...n.rollRequests[e.id] ?? Ku(e, t),
+      ...n.rollRequests[e.id] ?? Yu(e, t),
       total: o,
       roll: r
     };
@@ -9255,8 +9255,8 @@ async function Kk(e, t, n) {
     });
   }
 }
-function Ku(e, t) {
-  const n = e.intent ?? Yk(e.id);
+function Yu(e, t) {
+  const n = e.intent ?? Xk(e.id);
   return {
     id: e.id,
     formula: e.formula,
@@ -9265,7 +9265,7 @@ function Ku(e, t) {
     sourceStepIndex: t
   };
 }
-function Yk(e) {
+function Xk(e) {
   const t = e.toLowerCase();
   return t.includes("damage") || t.includes("dano") ? "damage" : t.includes("healing") || t.includes("heal") || t.includes("cura") ? "healing" : t.includes("attack") || t.includes("ataque") ? "attack" : t.includes("resistance") || t.includes("resistencia") || t.includes("resistência") ? "resistance" : "generic";
 }
@@ -9296,10 +9296,10 @@ function Gt(e, t, n, a) {
     requestedAmount: a
   });
 }
-function Xk(e) {
+function Qk(e) {
   const { step: t, context: n, transaction: a, stepIndex: r, lifecycle: o } = e;
   if (t.operation === "damage") {
-    const i = Qk(t, n, a, r);
+    const i = Zk(t, n, a, r);
     n.damageInstances.push(i), o.emit("afterDamageResolution", n, {
       stepIndex: r,
       step: t,
@@ -9326,7 +9326,7 @@ function Xk(e) {
     return;
   }
   if (t.operation === "heal") {
-    const i = Zk(t, n, a, r);
+    const i = Jk(t, n, a, r);
     n.healingInstances.push(i), o.emit("afterApplyHealing", n, {
       stepIndex: r,
       step: t,
@@ -9340,10 +9340,10 @@ function Xk(e) {
     });
   }
 }
-function Qk(e, t, n, a) {
+function Zk(e, t, n, a) {
   const r = zn(e.amountFrom), o = r ? t.rolls[r] : void 0;
   return {
-    id: Yu(t.id, "damage", a, t.damageInstances.length),
+    id: Xu(t.id, "damage", a, t.damageInstances.length),
     source: t.item.type === "ritual" ? "ritual" : "automation",
     sourceId: t.item.id ?? null,
     sourceName: t.item.name ?? "Item sem nome",
@@ -9357,10 +9357,10 @@ function Qk(e, t, n, a) {
     tags: ["workflow", "resource", e.resource]
   };
 }
-function Zk(e, t, n, a) {
+function Jk(e, t, n, a) {
   const r = zn(e.amountFrom);
   return {
-    id: Yu(t.id, "healing", a, t.healingInstances.length),
+    id: Xu(t.id, "healing", a, t.healingInstances.length),
     source: t.item.type === "ritual" ? "ritual" : "automation",
     sourceId: t.item.id ?? null,
     sourceName: t.item.name ?? "Item sem nome",
@@ -9373,10 +9373,10 @@ function Zk(e, t, n, a) {
     tags: ["workflow", "resource", e.resource]
   };
 }
-function Yu(e, t, n, a) {
+function Xu(e, t, n, a) {
   return `${e}.${t}.${n}.${a}`;
 }
-function Jk(e, t, n) {
+function eE(e, t, n) {
   const a = zn(e.amountFrom), r = a ? t.rolls[a] : void 0;
   return {
     actorSelector: e.actor,
@@ -9389,20 +9389,20 @@ function Jk(e, t, n) {
     damageType: r?.damageType
   };
 }
-function eE(e) {
-  const { step: t, context: n, stepIndex: a, metadata: r, lifecycle: o } = e;
-  o.emit("beforeApply", n, { stepIndex: a, step: t, metadata: r }), Xu("before", e), bs("before", e), bs("resolve", e);
-}
 function tE(e) {
   const { step: t, context: n, stepIndex: a, metadata: r, lifecycle: o } = e;
-  o.emit("apply", n, { stepIndex: a, step: t, metadata: r }), Xu("apply", e);
+  o.emit("beforeApply", n, { stepIndex: a, step: t, metadata: r }), Qu("before", e), bs("before", e), bs("resolve", e);
 }
 function nE(e) {
   const { step: t, context: n, stepIndex: a, metadata: r, lifecycle: o } = e;
+  o.emit("apply", n, { stepIndex: a, step: t, metadata: r }), Qu("apply", e);
+}
+function aE(e) {
+  const { step: t, context: n, stepIndex: a, metadata: r, lifecycle: o } = e;
   o.emit("afterApply", n, { stepIndex: a, step: t, metadata: r });
 }
-function Xu(e, t) {
-  const { step: n, context: a, stepIndex: r, metadata: o, lifecycle: i } = t, l = aE(e, n.operation);
+function Qu(e, t) {
+  const { step: n, context: a, stepIndex: r, metadata: o, lifecycle: i } = t, l = rE(e, n.operation);
   l && i.emit(l, a, {
     stepIndex: r,
     step: n,
@@ -9417,26 +9417,26 @@ function bs(e, t) {
     metadata: o
   });
 }
-function aE(e, t) {
+function rE(e, t) {
   return t === "damage" ? e === "before" ? "beforeApplyDamage" : e === "apply" ? "applyDamage" : "afterApplyDamage" : t === "heal" ? e === "before" ? "beforeApplyHealing" : e === "apply" ? "applyHealing" : "afterApplyHealing" : null;
 }
-async function rE(e, t, n) {
+async function oE(e, t, n) {
   return y(void 0);
 }
-async function oE(e) {
+async function iE(e) {
   const { step: t } = e;
   switch (t.type) {
     case "spendResource":
-      return iE(e, t);
-    case "spendRitualCost":
       return sE(e, t);
+    case "spendRitualCost":
+      return lE(e, t);
   }
 }
-async function iE(e, t) {
-  const { context: n, resources: a } = e, r = gn(t, n);
-  return r.ok ? Qu(await a.spend(n.sourceActor, t.resource, r.value), n) : g(r.error);
-}
 async function sE(e, t) {
+  const { context: n, resources: a } = e, r = gn(t, n);
+  return r.ok ? Zu(await a.spend(n.sourceActor, t.resource, r.value), n) : g(r.error);
+}
+async function lE(e, t) {
   const { context: n, resources: a, ritualCosts: r } = e, o = r.getCost({
     actor: n.sourceActor,
     ritual: n.item
@@ -9452,17 +9452,17 @@ async function sE(e, t) {
     ...i,
     itemId: n.item.id ?? null,
     itemName: n.item.name ?? "Ritual sem nome"
-  }), Qu(await a.spend(n.sourceActor, i.resource, i.amount), n, t);
+  }), Zu(await a.spend(n.sourceActor, i.resource, i.amount), n, t);
 }
-function Qu(e, t, n) {
+function Zu(e, t, n) {
   return e.ok ? (t.resourceTransactions.push(e.value), y(void 0)) : (n?.type === "spendRitualCost" && t.ritualCosts.pop(), g({
     reason: "resource-operation-failed",
     message: e.error.message,
     cause: e.error
   }));
 }
-async function lE(e) {
-  const { step: t, context: n, stepIndex: a, lifecycle: r, execute: o } = e, i = cE(t);
+async function cE(e) {
+  const { step: t, context: n, stepIndex: a, lifecycle: r, execute: o } = e, i = uE(t);
   for (const c of i.before)
     r.emit(c, n, { stepIndex: a, step: t });
   const l = await o();
@@ -9472,7 +9472,7 @@ async function lE(e) {
     r.emit(c, n, { stepIndex: a, step: t });
   return l;
 }
-function cE(e) {
+function uE(e) {
   switch (e.type) {
     case "spendResource":
     case "spendRitualCost":
@@ -9492,7 +9492,7 @@ function cE(e) {
       };
   }
 }
-class uE {
+class dE {
   constructor(t, n, a, r) {
     this.resources = t, this.ritualCosts = n, this.messages = a, this.lifecycle = r;
   }
@@ -9521,7 +9521,7 @@ class uE {
       case "modifyResource":
         return this.runModifyResourceStepWithLifecycle(t, n, a);
       default:
-        return lE({
+        return cE({
           step: t,
           context: n,
           stepIndex: a,
@@ -9552,7 +9552,7 @@ class uE {
     }
   }
   async runCostStep(t, n, a) {
-    const r = await oE({
+    const r = await iE({
       step: t,
       context: n,
       resources: this.resources,
@@ -9561,7 +9561,7 @@ class uE {
     return r.ok ? y(void 0) : g({ ...r.error, stepIndex: a, step: t, context: n });
   }
   async runRollFormulaStepWithLifecycle(t, n, a) {
-    const r = Ku(t, a);
+    const r = Yu(t, a);
     n.rollRequests[r.id] = r, this.lifecycle.emit("beforeRoll", n, { stepIndex: a, step: t, rollRequest: r }), this.emitSpecificRollPhase("before", r, n, a, t), this.lifecycle.emit("roll", n, { stepIndex: a, step: t, rollRequest: r }), this.emitSpecificRollPhase("roll", r, n, a, t);
     const o = await this.runRollFormulaStep(t, n, a);
     if (!o.ok)
@@ -9570,21 +9570,21 @@ class uE {
     return this.emitSpecificRollPhase("after", r, n, a, t, i), this.lifecycle.emit("afterRoll", n, { stepIndex: a, step: t, rollRequest: r, rollResult: i }), y(void 0);
   }
   async runRollFormulaStep(t, n, a) {
-    const r = await Kk(t, a, n);
+    const r = await Yk(t, a, n);
     return r.ok ? y(void 0) : g({ ...r.error, stepIndex: a, step: t, context: n });
   }
   async runModifyResourceStepWithLifecycle(t, n, a) {
     const r = gn(t, n);
     if (!r.ok)
       return g({ ...r.error, stepIndex: a, step: t, context: n });
-    const o = Jk(t, n, r.value);
-    eE({
+    const o = eE(t, n, r.value);
+    tE({
       step: t,
       context: n,
       stepIndex: a,
       metadata: o,
       lifecycle: this.lifecycle
-    }), tE({
+    }), nE({
       step: t,
       context: n,
       stepIndex: a,
@@ -9604,7 +9604,7 @@ class uE {
       const c = await Et(this.resources, l, t.resource, t.operation, r.value), u = this.handleResourceOperationResult(c, n, a, t);
       if (!u.ok)
         return u;
-      Xk({
+      Qk({
         step: t,
         context: n,
         transaction: u.value,
@@ -9612,7 +9612,7 @@ class uE {
         lifecycle: this.lifecycle
       });
     }
-    return nE({
+    return aE({
       step: t,
       context: n,
       stepIndex: a,
@@ -9641,7 +9641,7 @@ class uE {
     return y(void 0);
   }
   async runChatCardStep(t, n, a) {
-    const r = await rE(this.messages);
+    const r = await oE(this.messages);
     return r.ok ? y(void 0) : g({ ...r.error, stepIndex: a, step: t, context: n });
   }
   handleResourceOperationResult(t, n, a, r) {
@@ -9655,7 +9655,7 @@ class uE {
     });
   }
   emitSpecificRollPhase(t, n, a, r, o, i) {
-    const l = dE(t, n.intent);
+    const l = mE(t, n.intent);
     l && this.lifecycle.emit(l, a, {
       stepIndex: r,
       step: o,
@@ -9672,10 +9672,10 @@ class uE {
     }
   }
 }
-function dE(e, t) {
+function mE(e, t) {
   return t === "damage" ? e === "before" ? "beforeDamageRoll" : e === "roll" ? "damageRoll" : "afterDamageRoll" : t === "healing" ? e === "before" ? "beforeHealingRoll" : e === "roll" ? "healingRoll" : "afterHealingRoll" : null;
 }
-class mE {
+class fE {
   emitCastStarted(t) {
     Hooks.callAll(Xt.ritual.castStarted, t);
   }
@@ -9686,7 +9686,7 @@ class mE {
     Hooks.callAll(Xt.ritual.castFinished, t);
   }
 }
-class fE {
+class pE {
   constructor(t) {
     this.adapter = t;
   }
@@ -9804,7 +9804,7 @@ class fE {
     }
   }
 }
-class pE {
+class gE {
   constructor(t) {
     this.adapter = t;
   }
@@ -9816,9 +9816,9 @@ class pE {
     return this.adapter.getDifficulty?.(t) ?? null;
   }
 }
-function Zu(e) {
+function Ju(e) {
   return {
-    id: gE(),
+    id: hE(),
     sourceActor: e.sourceActor,
     sourceToken: e.sourceToken ?? null,
     item: e.item,
@@ -9834,11 +9834,11 @@ function Zu(e) {
     flags: e.flags ?? {}
   };
 }
-function gE() {
+function hE() {
   const e = globalThis.crypto;
   return e?.randomUUID ? e.randomUUID() : `workflow-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
-class hE {
+class bE {
   constructor(t, n) {
     this.automation = t, this.hooks = n;
   }
@@ -9852,7 +9852,7 @@ class hE {
     return je(this.lastContext);
   }
   async runAutomation(t, n) {
-    const a = Zu(n);
+    const a = Ju(n);
     this.lastContext = a, this.hooks.emit("created", a, {
       metadata: {
         definitionLabel: t.label,
@@ -9878,7 +9878,7 @@ class hE {
     });
   }
 }
-class bE {
+class yE {
   emit(t, n, a = {}) {
     const r = {
       phase: t,
@@ -9905,7 +9905,7 @@ class bE {
     }), Hooks.callAll(`${d}.workflow.${t}`, r), Hooks.callAll(`${d}.workflow.phase`, r), r;
   }
 }
-class yE {
+class _E {
   info(t) {
     this.emit("info", t);
   }
@@ -9916,22 +9916,22 @@ class yE {
     this.emit("error", t);
   }
   async chat(t) {
-    const n = va();
+    const n = Da();
     return !n.enabled || !n.chat ? !1 : (await ChatMessage.create({
       speaker: t.speaker,
       content: t.content,
-      whisper: _E(),
+      whisper: AE(),
       flags: {
         ...t.flags,
         [d]: {
-          ...AE(t.flags),
+          ...TE(t.flags),
           debugOutput: !0
         }
       }
     }), n.console && t.data !== void 0 && f.info("Debug chat criado.", t.data), !0);
   }
   emit(t, n) {
-    const a = va();
+    const a = Da();
     if (!a.enabled)
       return;
     const r = n.notification ?? ys(n);
@@ -9968,17 +9968,17 @@ class yE {
 function ys(e) {
   return e.message ? `${e.title}: ${e.message}` : e.title;
 }
-function _E() {
+function AE() {
   const e = game.users?.filter((t) => t.isGM === !0 && t.id).map((t) => t.id) ?? [];
   return e.length > 0 ? e : game.user?.id ? [game.user.id] : [];
 }
-function AE(e) {
+function TE(e) {
   const t = e?.[d];
   return t && typeof t == "object" && !Array.isArray(t) ? t : {};
 }
-const TE = ".inline-roll, .inline-result, a[data-roll], span[data-roll]", Ju = `${d}-inline-roll-neutralized`, RE = `${d}-inline-roll-notice`, bo = `data-${d}-inline-roll-neutralized`, _s = `data-${d}-inline-roll-notice`, kE = "Rolagens inline da descrição ignoradas; resultado oficial gerado pelo Paranormal Toolkit.";
+const RE = ".inline-roll, .inline-result, a[data-roll], span[data-roll]", ed = `${d}-inline-roll-neutralized`, kE = `${d}-inline-roll-notice`, yo = `data-${d}-inline-roll-neutralized`, _s = `data-${d}-inline-roll-notice`, EE = "Rolagens inline da descrição ignoradas; resultado oficial gerado pelo Paranormal Toolkit.";
 async function As(e) {
-  const t = ME(e.message), n = await EE(e.message), a = $E(t);
+  const t = FE(e.message), n = await $E(e.message), a = wE(t);
   return n.replacementCount + a.replacementCount > 0 && f.info("Rolagens inline neutralizadas para item automatizado.", {
     itemId: e.item.id ?? null,
     itemName: e.item.name ?? "Item sem nome",
@@ -9992,62 +9992,62 @@ async function As(e) {
     renderedReplacementCount: a.replacementCount
   };
 }
-async function EE(e) {
-  const t = NE(e);
+async function $E(e) {
+  const t = PE(e);
   if (!t || typeof t.content != "string")
     return { updated: !1, replacementCount: 0 };
-  const n = wE(t.content);
-  return n.replacementCount === 0 || n.content === t.content ? { updated: !1, replacementCount: n.replacementCount } : { updated: await PE(t, n.content), replacementCount: n.replacementCount };
-}
-function $E(e) {
-  const t = e ? OE(e) : null;
-  if (!t)
-    return { replacementCount: 0 };
-  const n = ed(t);
-  return n > 0 && td(vE(t)), { replacementCount: n };
+  const n = CE(t.content);
+  return n.replacementCount === 0 || n.content === t.content ? { updated: !1, replacementCount: n.replacementCount } : { updated: await OE(t, n.content), replacementCount: n.replacementCount };
 }
 function wE(e) {
-  const t = CE(e), n = document.createElement("template");
-  n.innerHTML = t.content;
-  const a = ed(n.content), r = t.replacementCount + a;
-  return r === 0 ? { content: e, replacementCount: 0 } : (td(n.content), { content: n.innerHTML, replacementCount: r });
+  const t = e ? ME(e) : null;
+  if (!t)
+    return { replacementCount: 0 };
+  const n = td(t);
+  return n > 0 && nd(DE(t)), { replacementCount: n };
 }
 function CE(e) {
-  let t = 0;
-  return { content: e.replace(/\[\[([^\[\]]+)\]\]/g, (a, r) => (t += 1, IE(r.trim()))), replacementCount: t };
-}
-function ed(e) {
-  const t = SE(e);
-  for (const n of t)
-    n.replaceWith(LE(DE(n)));
-  return t.length;
+  const t = SE(e), n = document.createElement("template");
+  n.innerHTML = t.content;
+  const a = td(n.content), r = t.replacementCount + a;
+  return r === 0 ? { content: e, replacementCount: 0 } : (nd(n.content), { content: n.innerHTML, replacementCount: r });
 }
 function SE(e) {
-  const t = /* @__PURE__ */ new Set();
-  for (const n of e.querySelectorAll(TE))
-    n.getAttribute(bo) !== "true" && t.add(n);
-  return Array.from(t);
-}
-function IE(e) {
-  return `<span class="${Ju}" ${bo}="true" title="Rolagem inline ignorada pelo Paranormal Toolkit">${FE(e)}</span>`;
-}
-function LE(e) {
-  const t = document.createElement("span");
-  return t.classList.add(Ju), t.setAttribute(bo, "true"), t.title = "Rolagem inline ignorada pelo Paranormal Toolkit", t.textContent = e, t;
+  let t = 0;
+  return { content: e.replace(/\[\[([^\[\]]+)\]\]/g, (a, r) => (t += 1, LE(r.trim()))), replacementCount: t };
 }
 function td(e) {
-  if (e.querySelector?.(`[${_s}="true"]`)) return;
-  const t = document.createElement("p");
-  t.classList.add(RE), t.setAttribute(_s, "true"), t.textContent = kE, e.append(t);
+  const t = IE(e);
+  for (const n of t)
+    n.replaceWith(vE(xE(n)));
+  return t.length;
+}
+function IE(e) {
+  const t = /* @__PURE__ */ new Set();
+  for (const n of e.querySelectorAll(RE))
+    n.getAttribute(yo) !== "true" && t.add(n);
+  return Array.from(t);
+}
+function LE(e) {
+  return `<span class="${ed}" ${yo}="true" title="Rolagem inline ignorada pelo Paranormal Toolkit">${BE(e)}</span>`;
 }
 function vE(e) {
-  return e.querySelector(".message-content") ?? e;
+  const t = document.createElement("span");
+  return t.classList.add(ed), t.setAttribute(yo, "true"), t.title = "Rolagem inline ignorada pelo Paranormal Toolkit", t.textContent = e, t;
+}
+function nd(e) {
+  if (e.querySelector?.(`[${_s}="true"]`)) return;
+  const t = document.createElement("p");
+  t.classList.add(kE), t.setAttribute(_s, "true"), t.textContent = EE, e.append(t);
 }
 function DE(e) {
-  const n = e.getAttribute("data-formula") ?? xE(e.getAttribute("data-roll")) ?? e.textContent?.trim().replace(/\s+/g, " ");
-  return n && n.length > 0 ? n : "rolagem inline";
+  return e.querySelector(".message-content") ?? e;
 }
 function xE(e) {
+  const n = e.getAttribute("data-formula") ?? NE(e.getAttribute("data-roll")) ?? e.textContent?.trim().replace(/\s+/g, " ");
+  return n && n.length > 0 ? n : "rolagem inline";
+}
+function NE(e) {
   if (!e) return null;
   try {
     const t = JSON.parse(e);
@@ -10056,10 +10056,10 @@ function xE(e) {
     return null;
   }
 }
-function NE(e) {
+function PE(e) {
   return e && typeof e == "object" ? e : null;
 }
-async function PE(e, t) {
+async function OE(e, t) {
   if (typeof e.update != "function")
     return !1;
   try {
@@ -10068,24 +10068,24 @@ async function PE(e, t) {
     return f.warn("Não foi possível atualizar o conteúdo da mensagem para neutralizar rolagens inline.", n), !1;
   }
 }
-function OE(e) {
-  const t = BE(e);
+function ME(e) {
+  const t = UE(e);
   return document.querySelector(
     `.chat-message[data-message-id="${t}"], [data-message-id="${t}"]`
   );
 }
-function ME(e) {
+function FE(e) {
   if (!e || typeof e != "object") return null;
   const t = e;
   return typeof t.id == "string" && t.id.length > 0 ? t.id : null;
 }
-function FE(e) {
+function BE(e) {
   return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
-function BE(e) {
+function UE(e) {
   return e.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
-const et = "ritualRollConfig", hn = "ritual-roll", UE = {
+const et = "ritualRollConfig", hn = "ritual-roll", qE = {
   nullifies: "anula",
   discredits: "desacredita",
   partial: "parcial",
@@ -10105,14 +10105,14 @@ function Nt() {
     }
   };
 }
-function nd(e) {
+function ad(e) {
   const t = e.getFlag(d, et);
   return bn(t);
 }
-function ad(e) {
-  return nd(e) ?? Nt();
+function rd(e) {
+  return ad(e) ?? Nt();
 }
-async function qE(e, t) {
+async function jE(e, t) {
   const n = bn(t) ?? bn({
     ...Nt(),
     ...t
@@ -10121,7 +10121,7 @@ async function qE(e, t) {
     throw new Error("Configuração de rolagem do ritual inválida.");
   return await e.setFlag(d, et, n), n;
 }
-async function jE(e) {
+async function zE(e) {
   const t = e.unsetFlag;
   if (typeof t == "function") {
     await Promise.resolve(t.call(e, d, et));
@@ -10131,19 +10131,19 @@ async function jE(e) {
 }
 function bn(e) {
   if (!Vn(e)) return null;
-  const t = ZE(e.intent);
+  const t = JE(e.intent);
   if (!t) return null;
   const n = Nt();
   return {
     schemaVersion: 1,
     intent: t,
-    damageType: cr(e.damageType),
-    utilityLabel: cr(e.utilityLabel) ?? n.utilityLabel,
-    note: yo(e.note),
-    forms: e$(e.forms)
+    damageType: ur(e.damageType),
+    utilityLabel: ur(e.utilityLabel) ?? n.utilityLabel,
+    note: _o(e.note),
+    forms: t$(e.forms)
   };
 }
-function zE(e) {
+function GE(e) {
   switch (e) {
     case "damage":
       return "Dano";
@@ -10153,23 +10153,23 @@ function zE(e) {
       return "Utilidade";
   }
 }
-function GE(e) {
-  const t = nd(e), n = Gn(e);
+function VE(e) {
+  const t = ad(e), n = Gn(e);
   if (!t)
     return Ts(e, n);
-  const a = XE(e, t);
+  const a = QE(e, t);
   if (!a)
     return Ts(e, n);
-  const r = VE(t, a), o = [
+  const r = HE(t, a), o = [
     { type: "spendRitualCost" },
     r,
-    ...HE(t)
+    ...WE(t)
   ];
   return {
     version: 1,
     label: `Fórmula de ${e.name ?? "ritual"}`,
     steps: o,
-    ritualForms: KE(e, t),
+    ritualForms: YE(e, t),
     resistance: n
   };
 }
@@ -10178,20 +10178,20 @@ function Ts(e, t) {
     version: 1,
     label: `Conjuração de ${e.name ?? "ritual"}`,
     steps: [{ type: "spendRitualCost" }],
-    ritualForms: YE(e),
+    ritualForms: XE(e),
     resistance: t
   } : null;
 }
-function VE(e, t) {
+function HE(e, t) {
   const n = {
     type: "rollFormula",
     id: hn,
     formula: t,
-    intent: QE(e.intent)
+    intent: ZE(e.intent)
   };
   return e.intent === "damage" && e.damageType && (n.damageType = e.damageType), n;
 }
-function HE(e) {
+function WE(e) {
   switch (e.intent) {
     case "damage":
       return [
@@ -10201,7 +10201,7 @@ function HE(e) {
           resource: "PV",
           operation: "damage",
           amountFrom: `${hn}.total`,
-          ...WE(e.damageType)
+          ...KE(e.damageType)
         }
       ];
     case "healing":
@@ -10218,16 +10218,16 @@ function HE(e) {
       return [];
   }
 }
-function WE(e) {
+function KE(e) {
   return e ? { damageType: e } : {};
 }
-function KE(e, t) {
+function YE(e, t) {
   const n = {
-    base: ba("Padrão", t.forms.base.formula)
+    base: ya("Padrão", t.forms.base.formula)
   };
-  return tt(e, "discente") && (n.discente = ba("Discente", t.forms.discente.formula, 2)), tt(e, "verdadeiro") && (n.verdadeiro = ba("Verdadeiro", t.forms.verdadeiro.formula, 5)), n;
+  return tt(e, "discente") && (n.discente = ya("Discente", t.forms.discente.formula, 2)), tt(e, "verdadeiro") && (n.verdadeiro = ya("Verdadeiro", t.forms.verdadeiro.formula, 5)), n;
 }
-function ba(e, t, n) {
+function ya(e, t, n) {
   return {
     label: e,
     ...n ? { extraCost: n } : {},
@@ -10236,13 +10236,13 @@ function ba(e, t, n) {
     }
   };
 }
-function YE(e) {
+function XE(e) {
   const t = {
     base: { label: "Padrão" }
   };
   return tt(e, "discente") && (t.discente = { label: "Discente", extraCost: 2 }), tt(e, "verdadeiro") && (t.verdadeiro = { label: "Verdadeiro", extraCost: 5 }), t;
 }
-function XE(e, t) {
+function QE(e, t) {
   return [
     t.forms.base.formula.trim(),
     tt(e, "discente") ? t.forms.discente.formula.trim() : "",
@@ -10250,9 +10250,9 @@ function XE(e, t) {
   ].find((a) => a.length > 0) ?? null;
 }
 function Gn(e) {
-  const t = rd(e), n = cr(t.skillResis), a = JE(t.resistance);
+  const t = od(e), n = ur(t.skillResis), a = e$(t.resistance);
   if (!n || !a) return;
-  const r = t$(n), o = UE[a];
+  const r = n$(n), o = qE[a];
   return {
     skill: n,
     label: r,
@@ -10260,7 +10260,7 @@ function Gn(e) {
     summary: `${r} ${o}`
   };
 }
-function QE(e) {
+function ZE(e) {
   switch (e) {
     case "damage":
       return "damage";
@@ -10270,32 +10270,32 @@ function QE(e) {
       return "generic";
   }
 }
-function ZE(e) {
+function JE(e) {
   return e === "damage" || e === "healing" || e === "utility" ? e : null;
 }
-function JE(e) {
+function e$(e) {
   return e === "nullifies" || e === "discredits" || e === "partial" || e === "reducesByHalf" ? e : null;
 }
-function e$(e) {
+function t$(e) {
   const t = Nt();
   return Vn(e) ? {
-    base: ya(e.base),
-    discente: ya(e.discente),
-    verdadeiro: ya(e.verdadeiro)
+    base: _a(e.base),
+    discente: _a(e.discente),
+    verdadeiro: _a(e.verdadeiro)
   } : t.forms;
 }
-function ya(e) {
-  return Vn(e) ? { formula: yo(e.formula) } : { formula: "" };
+function _a(e) {
+  return Vn(e) ? { formula: _o(e.formula) } : { formula: "" };
 }
 function tt(e, t) {
-  const n = rd(e), a = t === "discente" ? n.studentForm : n.trueForm;
-  return n$(a);
+  const n = od(e), a = t === "discente" ? n.studentForm : n.trueForm;
+  return a$(a);
 }
-function rd(e) {
+function od(e) {
   const t = e.system;
   return Vn(t) ? t : {};
 }
-function t$(e) {
+function n$(e) {
   switch (e) {
     case "resilience":
       return "Fortitude";
@@ -10307,24 +10307,24 @@ function t$(e) {
       return e;
   }
 }
-function n$(e) {
+function a$(e) {
   return e === !0 || e === "true" || e === 1 || e === "1";
 }
-function yo(e) {
+function _o(e) {
   return typeof e == "string" ? e.trim() : "";
 }
-function cr(e) {
-  const t = yo(e);
+function ur(e) {
+  const t = _o(e);
   return t.length > 0 ? t : null;
 }
 function Vn(e) {
   return e !== null && typeof e == "object" && !Array.isArray(e);
 }
-function a$(e) {
+function r$(e) {
   return 20 + Math.max(0, Math.trunc(e));
 }
-function od(e) {
-  switch (r$(e)) {
+function id(e) {
+  switch (o$(e)) {
     case "cutting":
     case "cuttingdamage":
     case "corte":
@@ -10388,45 +10388,45 @@ function od(e) {
     case null:
       return "Sem tipo";
     default:
-      return o$(String(e ?? ""));
+      return i$(String(e ?? ""));
   }
 }
-function r$(e) {
+function o$(e) {
   if (e == null) return null;
   const t = String(e).trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/gu, "").replace(/[^a-z0-9]/gu, "");
   return t.length > 0 ? t : null;
 }
-function o$(e) {
+function i$(e) {
   const t = e.trim();
   return t ? `${t.charAt(0).toLocaleUpperCase()}${t.slice(1)}` : "Sem tipo";
 }
-function i$() {
+function s$() {
   const e = globalThis.crypto;
   return e?.randomUUID ? e.randomUUID() : `ritual-cast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
-function s$(e) {
-  return {
-    ..._o(e),
-    type: "ritual.cast.started"
-  };
-}
 function l$(e) {
   return {
-    ..._o(e),
-    type: "ritual.area.resolved",
-    area: e.area
+    ...Ao(e),
+    type: "ritual.cast.started"
   };
 }
 function c$(e) {
   return {
-    ..._o(e),
+    ...Ao(e),
+    type: "ritual.area.resolved",
+    area: e.area
+  };
+}
+function u$(e) {
+  return {
+    ...Ao(e),
     type: "ritual.cast.finished",
     status: e.status,
     ...e.reason ? { reason: e.reason } : {},
     ...e.message ? { message: e.message } : {}
   };
 }
-function u$(e) {
+function d$(e) {
   if (e.type === "preset") {
     const t = ve(e.presetId);
     return {
@@ -10457,14 +10457,14 @@ function u$(e) {
     fxEligible: !1
   };
 }
-function d$(e, t = {}) {
-  const n = w$(e), a = [
-    ...S$(t.candidates ?? []),
-    ...I$(e)
-  ], r = v$(a) ?? { x: 0, y: 0, width: 0, height: 0 }, o = C$(t) ?? D$(a) ?? N$(r), i = O$(canvas?.grid?.size), l = m$(o, r, a), c = A$(a), u = _$(l);
+function m$(e, t = {}) {
+  const n = C$(e), a = [
+    ...I$(t.candidates ?? []),
+    ...L$(e)
+  ], r = D$(a) ?? { x: 0, y: 0, width: 0, height: 0 }, o = S$(t) ?? x$(a) ?? P$(r), i = M$(canvas?.grid?.size), l = f$(o, r, a), c = T$(a), u = A$(l);
   return {
     type: "rectangleRay",
-    sceneId: P$(e, n),
+    sceneId: O$(e, n),
     regionId: Ss(n?.id) ?? Ss(e.id),
     gridSize: i,
     bounds: {
@@ -10486,7 +10486,7 @@ function d$(e, t = {}) {
     targetingMode: "lineArea"
   };
 }
-function m$(e, t, n) {
+function f$(e, t, n) {
   const a = {
     x: P(e, "x") ?? 0,
     y: P(e, "y") ?? 0,
@@ -10497,14 +10497,14 @@ function m$(e, t, n) {
   };
   return {
     ...a,
-    direction: f$(a, t, n)
+    direction: p$(a, t, n)
   };
 }
-function f$(e, t, n) {
-  const a = p$(n);
-  return a !== null ? a : h$(e, t) ?? e.direction;
+function p$(e, t, n) {
+  const a = g$(n);
+  return a !== null ? a : b$(e, t) ?? e.direction;
 }
-function p$(e) {
+function g$(e) {
   const t = [
     "rotation",
     "direction",
@@ -10523,22 +10523,22 @@ function p$(e) {
 }
 function Rs(e, t) {
   for (const n of t) {
-    const a = g$(K(e, n));
+    const a = h$(Y(e, n));
     if (a !== null) return a;
   }
   return null;
 }
-function g$(e) {
+function h$(e) {
   const t = $t(e);
   if (t === null) return null;
-  const n = To(t);
+  const n = Ro(t);
   return Math.abs(n) > 1e-3 ? n : null;
 }
-function h$(e, t) {
+function b$(e, t) {
   if (e.width <= 0 || e.height < 0 || t.width <= 0 || t.height <= 0) return null;
-  const n = Es(ks(e, e.direction), t), a = b$(e, t);
+  const n = Es(ks(e, e.direction), t), a = y$(e, t);
   if (a === null) return null;
-  const o = y$([
+  const o = _$([
     a,
     -a,
     180 - a,
@@ -10553,16 +10553,16 @@ function h$(e, t) {
   })).sort((l, c) => l.error - c.error)[0];
   if (!o || o.error >= n) return null;
   const i = Math.max(12, Math.min(e.width, Math.max(e.height, 1)) * 0.12);
-  return o.error <= i ? To(o.direction) : null;
+  return o.error <= i ? Ro(o.direction) : null;
 }
-function b$(e, t) {
+function y$(e, t) {
   const n = e.width, a = e.height, r = n ** 2 - a ** 2;
   if (Math.abs(r) < 1e-3) return null;
   const o = (n * t.width - a * t.height) / r, i = (n * t.height - a * t.width) / r, l = Is(o, 0, 1), c = Is(i, 0, 1);
-  return !Number.isFinite(l) || !Number.isFinite(c) ? null : M$(Math.atan2(c, l));
+  return !Number.isFinite(l) || !Number.isFinite(c) ? null : F$(Math.atan2(c, l));
 }
 function ks(e, t) {
-  const n = sd(t), a = {
+  const n = ld(t), a = {
     x: Math.cos(n),
     y: Math.sin(n)
   }, r = {
@@ -10593,17 +10593,17 @@ function ks(e, t) {
 function Es(e, t) {
   return Math.abs(e.x - t.x) + Math.abs(e.y - t.y) + Math.abs(e.width - t.width) + Math.abs(e.height - t.height);
 }
-function y$(e) {
+function _$(e) {
   const t = /* @__PURE__ */ new Set();
   for (const n of e) {
-    const a = To(n);
+    const a = Ro(n);
     t.add(Math.round(a * 1e3) / 1e3);
   }
   return [...t];
 }
-function _$(e) {
+function A$(e) {
   if (e.width <= 0 || e.height < 0) return null;
-  const t = sd(e.direction), n = {
+  const t = ld(e.direction), n = {
     x: Math.cos(t),
     y: Math.sin(t)
   }, a = {
@@ -10621,7 +10621,7 @@ function _$(e) {
     }
   };
 }
-function A$(e) {
+function T$(e) {
   for (const t of e) {
     const n = $s(t, "ray.start"), a = $s(t, "ray.end");
     if (n && a) return { start: n, end: a };
@@ -10629,11 +10629,11 @@ function A$(e) {
   return null;
 }
 function $s(e, t) {
-  const n = K(e, t), a = $t(K(n, "x")), r = $t(K(n, "y"));
+  const n = Y(e, t), a = $t(Y(n, "x")), r = $t(Y(n, "y"));
   return a === null || r === null ? null : { x: a, y: r };
 }
-function _o(e) {
-  const t = u$(e.automationSource), n = e.targets ?? e.context.targets;
+function Ao(e) {
+  const t = d$(e.automationSource), n = e.targets ?? e.context.targets;
   return {
     version: 1,
     castId: e.castId,
@@ -10646,7 +10646,7 @@ function _o(e) {
         uuid: e.context.actor?.uuid ?? null,
         name: e.context.actor?.name ?? null
       },
-      token: k$(e.context.token)
+      token: E$(e.context.token)
     },
     item: {
       id: e.context.item.id ?? null,
@@ -10654,8 +10654,8 @@ function _o(e) {
       name: e.context.item.name,
       type: e.context.item.type
     },
-    ritual: T$(e.context.item, e.form, e.formLabel, t),
-    targets: n.map(E$),
+    ritual: R$(e.context.item, e.form, e.formLabel, t),
+    targets: n.map($$),
     documents: {
       actor: e.context.actor,
       token: null,
@@ -10663,19 +10663,19 @@ function _o(e) {
     }
   };
 }
-function T$(e, t, n, a) {
+function R$(e, t, n, a) {
   return {
     name: e.name,
-    slug: _a(e, "system.slug") ?? _a(e, "slug"),
+    slug: Aa(e, "system.slug") ?? Aa(e, "slug"),
     presetId: a.presetId,
     presetVersion: a.presetVersion,
-    element: _a(e, "system.element"),
-    circle: $$(e),
-    form: R$(t),
+    element: Aa(e, "system.element"),
+    circle: w$(e),
+    form: k$(t),
     formLabel: n
   };
 }
-function R$(e) {
+function k$(e) {
   switch (e) {
     case "discente":
       return "student";
@@ -10685,7 +10685,7 @@ function R$(e) {
       return "standard";
   }
 }
-function k$(e) {
+function E$(e) {
   return e ? {
     id: e.tokenId,
     actorId: e.actorId,
@@ -10693,7 +10693,7 @@ function k$(e) {
     name: e.name
   } : null;
 }
-function E$(e) {
+function $$(e) {
   return {
     tokenId: e.tokenId,
     actorId: e.actorId,
@@ -10701,11 +10701,11 @@ function E$(e) {
     name: e.name
   };
 }
-function $$(e) {
+function w$(e) {
   const t = foundry.utils.getProperty(e, "system.circle") ?? foundry.utils.getProperty(e, "system.ritual.circle");
   return typeof t == "number" && Number.isFinite(t) ? t : ve(t);
 }
-function _a(e, t) {
+function Aa(e, t) {
   return ve(foundry.utils.getProperty(e, t));
 }
 function ve(e) {
@@ -10713,34 +10713,34 @@ function ve(e) {
   const t = e.trim();
   return t.length > 0 ? t : null;
 }
-function w$(e) {
+function C$(e) {
   return "document" in e && e.document ? e.document : e;
 }
-function C$(e) {
-  return id(e.shape);
-}
 function S$(e) {
-  return e.filter(Ao);
+  return sd(e.shape);
 }
 function I$(e) {
-  return [
-    e,
-    L$(e),
-    "document" in e ? e.document : null,
-    "document" in e ? e.document?.object : null
-  ].filter(Ao);
+  return e.filter(To);
 }
 function L$(e) {
-  return "object" in e && Ao(e.object) ? e.object : null;
-}
-function Ao(e) {
-  return !!(e && typeof e == "object");
+  return [
+    e,
+    v$(e),
+    "document" in e ? e.document : null,
+    "document" in e ? e.document?.object : null
+  ].filter(To);
 }
 function v$(e) {
+  return "object" in e && To(e.object) ? e.object : null;
+}
+function To(e) {
+  return !!(e && typeof e == "object");
+}
+function D$(e) {
   for (const t of e) {
-    const n = ws(K(Hn(t), "bounds"));
+    const n = ws(Y(Hn(t), "bounds"));
     if (n) return n;
-    const a = ws(K(t, "bounds"));
+    const a = ws(Y(t, "bounds"));
     if (a) return a;
   }
   return null;
@@ -10750,26 +10750,26 @@ function ws(e) {
   return t === null || n === null || a === null || r === null ? null : { x: t, y: n, width: a, height: r };
 }
 function P(e, t) {
-  return $t(K(e, t));
+  return $t(Y(e, t));
 }
-function D$(e) {
+function x$(e) {
   for (const t of e) {
-    const n = x$(t).find((a) => a.type === "rectangle") ?? null;
+    const n = N$(t).find((a) => a.type === "rectangle") ?? null;
     if (n) return n;
   }
   return null;
 }
-function x$(e) {
+function N$(e) {
   if (!e || typeof e != "object") return [];
   const t = Cs(Hn(e));
   return t.length > 0 ? t : Cs(e);
 }
 function Cs(e) {
-  const t = K(e, "shapes");
-  return Array.isArray(t) ? t.map(id).filter((n) => n !== null) : [];
+  const t = Y(e, "shapes");
+  return Array.isArray(t) ? t.map(sd).filter((n) => n !== null) : [];
 }
-function id(e) {
-  const t = Hn(e) ?? e, n = K(t, "type");
+function sd(e) {
+  const t = Hn(e) ?? e, n = Y(t, "type");
   return typeof n != "string" ? null : {
     type: n,
     x: P(t, "x"),
@@ -10780,7 +10780,7 @@ function id(e) {
     elevation: P(t, "elevation")
   };
 }
-function N$(e) {
+function P$(e) {
   return {
     type: "rectangle",
     x: 0,
@@ -10791,13 +10791,13 @@ function N$(e) {
     elevation: null
   };
 }
-function P$(e, t) {
-  return Aa(e, "parent.id") ?? Aa(e, "document.parent.id") ?? Aa(t, "parent.id") ?? canvas?.scene?.id ?? null;
+function O$(e, t) {
+  return Ta(e, "parent.id") ?? Ta(e, "document.parent.id") ?? Ta(t, "parent.id") ?? canvas?.scene?.id ?? null;
 }
-function Aa(e, t) {
-  return ve(K(e, t));
+function Ta(e, t) {
+  return ve(Y(e, t));
 }
-function K(e, t) {
+function Y(e, t) {
   if (!e || typeof e != "object") return;
   let n = e;
   for (const a of t.split(".")) {
@@ -10812,7 +10812,7 @@ function K(e, t) {
 }
 function Hn(e) {
   if (!e || typeof e != "object") return null;
-  const t = K(e, "toObject");
+  const t = Y(e, "toObject");
   if (typeof t != "function") return null;
   try {
     const n = t.call(e);
@@ -10827,24 +10827,24 @@ function Ss(e) {
 function $t(e) {
   return typeof e == "number" && Number.isFinite(e) ? e : null;
 }
-function O$(e) {
+function M$(e) {
   const t = $t(e);
   return t !== null && t > 0 ? t : null;
 }
-function sd(e) {
+function ld(e) {
   return e * Math.PI / 180;
 }
-function M$(e) {
+function F$(e) {
   return e * 180 / Math.PI;
 }
-function To(e) {
+function Ro(e) {
   const t = e % 360;
   return t < 0 ? t + 360 : t;
 }
 function Is(e, t, n) {
   return Math.min(Math.max(e, t), n);
 }
-class F$ {
+class B$ {
   validateCanvasState() {
     return !canvas || canvas.ready !== !0 ? {
       ok: !1,
@@ -10928,14 +10928,14 @@ class Wn {
     ui.notifications?.error(`Paranormal Toolkit: ${t}`);
   }
 }
-const B$ = "Não foi possível remover a Region temporária da linha. Remova-a manualmente da cena.";
-class U$ {
+const U$ = "Não foi possível remover a Region temporária da linha. Remova-a manualmente da cena.";
+class q$ {
   constructor(t = new Wn()) {
     this.foundryAdapter = t;
   }
   foundryAdapter;
   async deleteCreatedRegion(t) {
-    const n = q$(t, this.foundryAdapter);
+    const n = j$(t, this.foundryAdapter);
     for (const a of n)
       try {
         await a.run(), a.method;
@@ -10943,11 +10943,11 @@ class U$ {
       } catch {
         a.method;
       }
-    this.foundryAdapter.warn(B$);
+    this.foundryAdapter.warn(U$);
   }
 }
-function q$(e, t) {
-  const n = [], a = j$(e), r = Ls(a), o = Ls(e);
+function j$(e, t) {
+  const n = [], a = z$(e), r = Ls(a), o = Ls(e);
   if (typeof a?.delete == "function") {
     const i = a.delete.bind(a);
     n.push({ method: "document.delete", run: i });
@@ -10964,17 +10964,17 @@ function q$(e, t) {
     run: () => t.deleteRegionDocumentById(o)
   }), n;
 }
-function j$(e) {
-  return z$(e) ? e.document ?? null : e;
-}
 function z$(e) {
+  return G$(e) ? e.document ?? null : e;
+}
+function G$(e) {
   return "bounds" in e;
 }
 function Ls(e) {
   return typeof e?.id == "string" && e.id.length > 0 ? e.id : null;
 }
-const G$ = 100, V$ = 12;
-class H$ {
+const V$ = 100, H$ = 12;
+class W$ {
   constructor(t = new Wn()) {
     this.foundryAdapter = t;
   }
@@ -10988,8 +10988,8 @@ class H$ {
         message: a.message
       };
     try {
-      const r = this.foundryAdapter.getGridSize() ?? G$, o = Q$(n), i = await this.foundryAdapter.placeRegion(
-        W$(t, this.foundryAdapter.getUserColor(), r),
+      const r = this.foundryAdapter.getGridSize() ?? V$, o = Z$(n), i = await this.foundryAdapter.placeRegion(
+        K$(t, this.foundryAdapter.getUserColor(), r),
         {
           create: !0,
           allowRotation: !0,
@@ -11008,12 +11008,12 @@ class H$ {
       return {
         status: "failed",
         reason: "region-placement-failed",
-        message: X$(r)
+        message: Q$(r)
       };
     }
   }
 }
-function W$(e, t, n) {
+function K$(e, t, n) {
   return {
     name: "Ritual: Linha de efeito",
     color: t ?? void 0,
@@ -11025,11 +11025,11 @@ function W$(e, t, n) {
         purpose: "ritual-line-targeting"
       }
     },
-    shapes: [K$(e, n)]
+    shapes: [Y$(e, n)]
   };
 }
-function K$(e, t) {
-  const n = Y$(e, t);
+function Y$(e, t) {
+  const n = X$(e, t);
   return {
     type: "rectangle",
     x: 0,
@@ -11040,22 +11040,22 @@ function K$(e, t) {
     elevation: e.elevation ?? 0
   };
 }
-function Y$(e, t) {
+function X$(e, t) {
   return {
-    length: vs(e.length, V$, t),
+    length: vs(e.length, H$, t),
     width: vs(e.width, 1, t)
   };
 }
 function vs(e, t, n) {
   return (typeof e == "number" && Number.isFinite(e) && e > 0 ? e : t) * n;
 }
-function X$(e) {
+function Q$(e) {
   const t = "Não foi possível criar a linha na cena. Desmarque para usar os alvos selecionados manualmente.";
   return e instanceof Error && e.message.trim().length > 0 ? `${t} (${e.message})` : t;
 }
-function Q$(e) {
+function Z$(e) {
   const t = (n) => {
-    const a = Z$(n);
+    const a = J$(n);
     a && e.onChange?.(a);
   };
   return {
@@ -11064,17 +11064,17 @@ function Q$(e) {
     onRotate: t
   };
 }
-function Z$(e) {
-  return J$(e) ? {
+function J$(e) {
+  return ew(e) ? {
     document: e.document,
     preview: e.preview ?? null,
     shape: e.shape ?? null
   } : { document: e };
 }
-function J$(e) {
+function ew(e) {
   return !!(e && typeof e == "object" && "document" in e && e.document);
 }
-class ew {
+class tw {
   constructor(t = new Wn()) {
     this.foundryAdapter = t;
   }
@@ -11094,8 +11094,8 @@ class ew {
     this.applyTargets(t.targetIds), this.lastAppliedTargetIds = null;
   }
   applyTargets(t) {
-    const n = tw(t);
-    nw(this.lastAppliedTargetIds, n) || (this.lastAppliedTargetIds = n, this.foundryAdapter.updateUserTargets(n));
+    const n = nw(t);
+    aw(this.lastAppliedTargetIds, n) || (this.lastAppliedTargetIds = n, this.foundryAdapter.updateUserTargets(n));
   }
 }
 function Ds(e) {
@@ -11104,13 +11104,13 @@ function Ds(e) {
     return n ? [n] : [];
   });
 }
-function tw(e) {
+function nw(e) {
   return Array.from(new Set(e));
 }
-function nw(e, t) {
+function aw(e, t) {
   return !e || e.length !== t.length ? !1 : e.every((n, a) => n === t[a]);
 }
-class aw {
+class rw {
   constructor(t = new Wn()) {
     this.foundryAdapter = t;
   }
@@ -11123,18 +11123,18 @@ class aw {
     };
   }
   resolvePreviewTargetTokens(t) {
-    return this.resolveFirstRegionCandidate(rw(t), "preview");
+    return this.resolveFirstRegionCandidate(ow(t), "preview");
   }
   resolveTargetTokens(t) {
-    return this.resolveFirstRegionCandidate(ow(t), "final");
+    return this.resolveFirstRegionCandidate(iw(t), "final");
   }
   resolveFirstRegionCandidate(t, n) {
     t.map((a) => ({
       source: a.source,
-      hasBounds: ur(a.region)
+      hasBounds: dr(a.region)
     }));
     for (const a of t) {
-      if (!ur(a.region)) continue;
+      if (!dr(a.region)) continue;
       const r = this.resolveRegionObjectTargetTokens(a.region);
       return a.source, r.tokens.length, r;
     }
@@ -11142,13 +11142,13 @@ class aw {
   }
   resolveRegionObjectTargetTokens(t) {
     if (!t.bounds) return { tokens: [], source: "regionObjectUnavailable" };
-    const n = this.foundryAdapter.getTokensInBounds(t.bounds), a = sw(
+    const n = this.foundryAdapter.getTokensInBounds(t.bounds), a = lw(
       n.filter((r) => !r.actor || typeof r.document?.testInsideRegion != "function" ? !1 : r.document.testInsideRegion(t))
     );
     return n.length, a.length, { tokens: a, source: "regionObject" };
   }
 }
-function rw(e) {
+function ow(e) {
   return [
     { source: "document", region: Le(e.document) },
     { source: "document.object", region: Le(e.document.object) },
@@ -11156,30 +11156,30 @@ function rw(e) {
     { source: "preview.document.object", region: Le(e.preview?.document?.object) }
   ];
 }
-function ow(e) {
+function iw(e) {
   return [
     { source: "input", region: Le(e) },
-    { source: "input.object", region: iw(e) ? Le(e.object) : null },
-    { source: "input.document.object", region: ld(e) ? Le(e.document?.object) : null }
+    { source: "input.object", region: sw(e) ? Le(e.object) : null },
+    { source: "input.document.object", region: cd(e) ? Le(e.document?.object) : null }
   ];
 }
 function Le(e) {
-  return ur(e) ? e : null;
+  return dr(e) ? e : null;
 }
-function ur(e) {
+function dr(e) {
   if (!e || typeof e != "object") return !1;
   const t = e.bounds;
   if (!t || typeof t != "object") return !1;
   const n = t;
   return Vt(n.x) && Vt(n.y) && Vt(n.width) && Vt(n.height);
 }
-function ld(e) {
+function cd(e) {
   return "document" in e && "bounds" in e;
 }
-function iw(e) {
-  return !ld(e);
-}
 function sw(e) {
+  return !cd(e);
+}
+function lw(e) {
   const t = /* @__PURE__ */ new Set();
   return e.filter((n) => {
     const a = n.uuid ?? n.id ?? n.document?.uuid ?? n.document?.id ?? n.name;
@@ -11189,67 +11189,67 @@ function sw(e) {
 function Vt(e) {
   return typeof e == "number" && Number.isFinite(e);
 }
-class lw {
+class cw {
   async minimizeForPlacement() {
     const t = [];
-    for (const n of dw())
-      await cw(n) && t.push(n);
+    for (const n of mw())
+      await uw(n) && t.push(n);
     return {
       restore: async () => {
         for (const n of [...t].reverse())
-          await uw(n);
+          await dw(n);
       }
     };
   }
 }
-async function cw(e) {
-  if (cd(e) || !_w(e)) return !1;
+async function uw(e) {
+  if (ud(e) || !Aw(e)) return !1;
   try {
     return await e.minimize(), !0;
   } catch (t) {
     return console.warn("Paranormal Toolkit | Falha ao minimizar janela para seleção no canvas.", t), !1;
   }
 }
-async function uw(e) {
-  if (cd(e))
+async function dw(e) {
+  if (ud(e))
     try {
       await e.maximize();
     } catch (t) {
       console.warn("Paranormal Toolkit | Falha ao restaurar janela após seleção no canvas.", t);
     }
 }
-function dw() {
+function mw() {
   const e = /* @__PURE__ */ new Set();
-  for (const t of mw())
-    gw(t) && hw(t) && e.add(t);
+  for (const t of fw())
+    hw(t) && bw(t) && e.add(t);
   return [...e];
 }
-function mw() {
+function fw() {
   return [
-    ...xs(fw()),
-    ...xs(pw())
+    ...xs(pw()),
+    ...xs(gw())
   ];
 }
 function xs(e) {
   return e ? e instanceof Map || e instanceof Set ? [...e.values()] : Array.isArray(e) ? e : typeof e == "object" ? Object.values(e) : [] : [];
 }
-function fw() {
+function pw() {
   return globalThis.ui?.windows ?? null;
 }
-function pw() {
+function gw() {
   return globalThis.foundry?.applications?.instances ?? null;
 }
-function gw(e) {
+function hw(e) {
   return !!(e && typeof e == "object" && typeof e.minimize == "function" && typeof e.maximize == "function");
 }
-function hw(e) {
-  const t = bw(e), n = yw(t);
+function bw(e) {
+  const t = yw(e), n = _w(t);
   return n === "Actor" || n === "Item";
 }
-function bw(e) {
+function yw(e) {
   return e.document ?? e.object ?? null;
 }
-function yw(e) {
+function _w(e) {
   if (!e || typeof e != "object") return null;
   const t = e;
   if (typeof t.documentName == "string") return t.documentName;
@@ -11257,13 +11257,13 @@ function yw(e) {
   const n = t.constructor?.name;
   return n === "Actor" || n === "Item" ? n : null;
 }
-function _w(e) {
-  const t = Aw(e);
+function Aw(e) {
+  const t = Tw(e);
   if (!t || t.isConnected === !1) return !1;
   const n = globalThis.document;
   return n ? t.ownerDocument === n : !1;
 }
-function Aw(e) {
+function Tw(e) {
   const t = e.element;
   if (Ns(t)) return t;
   if (t && typeof t == "object") {
@@ -11275,12 +11275,12 @@ function Aw(e) {
 function Ns(e) {
   return !!(e && typeof e == "object" && "ownerDocument" in e && e.ownerDocument);
 }
-function cd(e) {
+function ud(e) {
   return e.minimized === !0;
 }
-const Tw = "Nenhum alvo encontrado na linha.";
-class Rw {
-  constructor(t = new H$(), n = new aw(), a = new U$(), r = new ew(), o = new F$(), i = new lw()) {
+const Rw = "Nenhum alvo encontrado na linha.";
+class kw {
+  constructor(t = new W$(), n = new rw(), a = new q$(), r = new tw(), o = new B$(), i = new cw()) {
     this.regionLinePlacement = t, this.regionTargetResolver = n, this.regionCleanup = a, this.regionTargetPreview = r, this.foundryAdapter = o, this.placementWindowManager = i;
   }
   regionLinePlacement;
@@ -11328,11 +11328,11 @@ class Rw {
       if (l.status === "failed")
         return o(), this.foundryAdapter.warn(l.message), l;
       try {
-        const c = this.regionTargetResolver.resolveTargets(l.region), u = Ew(a), m = d$(l.region, {
+        const c = this.regionTargetResolver.resolveTargets(l.region), u = $w(a), m = m$(l.region, {
           candidates: [u?.preview, u?.document],
           shape: u?.shape
         });
-        return c.targets.length === 0 ? (o(), this.foundryAdapter.warn(Tw), {
+        return c.targets.length === 0 ? (o(), this.foundryAdapter.warn(Rw), {
           status: "cancelled",
           reason: "no-targets-found"
         }) : (this.regionTargetPreview.keepPreviewTargets(c.tokens), {
@@ -11342,7 +11342,7 @@ class Rw {
         });
       } catch (c) {
         o();
-        const u = kw(c);
+        const u = Ew(c);
         return this.foundryAdapter.warn(u), {
           status: "failed",
           reason: "region-resolution-failed",
@@ -11359,57 +11359,57 @@ class Rw {
     };
   }
 }
-function kw(e) {
+function Ew(e) {
   return e instanceof Error && e.message.trim().length > 0 ? `Falha ao resolver os alvos da linha: ${e.message}` : "Falha ao resolver os alvos da linha.";
 }
-function Ew(e) {
+function $w(e) {
   return e.length > 0 ? e[e.length - 1] ?? null : null;
 }
-function $w(e) {
+function ww(e) {
   return {
     header: {
       eyebrow: xl,
       title: e.ritual.name ?? "Ritual sem nome",
-      subtitle: xw(e.ritual)
+      subtitle: Nw(e.ritual)
     },
-    forms: e.variantOptions.map((t) => ww(t, e.cost)),
+    forms: e.variantOptions.map((t) => Cw(t, e.cost)),
     cost: {
       spendResourceChecked: e.defaultSpendResource,
       baseCostText: e.cost ? `${e.cost.amount} ${e.cost.resource}` : "não resolvido",
       casterName: e.actor.name ?? "Ator sem nome"
     },
-    targets: Iw(e.targetNames, e.variantOptions, e.ritual),
-    automation: Dw(e.automationStatus ?? "assisted")
+    targets: Lw(e.targetNames, e.variantOptions, e.ritual),
+    automation: xw(e.automationStatus ?? "assisted")
   };
 }
-function ww(e, t) {
-  const n = Cw(e);
+function Cw(e, t) {
+  const n = Sw(e);
   return {
     variant: e.variant,
     label: e.label,
     enabled: e.enabled,
     checked: e.variant === "base",
-    costText: e.enabled ? e.finalCostText ?? Sw(t) : "—",
+    costText: e.enabled ? e.finalCostText ?? Iw(t) : "—",
     details: n
   };
 }
-function Cw(e) {
+function Sw(e) {
   return e.enabled ? e.details.map((t) => t.trim()).filter((t) => t.length > 0).filter((t) => !t.toLocaleLowerCase().startsWith("custo final")) : [e.unavailableReason ?? "não disponível neste ritual"];
 }
-function Sw(e) {
+function Iw(e) {
   return e ? `${e.amount} ${e.resource}` : "custo não resolvido";
 }
-function Iw(e, t, n) {
+function Lw(e, t, n) {
   const a = e.map((r) => r.trim()).filter((r) => r.length > 0);
   return {
     targetNames: a,
     targetText: a.length > 0 ? a.join(", ") : "Nenhum alvo selecionado.",
     hasTargets: a.length > 0,
-    forms: t.map((r) => Lw(r, n))
+    forms: t.map((r) => vw(r, n))
   };
 }
-function Lw(e, t) {
-  const n = e.targeting ?? vw(t, e.variant), a = n?.mode === "lineArea" ? "lineArea" : "selectedTokens";
+function vw(e, t) {
+  const n = e.targeting ?? Dw(t, e.variant), a = n?.mode === "lineArea" ? "lineArea" : "selectedTokens";
   return {
     variant: e.variant,
     mode: a,
@@ -11421,12 +11421,12 @@ function Lw(e, t) {
     checked: e.variant === "base"
   };
 }
-function vw(e, t) {
+function Dw(e, t) {
   const n = St(e);
   if (n.ok)
     return n.value.ritualForms?.[t]?.targeting;
 }
-function Dw(e) {
+function xw(e) {
   return e === "generic" ? {
     status: e,
     title: "Sem automação configurada.",
@@ -11437,17 +11437,17 @@ function Dw(e) {
     description: "O Toolkit vai preparar custo, rolagens e ações assistidas no card persistente do chat."
   };
 }
-function xw(e) {
-  const t = e.system, n = [Pw(t?.element), Nw(t?.circle)].filter(Fw);
+function Nw(e) {
+  const t = e.system, n = [Ow(t?.element), Pw(t?.circle)].filter(Bw);
   return n.length > 0 ? n.join(" • ") : "Conjuração de ritual";
 }
-function Nw(e) {
+function Pw(e) {
   const t = typeof e == "string" ? Number(e) : e;
   return typeof t != "number" || !Number.isFinite(t) ? null : `${t}º Círculo`;
 }
-function Pw(e) {
+function Ow(e) {
   if (typeof e != "string" || e.trim().length === 0) return null;
-  switch (Ow(e)) {
+  switch (Mw(e)) {
     case "blood":
     case "op.elementchoices.blood":
       return "Sangue";
@@ -11464,21 +11464,21 @@ function Pw(e) {
     case "op.elementchoices.fear":
       return "Medo";
     default:
-      return Mw(e);
+      return Fw(e);
   }
 }
-function Ow(e) {
+function Mw(e) {
   return e.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/gu, "");
 }
-function Mw(e) {
+function Fw(e) {
   const t = e.trim();
   return t ? `${t.charAt(0).toLocaleUpperCase()}${t.slice(1)}` : null;
 }
-function Fw(e) {
+function Bw(e) {
   return typeof e == "string" && e.length > 0;
 }
-const ud = ["base", "discente", "verdadeiro"];
-function Ro(e) {
+const dd = ["base", "discente", "verdadeiro"];
+function ko(e) {
   switch (e) {
     case "base":
       return "Padrão";
@@ -11489,17 +11489,17 @@ function Ro(e) {
   }
 }
 function yn(e) {
-  return typeof e == "string" && ud.includes(e);
+  return typeof e == "string" && dd.includes(e);
 }
-const { ApplicationV2: Bw } = foundry.applications.api;
-class At extends Bw {
+const { ApplicationV2: Uw } = foundry.applications.api;
+class At extends Uw {
   constructor(t, n) {
     super({
       id: `${d}-ritual-cast-${t.actor.id ?? foundry.utils.randomID()}-${t.ritual.id ?? foundry.utils.randomID()}`,
       window: {
         title: `Conjurar ${t.ritual.name ?? "ritual"}`
       }
-    }), this.resolveRequest = n, this.model = $w(t), this.selectedVariant = this.model.forms.find((a) => a.checked && a.enabled)?.variant ?? "base", this.spendResource = this.model.cost.spendResourceChecked;
+    }), this.resolveRequest = n, this.model = ww(t), this.selectedVariant = this.model.forms.find((a) => a.checked && a.enabled)?.variant ?? "base", this.spendResource = this.model.cost.spendResourceChecked;
   }
   resolveRequest;
   model;
@@ -11536,9 +11536,9 @@ class At extends Bw {
   _replaceHTML(t, n, a) {
     n.replaceChildren(t);
     const r = n.querySelector(".paranormal-toolkit-ritual-cast") ?? n;
-    jw(r, (o) => {
-      this.selectedVariant = o, dr(r, o);
-    }), dr(r, this.selectedVariant), zw(r, (o) => {
+    zw(r, (o) => {
+      this.selectedVariant = o, mr(r, o);
+    }), mr(r, this.selectedVariant), Gw(r, (o) => {
       this.spendResource = o;
     });
   }
@@ -11558,7 +11558,7 @@ class At extends Bw {
       <section class="paranormal-toolkit-ritual-cast__panel">
         <h3>Forma</h3>
         <div class="paranormal-toolkit-ritual-cast__forms" role="radiogroup" aria-label="Forma do ritual">
-          ${this.model.forms.map(Uw).join("")}
+          ${this.model.forms.map(qw).join("")}
         </div>
       </section>
 
@@ -11584,7 +11584,7 @@ class At extends Bw {
           </span>
         </div>
         <div class="paranormal-toolkit-ritual-cast__targeting-forms">
-          ${this.model.targets.forms.map(qw).join("")}
+          ${this.model.targets.forms.map(jw).join("")}
         </div>
         <dl class="paranormal-toolkit-ritual-cast__summary paranormal-toolkit-ritual-cast__summary--targets">
           <div class="paranormal-toolkit-ritual-cast__summary-targets"><dt>Alvos atuais</dt><dd>${v(this.model.targets.targetText)}</dd></div>
@@ -11602,7 +11602,7 @@ class At extends Bw {
   }
   static async onCast(t) {
     t.preventDefault();
-    const n = Ww(t), a = Gw(n, this.spendResource, this.selectedVariant);
+    const n = Kw(t), a = Vw(n, this.spendResource, this.selectedVariant);
     this.settle(a), await this.close();
   }
   static async onCancel(t) {
@@ -11612,7 +11612,7 @@ class At extends Bw {
     this.isResolved || (this.isResolved = !0, this.resolveRequest(t));
   }
 }
-function Uw(e) {
+function qw(e) {
   const t = e.checked ? "checked" : "", n = e.enabled ? "" : "disabled", a = e.enabled ? "" : " paranormal-toolkit-ritual-cast__form--disabled", r = e.details.map((o) => `<span>${v(o)}</span>`).join("");
   return `
     <label
@@ -11632,7 +11632,7 @@ function Uw(e) {
     </label>
   `;
 }
-function qw(e) {
+function jw(e) {
   const t = e.checked ? "" : "hidden", n = e.showLineToggle && e.lineOptionLabel ? `
         <label class="paranormal-toolkit-ritual-cast__targeting-line-toggle">
             <input
@@ -11661,20 +11661,20 @@ function qw(e) {
     </div>
   `;
 }
-function jw(e, t) {
+function zw(e, t) {
   const n = Array.from(e.querySelectorAll("[data-paranormal-toolkit-ritual-cast-form]"));
   for (const r of n)
     r.addEventListener("click", () => Ps(e, r, t)), r.addEventListener("keydown", (o) => {
       o.key !== "Enter" && o.key !== " " || (o.preventDefault(), Ps(e, r, t));
     });
-  const a = dd(e);
+  const a = md(e);
   a && t(a);
 }
 function Ps(e, t, n) {
   const a = t.querySelector('input[name="variant"]');
-  !a || a.disabled || !yn(a.value) || (a.checked = !0, e.dataset.paranormalToolkitSelectedVariant = a.value, n(a.value), a.dispatchEvent(new Event("change", { bubbles: !0 })), dd(e), dr(e, a.value));
+  !a || a.disabled || !yn(a.value) || (a.checked = !0, e.dataset.paranormalToolkitSelectedVariant = a.value, n(a.value), a.dispatchEvent(new Event("change", { bubbles: !0 })), md(e), mr(e, a.value));
 }
-function dd(e) {
+function md(e) {
   const t = e.querySelectorAll("[data-paranormal-toolkit-ritual-cast-form]");
   let n = null;
   for (const a of t) {
@@ -11683,28 +11683,28 @@ function dd(e) {
   }
   return n && (e.dataset.paranormalToolkitSelectedVariant = n), n;
 }
-function dr(e, t) {
+function mr(e, t) {
   const n = e.querySelectorAll("[data-paranormal-toolkit-targeting-form]");
   for (const a of n) {
     const r = a.dataset.paranormalToolkitTargetingForm === t;
     a.hidden = !r;
   }
 }
-function zw(e, t) {
+function Gw(e, t) {
   const n = e.querySelector('input[name="spendResource"]');
   n && (t(n.checked), n.addEventListener("change", () => {
     t(n.checked);
   }));
 }
-function Gw(e, t, n) {
-  const a = Hw(e) ?? n, r = e?.querySelector('input[name="spendResource"]')?.checked ?? t, o = Vw(e, a);
+function Vw(e, t, n) {
+  const a = Ww(e) ?? n, r = e?.querySelector('input[name="spendResource"]')?.checked ?? t, o = Hw(e, a);
   return {
     variant: a,
     spendResource: r,
     areaTargeting: o
   };
 }
-function Vw(e, t) {
+function Hw(e, t) {
   const n = e?.querySelector(
     `[data-paranormal-toolkit-targeting-form="${t}"]`
   );
@@ -11712,13 +11712,13 @@ function Vw(e, t) {
     "[data-paranormal-toolkit-area-targeting-line-toggle]"
   )?.checked === !0 ? { mode: "lineArea", enabled: !0 } : { mode: "selectedTokens", enabled: !1 } : { mode: "selectedTokens", enabled: !1 };
 }
-function Hw(e) {
+function Ww(e) {
   const t = e?.querySelector('input[name="variant"]:checked')?.value;
   if (yn(t)) return t;
   const n = e?.dataset.paranormalToolkitSelectedVariant;
   return yn(n) ? n : null;
 }
-function Ww(e) {
+function Kw(e) {
   for (const t of [e.currentTarget, e.target, ...e.composedPath()]) {
     if (!(t instanceof HTMLElement)) continue;
     const n = t.closest(".paranormal-toolkit-ritual-cast");
@@ -11730,19 +11730,19 @@ function v(e) {
   const t = document.createElement("div");
   return t.textContent = e, t.innerHTML;
 }
-async function Kw(e) {
+async function Yw(e) {
   return At.request(e);
 }
-const ko = {
+const Eo = {
   label: "Padrão"
-}, Yw = {
+}, Xw = {
   label: "Discente",
   extraCost: 2
-}, Xw = {
+}, Qw = {
   label: "Verdadeiro",
   extraCost: 5
 };
-class Qw {
+class Zw {
   constructor(t, n, a, r) {
     this.workflow = t, this.resources = n, this.ritualCosts = a, this.ritualEvents = r;
   }
@@ -11750,7 +11750,7 @@ class Qw {
   resources;
   ritualCosts;
   ritualEvents;
-  areaTargeting = new Rw();
+  areaTargeting = new kw();
   canHandle(t, n) {
     return t.item.type === "ritual" || n.steps.some((a) => a.type === "spendRitualCost");
   }
@@ -11761,28 +11761,28 @@ class Qw {
         reason: "missing-actor",
         message: "Não foi possível resolver o conjurador do ritual."
       };
-    const r = this.resolveCostPreview(t), o = HC(n), i = zC(
+    const r = this.resolveCostPreview(t), o = WC(n), i = GC(
       n,
       t.item,
       r,
       o
-    ), l = await Kw({
+    ), l = await Yw({
       actor: t.actor,
       ritual: t.item,
       targetNames: t.targets.map((S) => S.name),
       cost: r,
-      defaultSpendResource: ZC(n),
+      defaultSpendResource: JC(n),
       variantOptions: i,
       automationStatus: o ? "generic" : "assisted"
     });
     if (!l)
       return { status: "cancelled" };
-    const c = Zw(l), u = KC(
+    const c = Jw(l), u = YC(
       n,
       t.item,
       c.variant,
       o
-    ), m = i$(), p = u.label ?? Ro(c.variant), _ = rC(u), $ = (S = t.targets) => ({
+    ), m = s$(), p = u.label ?? ko(c.variant), _ = oC(u), $ = (S = t.targets) => ({
       castId: m,
       context: t,
       automationSource: a,
@@ -11791,7 +11791,7 @@ class Qw {
       targets: S
     }), T = (S, I = t.targets, ue = {}) => {
       this.ritualEvents.emitCastFinished(
-        c$({
+        u$({
           ...$(I),
           status: S,
           ...ue
@@ -11799,7 +11799,7 @@ class Qw {
       );
     };
     this.ritualEvents.emitCastStarted(
-      s$($())
+      l$($())
     );
     const k = await this.areaTargeting.resolvePreCastTargets({
       castOptions: c,
@@ -11817,12 +11817,12 @@ class Qw {
         reason: k.reason,
         message: k.message
       };
-    const b = Jw(
+    const b = eC(
       t,
       k.targets
     ), L = !!k.areaSnapshot;
     k.areaSnapshot && this.ritualEvents.emitAreaResolved(
-      l$({
+      c$({
         ...$(k.targets),
         area: k.areaSnapshot
       })
@@ -11830,7 +11830,7 @@ class Qw {
     const E = Zl();
     let D = null;
     if (E) {
-      const S = await tC(
+      const S = await nC(
         this.resources,
         b.actor,
         c,
@@ -11847,10 +11847,10 @@ class Qw {
           message: S.message
         };
       try {
-        const I = await Sk(
+        const I = await Ik(
           b.actor
         );
-        D = oC(
+        D = iC(
           I,
           u,
           r
@@ -11868,7 +11868,7 @@ class Qw {
         };
       }
     }
-    const G = eC(
+    const G = tC(
       n,
       c,
       u,
@@ -11878,7 +11878,7 @@ class Qw {
       }
     );
     if (G.steps.length === 0) {
-      const S = WC(
+      const S = KC(
         b,
         c
       ), I = Ms(
@@ -11952,7 +11952,7 @@ class Qw {
         message: q.error.message,
         cause: q.error
       };
-    const x = q.value.context, H = mC(
+    const x = q.value.context, H = fC(
       n,
       b,
       x,
@@ -12030,28 +12030,28 @@ class Qw {
     return n.ok ? n.value : null;
   }
 }
-function Zw(e) {
+function Jw(e) {
   return {
     variant: e.variant,
     spendResource: e.spendResource === !0,
     areaTargeting: e.areaTargeting
   };
 }
-function Jw(e, t) {
+function eC(e, t) {
   return {
     ...e,
     targets: t
   };
 }
-function eC(e, t, n, a, r) {
+function tC(e, t, n, a, r) {
   const o = [], i = t.spendResource === !0;
   for (const l of e.steps) {
-    if (l.type === "modifyResource" || l.type === "chatCard" || $o(l) && (!r.includeCostSteps || !i))
+    if (l.type === "modifyResource" || l.type === "chatCard" || wo(l) && (!r.includeCostSteps || !i))
       continue;
-    const c = nC(l, n);
+    const c = aC(l, n);
     c && o.push(c);
   }
-  return r.includeCostSteps && i && a && JC(n.extraCost) && o.push({
+  return r.includeCostSteps && i && a && eS(n.extraCost) && o.push({
     type: "spendResource",
     actor: "self",
     resource: a.resource,
@@ -12062,7 +12062,7 @@ function eC(e, t, n, a, r) {
     steps: o
   };
 }
-async function tC(e, t, n, a, r) {
+async function nC(e, t, n, a, r) {
   if (n.spendResource !== !0) return { ok: !0 };
   const o = Oe(r, a);
   if (!o)
@@ -12083,36 +12083,36 @@ async function tC(e, t, n, a, r) {
     message: i.error.message
   };
 }
-function nC(e, t) {
+function aC(e, t) {
   if (e.type !== "rollFormula") return e;
-  const n = aC(t, e.id);
+  const n = rC(t, e.id);
   return n === null ? e : n.length === 0 ? null : {
     ...e,
     formula: n
   };
 }
-function aC(e, t) {
+function rC(e, t) {
   const n = e.rollFormulaOverrides;
   if (!n || !Object.prototype.hasOwnProperty.call(n, t)) return null;
   const a = n[t];
   return typeof a == "string" ? a.trim() : "";
 }
-function rC(e) {
+function oC(e) {
   return new Set(
     Object.entries(e.rollFormulaOverrides ?? {}).filter(([, t]) => typeof t != "string" || t.trim().length === 0).map(([t]) => t)
   );
 }
-function oC(e, t, n) {
-  const r = iC(n, t) ?? e.difficulty;
+function iC(e, t, n) {
+  const r = sC(n, t) ?? e.difficulty;
   return {
     ...e,
     difficulty: r,
     success: e.total >= r
   };
 }
-function iC(e, t) {
+function sC(e, t) {
   const n = Oe(e, t);
-  return n ? a$(n.amount) : null;
+  return n ? r$(n.amount) : null;
 }
 function Os(e, t, n, a) {
   if (!t || t.success) return [];
@@ -12137,7 +12137,7 @@ function Os(e, t, n, a) {
 function Ms(e, t) {
   const n = [];
   for (const a of e.conditionApplications ?? []) {
-    const r = Eo(a.actor, t);
+    const r = $o(a.actor, t);
     if (r.length === 0) {
       if (a.actor === "target") continue;
       return {
@@ -12149,7 +12149,7 @@ function Ms(e, t) {
     for (const o of r) {
       const i = Nc(o);
       n.push(
-        sC(
+        lC(
           a,
           o,
           t.item,
@@ -12160,21 +12160,21 @@ function Ms(e, t) {
   }
   return { ok: !0, actions: n };
 }
-function sC(e, t, n, a) {
-  const r = t.name ?? "Ator sem nome", o = e.label ?? dC(e.conditionId);
+function lC(e, t, n, a) {
+  const r = t.name ?? "Ator sem nome", o = e.label ?? mC(e.conditionId);
   return {
     kind: "condition-application",
     actor: t,
     actorName: r,
     conditionId: e.conditionId,
     conditionLabel: o,
-    duration: cC(
+    duration: uC(
       e.duration ?? null,
       a
     ),
     source: e.source ?? null,
     originUuid: n.uuid ?? null,
-    label: uC(o, e.duration),
+    label: dC(o, e.duration),
     executedLabel: e.executedLabel ?? `✓ ${o} aplicado`,
     actionSectionId: e.actionSectionId ?? "apply-effects",
     actionSectionTitle: e.actionSectionTitle ?? "Aplicar efeito",
@@ -12194,12 +12194,12 @@ function Fs(e, t, n, a, r, o, i, l, c) {
       total: u.total,
       intent: u.intent,
       damageType: u.damageType ?? null,
-      diceResults: lC(u.roll)
+      diceResults: cC(u.roll)
     })),
     areaTargeting: c
   };
 }
-function lC(e) {
+function cC(e) {
   const t = e.dice;
   return Array.isArray(t) ? t.flatMap((n) => {
     const a = n.results;
@@ -12209,14 +12209,14 @@ function lC(e) {
     }) : [];
   }) : [];
 }
-function cC(e, t) {
+function uC(e, t) {
   return e ? {
     ...e,
     expiry: e.expiry ?? "turnStart",
     anchor: t
   } : null;
 }
-function uC(e, t) {
+function dC(e, t) {
   const n = t?.rounds;
   if (typeof n == "number" && Number.isInteger(n) && n > 0) {
     const a = n === 1 ? "1 rodada" : `${n} rodadas`;
@@ -12224,14 +12224,14 @@ function uC(e, t) {
   }
   return e;
 }
-function dC(e) {
+function mC(e) {
   const t = e.trim();
   return t.length === 0 ? "Condição" : t.split(/[._-]+/u).filter((n) => n.length > 0).map((n) => `${n.charAt(0).toLocaleUpperCase()}${n.slice(1)}`).join(" ");
 }
-function mC(e, t, n, a = /* @__PURE__ */ new Set()) {
+function fC(e, t, n, a = /* @__PURE__ */ new Set()) {
   const r = [], o = /* @__PURE__ */ new Map();
   for (const i of e.steps) {
-    if (i.type !== "modifyResource" || fC(i, a)) continue;
+    if (i.type !== "modifyResource" || pC(i, a)) continue;
     const l = gn(i, n);
     if (!l.ok)
       return {
@@ -12239,7 +12239,7 @@ function mC(e, t, n, a = /* @__PURE__ */ new Set()) {
         reason: l.error.reason,
         message: l.error.message
       };
-    const c = Eo(i.actor, t);
+    const c = $o(i.actor, t);
     if (c.length === 0) {
       if (i.actor === "target") continue;
       return {
@@ -12249,20 +12249,20 @@ function mC(e, t, n, a = /* @__PURE__ */ new Set()) {
       };
     }
     for (const u of c) {
-      if (pC(i)) {
-        gC(
+      if (gC(i)) {
+        hC(
           o,
           u,
-          hC(i, n, l.value)
+          bC(i, n, l.value)
         );
         continue;
       }
-      r.push(yC(i, u, l.value));
+      r.push(_C(i, u, l.value));
     }
   }
   for (const i of o.values())
     r.push(
-      ...bC(
+      ...yC(
         e,
         t.item,
         i.actor,
@@ -12271,15 +12271,15 @@ function mC(e, t, n, a = /* @__PURE__ */ new Set()) {
     );
   return { ok: !0, actions: r };
 }
-function fC(e, t) {
-  const n = md(e.amountFrom);
+function pC(e, t) {
+  const n = fd(e.amountFrom);
   return n !== null && t.has(n);
 }
-function pC(e) {
+function gC(e) {
   return e.operation === "damage" && e.resource === "PV";
 }
-function gC(e, t, n) {
-  const a = RC(t), r = e.get(a);
+function hC(e, t, n) {
+  const a = kC(t), r = e.get(a);
   if (r) {
     r.entries.push(n);
     return;
@@ -12289,8 +12289,8 @@ function gC(e, t, n) {
     entries: [n]
   });
 }
-function hC(e, t, n) {
-  const a = md(e.amountFrom), r = a ? t.rolls[a]?.damageType : void 0;
+function bC(e, t, n) {
+  const a = fd(e.amountFrom), r = a ? t.rolls[a]?.damageType : void 0;
   return {
     step: e,
     amount: n,
@@ -12298,14 +12298,14 @@ function hC(e, t, n) {
     sourceRollId: a
   };
 }
-function bC(e, t, n, a) {
-  const r = wC(e), o = r.length > 1 ? IC() : void 0;
+function yC(e, t, n, a) {
+  const r = CC(e), o = r.length > 1 ? LC() : void 0;
   return r.map((i) => {
     const l = a.map(
       (u, m) => {
-        const p = CC(u.amount, i);
+        const p = SC(u.amount, i);
         return {
-          id: _C(u, i, m),
+          id: AC(u, i, m),
           amount: p,
           damageType: u.damageType,
           sourceRollId: u.sourceRollId,
@@ -12321,8 +12321,8 @@ function bC(e, t, n, a) {
       actor: n,
       actorName: n.name ?? "Ator sem nome",
       instances: l,
-      label: AC(c, i, r.length > 1),
-      executedLabel: TC(
+      label: TC(c, i, r.length > 1),
+      executedLabel: RC(
         n.name ?? "Ator sem nome",
         i,
         r.length > 1
@@ -12336,8 +12336,8 @@ function bC(e, t, n, a) {
     };
   });
 }
-function yC(e, t, n) {
-  const a = t.name ?? "Ator sem nome", r = $C(e);
+function _C(e, t, n) {
+  const a = t.name ?? "Ator sem nome", r = wC(e);
   return {
     kind: "resource-operation",
     actor: t,
@@ -12345,25 +12345,25 @@ function yC(e, t, n) {
     resource: e.resource,
     operation: e.operation,
     amount: n,
-    label: kC(e, a, n),
-    executedLabel: EC(e, a),
+    label: EC(e, a, n),
+    executedLabel: $C(e, a),
     actionSectionId: r.id,
     actionSectionTitle: r.title
   };
 }
-function _C(e, t, n) {
+function AC(e, t, n) {
   return `${e.sourceRollId ?? `damage-${n + 1}`}:${n + 1}:${t.id}`;
 }
-function AC(e, t, n) {
+function TC(e, t, n) {
   return n ? `${t.id === "normal" ? "Normal" : t.label}: ${e} PV` : `Dano: ${e} PV`;
 }
-function TC(e, t, n) {
+function RC(e, t, n) {
   return n ? `✓ ${t.id === "normal" ? "dano normal" : t.label.toLowerCase()} aplicado` : `✓ Dano aplicado em ${e}`;
 }
-function RC(e) {
+function kC(e) {
   return e.uuid ?? e.id ?? e.name ?? `actor-${Math.random().toString(36).slice(2)}`;
 }
-function md(e) {
+function fd(e) {
   const t = e?.trim();
   if (!t) return null;
   if (t.endsWith(".total"))
@@ -12371,30 +12371,30 @@ function md(e) {
   const [n] = t.split(".");
   return n && n.length > 0 ? n : null;
 }
-function kC(e, t, n) {
+function EC(e, t, n) {
   return e.operation === "heal" && e.resource === "PV" ? `Curar ${n} PV` : e.operation === "damage" ? `Dano: ${n} ${e.resource}` : e.operation === "recover" ? `Recuperar ${n} ${e.resource}` : e.operation === "spend" ? `Gastar ${n} ${e.resource}` : `Aplicar ${n} ${e.resource}`;
 }
-function EC(e, t) {
+function $C(e, t) {
   return e.operation === "heal" && e.resource === "PV" ? `✓ ${t} curado` : e.operation === "damage" ? `✓ Dano aplicado em ${t}` : e.operation === "recover" ? `✓ ${t} recuperado` : e.operation === "spend" ? `✓ Recurso gasto de ${t}` : "✓ Ação aplicada";
 }
-function $C(e) {
+function wC(e) {
   return e.operation === "damage" && e.resource === "PV" ? { id: "apply-damage", title: "Aplicar danos" } : e.operation === "heal" && e.resource === "PV" ? { id: "apply-healing", title: "Aplicar cura" } : e.operation === "recover" || e.operation === "spend" ? { id: "apply-resources", title: "Aplicar recursos" } : { id: "actions", title: "Ações" };
 }
-function wC(e) {
+function CC(e) {
   const t = e.resistance?.damageApplications;
   return t && t.length > 0 ? t : e.resistance?.effect === "reducesByHalf" ? [
     { id: "normal", label: "Dano normal", multiplier: 1 },
     { id: "half", label: "Metade", multiplier: 0.5, rounding: "floor" }
   ] : [{ id: "normal", label: "Dano normal", multiplier: 1 }];
 }
-function CC(e, t) {
-  const n = e * t.multiplier, a = SC(
+function SC(e, t) {
+  const n = e * t.multiplier, a = IC(
     n,
     t.rounding ?? "floor"
   );
   return Math.max(0, a);
 }
-function SC(e, t) {
+function IC(e, t) {
   switch (t) {
     case "ceil":
       return Math.ceil(e);
@@ -12404,11 +12404,11 @@ function SC(e, t) {
       return Math.floor(e);
   }
 }
-function IC() {
+function LC() {
   const e = globalThis.crypto;
   return e?.randomUUID ? e.randomUUID() : `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
-function Eo(e, t) {
+function $o(e, t) {
   switch (e) {
     case "self":
       return t.actor ? [t.actor] : [];
@@ -12420,28 +12420,28 @@ function Eo(e, t) {
 }
 function Bs(e, t, n, a, r, o, i = null) {
   return [
-    `Forma: ${Ro(t.variant)}`,
-    xC(t, n, a),
-    ...DC(i),
-    ...Object.values(r.rolls).flatMap(NC),
-    ...LC(e, o),
-    ...PC(e.resistance),
-    ...qC(n)
+    `Forma: ${ko(t.variant)}`,
+    NC(t, n, a),
+    ...xC(i),
+    ...Object.values(r.rolls).flatMap(PC),
+    ...vC(e, o),
+    ...OC(e.resistance),
+    ...jC(n)
   ];
 }
-function LC(e, t) {
-  return vC(e) ? Eo("target", t).length > 0 ? [] : [
+function vC(e, t) {
+  return DC(e) ? $o("target", t).length > 0 ? [] : [
     "Aplicação manual: nenhum alvo com ficha foi selecionado; use o resultado do card manualmente."
   ] : [];
 }
-function vC(e) {
+function DC(e) {
   return e.steps.some(
     (t) => t.type === "modifyResource" && t.actor === "target"
   ) || (e.conditionApplications ?? []).some(
     (t) => t.actor === "target"
   );
 }
-function DC(e) {
+function xC(e) {
   return e ? [
     `Conjuração: ${e.skillLabel} = ${Math.trunc(e.total)}`,
     `Conjuração Fórmula: ${e.formula}`,
@@ -12450,22 +12450,22 @@ function DC(e) {
     ...e.diceBreakdown ? [`Dados (Conjuração): ${e.diceBreakdown}`] : []
   ] : [];
 }
-function xC(e, t, n) {
+function NC(e, t, n) {
   const a = Oe(n, t);
   return a ? e.spendResource ? `Custo: ${a.amount} ${a.resource} gasto` : `Custo: ${a.amount} ${a.resource} não gasto` : e.spendResource ? "Custo: não resolvido" : "Custo: não gasto";
 }
-function NC(e) {
-  const n = [`${jC(e)}: ${e.formula} = ${Math.trunc(e.total)}`], a = OC(e.roll);
-  return a && n.push(`Dados: ${a}`), e.damageType && n.push(`Tipo: ${od(e.damageType)}`), n;
-}
 function PC(e) {
+  const n = [`${zC(e)}: ${e.formula} = ${Math.trunc(e.total)}`], a = MC(e.roll);
+  return a && n.push(`Dados: ${a}`), e.damageType && n.push(`Tipo: ${id(e.damageType)}`), n;
+}
+function OC(e) {
   return e ? [
     `Resistência: ${e.summary}`,
     `Resistência Perícia: ${e.skill}`,
     `Resistência Rótulo: ${e.label}`
   ] : [];
 }
-function OC(e) {
+function MC(e) {
   if (!e || typeof e != "object") return null;
   const t = e.terms;
   if (!Array.isArray(t)) return null;
@@ -12478,8 +12478,8 @@ function OC(e) {
       a = o.operator;
       continue;
     }
-    const i = MC(o);
-    i && (UC(
+    const i = FC(o);
+    i && (qC(
       n,
       i.operator ?? a,
       i.value
@@ -12487,18 +12487,18 @@ function OC(e) {
   }
   return n.length > 0 ? n.join(" ") : null;
 }
-function MC(e) {
-  const t = FC(e);
-  return t.length > 0 ? { value: `(${t.join(", ")})` } : BC(e);
-}
 function FC(e) {
+  const t = BC(e);
+  return t.length > 0 ? { value: `(${t.join(", ")})` } : UC(e);
+}
+function BC(e) {
   return Array.isArray(e.results) ? e.results.flatMap((t) => {
     if (!t || typeof t != "object") return [];
     const n = t;
     return typeof n.result != "number" || !Number.isFinite(n.result) ? [] : n.active !== !1 && n.discarded !== !0 ? [String(n.result)] : [];
   }) : [];
 }
-function BC(e) {
+function UC(e) {
   if (typeof e.faces == "number") return null;
   if (typeof e.number == "number" && Number.isFinite(e.number)) {
     const t = Math.abs(e.number);
@@ -12509,17 +12509,17 @@ function BC(e) {
   }
   return null;
 }
-function UC(e, t, n) {
+function qC(e, t, n) {
   if (e.length === 0) {
     e.push(t === "-" ? `- ${n}` : n);
     return;
   }
   e.push(`${t} ${n}`);
 }
-function qC(e) {
+function jC(e) {
   return (e.notes ?? []).map((t) => `Observação: ${t}`);
 }
-function jC(e) {
+function zC(e) {
   switch (e.intent) {
     case "healing":
       return "Cura";
@@ -12537,9 +12537,9 @@ function jC(e) {
       return "Rolagem";
   }
 }
-function zC(e, t, n, a) {
-  return ud.map((r) => {
-    const o = fd(
+function GC(e, t, n, a) {
+  return dd.map((r) => {
+    const o = pd(
       e,
       t,
       r,
@@ -12547,15 +12547,15 @@ function zC(e, t, n, a) {
     ), i = o !== null;
     return {
       variant: r,
-      label: o?.label ?? Ro(r),
+      label: o?.label ?? ko(r),
       enabled: i,
-      details: o ? GC(o, n) : [],
-      finalCostText: o ? VC(n, o) : null,
+      details: o ? VC(o, n) : [],
+      finalCostText: o ? HC(n, o) : null,
       unavailableReason: i ? void 0 : "não disponível neste ritual"
     };
   });
 }
-function GC(e, t, n) {
+function VC(e, t, n) {
   const a = [], r = Object.values(e.rollFormulaOverrides ?? {}).map((i) => i.trim()).filter((i) => i.length > 0);
   r.length > 0 ? a.push(r.join(", ")) : a.push("efeito manual");
   const o = Oe(t, e);
@@ -12569,15 +12569,15 @@ function Oe(e, t) {
     amount: e.amount + (t.extraCost ?? 0)
   } : null;
 }
-function VC(e, t) {
+function HC(e, t) {
   const n = Oe(e, t);
   return n ? `${n.amount} ${n.resource}` : null;
 }
-function HC(e) {
-  return !e.resistance && e.steps.length > 0 && e.steps.every($o);
+function WC(e) {
+  return !e.resistance && e.steps.length > 0 && e.steps.every(wo);
 }
-function WC(e, t) {
-  return Zu({
+function KC(e, t) {
+  return Ju({
     sourceActor: e.actor,
     sourceToken: e.token,
     item: e.item,
@@ -12594,42 +12594,42 @@ function WC(e, t) {
     }
   });
 }
-function KC(e, t, n, a) {
-  return fd(e, t, n, a) ?? ko;
+function YC(e, t, n, a) {
+  return pd(e, t, n, a) ?? Eo;
 }
-function fd(e, t, n, a) {
+function pd(e, t, n, a) {
   const r = e.ritualForms?.[n] ?? null;
-  return r || (a ? XC(t, n) ? YC(n) : null : n === "base" ? ko : null);
+  return r || (a ? QC(t, n) ? XC(n) : null : n === "base" ? Eo : null);
 }
-function YC(e) {
+function XC(e) {
   switch (e) {
     case "base":
-      return ko;
+      return Eo;
     case "discente":
-      return Yw;
-    case "verdadeiro":
       return Xw;
+    case "verdadeiro":
+      return Qw;
   }
 }
-function XC(e, t) {
+function QC(e, t) {
   if (t === "base") return !0;
   const n = t === "discente" ? "system.studentForm" : "system.trueForm";
-  return QC(foundry.utils.getProperty(e, n));
-}
-function QC(e) {
-  return e === !0 || e === "true" || e === 1 || e === "1";
+  return ZC(foundry.utils.getProperty(e, n));
 }
 function ZC(e) {
-  return e.steps.some($o);
-}
-function $o(e) {
-  return e.type === "spendResource" || e.type === "spendRitualCost";
+  return e === !0 || e === "true" || e === 1 || e === "1";
 }
 function JC(e) {
+  return e.steps.some(wo);
+}
+function wo(e) {
+  return e.type === "spendResource" || e.type === "spendRitualCost";
+}
+function eS(e) {
   return typeof e == "number" && Number.isFinite(e) && e > 0;
 }
-function pd(e) {
-  if (!X(e) || e.schemaVersion !== 2 || e.kind !== "ritual" || e.renderer !== "single-target" || !mr(e.revision) || !mr(e.createdAt) || !(typeof e.messageId == "string" || e.messageId === null) || !nS(e.state)) return null;
+function gd(e) {
+  if (!W(e) || e.schemaVersion !== 2 || e.kind !== "ritual" || e.renderer !== "single-target" || !fr(e.revision) || !fr(e.createdAt) || !(typeof e.messageId == "string" || e.messageId === null) || !aS(e.state)) return null;
   const t = e, n = t.state.actions.some((r) => r.state === "executing"), a = t.state.resistance?.status === "executing";
   return !n && !a ? t : {
     ...t,
@@ -12640,35 +12640,38 @@ function pd(e) {
     }
   };
 }
-function eS(e) {
-  return pd(e) !== null;
-}
 function tS(e) {
-  if (!X(e) || !X(e.legacyFallback)) return null;
+  return gd(e) !== null;
+}
+function nS(e) {
+  if (!W(e) || !W(e.legacyFallback)) return null;
   const t = typeof e.legacyFallback.itemName == "string" ? e.legacyFallback.itemName.trim() : "", n = Array.isArray(e.legacyFallback.summaryLines) ? e.legacyFallback.summaryLines.filter((a) => typeof a == "string") : [];
   return !t && n.length === 0 ? null : { itemName: t || "Ritual", summaryLines: n };
 }
-function nS(e) {
-  return !X(e) || e.schemaVersion !== 1 || e.renderer !== "single-target" || typeof e.castId != "string" || !an(e.source) || !an(e.item) || !an(e.target) || !X(e.form) || typeof e.form.id != "string" || typeof e.form.label != "string" || !(e.descriptionHtml === void 0 || e.descriptionHtml === null || typeof e.descriptionHtml == "string") || !Array.isArray(e.actions) || !e.actions.every(aS) || !(e.mainRoll === null || X(e.mainRoll)) || !(e.conjuration === null || X(e.conjuration)) || !(e.resistance === null || X(e.resistance)) ? !1 : mr(e.createdAt);
-}
 function aS(e) {
-  return !X(e) || typeof e.id != "string" || typeof e.label != "string" || typeof e.executedLabel != "string" || !an(e.actor) || !["pending", "available", "executing", "completed", "resolved", "uncertain"].includes(String(e.state)) ? !1 : ["resource-operation", "damage-application", "condition-application"].includes(String(e.kind));
+  return !W(e) || e.schemaVersion !== 1 || e.renderer !== "single-target" || typeof e.castId != "string" || !an(e.source) || !an(e.item) || !an(e.target) || !W(e.form) || typeof e.form.id != "string" || typeof e.form.label != "string" || !(e.ritualIdentity === void 0 || e.ritualIdentity === null || rS(e.ritualIdentity)) || !(e.descriptionHtml === void 0 || e.descriptionHtml === null || typeof e.descriptionHtml == "string") || !Array.isArray(e.actions) || !e.actions.every(oS) || !(e.mainRoll === null || W(e.mainRoll)) || !(e.conjuration === null || W(e.conjuration)) || !(e.resistance === null || W(e.resistance)) ? !1 : fr(e.createdAt);
+}
+function rS(e) {
+  return W(e) && typeof e.elementKey == "string" && typeof e.elementLabel == "string" && [1, 2, 3, 4].includes(e.circle);
+}
+function oS(e) {
+  return !W(e) || typeof e.id != "string" || typeof e.label != "string" || typeof e.executedLabel != "string" || !an(e.actor) || !["pending", "available", "executing", "completed", "resolved", "uncertain"].includes(String(e.state)) ? !1 : ["resource-operation", "damage-application", "condition-application"].includes(String(e.kind));
 }
 function an(e) {
-  return X(e) && (typeof e.id == "string" || e.id === null) && (typeof e.uuid == "string" || e.uuid === null) && typeof e.name == "string";
+  return W(e) && (typeof e.id == "string" || e.id === null) && (typeof e.uuid == "string" || e.uuid === null) && typeof e.name == "string";
 }
-function mr(e) {
+function fr(e) {
   return typeof e == "number" && Number.isFinite(e) && e >= 0;
 }
-function X(e) {
+function W(e) {
   return !!(e && typeof e == "object" && !Array.isArray(e));
 }
 const Ht = /* @__PURE__ */ new Map();
-function wo(e) {
+function Kn(e) {
   const t = e?.getFlag?.(d, "chatCard");
-  return eS(t) ? t : null;
+  return tS(t) ? t : null;
 }
-async function gd(e, t) {
+async function hd(e, t) {
   if (typeof e.setFlag != "function") throw new Error("ChatMessage não permite persistência de flags.");
   await Promise.resolve(e.setFlag(d, "chatCard", t));
 }
@@ -12679,23 +12682,23 @@ async function Pt(e, t) {
     r = c, o = u;
   }), l = a.catch(() => {
   }).then(async () => {
-    const c = wo(e);
+    const c = Kn(e);
     if (!c) throw new Error("Card ritual v2 inválido ou ausente.");
     const m = { ...await t(c), revision: c.revision + 1 };
-    await gd(e, m), r(m);
+    await hd(e, m), r(m);
   }).catch(o).finally(() => {
     Ht.get(n) === l && Ht.delete(n);
   });
   return Ht.set(n, l), i;
 }
-function rS(e) {
-  const t = e.mainRoll, n = e.resistance?.result?.outcome ?? null, a = oS(e.actions, n, e.target.name);
+function iS(e) {
+  const t = e.mainRoll, n = e.resistance?.result?.outcome ?? null, a = sS(e.actions, n, e.target.name);
   return {
-    header: { title: e.item.name, subtitle: e.form.label, context: `${e.source.name} → ${e.target.name}`, badges: [{ label: "Ritual", tone: "wine" }] },
+    header: { title: e.item.name, subtitle: e.form.label, context: `${e.source.name} → ${e.target.name}`, badges: [{ label: e.ritualIdentity ? `${e.ritualIdentity.elementLabel} ${e.ritualIdentity.circle}` : "Ritual", tone: "wine" }] },
     description: e.descriptionHtml?.trim() ? { html: e.descriptionHtml } : void 0,
     metadata: { items: [e.cost ? `${e.cost.amount} ${e.cost.resource}` : null, e.target.name].filter((r) => !!r).map((r) => ({ text: r })) },
     conjuration: e.conjuration ? { status: e.conjuration.success ? "success" : "failure", skillLabel: e.conjuration.skillLabel, total: e.conjuration.total, difficultyClass: e.conjuration.difficulty, formula: e.conjuration.formula, diceResults: e.conjuration.diceResults, consequence: e.conjuration.consequence ?? void 0 } : void 0,
-    effect: t ? { title: t.intent === "damage" ? "Dano" : t.intent === "healing" ? "Cura" : "Efeito", typeLabel: t.damageType ? od(t.damageType) : void 0, formula: t.formula, total: t.total, diceResults: t.diceResults } : void 0,
+    effect: t ? { title: t.intent === "damage" ? "Dano" : t.intent === "healing" ? "Cura" : "Efeito", typeLabel: t.damageType ? id(t.damageType) : void 0, formula: t.formula, total: t.total, diceResults: t.diceResults } : void 0,
     resistance: e.resistance ? {
       skill: e.resistance.skillLabel,
       difficultyLabel: `DT ${e.resistance.difficulty}`,
@@ -12707,16 +12710,16 @@ function rS(e) {
     assistedActions: a.length ? { rows: a } : void 0
   };
 }
-function oS(e, t, n) {
-  const a = e.filter((i) => i.kind === "condition-application" && i.outcome !== null), o = e.filter((i) => !(i.kind === "condition-application" && i.outcome !== null)).map(lS);
-  return a.length && o.push(iS(a, t, n)), o;
+function sS(e, t, n) {
+  const a = e.filter((i) => i.kind === "condition-application" && i.outcome !== null), o = e.filter((i) => !(i.kind === "condition-application" && i.outcome !== null)).map(uS);
+  return a.length && o.push(lS(a, t, n)), o;
 }
-function iS(e, t, n) {
+function lS(e, t, n) {
   if (!t)
     return { label: "Efeitos da resistência", description: "Aguardando resistência", control: { state: "disabled", button: { label: "Aplicar", disabled: !0, actionId: "resistance-outcome-conditions", actionKind: "apply-resistance-outcome-conditions" } } };
-  const a = e.filter((p) => p.outcome === t), r = a.filter((p) => p.state === "available"), o = a.filter((p) => p.state === "completed"), i = a.length, c = `${t === "success" ? "Sucesso" : "Falha"} · ${i} ${i === 1 ? "efeito" : "efeitos"}`, u = { items: a.map(sS) };
+  const a = e.filter((p) => p.outcome === t), r = a.filter((p) => p.state === "available"), o = a.filter((p) => p.state === "completed"), i = a.length, c = `${t === "success" ? "Sucesso" : "Falha"} · ${i} ${i === 1 ? "efeito" : "efeitos"}`, u = { items: a.map(cS) };
   if (a.length > 0 && o.length === a.length)
-    return { label: "Efeitos da resistência", description: `${c} · ${n}`, details: u, control: hd() };
+    return { label: "Efeitos da resistência", description: `${c} · ${n}`, details: u, control: bd() };
   const m = o.length > 0;
   return {
     label: "Efeitos da resistência",
@@ -12725,113 +12728,113 @@ function iS(e, t, n) {
     control: { state: r.length ? "active" : "disabled", button: { label: m ? "Aplicar pendentes" : "Aplicar", disabled: !r.length, actionId: "resistance-outcome-conditions", actionKind: "apply-resistance-outcome-conditions" } }
   };
 }
-function sS(e) {
+function cS(e) {
   const t = e.label.replace(/^(?:Sucesso|Falha)\s*·\s*/iu, ""), [n, a] = t.split(/:\s*/u, 2);
   return `${n ?? "Condição"} · ${a ?? "duração indefinida"}`;
 }
-function lS(e) {
+function uS(e) {
   const t = e.state === "completed" || e.state === "resolved" || e.state === "uncertain";
   return {
     label: e.label,
     description: e.state === "resolved" ? "Alternativa não aplicável" : e.state === "uncertain" ? "Verifique no alvo antes de tentar novamente" : e.actor.name,
-    control: t ? e.state === "completed" ? hd() : { state: "completed", indicator: { label: e.state === "resolved" ? "Resolvida" : "Aplicação incerta" } } : { state: e.state === "available" ? "active" : "disabled", button: { label: Us(e) ? "Curar" : "Aplicar", actionId: e.id, actionKind: e.kind === "damage-application" ? "apply-damage" : e.kind === "condition-application" ? "apply-condition" : Us(e) ? "apply-healing" : "apply-resource" } }
+    control: t ? e.state === "completed" ? bd() : { state: "completed", indicator: { label: e.state === "resolved" ? "Resolvida" : "Aplicação incerta" } } : { state: e.state === "available" ? "active" : "disabled", button: { label: Us(e) ? "Curar" : "Aplicar", actionId: e.id, actionKind: e.kind === "damage-application" ? "apply-damage" : e.kind === "condition-application" ? "apply-condition" : Us(e) ? "apply-healing" : "apply-resource" } }
   };
 }
-function hd() {
+function bd() {
   return { state: "disabled", button: { label: "✓ Aplicado", disabled: !0 } };
 }
 function Us(e) {
   return e.kind === "resource-operation" && (e.operation === "heal" || e.operation === "recover");
 }
-const cS = '[data-paranormal-toolkit-card-renderer="ritual-single-target"]';
-function bd(e) {
-  return dc(rS(e.state));
+const dS = '[data-paranormal-toolkit-card-renderer="ritual-single-target"]';
+function yd(e) {
+  return dc(iS(e.state));
 }
-async function uS(e, t) {
-  if (bd(t), await gd(e, t), t.messageId) {
-    const n = document.querySelector(`[data-message-id="${mS(t.messageId)}"]`);
+async function mS(e, t) {
+  if (yd(t), await hd(e, t), t.messageId) {
+    const n = document.querySelector(`[data-message-id="${pS(t.messageId)}"]`);
     n && Co(e, n);
   }
 }
 function Co(e, t) {
   const n = e.getFlag?.(d, "chatCard");
   if (!n || typeof n != "object" || n.schemaVersion !== 2) return !1;
-  const a = dS(t), r = pd(n);
+  const a = fS(t), r = gd(n);
   if (!r) return qs(n, e, a, "invalid-state");
   try {
-    const o = yd(a);
-    return o.dataset.paranormalToolkitMessageId = typeof e.id == "string" ? e.id : "", o.innerHTML = bd(r), _d(a, o), !0;
+    const o = _d(a);
+    return o.dataset.paranormalToolkitMessageId = typeof e.id == "string" ? e.id : "", o.innerHTML = yd(r), Ad(a, o), !0;
   } catch (o) {
     return console.warn("Paranormal Toolkit: falha ao reidratar card ritual v2.", { messageId: e.id, stage: "renderer", cause: o }), qs(n, e, a, "renderer");
   }
 }
 function qs(e, t, n, a) {
   try {
-    const r = tS(e);
+    const r = nS(e);
     if (!r)
       return console.warn("Paranormal Toolkit: card ritual v2 inválido e sem fallback seguro; conteúdo original preservado.", { messageId: t.id, stage: a }), !1;
-    const o = yd(n);
-    return o.dataset.paranormalToolkitMessageId = typeof t.id == "string" ? t.id : "", o.classList.add("paranormal-toolkit-item-use-prompt"), o.innerHTML = fS(r), _d(n, o), !0;
+    const o = _d(n);
+    return o.dataset.paranormalToolkitMessageId = typeof t.id == "string" ? t.id : "", o.classList.add("paranormal-toolkit-item-use-prompt"), o.innerHTML = gS(r), Ad(n, o), !0;
   } catch (r) {
     return console.warn("Paranormal Toolkit: o fallback seguro também falhou; conteúdo original preservado.", { messageId: t.id, stage: `${a}:fallback`, cause: r }), !1;
   }
 }
-function dS(e) {
+function fS(e) {
   return e.classList.contains("message-content") ? e : e.querySelector(".message-content") ?? e;
 }
-function yd(e) {
-  const t = e.querySelector(cS);
+function _d(e) {
+  const t = e.querySelector(dS);
   if (t) return t;
   const n = document.createElement("section");
   return n.dataset.paranormalToolkitCardRenderer = "ritual-single-target", n;
 }
-function _d(e, t) {
-  Pr() === "replace" ? e.replaceChildren(t) : t.parentElement || e.append(t);
+function Ad(e, t) {
+  Or() === "replace" ? e.replaceChildren(t) : t.parentElement || e.append(t);
 }
-function mS(e) {
+function pS(e) {
   return globalThis.CSS?.escape ? globalThis.CSS.escape(e) : e.replace(/["\\]/gu, "\\$&");
 }
-function fS(e) {
+function gS(e) {
   const t = e.summaryLines.map((n) => `<li>${R(n)}</li>`).join("");
   return `<header><strong>${R(e.itemName)}</strong></header>${t ? `<ul>${t}</ul>` : ""}<p>O card interativo não pôde ser reidratado com segurança. Use o conteúdo original da mensagem.</p>`;
 }
-const Ad = "itemUsePrompts", Td = "chatCard", Kn = "data-paranormal-toolkit-prompt-id", Yn = "data-paranormal-toolkit-pending-id", So = "data-paranormal-toolkit-executed-label", fr = "data-paranormal-toolkit-choice-group", Rd = "data-paranormal-toolkit-skipped-label", _n = "data-paranormal-toolkit-action-section", js = "data-paranormal-toolkit-detail-key", zs = "data-paranormal-toolkit-roll-card", Io = "data-paranormal-toolkit-roll-detail-toggle", kd = "data-paranormal-toolkit-roll-detail-id", Ed = "data-paranormal-toolkit-resistance-roll-button", $d = "data-paranormal-toolkit-resistance-skill", wd = "data-paranormal-toolkit-resistance-skill-label", Cd = "data-paranormal-toolkit-resistance-target-actor-id", Sd = "data-paranormal-toolkit-resistance-target-name", Id = "data-paranormal-toolkit-resistance-roll-result", Gs = "data-paranormal-toolkit-system-card-replaced", pS = `[${Yn}]`, gS = `[${Io}]`, hS = `[${Ed}]`, pr = `${d}-chat-enrichment`, h = `${d}-item-use-prompt`, bS = `${h}__actions`, Vs = `${h}__details`, Ld = `${h}__summary`, yS = `${h}__title`, vd = `${h}__button--executed`, Wt = `${h}__roll-card`, _S = "data-paranormal-toolkit-roll-card-target-mode", AS = "data-paranormal-toolkit-roll-card-target-names", TS = "data-paranormal-toolkit-roll-card-resistance", RS = "data-paranormal-toolkit-roll-card-resistance-skill", kS = "data-paranormal-toolkit-roll-card-resistance-skill-label";
-let Hs = !1, gr = null;
-const ee = /* @__PURE__ */ new Map(), ES = [0, 100, 500, 1500, 3e3], $S = 3e4, wS = [0, 100, 500, 1500, 3e3];
-function CS(e) {
-  if (gr = e, Hs) {
+const Td = "itemUsePrompts", Rd = "chatCard", Yn = "data-paranormal-toolkit-prompt-id", Xn = "data-paranormal-toolkit-pending-id", So = "data-paranormal-toolkit-executed-label", pr = "data-paranormal-toolkit-choice-group", kd = "data-paranormal-toolkit-skipped-label", _n = "data-paranormal-toolkit-action-section", js = "data-paranormal-toolkit-detail-key", zs = "data-paranormal-toolkit-roll-card", Io = "data-paranormal-toolkit-roll-detail-toggle", Ed = "data-paranormal-toolkit-roll-detail-id", $d = "data-paranormal-toolkit-resistance-roll-button", wd = "data-paranormal-toolkit-resistance-skill", Cd = "data-paranormal-toolkit-resistance-skill-label", Sd = "data-paranormal-toolkit-resistance-target-actor-id", Id = "data-paranormal-toolkit-resistance-target-name", Ld = "data-paranormal-toolkit-resistance-roll-result", Gs = "data-paranormal-toolkit-system-card-replaced", hS = `[${Xn}]`, bS = `[${Io}]`, yS = `[${$d}]`, gr = `${d}-chat-enrichment`, h = `${d}-item-use-prompt`, _S = `${h}__actions`, Vs = `${h}__details`, vd = `${h}__summary`, AS = `${h}__title`, Dd = `${h}__button--executed`, Wt = `${h}__roll-card`, TS = "data-paranormal-toolkit-roll-card-target-mode", RS = "data-paranormal-toolkit-roll-card-target-names", kS = "data-paranormal-toolkit-roll-card-resistance", ES = "data-paranormal-toolkit-roll-card-resistance-skill", $S = "data-paranormal-toolkit-roll-card-resistance-skill-label";
+let Hs = !1, hr = null;
+const ee = /* @__PURE__ */ new Map(), wS = [0, 100, 500, 1500, 3e3], CS = 3e4, SS = [0, 100, 500, 1500, 3e3];
+function IS(e) {
+  if (hr = e, Hs) {
     Ks(e);
     return;
   }
   const t = (n, a) => {
-    Dd(n, a, e);
+    xd(n, a, e);
   };
   Hooks.on("renderChatMessageHTML", t), Hooks.on("renderChatMessage", t), Hs = !0, Ks(e);
 }
 async function Ws(e) {
   const t = vo(e);
-  ee.set(e.pendingId, t), await xo(t) || Gd(t), xd(e.pendingId);
+  ee.set(e.pendingId, t), await xo(t) || Vd(t), Nd(e.pendingId);
 }
-async function SS(e) {
+async function LS(e) {
   const t = vo({
     ...e,
     actionPayload: null
   });
-  t.executed = !0, t.executedLabel = e.executedLabel ?? "✓ Ritual conjurado", ee.set(e.pendingId, t), await xo(t) || Gd(t), xd(e.pendingId);
+  t.executed = !0, t.executedLabel = e.executedLabel ?? "✓ Ritual conjurado", ee.set(e.pendingId, t), await xo(t) || Vd(t), Nd(e.pendingId);
 }
-async function Ta(e, t) {
+async function Ra(e, t) {
   const n = ee.get(e);
-  ee.delete(e), n && await xI(n, t);
+  ee.delete(e), n && await PI(n, t);
 }
 function Lo(e) {
-  const t = Kd();
+  const t = Yd();
   for (const n of t) {
     const a = ce(n)[e];
     if (a) return { message: n, prompt: a };
   }
   return null;
 }
-async function IS(e, t) {
+async function vS(e, t) {
   const n = Lo(e);
   if (!n) return;
   const a = ce(n.message), r = a[e];
@@ -12841,7 +12844,7 @@ async function IS(e, t) {
     executed: !0
   }, await st(n.message, a));
 }
-async function LS(e, t, n) {
+async function DS(e, t, n) {
   if (!t) return;
   const a = Lo(e);
   if (!a) return;
@@ -12856,7 +12859,7 @@ async function LS(e, t, n) {
   o && await st(a.message, r);
 }
 function vo(e) {
-  const t = Re(e.context.message), n = e.context.targets.find((i) => _r(i)), a = n ? _r(n) : null, r = e.resistanceTargetActor ?? a, o = e.resistanceTargetName ?? n?.name ?? r?.name ?? e.context.targets[0]?.name ?? null;
+  const t = Re(e.context.message), n = e.context.targets.find((i) => Ar(i)), a = n ? Ar(n) : null, r = e.resistanceTargetActor ?? a, o = e.resistanceTargetName ?? n?.name ?? r?.name ?? e.context.targets[0]?.name ?? null;
   return {
     ...e,
     createdAt: Date.now(),
@@ -12872,41 +12875,41 @@ function vo(e) {
     skippedLabel: e.skippedLabel ?? null,
     actionSectionId: e.actionSectionId ?? null,
     actionSectionTitle: e.actionSectionTitle ?? null,
-    summary: oI(e.context),
+    summary: sI(e.context),
     executed: !1
   };
 }
-function Dd(e, t, n) {
-  DI();
-  const a = Qn(t);
+function xd(e, t, n) {
+  NI();
+  const a = Zn(t);
   if (!a) return;
   const r = te(e);
   if (r && Co(r, a)) return;
-  const o = II(e, a);
+  const o = vI(e, a);
   o.length > 0 && An(a);
   for (const i of o)
-    hr(a, i);
-  Fd(a, n), br(a), yr(a);
+    br(a, i);
+  Bd(a, n), yr(a), _r(a);
 }
-function vS(e) {
+function xS(e) {
   const t = Oo(e.message);
   if (t) return t;
   const n = vo({ pendingId: `lookup-${Date.now()}`, context: e, mode: "ask" });
   return Mo(n);
 }
 function Ks(e) {
-  for (const t of wS)
+  for (const t of SS)
     globalThis.setTimeout(() => {
-      DS(e);
+      NS(e);
     }, t);
 }
-function DS(e) {
-  for (const t of xS()) {
-    const n = Xn(t);
-    NS(n) && Dd(n, t, e);
+function NS(e, t = PS(), n = xd) {
+  for (const a of t) {
+    const r = Qn(a);
+    !r || !OS(r) || n(r, a, e);
   }
 }
-function xS() {
+function PS() {
   const e = /* @__PURE__ */ new Set();
   for (const t of document.querySelectorAll(".chat-message[data-message-id], [data-message-id]")) {
     const n = t.classList.contains("chat-message") ? t : t.closest(".chat-message") ?? t;
@@ -12914,104 +12917,104 @@ function xS() {
   }
   return Array.from(e);
 }
-function NS(e) {
-  return e ? No(e) ? !0 : PI(e).length > 0 : !1;
+function OS(e) {
+  return e ? Kn(e) || No(e) ? !0 : MI(e).length > 0 : !1;
 }
-function xd(e) {
+function Nd(e) {
   const t = ee.get(e);
   if (!t) return;
-  const n = t.messageId ? LI(t.messageId) : null;
+  const n = t.messageId ? DI(t.messageId) : null;
   if (n) {
-    Js(n, t), An(n), hr(n, t), Ys(n), br(n), yr(n);
+    Js(n, t), An(n), br(n, t), Ys(n), yr(n), _r(n);
     return;
   }
   if (t.messageId) {
-    Tr(t);
+    Rr(t);
     return;
   }
-  const a = vI(t);
+  const a = xI(t);
   if (a) {
-    Js(a, t), An(a), hr(a, t), Ys(a), br(a), yr(a);
+    Js(a, t), An(a), br(a, t), Ys(a), yr(a), _r(a);
     return;
   }
-  Tr(t);
+  Rr(t);
 }
 function Ys(e) {
-  gr && Fd(e, gr);
+  hr && Bd(e, hr);
 }
 function An(e) {
-  const t = PS();
+  const t = MS();
   e.classList.toggle(`${h}--system-card-replaced`, t);
-  const n = Md(e);
+  const n = Fd(e);
   if (!n || (n.classList.toggle(`${h}__host--system-card-replaced`, t), !t) || n.getAttribute(Gs) === "true") return;
-  const a = n.querySelector(`.${pr}`);
+  const a = n.querySelector(`.${gr}`);
   a ? n.replaceChildren(a) : n.replaceChildren(), n.setAttribute(Gs, "true");
 }
-function PS() {
+function MS() {
   try {
-    return Pr() === "replace";
+    return Or() === "replace";
   } catch {
     return !1;
   }
 }
-function hr(e, t) {
-  if (An(e), e.querySelector(`[${Kn}="${lt(t.pendingId)}"]`)) return;
-  const n = MS(e, t);
-  BS(n, t);
-  const a = tI(t);
-  if (OS(a)) return;
-  eI(n, a).append(rI(t));
+function br(e, t) {
+  if (An(e), e.querySelector(`[${Yn}="${lt(t.pendingId)}"]`)) return;
+  const n = BS(e, t);
+  qS(n, t);
+  const a = aI(t);
+  if (FS(a)) return;
+  nI(n, a).append(iI(t));
 }
-function OS(e) {
-  return Pd(e.id) && !he();
-}
-function Nd(e) {
-  const n = e.closest(`[${_n}]`)?.getAttribute(_n) ?? null;
-  return Pd(n) && !he();
+function FS(e) {
+  return Od(e.id) && !he();
 }
 function Pd(e) {
+  const n = e.closest(`[${_n}]`)?.getAttribute(_n) ?? null;
+  return Od(n) && !he();
+}
+function Od(e) {
   return e === "apply-damage" || e === "apply-effects";
 }
-function MS(e, t) {
-  const n = e.querySelector(`.${pr}`);
+function BS(e, t) {
+  const n = e.querySelector(`.${gr}`);
   if (n)
     return n;
   const a = document.createElement("section");
-  a.classList.add(pr, h);
+  a.classList.add(gr, h);
   const r = document.createElement("header");
   r.classList.add(`${h}__header`);
   const o = document.createElement("span");
   o.classList.add(`${h}__kicker`), o.textContent = "Paranormal Toolkit";
   const i = document.createElement("strong");
-  i.classList.add(yS), i.textContent = FS(t);
+  i.classList.add(AS), i.textContent = US(t);
   const l = document.createElement("span");
-  return l.classList.add(Ld), l.textContent = t.summary, r.append(o, i, l), a.append(r), sI(e).append(a), a;
+  return l.classList.add(vd), l.textContent = t.summary, r.append(o, i, l), a.append(r), cI(e).append(a), a;
 }
-function FS(e) {
+function US(e) {
   const t = z(e.summaryLines ?? [], "Forma"), n = e.itemName ?? e.title ?? "Automação assistida";
   return t ? `${n} • ${t}` : n;
 }
-function BS(e, t) {
-  const n = t.summaryLines ?? [], a = jd(n, t);
+function qS(e, t) {
+  const n = t.summaryLines ?? [], a = zd(n, t);
   if (a) {
-    US(e, a, t);
+    jS(e, a, t);
     return;
   }
-  nI(e, n);
+  rI(e, n);
 }
-function US(e, t, n) {
+function jS(e, t, n) {
   if (e.querySelector(`[${zs}="true"]`)) return;
   const a = document.createElement("article");
   a.classList.add(
     Wt,
     `${Wt}--${t.intent}`,
     `${Wt}--target-${t.targetMode}`
-  ), t.targetMode === "multi" && a.classList.add(`${Wt}--multi-target`), a.setAttribute(zs, "true"), a.setAttribute(_S, t.targetMode), a.setAttribute(AS, JSON.stringify(t.targetNames)), YS(a, t), t.castingCheck && Xs(a, jS(t.castingCheck), n.pendingId, "casting"), qS(t) && Xs(a, zS(t), n.pendingId, "effect"), KS(a, t), XS(a, t, n), JS(a, t), e.append(a);
+  ), t.targetMode === "multi" && a.classList.add(`${Wt}--multi-target`), a.setAttribute(zs, "true"), a.setAttribute(TS, t.targetMode), a.setAttribute(RS, JSON.stringify(t.targetNames)), QS(a, t), t.castingCheck && Xs(a, GS(t.castingCheck), n.pendingId, "casting"), zS(t) && Xs(a, VS(t), n.pendingId, "effect"), XS(a, t), ZS(a, t, n), tI(a, t), e.append(a);
 }
-function qS(e) {
+function zS(e) {
   return e.intent !== "casting";
 }
-function jS(e) {
+function GS(e) {
   const t = e.success ? "Sucesso" : "Falha";
   return {
     kind: "casting",
@@ -13032,7 +13035,7 @@ function jS(e) {
     ]
   };
 }
-function zS(e) {
+function VS(e) {
   const t = e.intent === "healing" ? "Cura" : e.intent === "damage" ? "Dano" : e.label, n = e.damageType ? `${e.damageType}` : null;
   return {
     kind: "effect",
@@ -13066,33 +13069,33 @@ function Xs(e, t, n, a) {
     const l = document.createElement("span");
     l.classList.add(`${h}__workflow-section-description`), l.textContent = t.description, r.append(l);
   }
-  GS(r, t), ZS(r, t.detailRows, n, a, `▸ Detalhes de ${t.title.toLowerCase()}`), e.append(r);
+  HS(r, t), eI(r, t.detailRows, n, a, `▸ Detalhes de ${t.title.toLowerCase()}`), e.append(r);
 }
-function GS(e, t) {
+function HS(e, t) {
   const n = document.createElement("div");
   n.classList.add(`${h}__workflow-roll`);
   const a = document.createElement("span");
   a.classList.add(`${h}__workflow-roll-formula`), a.textContent = t.formula;
   const r = document.createElement("strong");
   r.classList.add(`${h}__workflow-roll-total`), r.textContent = String(t.total), n.append(a, r);
-  const o = VS(t.formula, t.diceBreakdown);
+  const o = WS(t.formula, t.diceBreakdown);
   o && n.append(o), e.append(n);
 }
-function VS(e, t) {
-  const n = HS(t);
+function WS(e, t) {
+  const n = KS(t);
   if (n.length === 0) return null;
   const a = document.createElement("div");
   a.classList.add(`${h}__workflow-dice-tray`);
-  for (const r of WS(n, e)) {
+  for (const r of YS(n, e)) {
     const o = document.createElement("span");
     o.classList.add(`${h}__workflow-die`), r.active || o.classList.add(`${h}__workflow-die--inactive`), o.textContent = String(r.value), a.append(o);
   }
   return a;
 }
-function HS(e) {
+function KS(e) {
   return e ? (/\(([^)]+)\)/u.exec(e)?.[1] ?? e).split(",").map((a) => Number(a.trim())).filter((a) => Number.isFinite(a)).map((a) => Math.trunc(a)) : [];
 }
-function WS(e, t) {
+function YS(e, t) {
   if (e.length <= 1) return e.map((a) => ({ value: a, active: !0 }));
   const n = t.toLowerCase();
   return n.includes("kh") ? Qs(e, "highest") : n.includes("kl") ? Qs(e, "lowest") : e.map((a) => ({ value: a, active: !0 }));
@@ -13105,12 +13108,12 @@ function Qs(e, t) {
     return o && (a = !0), { value: r, active: o };
   });
 }
-function KS(e, t) {
+function XS(e, t) {
   const n = [
     t.form ? `Forma: ${t.form}` : null,
     t.cost,
     t.damageType ? `Tipo: ${t.damageType}` : null
-  ].filter(JI);
+  ].filter(tL);
   if (n.length === 0) return;
   const a = document.createElement("div");
   a.classList.add(`${h}__roll-meta`);
@@ -13120,10 +13123,10 @@ function KS(e, t) {
   }
   e.append(a);
 }
-function YS(e, t) {
-  t.resistance && (e.setAttribute(TS, t.resistance), t.resistanceSkill && e.setAttribute(RS, t.resistanceSkill), t.resistanceSkillLabel && e.setAttribute(kS, t.resistanceSkillLabel));
+function QS(e, t) {
+  t.resistance && (e.setAttribute(kS, t.resistance), t.resistanceSkill && e.setAttribute(ES, t.resistanceSkill), t.resistanceSkillLabel && e.setAttribute($S, t.resistanceSkillLabel));
 }
-function XS(e, t, n) {
+function ZS(e, t, n) {
   if (!t.resistance || t.targetMode === "multi") return;
   const a = document.createElement("div");
   a.classList.add(`${h}__resistance`);
@@ -13131,33 +13134,33 @@ function XS(e, t, n) {
   r.classList.add(`${h}__resistance-header`);
   const o = document.createElement("strong");
   o.textContent = "Resistência";
-  const i = QS(t, n);
+  const i = JS(t, n);
   r.append(o), i && r.append(i);
   const l = document.createElement("span");
-  l.classList.add(`${h}__resistance-description`), l.textContent = t.resistance, a.append(r, l), t.resistanceRollResult && a.append(Od(t.resistanceRollResult)), e.append(a);
+  l.classList.add(`${h}__resistance-description`), l.textContent = t.resistance, a.append(r, l), t.resistanceRollResult && a.append(Md(t.resistanceRollResult)), e.append(a);
 }
-function QS(e, t) {
+function JS(e, t) {
   if (e.targetMode === "none" || !e.resistanceSkill || !Te())
     return null;
   const n = document.createElement("button");
-  if (n.type = "button", n.classList.add(`${h}__resistance-roll-button`), n.setAttribute(Kn, t.pendingId), n.setAttribute(Ed, "true"), n.setAttribute($d, e.resistanceSkill), n.setAttribute(wd, e.resistanceSkillLabel ?? e.resistanceSkill), t.resistanceTargetActorId && n.setAttribute(Cd, t.resistanceTargetActorId), t.resistanceTargetName && n.setAttribute(Sd, t.resistanceTargetName), e.resistanceRollResult)
-    return n.classList.add(`${h}__resistance-roll-button--rolled`), n.setAttribute(Id, String(e.resistanceRollResult.total)), n.textContent = String(e.resistanceRollResult.total), n.title = `Rolar ${e.resistanceRollResult.skillLabel} novamente`, n.setAttribute("aria-label", n.title), n;
+  if (n.type = "button", n.classList.add(`${h}__resistance-roll-button`), n.setAttribute(Yn, t.pendingId), n.setAttribute($d, "true"), n.setAttribute(wd, e.resistanceSkill), n.setAttribute(Cd, e.resistanceSkillLabel ?? e.resistanceSkill), t.resistanceTargetActorId && n.setAttribute(Sd, t.resistanceTargetActorId), t.resistanceTargetName && n.setAttribute(Id, t.resistanceTargetName), e.resistanceRollResult)
+    return n.classList.add(`${h}__resistance-roll-button--rolled`), n.setAttribute(Ld, String(e.resistanceRollResult.total)), n.textContent = String(e.resistanceRollResult.total), n.title = `Rolar ${e.resistanceRollResult.skillLabel} novamente`, n.setAttribute("aria-label", n.title), n;
   const a = document.createElement("i");
   a.classList.add("fa-solid", "fa-dice-d20"), a.setAttribute("aria-hidden", "true");
   const r = document.createElement("span");
   return r.classList.add(`${h}__resistance-roll-fallback`), r.textContent = "d20", n.append(a, r), n.title = `Rolar ${e.resistanceSkillLabel ?? e.resistanceSkill} do alvo`, n.setAttribute("aria-label", n.title), n;
 }
-function Od(e) {
+function Md(e) {
   const t = document.createElement("span");
-  return t.classList.add(`${h}__resistance-roll-result`), t.textContent = Ud(e), t;
+  return t.classList.add(`${h}__resistance-roll-result`), t.textContent = qd(e), t;
 }
-function ZS(e, t, n, a, r) {
+function eI(e, t, n, a, r) {
   const o = t.filter((u) => u.value.trim().length > 0);
   if (o.length === 0) return;
   const i = `${n}-roll-details-${a}`, l = document.createElement("button");
   l.type = "button", l.classList.add(`${h}__roll-detail-toggle`), l.setAttribute(Io, i), l.setAttribute("aria-expanded", "false"), l.textContent = r;
   const c = document.createElement("dl");
-  c.classList.add(`${h}__roll-detail-list`), c.setAttribute(kd, i), c.hidden = !0;
+  c.classList.add(`${h}__roll-detail-list`), c.setAttribute(Ed, i), c.hidden = !0;
   for (const u of o) {
     const m = document.createElement("dt");
     m.textContent = u.label;
@@ -13166,7 +13169,7 @@ function ZS(e, t, n, a, r) {
   }
   e.append(l, c);
 }
-function JS(e, t) {
+function tI(e, t) {
   if (t.notes.length === 0 && t.details.length === 0) return;
   const n = document.createElement("div");
   n.classList.add(`${h}__workflow-notes`);
@@ -13176,109 +13179,109 @@ function JS(e, t) {
   }
   e.append(n);
 }
-function eI(e, t) {
+function nI(e, t) {
   const n = `[${_n}="${lt(t.id)}"]`, a = e.querySelector(n);
   if (a)
     return a;
   const r = document.createElement("div");
-  r.classList.add(bS), r.setAttribute(_n, t.id);
+  r.classList.add(_S), r.setAttribute(_n, t.id);
   const o = document.createElement("strong");
   return o.classList.add(`${h}__actions-title`), o.textContent = t.title, r.append(o), e.append(r), r;
 }
-function tI(e) {
+function aI(e) {
   const t = e.actionSectionId?.trim(), n = e.actionSectionTitle?.trim();
   if (t && n)
     return { id: t, title: n };
-  const a = jd(e.summaryLines ?? [], e);
+  const a = zd(e.summaryLines ?? [], e);
   return a?.intent === "damage" ? { id: "apply-damage", title: "Aplicar danos" } : a?.intent === "healing" ? { id: "apply-healing", title: "Aplicar cura" } : { id: "actions", title: "Ações" };
 }
-function nI(e, t) {
+function rI(e, t) {
   if (t.length === 0) return;
-  const n = aI(e);
+  const n = oI(e);
   for (const a of t) {
-    const r = eL(a);
+    const r = nL(a);
     if (n.querySelector(`[${js}="${lt(r)}"]`)) continue;
     const o = document.createElement("li");
     o.textContent = a, o.setAttribute(js, r), n.append(o);
   }
 }
-function aI(e) {
+function oI(e) {
   const t = e.querySelector(`.${Vs}`);
   if (t)
     return t;
   const n = document.createElement("ul");
   return n.classList.add(Vs), e.append(n), n;
 }
-function rI(e) {
-  const t = document.createElement("button");
-  return t.type = "button", t.classList.add(`${h}__button`), t.setAttribute(Kn, e.pendingId), e.executed ? (t.disabled = !0, t.textContent = e.executedLabel ?? "✓ Automação aplicada", t.classList.add(vd), t) : (t.textContent = e.buttonLabel ?? "Aplicar automação", t.setAttribute(Yn, e.pendingId), t.setAttribute(So, e.executedLabel ?? "✓ Automação aplicada"), e.choiceGroupId && (t.setAttribute(fr, e.choiceGroupId), t.setAttribute(Rd, e.skippedLabel ?? "✓ Outra opção escolhida")), t);
-}
-function oI(e) {
-  const t = e.actor?.name ?? e.token?.name ?? "Origem não resolvida", n = iI(e);
-  return `${t} → ${n}`;
-}
 function iI(e) {
-  return e.targets.length > 0 ? e.targets.map((t) => t.name).join(", ") : "nenhum alvo";
+  const t = document.createElement("button");
+  return t.type = "button", t.classList.add(`${h}__button`), t.setAttribute(Yn, e.pendingId), e.executed ? (t.disabled = !0, t.textContent = e.executedLabel ?? "✓ Automação aplicada", t.classList.add(Dd), t) : (t.textContent = e.buttonLabel ?? "Aplicar automação", t.setAttribute(Xn, e.pendingId), t.setAttribute(So, e.executedLabel ?? "✓ Automação aplicada"), e.choiceGroupId && (t.setAttribute(pr, e.choiceGroupId), t.setAttribute(kd, e.skippedLabel ?? "✓ Outra opção escolhida")), t);
 }
 function sI(e) {
-  return Md(e) ?? e;
+  const t = e.actor?.name ?? e.token?.name ?? "Origem não resolvida", n = lI(e);
+  return `${t} → ${n}`;
 }
-function Md(e) {
+function lI(e) {
+  return e.targets.length > 0 ? e.targets.map((t) => t.name).join(", ") : "nenhum alvo";
+}
+function cI(e) {
+  return Fd(e) ?? e;
+}
+function Fd(e) {
   return e.classList.contains("message-content") ? e : e.querySelector(".message-content");
 }
-function Fd(e, t) {
-  const n = Qn(e);
+function Bd(e, t) {
+  const n = Zn(e);
   if (!n) return;
-  const a = n.querySelectorAll(pS);
+  const a = n.querySelectorAll(hS);
   for (const r of a) {
-    if (Nd(r)) {
+    if (Pd(r)) {
       r.remove();
       continue;
     }
     r.dataset.paranormalToolkitBound !== "true" && (r.dataset.paranormalToolkitBound = "true", r.addEventListener("click", () => {
-      TI(r, t);
+      kI(r, t);
     }));
   }
 }
-function br(e) {
-  const t = Qn(e);
+function yr(e) {
+  const t = Zn(e);
   if (!t) return;
-  const n = t.querySelectorAll(gS);
+  const n = t.querySelectorAll(bS);
   for (const a of n)
     a.dataset.paranormalToolkitRollDetailsBound !== "true" && (a.dataset.paranormalToolkitRollDetailsBound = "true", a.addEventListener("click", () => {
-      lI(t, a);
+      uI(t, a);
     }));
 }
-function yr(e) {
-  const t = Qn(e);
+function _r(e) {
+  const t = Zn(e);
   if (!t) return;
-  const n = t.querySelectorAll(hS);
+  const n = t.querySelectorAll(yS);
   for (const a of n) {
     if (!Te()) {
       a.remove();
       continue;
     }
     a.dataset.paranormalToolkitResistanceRollBound !== "true" && (a.dataset.paranormalToolkitResistanceRollBound = "true", a.addEventListener("click", () => {
-      cI(t, a);
+      dI(t, a);
     }));
   }
 }
-function lI(e, t) {
+function uI(e, t) {
   const n = t.getAttribute(Io);
   if (!n) return;
-  const a = e.querySelector(`[${kd}="${lt(n)}"]`);
+  const a = e.querySelector(`[${Ed}="${lt(n)}"]`);
   if (!a) return;
   const r = a.hidden;
   a.hidden = !r, t.setAttribute("aria-expanded", r ? "true" : "false"), t.textContent = r ? "▾ Ocultar detalhes" : "▸ Ver detalhes";
 }
-async function cI(e, t) {
+async function dI(e, t) {
   if (!Te()) {
     t.remove(), ui.notifications?.warn("Paranormal Toolkit: apenas o Mestre pode rolar resistência assistida.");
     return;
   }
-  const n = t.getAttribute(Kn), a = t.getAttribute($d), r = t.getAttribute(wd) ?? (a ? De(a) : "Resistência");
+  const n = t.getAttribute(Yn), a = t.getAttribute(wd), r = t.getAttribute(Cd) ?? (a ? De(a) : "Resistência");
   if (!n || !a) return;
-  const o = mI(e, n), i = fI(o, t);
+  const o = pI(e, n), i = gI(o, t);
   if (!i) {
     ui.notifications?.warn("Paranormal Toolkit: não consegui encontrar o alvo para rolar a resistência.");
     return;
@@ -13287,8 +13290,8 @@ async function cI(e, t) {
   const l = t.innerHTML;
   t.textContent = "...";
   try {
-    const c = await zh(i, a);
-    await yI(c.roll);
+    const c = await Vh(i, a);
+    await AI(c.roll);
     const u = {
       skill: a,
       skillLabel: r,
@@ -13299,51 +13302,51 @@ async function cI(e, t) {
       usedFallbackBonus: !1,
       rolledAt: (/* @__PURE__ */ new Date()).toISOString()
     };
-    uI(t, u), dI(t, u), _I(n, u), await AI(e, n, u);
+    mI(t, u), fI(t, u), TI(n, u), await RI(e, n, u);
   } catch (c) {
     console.warn("Paranormal Toolkit: não foi possível rolar resistência assistida.", c), ui.notifications?.warn(`Paranormal Toolkit: não foi possível rolar ${r}.`), t.innerHTML = l;
   } finally {
     t.disabled = !1;
   }
 }
-function uI(e, t) {
-  e.classList.add(`${h}__resistance-roll-button--rolled`), e.setAttribute(Id, String(t.total)), e.textContent = String(t.total), e.title = `Rolar ${t.skillLabel} novamente`, e.setAttribute("aria-label", e.title);
+function mI(e, t) {
+  e.classList.add(`${h}__resistance-roll-button--rolled`), e.setAttribute(Ld, String(t.total)), e.textContent = String(t.total), e.title = `Rolar ${t.skillLabel} novamente`, e.setAttribute("aria-label", e.title);
 }
-function dI(e, t) {
+function fI(e, t) {
   const n = e.closest(`.${h}__resistance`);
   if (!n) return;
-  const a = n.querySelector(`.${h}__resistance-roll-result`), r = a ?? Od(t);
+  const a = n.querySelector(`.${h}__resistance-roll-result`), r = a ?? Md(t);
   if (a) {
-    a.textContent = Ud(t);
+    a.textContent = qd(t);
     return;
   }
   n.append(r);
 }
-function mI(e, t) {
+function pI(e, t) {
   const n = ee.get(t);
   if (n) return n;
-  const a = Xn(e);
+  const a = Qn(e);
   return ce(a)[t] ?? null;
 }
-function fI(e, t) {
+function gI(e, t) {
   const n = e?.resistanceTargetActor;
   if (se(n)) return n;
-  const r = e?.context?.targets.map(_r).find(se) ?? null;
+  const r = e?.context?.targets.map(Ar).find(se) ?? null;
   if (r) return r;
-  const o = t.getAttribute(Cd) ?? e?.resistanceTargetActorId ?? null, i = o ? gI(o) : null;
-  return i || hI(
-    t.getAttribute(Sd) ?? e?.resistanceTargetName ?? pI(t)
+  const o = t.getAttribute(Sd) ?? e?.resistanceTargetActorId ?? null, i = o ? bI(o) : null;
+  return i || yI(
+    t.getAttribute(Id) ?? e?.resistanceTargetName ?? hI(t)
   );
 }
-function pI(e) {
-  const n = e.closest(`.${h}`)?.querySelector(`.${Ld}`)?.textContent ?? null;
+function hI(e) {
+  const n = e.closest(`.${h}`)?.querySelector(`.${vd}`)?.textContent ?? null;
   if (!n) return null;
   const a = "→";
   if (!n.includes(a)) return null;
   const r = n.split(a), o = r[r.length - 1]?.trim();
   return o && o.length > 0 ? o : null;
 }
-function _r(e) {
+function Ar(e) {
   const t = e.actor;
   if (se(t)) return t;
   const n = e.token, a = wt(n);
@@ -13358,23 +13361,23 @@ function wt(e) {
   const n = e.document?.actor;
   return se(n) ? n : null;
 }
-function gI(e) {
+function bI(e) {
   const n = game.actors?.get?.(e);
-  return se(n) ? n : Bd().map((o) => wt(o)).find((o) => o?.id === e) ?? null;
+  return se(n) ? n : Ud().map((o) => wt(o)).find((o) => o?.id === e) ?? null;
 }
-function hI(e) {
+function yI(e) {
   const t = We(e);
   if (!t) return null;
-  const n = Bd().filter((o) => We(bI(o)) === t).map((o) => wt(o)).find(se) ?? null;
+  const n = Ud().filter((o) => We(_I(o)) === t).map((o) => wt(o)).find(se) ?? null;
   if (n) return n;
   const r = game.actors?.find?.((o) => se(o) && We(o.name) === t);
   return se(r) ? r : null;
 }
-function Bd() {
+function Ud() {
   const e = canvas?.tokens?.placeables;
   return Array.isArray(e) ? e : [];
 }
-function bI(e) {
+function _I(e) {
   if (!e || typeof e != "object") return null;
   const t = e.name;
   if (typeof t == "string") return t;
@@ -13388,20 +13391,20 @@ function We(e) {
 function se(e) {
   return !!(e && typeof e == "object" && "system" in e);
 }
-function Ud(e) {
+function qd(e) {
   const t = e.diceBreakdown ? ` ${e.diceBreakdown}` : "";
   return `${e.skillLabel}: ${e.formula}${t} = ${e.total}`;
 }
-async function yI(e) {
+async function AI(e) {
   const t = game.dice3d;
   typeof t?.showForRoll == "function" && await Promise.resolve(t.showForRoll(e, game.user, !0));
 }
-function _I(e, t) {
+function TI(e, t) {
   const n = ee.get(e);
   n && (n.resistanceRollResult = t);
 }
-async function AI(e, t, n) {
-  const a = Xn(e);
+async function RI(e, t, n) {
+  const a = Qn(e);
   if (a)
     try {
       const r = ce(a), o = r[t];
@@ -13414,46 +13417,46 @@ async function AI(e, t, n) {
       console.warn("Paranormal Toolkit: não foi possível persistir rolagem de resistência.", r);
     }
 }
-function Xn(e) {
+function Qn(e) {
   const n = (e.closest("[data-message-id]") ?? e).dataset.messageId ?? null;
   if (!n) return null;
   const a = game.messages;
   return te(a?.get?.(n));
 }
-async function TI(e, t) {
-  if (Nd(e)) {
+async function kI(e, t) {
+  if (Pd(e)) {
     e.remove(), ui.notifications?.warn("Paranormal Toolkit: apenas o Mestre pode aplicar ações assistidas.");
     return;
   }
-  const n = e.getAttribute(Yn);
+  const n = e.getAttribute(Xn);
   if (!n) return;
   e.disabled = !0;
   const a = e.textContent;
   if (e.textContent = "Aplicando...", await t(n)) {
-    qd(e, e.getAttribute(So) ?? "✓ Automação aplicada"), RI(e);
+    jd(e, e.getAttribute(So) ?? "✓ Automação aplicada"), EI(e);
     return;
   }
   e.disabled = !1, e.textContent = a;
 }
-function qd(e, t) {
-  e.disabled = !0, e.textContent = t, e.classList.add(vd), e.removeAttribute(Yn), e.removeAttribute(So);
+function jd(e, t) {
+  e.disabled = !0, e.textContent = t, e.classList.add(Dd), e.removeAttribute(Xn), e.removeAttribute(So);
 }
-function RI(e) {
-  const t = e.getAttribute(fr);
+function EI(e) {
+  const t = e.getAttribute(pr);
   if (!t) return;
   const n = e.closest(`.${h}`) ?? e.parentElement;
   if (!n) return;
-  const a = `[${fr}="${lt(t)}"]`;
+  const a = `[${pr}="${lt(t)}"]`;
   for (const r of n.querySelectorAll(a)) {
     if (r === e) continue;
-    const o = r.getAttribute(Rd) ?? "✓ Outra opção escolhida";
-    qd(r, o);
+    const o = r.getAttribute(kd) ?? "✓ Outra opção escolhida";
+    jd(r, o);
   }
 }
-function jd(e, t) {
-  const n = e.map(Do).filter(QI), a = n.find((k) => k.intent !== "casting") ?? n[0] ?? null;
+function zd(e, t) {
+  const n = e.map(Do).filter(JI), a = n.find((k) => k.intent !== "casting") ?? n[0] ?? null;
   if (!a) return null;
-  const r = z(e, "Forma"), o = z(e, "Custo"), i = z(e, "Dados") ?? z(e, `Dados (${a.label})`), l = z(e, "Tipo"), c = z(e, "Resistência"), u = z(e, "Resistência Perícia"), m = z(e, "Resistência Rótulo") ?? (u ? De(u) : null), p = zd(e, "Observação"), _ = e.filter((k) => SI(k, a)), $ = wI(e), T = kI(t);
+  const r = z(e, "Forma"), o = z(e, "Custo"), i = z(e, "Dados") ?? z(e, `Dados (${a.label})`), l = z(e, "Tipo"), c = z(e, "Resistência"), u = z(e, "Resistência Perícia"), m = z(e, "Resistência Rótulo") ?? (u ? De(u) : null), p = Gd(e, "Observação"), _ = e.filter((k) => LI(k, a)), $ = SI(e), T = $I(t);
   return {
     ...a,
     itemName: t.itemName ?? t.title ?? "Automação assistida",
@@ -13472,18 +13475,18 @@ function jd(e, t) {
     resistanceRollResult: t.resistanceRollResult ?? null
   };
 }
-function kI(e) {
-  const t = EI(e);
+function $I(e) {
+  const t = wI(e);
   return t.length <= 0 ? { mode: "none", names: t } : t.length === 1 ? { mode: "single", names: t } : { mode: "multi", names: t };
 }
-function EI(e) {
+function wI(e) {
   const [, t] = e.summary.split("→");
-  return t ? t.split(",").map((n) => n.trim()).filter((n) => n.length > 0 && $I(n) !== "nenhum alvo") : [];
+  return t ? t.split(",").map((n) => n.trim()).filter((n) => n.length > 0 && CI(n) !== "nenhum alvo") : [];
 }
-function $I(e) {
+function CI(e) {
   return e.normalize("NFD").replace(/[\u0300-\u036f]/gu, "").trim().toLocaleLowerCase();
 }
-function wI(e) {
+function SI(e) {
   const t = e.map(Do).find((o) => o?.intent === "casting") ?? null, n = z(e, "Conjuração DT"), a = z(e, "Conjuração Resultado");
   if (!t || !n || !a) return null;
   const r = Number(n);
@@ -13504,16 +13507,16 @@ function Do(e) {
     label: n,
     formula: a,
     total: o,
-    intent: CI(n)
+    intent: II(n)
   } : null;
 }
-function CI(e) {
+function II(e) {
   return e === "Cura" ? "healing" : e === "Dano" ? "damage" : e === "Conjuração" ? "casting" : "generic";
 }
 function z(e, t) {
-  return zd(e, t)[0] ?? null;
+  return Gd(e, t)[0] ?? null;
 }
-function zd(e, t) {
+function Gd(e, t) {
   const n = `${t}:`;
   return e.flatMap((a) => {
     if (!a.startsWith(n)) return [];
@@ -13521,49 +13524,49 @@ function zd(e, t) {
     return r.length > 0 ? [r] : [];
   });
 }
-function SI(e, t) {
+function LI(e, t) {
   return e.startsWith("Forma:") || e.startsWith("Custo:") || e.startsWith("Dados:") || e.startsWith(`Dados (${t.label}):`) || e.startsWith("Tipo:") || e.startsWith("Resistência:") || e.startsWith("Resistência Perícia:") || e.startsWith("Resistência Rótulo:") || e.startsWith("Observação:") || e.startsWith("Conjuração Fórmula:") || e.startsWith("Conjuração DT:") || e.startsWith("Conjuração Resultado:") || e.startsWith("Dados (Conjuração):") || Do(e) ? !1 : e.trim().length > 0;
 }
-function II(e, t) {
+function vI(e, t) {
   const n = /* @__PURE__ */ new Map();
   for (const a of ee.values())
-    Ar(a, e, t) && n.set(a.pendingId, a);
-  for (const a of NI(e))
-    Ar(a, e, t) && !n.has(a.pendingId) && n.set(a.pendingId, a);
+    Tr(a, e, t) && n.set(a.pendingId, a);
+  for (const a of OI(e))
+    Tr(a, e, t) && !n.has(a.pendingId) && n.set(a.pendingId, a);
   return Array.from(n.values()).sort((a, r) => a.createdAt - r.createdAt);
 }
-function Ar(e, t, n) {
+function Tr(e, t, n) {
   const a = Re(t) ?? n.dataset.messageId ?? null;
   return e.messageId ? e.messageId === a : !e.itemId || !Zs(n, "itemId", e.itemId) ? !1 : !e.actorId || Zs(n, "actorId", e.actorId);
 }
 function Zs(e, t, n) {
   if (e.dataset[t] === n)
     return !0;
-  const a = `data-${tL(t)}`;
+  const a = `data-${aL(t)}`;
   for (const r of e.querySelectorAll(`[${a}]`))
     if (r.getAttribute(a) === n)
       return !0;
   return !1;
 }
-function LI(e) {
+function DI(e) {
   const t = lt(e);
   return document.querySelector(
     `.chat-message[data-message-id="${t}"], [data-message-id="${t}"]`
   );
 }
-function vI(e) {
+function xI(e) {
   for (const t of document.querySelectorAll(".chat-message, [data-message-id]"))
-    if (Ar(e, null, t))
+    if (Tr(e, null, t))
       return t;
   return null;
 }
-function DI() {
+function NI() {
   const e = Date.now(), t = 300 * 1e3;
   for (const [n, a] of ee.entries())
     e - a.createdAt > t && ee.delete(n);
 }
 async function Js(e, t) {
-  const n = Xn(e);
+  const n = Qn(e);
   if (!n) return !1;
   try {
     const a = ce(n);
@@ -13582,13 +13585,13 @@ async function xo(e) {
     return console.warn("Paranormal Toolkit: não foi possível persistir ação assistida no chat.", n), !1;
   }
 }
-function Gd(e) {
-  for (const t of ES)
+function Vd(e) {
+  for (const t of wS)
     globalThis.setTimeout(() => {
-      Tr(e);
+      Rr(e);
     }, t);
 }
-async function Tr(e) {
+async function Rr(e) {
   const t = Mo(e);
   if (No(t)?.prompts.some((r) => r.pendingId === e.pendingId))
     return !0;
@@ -13601,7 +13604,7 @@ async function Tr(e) {
     messageId: e.messageId
   }), a;
 }
-async function xI(e, t) {
+async function PI(e, t) {
   const n = Oo(e.context.message);
   if (n)
     try {
@@ -13615,7 +13618,7 @@ async function xI(e, t) {
       console.warn("Paranormal Toolkit: não foi possível marcar ação assistida como executada no chat.", a);
     }
 }
-function NI(e) {
+function OI(e) {
   return Object.values(ce(te(e))).filter(Ot);
 }
 function ce(e) {
@@ -13623,16 +13626,16 @@ function ce(e) {
   const t = {}, n = No(e);
   for (const a of n?.prompts ?? [])
     t[a.pendingId] = a;
-  for (const [a, r] of Object.entries(Vd(e)))
+  for (const [a, r] of Object.entries(Hd(e)))
     t[a] ??= r;
   return t;
 }
-function PI(e) {
-  return Object.values(Vd(te(e))).filter(Ot);
+function MI(e) {
+  return Object.values(Hd(te(e))).filter(Ot);
 }
-function Vd(e) {
+function Hd(e) {
   if (!e) return {};
-  const t = e.getFlag?.(d, Ad);
+  const t = e.getFlag?.(d, Td);
   if (!nt(t))
     return {};
   const n = {};
@@ -13641,17 +13644,17 @@ function Vd(e) {
   return n;
 }
 async function st(e, t) {
-  typeof e.setFlag == "function" && (await MI(e, t), await OI(e, t));
+  typeof e.setFlag == "function" && (await BI(e, t), await FI(e, t));
 }
-async function OI(e, t) {
-  await Promise.resolve(e.setFlag?.(d, Ad, t));
+async function FI(e, t) {
+  await Promise.resolve(e.setFlag?.(d, Td, t));
 }
 function No(e) {
   if (!e) return null;
-  const t = e.getFlag?.(d, Td);
-  return YI(t) ? t : null;
+  const t = e.getFlag?.(d, Rd);
+  return QI(t) ? t : null;
 }
-async function MI(e, t) {
+async function BI(e, t) {
   if (typeof e.setFlag != "function") return;
   const n = Object.values(t).filter(Ot).sort((o, i) => o.createdAt - i.createdAt);
   if (n.length === 0) return;
@@ -13664,15 +13667,15 @@ async function MI(e, t) {
     messageId: a.messageId ?? Re(e) ?? null,
     source: {
       actorId: a.actorId,
-      actorName: FI(a.summary),
+      actorName: UI(a.summary),
       itemId: a.itemId,
       itemName: a.itemName
     },
     prompts: n
   };
-  await Promise.resolve(e.setFlag(d, Td, r));
+  await Promise.resolve(e.setFlag(d, Rd, r));
 }
-function FI(e) {
+function UI(e) {
   if (!e.includes("→")) return e.trim() || null;
   const n = e.split("→")[0]?.trim();
   return n && n.length > 0 ? n : null;
@@ -13707,7 +13710,7 @@ function Oo(e) {
   const t = te(e);
   if (t?.setFlag)
     return t;
-  const n = BI(e);
+  const n = qI(e);
   if (n?.setFlag)
     return n;
   const a = Re(e);
@@ -13715,7 +13718,7 @@ function Oo(e) {
   const r = game.messages;
   return te(r?.get?.(a));
 }
-function BI(e) {
+function qI(e) {
   return !e || typeof e != "object" ? null : [
     e.document,
     e.message,
@@ -13725,48 +13728,48 @@ function BI(e) {
 function Mo(e) {
   const t = Oo(e.context.message);
   if (t) return t;
-  const n = e.messageId ? UI(e.messageId) : null;
+  const n = e.messageId ? jI(e.messageId) : null;
   if (n) return n;
-  const a = Kd().slice().reverse();
-  return a.find((r) => qI(r, e)) ?? a.find((r) => jI(r, e)) ?? null;
+  const a = Yd().slice().reverse();
+  return a.find((r) => zI(r, e)) ?? a.find((r) => GI(r, e)) ?? null;
 }
-function UI(e) {
+function jI(e) {
   const t = game.messages;
   return te(t?.get?.(e));
 }
-function qI(e, t) {
+function zI(e, t) {
   const n = Re(e);
   if (t.messageId && n === t.messageId) return !0;
-  if (!Hd(e, t)) return !1;
-  const r = Wd(e);
+  if (!Wd(e, t)) return !1;
+  const r = Kd(e);
   return !t.actorId || !r || r === t.actorId;
 }
-function jI(e, t) {
-  if (!GI(e, t)) return !1;
-  const n = Wd(e);
-  return t.actorId && n === t.actorId ? !0 : Hd(e, t);
+function GI(e, t) {
+  if (!HI(e, t)) return !1;
+  const n = Kd(e);
+  return t.actorId && n === t.actorId ? !0 : Wd(e, t);
 }
-function Hd(e, t) {
-  const n = We(zI(e));
+function Wd(e, t) {
+  const n = We(VI(e));
   if (!n) return !1;
   const a = We(t.itemName);
   if (a && n.includes(a)) return !0;
   const r = We(t.itemId);
   return !!(r && n.includes(r));
 }
-function zI(e) {
+function VI(e) {
   const t = e.content;
   return typeof t == "string" ? t : null;
 }
-function Wd(e) {
+function Kd(e) {
   const t = e.speaker;
   return typeof t?.actor == "string" && t.actor.length > 0 ? t.actor : null;
 }
-function GI(e, t) {
-  const n = VI(e);
-  return n === null ? !1 : Math.abs(n - t.createdAt) <= $S;
+function HI(e, t) {
+  const n = WI(e);
+  return n === null ? !1 : Math.abs(n - t.createdAt) <= CS;
 }
-function VI(e) {
+function WI(e) {
   const t = e.timestamp;
   if (typeof t == "number" && Number.isFinite(t)) return t;
   const n = e._stats?.modifiedTime;
@@ -13776,45 +13779,45 @@ function te(e) {
   return e && typeof e == "object" ? e : null;
 }
 function Ot(e) {
-  return nt(e) ? e.schemaVersion === 1 && typeof e.pendingId == "string" && e.mode === "ask" && typeof e.createdAt == "number" && typeof e.summary == "string" && typeof e.executed == "boolean" && W(e.messageId) && W(e.itemId) && W(e.actorId) && W(e.itemName) && Ce(e.resistanceTargetActorId) && Ce(e.resistanceTargetName) && XI(e.resistanceRollResult) && HI(e.actionPayload) && Ra(e.title) && Ra(e.buttonLabel) && Ra(e.executedLabel) && Ce(e.choiceGroupId) && Ce(e.skippedLabel) && Ce(e.actionSectionId) && Ce(e.actionSectionTitle) && ZI(e.summaryLines) : !1;
-}
-function HI(e) {
-  return e == null ? !0 : nt(e) ? e.kind === "resource-operation" && W(e.actorId) && W(e.actorUuid) && typeof e.actorName == "string" && WI(e.resource) && KI(e.operation) && typeof e.amount == "number" && Number.isFinite(e.amount) : !1;
-}
-function WI(e) {
-  return e === "PV" || e === "SAN" || e === "PE" || e === "PD";
+  return nt(e) ? e.schemaVersion === 1 && typeof e.pendingId == "string" && e.mode === "ask" && typeof e.createdAt == "number" && typeof e.summary == "string" && typeof e.executed == "boolean" && K(e.messageId) && K(e.itemId) && K(e.actorId) && K(e.itemName) && Ce(e.resistanceTargetActorId) && Ce(e.resistanceTargetName) && ZI(e.resistanceRollResult) && KI(e.actionPayload) && ka(e.title) && ka(e.buttonLabel) && ka(e.executedLabel) && Ce(e.choiceGroupId) && Ce(e.skippedLabel) && Ce(e.actionSectionId) && Ce(e.actionSectionTitle) && eL(e.summaryLines) : !1;
 }
 function KI(e) {
-  return e === "damage" || e === "heal" || e === "recover" || e === "spend";
+  return e == null ? !0 : nt(e) ? e.kind === "resource-operation" && K(e.actorId) && K(e.actorUuid) && typeof e.actorName == "string" && YI(e.resource) && XI(e.operation) && typeof e.amount == "number" && Number.isFinite(e.amount) : !1;
 }
 function YI(e) {
-  return nt(e) ? e.schemaVersion === 1 && e.kind === "item-use" && typeof e.createdAt == "number" && W(e.messageId) && nt(e.source) && W(e.source.actorId) && W(e.source.actorName) && W(e.source.itemId) && W(e.source.itemName) && Array.isArray(e.prompts) && e.prompts.every(Ot) : !1;
+  return e === "PV" || e === "SAN" || e === "PE" || e === "PD";
 }
 function XI(e) {
-  return e == null ? !0 : nt(e) ? typeof e.skill == "string" && typeof e.skillLabel == "string" && typeof e.formula == "string" && typeof e.total == "number" && Number.isFinite(e.total) && typeof e.targetName == "string" && Ce(e.diceBreakdown) && (e.usedFallbackBonus === void 0 || typeof e.usedFallbackBonus == "boolean") && typeof e.rolledAt == "string" : !1;
+  return e === "damage" || e === "heal" || e === "recover" || e === "spend";
 }
 function QI(e) {
+  return nt(e) ? e.schemaVersion === 1 && e.kind === "item-use" && typeof e.createdAt == "number" && K(e.messageId) && nt(e.source) && K(e.source.actorId) && K(e.source.actorName) && K(e.source.itemId) && K(e.source.itemName) && Array.isArray(e.prompts) && e.prompts.every(Ot) : !1;
+}
+function ZI(e) {
+  return e == null ? !0 : nt(e) ? typeof e.skill == "string" && typeof e.skillLabel == "string" && typeof e.formula == "string" && typeof e.total == "number" && Number.isFinite(e.total) && typeof e.targetName == "string" && Ce(e.diceBreakdown) && (e.usedFallbackBonus === void 0 || typeof e.usedFallbackBonus == "boolean") && typeof e.rolledAt == "string" : !1;
+}
+function JI(e) {
   return e !== null;
 }
 function nt(e) {
   return e !== null && typeof e == "object" && !Array.isArray(e);
 }
-function W(e) {
+function K(e) {
   return e === null || typeof e == "string";
 }
-function Ra(e) {
+function ka(e) {
   return e === void 0 || typeof e == "string";
 }
 function Ce(e) {
   return e == null || typeof e == "string";
 }
-function ZI(e) {
+function eL(e) {
   return e === void 0 || Array.isArray(e) && e.every((t) => typeof t == "string");
 }
-function JI(e) {
+function tL(e) {
   return typeof e == "string" && e.length > 0;
 }
-function Kd() {
+function Yd() {
   const e = game.messages;
   if (!e || typeof e != "object") return [];
   const t = e.contents;
@@ -13823,7 +13826,7 @@ function Kd() {
   const n = e.values;
   return typeof n == "function" ? Array.from(n.call(e)).map(te).filter((a) => a !== null) : [];
 }
-function Qn(e) {
+function Zn(e) {
   if (e instanceof HTMLElement)
     return e;
   if (e && typeof e == "object") {
@@ -13838,20 +13841,20 @@ function Re(e) {
   const t = e;
   return typeof t.id == "string" && t.id.length > 0 ? t.id : typeof t._id == "string" && t._id.length > 0 ? t._id : null;
 }
-function eL(e) {
+function nL(e) {
   return e.trim().toLowerCase();
 }
-function tL(e) {
+function aL(e) {
   return e.replace(/[A-Z]/g, (t) => `-${t.toLowerCase()}`);
 }
 function lt(e) {
   return e.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
-const Fo = "ritualResistanceOutcomes", nL = {
+const Fo = "ritualResistanceOutcomes", rL = {
   success: "Sucesso",
   failure: "Falha"
 };
-function Yd() {
+function Xd() {
   return {
     schemaVersion: 1,
     outcomes: {
@@ -13860,17 +13863,17 @@ function Yd() {
     }
   };
 }
-function Xd(e) {
+function Qd(e) {
   const t = e.getFlag(
     d,
     Fo
   );
-  return Qd(t);
+  return Zd(t);
 }
-function aL(e) {
-  return Xd(e) ?? Yd();
+function oL(e) {
+  return Qd(e) ?? Xd();
 }
-function Qd(e) {
+function Zd(e) {
   if (!Tn(e)) return null;
   const t = Tn(e.outcomes) ? e.outcomes : {};
   return {
@@ -13881,24 +13884,24 @@ function Qd(e) {
     }
   };
 }
-function rL() {
-  return Kr.map((e) => ({
+function iL() {
+  return Yr.map((e) => ({
     value: e.id,
     label: e.label
   })).sort((e, t) => e.label.localeCompare(t.label, "pt-BR"));
 }
-function Zd(e) {
+function Jd(e) {
   return Object.values(e.outcomes).some(
     (t) => t.conditions.length > 0
   );
 }
-function oL(e, t) {
+function sL(e, t) {
   const n = t.resistance ?? Gn(e);
   if (!n) return t;
-  const a = Xd(e);
-  if (!a || !Zd(a))
+  const a = Qd(e);
+  if (!a || !Jd(a))
     return t;
-  const r = t.conditionApplications ?? [], o = new Set(r.map((l) => l.id)), i = iL(e, a).filter(
+  const r = t.conditionApplications ?? [], o = new Set(r.map((l) => l.id)), i = lL(e, a).filter(
     (l) => !o.has(l.id)
   );
   return i.length === 0 ? t : {
@@ -13910,20 +13913,20 @@ function oL(e, t) {
     ]
   };
 }
-function iL(e, t) {
+function lL(e, t) {
   return ["success", "failure"].flatMap(
     (n) => t.outcomes[n].conditions.map(
-      (a, r) => sL(e, n, a, r)
+      (a, r) => cL(e, n, a, r)
     )
   );
 }
-function sL(e, t, n, a) {
-  const r = Jd(n.conditionId), o = r?.id ?? n.conditionId, i = r?.label ?? uL(o);
+function cL(e, t, n, a) {
+  const r = em(n.conditionId), o = r?.id ?? n.conditionId, i = r?.label ?? mL(o);
   return {
     id: `generic-ritual-resistance-${t}-${a + 1}-${o}`,
     actor: "target",
     conditionId: o,
-    label: `${nL[t]} · ${i}`,
+    label: `${rL[t]} · ${i}`,
     duration: n.rounds === null ? null : { rounds: n.rounds },
     source: `ritual.generic-resistance.${e.id ?? "item"}`,
     actionSectionId: "apply-effects",
@@ -13937,35 +13940,35 @@ function el(e) {
     return { conditions: [] };
   const t = [], n = /* @__PURE__ */ new Set();
   for (const a of e.conditions) {
-    const r = lL(a);
+    const r = uL(a);
     !r || n.has(r.conditionId) || (n.add(r.conditionId), t.push(r));
   }
   return { conditions: t };
 }
-function lL(e) {
+function uL(e) {
   if (!Tn(e)) return null;
-  const t = Jd(dL(e.conditionId));
+  const t = em(fL(e.conditionId));
   return t ? {
     conditionId: t.id,
-    rounds: cL(e.rounds)
+    rounds: dL(e.rounds)
   } : null;
 }
-function Jd(e) {
+function em(e) {
   const t = tl(e);
-  return t ? Kr.find((n) => [
+  return t ? Yr.find((n) => [
     n.id,
     n.label,
     ...n.aliases ?? []
   ].some((r) => tl(r) === t)) ?? null : null;
 }
-function cL(e) {
+function dL(e) {
   if (e == null || e === "") return null;
   const t = typeof e == "number" ? e : typeof e == "string" ? Number(e.trim()) : Number.NaN;
   if (!Number.isFinite(t)) return null;
   const n = Math.trunc(t);
   return n > 0 ? n : null;
 }
-function uL(e) {
+function mL(e) {
   return e.trim().split(/[._-]+/u).filter((t) => t.length > 0).map(
     (t) => `${t.charAt(0).toLocaleUpperCase()}${t.slice(1)}`
   ).join(" ");
@@ -13973,13 +13976,13 @@ function uL(e) {
 function tl(e) {
   return e.trim().normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLocaleLowerCase();
 }
-function dL(e) {
+function fL(e) {
   return typeof e == "string" ? e.trim() : "";
 }
 function Tn(e) {
   return e !== null && typeof e == "object" && !Array.isArray(e);
 }
-function mL(e) {
+function pL(e) {
   if (e.mode === "legacy") return { eligible: !1, reason: "mode-legacy" };
   if (e.systemId !== "ordemparanormal") return { eligible: !1, reason: "unsupported-system" };
   if (e.context.item.type !== "ritual") return { eligible: !1, reason: "not-ritual" };
@@ -13991,17 +13994,33 @@ function mL(e) {
   const t = e.context.targets[0]?.actor;
   return !t || !t.id && !t.uuid ? { eligible: !1, reason: "missing-target-actor" } : e.snapshot.rolls.some((n) => !["damage", "healing", "ritual", "generic"].includes(n.intent)) ? { eligible: !1, reason: "unsupported-roll-intent" } : e.snapshot.rolls.filter((n) => n.intent !== "ritual").length > 1 ? { eligible: !1, reason: "multiple-effect-rolls" } : e.actions.some((n) => !["resource-operation", "damage-application", "condition-application"].includes(n.kind)) ? { eligible: !1, reason: "unsupported-action" } : e.snapshot.resistance && e.resistanceDifficulty === null ? { eligible: !1, reason: "missing-resistance-difficulty" } : { eligible: !0 };
 }
-const fL = /* @__PURE__ */ new Set(["p", "br", "strong", "b", "em", "i", "ul", "ol", "li"]), nl = "__PTK_SAFE_HTML_";
-function pL(e) {
+const tm = {
+  blood: "Sangue",
+  death: "Morte",
+  knowledge: "Conhecimento",
+  energy: "Energia",
+  fear: "Medo"
+};
+function gL(e) {
+  const t = hL(e.system?.element), n = new Hu().getCircle(e);
+  return !t || !n.ok ? null : { elementKey: t, elementLabel: tm[t], circle: n.value };
+}
+function hL(e) {
+  if (typeof e != "string") return null;
+  const t = e.trim().toLocaleLowerCase(), n = t.startsWith("op.elementchoices.") ? t.slice(18) : t;
+  return n in tm ? n : null;
+}
+const bL = /* @__PURE__ */ new Set(["p", "br", "strong", "b", "em", "i", "ul", "ol", "li"]), nl = "__PTK_SAFE_HTML_";
+function yL(e) {
   const t = e.system?.description;
-  if (typeof t != "string" || !hL(t).trim()) return null;
-  const n = gL(t);
+  if (typeof t != "string" || !AL(t).trim()) return null;
+  const n = _L(t);
   return n.trim() ? n : null;
 }
-function gL(e) {
+function _L(e) {
   const t = e.replace(/<!--[\s\S]*?-->/gu, "").replace(/<(script|style|iframe|object|embed)\b[^>]*>[\s\S]*?<\/\1\s*>/giu, "").replace(/<(script|style|iframe|object|embed)\b[^>]*\/?\s*>/giu, ""), n = [], a = t.replace(/<\/?([a-z0-9]+)\b[^>]*>/giu, (o, i) => {
     const l = i.toLowerCase();
-    if (!fL.has(l)) return "";
+    if (!bL.has(l)) return "";
     const c = /^<\s*\//u.test(o), u = l === "br" ? "<br>" : c ? `</${l}>` : `<${l}>`, m = `${nl}${n.length}__`;
     return n.push(u), m;
   });
@@ -14010,10 +14029,10 @@ function gL(e) {
     r = r.replace(`${nl}${i}__`, o);
   }), r;
 }
-function hL(e) {
+function AL(e) {
   return e.replace(/<[^>]*>/gu, "").replace(/&nbsp;/giu, " ");
 }
-function bL(e) {
+function TL(e) {
   const { context: t, snapshot: n } = e;
   if (!t.actor) throw new Error("Conjurador ausente.");
   const a = t.targets[0];
@@ -14026,39 +14045,40 @@ function bL(e) {
     source: rn(t.actor),
     item: rn(t.item),
     form: n.form,
-    descriptionHtml: pL(t.item),
+    ritualIdentity: gL(t.item),
+    descriptionHtml: yL(t.item),
     cost: n.cost,
     target: { ...rn(a.actor), tokenId: a.tokenId, tokenUuid: a.sceneId && a.tokenId ? `Scene.${a.sceneId}.Token.${a.tokenId}` : null },
-    conjuration: n.castingCheck ? { ...n.castingCheck, diceResults: yL(n.castingCheck.diceBreakdown), consequence: n.castingCheck.success ? null : "Falha na conjuração" } : null,
+    conjuration: n.castingCheck ? { ...n.castingCheck, diceResults: RL(n.castingCheck.diceBreakdown), consequence: n.castingCheck.success ? null : "Falha na conjuração" } : null,
     mainRoll: o ? { id: o.id, label: o.intent === "damage" ? "Dano" : o.intent === "healing" ? "Cura" : "Efeito", intent: o.intent === "damage" || o.intent === "healing" ? o.intent : "utility", formula: o.formula, total: o.total, diceResults: o.diceResults, damageType: o.damageType } : null,
     resistance: n.resistance && e.resistanceDifficulty !== null ? { skill: n.resistance.skill, skillLabel: n.resistance.label, difficulty: e.resistanceDifficulty, effect: n.resistance.summary, status: "pending", result: null } : null,
-    actions: e.actions.map((i, l) => _L(n.castId, i, l)),
+    actions: e.actions.map((i, l) => kL(n.castId, i, l)),
     createdAt: r
   };
 }
 function rn(e) {
   return { id: e.id ?? null, uuid: e.uuid ?? null, name: e.name ?? "Documento sem nome" };
 }
-function yL(e) {
+function RL(e) {
   return e?.match(/-?\d+/gu)?.map(Number).filter(Number.isFinite) ?? [];
 }
-function _L(e, t, n) {
+function kL(e, t, n) {
   const a = { id: `${e}:action:${n + 1}`, state: t.kind === "condition-application" && t.resistanceOutcome && t.resistanceOutcome !== "always" ? "pending" : "available", label: t.label, executedLabel: t.executedLabel, actor: rn(t.actor), choiceGroupId: t.kind !== "condition-application" ? t.choiceGroupId ?? null : null, outcome: t.kind === "condition-application" && t.resistanceOutcome !== "always" ? t.resistanceOutcome ?? null : null, completedAt: null, completedByUserId: null };
   return t.kind === "resource-operation" ? { ...a, kind: t.kind, resource: t.resource, operation: t.operation, amount: t.amount } : t.kind === "damage-application" ? { ...a, kind: t.kind, instances: t.instances.map((r) => ({ ...r })), source: t.source, originUuid: t.originUuid } : { ...a, kind: t.kind, conditionId: t.conditionId, duration: t.duration ? structuredClone(t.duration) : null, source: t.source, originUuid: t.originUuid };
 }
-let al = !1, Rr = null;
-function AL(e) {
-  Rr = e, !al && (al = !0, document.addEventListener("click", (t) => {
-    TL(t);
+let al = !1, kr = null;
+function EL(e) {
+  kr = e, !al && (al = !0, document.addEventListener("click", (t) => {
+    $L(t);
   }));
 }
-async function TL(e) {
+async function $L(e) {
   const t = e.target instanceof Element ? e.target.closest("[data-paranormal-toolkit-card-action]") : null, n = t?.closest('[data-paranormal-toolkit-card-renderer="ritual-single-target"]');
-  if (!t || !n || !Rr) return;
-  const a = n.dataset.paranormalToolkitMessageId, r = a ? CL(game.messages?.get?.(a)) : null;
-  r && (t.disabled = !0, await RL({ message: r, messageId: a, actionId: t.dataset.paranormalToolkitActionId ?? null, kind: t.dataset.paranormalToolkitCardAction ?? "", executor: Rr, root: n }));
+  if (!t || !n || !kr) return;
+  const a = n.dataset.paranormalToolkitMessageId, r = a ? vL(game.messages?.get?.(a)) : null;
+  r && (t.disabled = !0, await wL({ message: r, messageId: a, actionId: t.dataset.paranormalToolkitActionId ?? null, kind: t.dataset.paranormalToolkitCardAction ?? "", executor: kr, root: n }));
 }
-async function RL(e) {
+async function wL(e) {
   if (e.kind === "toggle-roll-details") return;
   let t = [], n = !1;
   try {
@@ -14071,31 +14091,31 @@ async function RL(e) {
         const i = r.state.resistance?.result?.outcome;
         if (!i) throw new Error("A resistência ainda não foi resolvida.");
         if (t = r.state.actions.filter((l) => l.kind === "condition-application" && l.outcome === i && l.state === "available").map((l) => l.id), !t.length) throw new Error("Não há condições pendentes para aplicar.");
-        return { ...r, state: { ...r.state, actions: kr(r.state.actions, t, "executing") } };
+        return { ...r, state: { ...r.state, actions: Er(r.state.actions, t, "executing") } };
       }
       const o = r.state.actions.find((i) => i.id === e.actionId);
       if (!o || o.state !== "available") throw new Error("Ação indisponível ou já executada.");
-      return t = [o.id], { ...r, state: { ...r.state, actions: kr(r.state.actions, t, "executing") } };
+      return t = [o.id], { ...r, state: { ...r.state, actions: Er(r.state.actions, t, "executing") } };
     });
     if (e.kind === "roll-resistance") {
       const r = await rl(() => e.executor({ message: e.message, action: null, kind: e.kind, card: a }));
-      n = r.ok || r.sideEffect === "uncertain", await kL(e.message, r), ol(r);
+      n = r.ok || r.sideEffect === "uncertain", await CL(e.message, r), ol(r);
     } else {
       const r = /* @__PURE__ */ new Map();
       for (const o of t) {
-        const i = wo(e.message) ?? a, l = i.state.actions.find((u) => u.id === o) ?? null, c = await rl(() => e.executor({ message: e.message, action: l, kind: e.kind, card: i }));
+        const i = Kn(e.message) ?? a, l = i.state.actions.find((u) => u.id === o) ?? null, c = await rl(() => e.executor({ message: e.message, action: l, kind: e.kind, card: i }));
         (c.ok || c.sideEffect === "uncertain") && (n = !0), r.set(o, c);
       }
-      await EL(e.message, t, r);
+      await SL(e.message, t, r);
       for (const o of r.values()) ol(o);
     }
     il(e.message, e.root);
   } catch (a) {
     const r = n ? "finalize-after-side-effect" : "claim-or-execute";
-    console.warn("Paranormal Toolkit: falha ao concluir interação do card ritual.", { messageId: e.messageId ?? e.message.id, actionId: e.actionId, stage: r, cause: a }), t.length && await $L(e.message, t, n ? "uncertain" : "available"), e.kind === "roll-resistance" && !n && await wL(e.message), ui.notifications?.warn(n ? "Paranormal Toolkit: a ação pode ter sido aplicada, mas não foi possível confirmar. Verifique o alvo antes de tentar novamente." : `Paranormal Toolkit: ${a instanceof Error ? a.message : "ação não executada"}`), il(e.message, e.root);
+    console.warn("Paranormal Toolkit: falha ao concluir interação do card ritual.", { messageId: e.messageId ?? e.message.id, actionId: e.actionId, stage: r, cause: a }), t.length && await IL(e.message, t, n ? "uncertain" : "available"), e.kind === "roll-resistance" && !n && await LL(e.message), ui.notifications?.warn(n ? "Paranormal Toolkit: a ação pode ter sido aplicada, mas não foi possível confirmar. Verifique o alvo antes de tentar novamente." : `Paranormal Toolkit: ${a instanceof Error ? a.message : "ação não executada"}`), il(e.message, e.root);
   }
 }
-async function kL(e, t) {
+async function CL(e, t) {
   await Pt(e, (n) => {
     if (!n.state.resistance) return n;
     if (!t.ok || !t.resistance) return { ...n, state: { ...n.state, resistance: { ...n.state.resistance, status: "pending" } } };
@@ -14103,12 +14123,12 @@ async function kL(e, t) {
     return { ...n, state: { ...n.state, resistance: { ...n.state.resistance, status: "completed", result: t.resistance }, actions: n.state.actions.map((r) => r.outcome ? { ...r, state: r.outcome === a ? "available" : "resolved" } : r) } };
   });
 }
-async function EL(e, t, n) {
+async function SL(e, t, n) {
   await Pt(e, (a) => {
     let r = a.state.actions.map((o) => {
       if (!t.includes(o.id)) return o;
       const i = n.get(o.id);
-      return i ? i.ok ? { ...o, state: "completed", completedAt: (/* @__PURE__ */ new Date()).toISOString(), completedByUserId: SL() } : { ...o, state: i.sideEffect === "none" ? "available" : "uncertain" } : { ...o, state: "available" };
+      return i ? i.ok ? { ...o, state: "completed", completedAt: (/* @__PURE__ */ new Date()).toISOString(), completedByUserId: DL() } : { ...o, state: i.sideEffect === "none" ? "available" : "uncertain" } : { ...o, state: "available" };
     });
     for (const o of t) {
       const i = r.find((l) => l.id === o);
@@ -14124,40 +14144,40 @@ async function rl(e) {
     return { ok: !1, sideEffect: "uncertain", message: t instanceof Error ? t.message : "falha inesperada durante a execução" };
   }
 }
-async function $L(e, t, n) {
+async function IL(e, t, n) {
   try {
-    await Pt(e, (a) => ({ ...a, state: { ...a.state, actions: kr(a.state.actions, t, n) } }));
+    await Pt(e, (a) => ({ ...a, state: { ...a.state, actions: Er(a.state.actions, t, n) } }));
   } catch (a) {
     console.warn("Paranormal Toolkit: recovery de ações falhou.", { messageId: e.id, actionIds: t, stage: "recovery", cause: a });
   }
 }
-async function wL(e) {
+async function LL(e) {
   try {
     await Pt(e, (t) => t.state.resistance ? { ...t, state: { ...t.state, resistance: { ...t.state.resistance, status: "pending" } } } : t);
   } catch (t) {
     console.warn("Paranormal Toolkit: recovery da resistência falhou.", { messageId: e.id, stage: "resistance-recovery", cause: t });
   }
 }
-function kr(e, t, n) {
+function Er(e, t, n) {
   return e.map((a) => t.includes(a.id) ? { ...a, state: n } : a);
 }
 function ol(e) {
   e.ok || ui.notifications?.warn(`Paranormal Toolkit: ${e.message}`);
 }
 function il(e, t) {
-  t && wo(e) && Co(e, t.closest(".chat-message") ?? t);
+  t && Kn(e) && Co(e, t.closest(".chat-message") ?? t);
 }
-function CL(e) {
+function vL(e) {
   return e && typeof e == "object" ? e : null;
 }
-function SL() {
+function DL() {
   const e = game.user?.id;
   return typeof e == "string" ? e : null;
 }
 const sl = 1e3;
-class IL {
+class xL {
   constructor(t, n, a, r, o, i, l) {
-    this.workflow = t, this.resources = n, this.damage = r, this.conditions = o, this.debugOutput = i, this.ritualAssistant = new Qw(
+    this.workflow = t, this.resources = n, this.damage = r, this.conditions = o, this.debugOutput = i, this.ritualAssistant = new Zw(
       t,
       n,
       a,
@@ -14185,21 +14205,21 @@ class IL {
   }
   status() {
     return {
-      settings: Da(),
+      settings: xa(),
       strategies: this.strategies.map((t) => t.status()),
       lastAttempt: this.lastAttempt ? { ...this.lastAttempt } : null,
       pendingPromptCount: this.pendingExecutions.size
     };
   }
   async handleItemUsed(t) {
-    const n = Da();
+    const n = xa();
     if (n.executionMode === "disabled") {
       this.setAttempt(t, "skipped", "execution-mode-disabled");
       return;
     }
-    const a = Sr(t.item);
+    const a = Ir(t.item);
     if (!a.ok) {
-      if (a.error.reason === "missing-automation" && FL(t.item) && n.executionMode === "ask") {
+      if (a.error.reason === "missing-automation" && jL(t.item) && n.executionMode === "ask") {
         await this.handleGenericRitual(t);
         return;
       }
@@ -14215,7 +14235,7 @@ class IL {
       this.setAttempt(t, "failed", "missing-actor"), this.debugOutput.warn({
         title: "Uso de item sem ator",
         message: `Não foi possível resolver o ator para ${t.item.name}.`,
-        data: $a(t, "failed", "missing-actor")
+        data: wa(t, "failed", "missing-actor")
       });
       return;
     }
@@ -14224,7 +14244,7 @@ class IL {
       return;
     }
     this.markExecution(t);
-    const r = xL(
+    const r = ML(
       t.item,
       a.value.definition
     );
@@ -14242,7 +14262,7 @@ class IL {
     if (!n)
       return this.executePersistedPendingAutomation(t);
     if (n.kind === "workflow")
-      return this.pendingExecutions.delete(t), await Ta(t), await this.executeAutomation(
+      return this.pendingExecutions.delete(t), await Ra(t), await this.executeAutomation(
         n.context,
         n.definition,
         n.mode
@@ -14251,7 +14271,7 @@ class IL {
       n.action,
       n.workflowContext
     );
-    return a.ok ? (this.pendingExecutions.delete(t), await Ta(
+    return a.ok ? (this.pendingExecutions.delete(t), await Ra(
       t,
       a.executedLabel
     ), await this.resolveAlternativeActions(n), this.setAttempt(n.context, "completed"), !0) : !1;
@@ -14262,7 +14282,7 @@ class IL {
       return ui.notifications?.warn(
         "Paranormal Toolkit: automação pendente não encontrada ou já executada."
       ), !1;
-    const a = n.prompt.actionPayload, r = qL(a);
+    const a = n.prompt.actionPayload, r = VL(a);
     if (!r)
       return ui.notifications?.warn(
         `Paranormal Toolkit: não consegui encontrar ${a.actorName} para aplicar a ação persistida.`
@@ -14274,16 +14294,16 @@ class IL {
       a.operation,
       a.amount
     );
-    return o.ok ? (await IS(t), await LS(
+    return o.ok ? (await vS(t), await DS(
       t,
       n.prompt.choiceGroupId,
       n.prompt.skippedLabel ?? "✓ Outra opção escolhida"
     ), !0) : (this.handleResourceActionFailure(o), !1);
   }
   registerPromptRenderer() {
-    this.promptRendererRegistered || (CS(
+    this.promptRendererRegistered || (IS(
       (t) => this.executePendingAutomation(t)
-    ), AL((t) => this.executeRitualCardAction(t)), this.promptRendererRegistered = !0);
+    ), EL((t) => this.executeRitualCardAction(t)), this.promptRendererRegistered = !0);
   }
   async handleAskMode(t, n, a) {
     if (this.ritualAssistant.canHandle(t, n)) {
@@ -14297,7 +14317,7 @@ class IL {
       this.setAttempt(t, "failed", "missing-actor"), this.debugOutput.warn({
         title: "Conjuração de ritual sem ator",
         message: `Não foi possível resolver o ator para ${t.item.name}.`,
-        data: $a(t, "failed", "missing-actor")
+        data: wa(t, "failed", "missing-actor")
       });
       return;
     }
@@ -14307,13 +14327,13 @@ class IL {
     }
     this.markExecution(t), await this.handleAssistedRitual(
       t,
-      BL(t.item),
+      zL(t.item),
       { type: "generic" }
     );
   }
   async handleAssistedRitual(t, n, a) {
     this.setAttempt(t, "running", "ritual-assisted-cast");
-    const r = oL(t.item, n), o = await this.ritualAssistant.run(t, r, a);
+    const r = sL(t.item, n), o = await this.ritualAssistant.run(t, r, a);
     switch (o.status) {
       case "cancelled":
         this.setAttempt(t, "skipped", "ritual-cast-cancelled");
@@ -14353,14 +14373,14 @@ class IL {
     }
   }
   async tryRegisterSingleTargetRitualCard(t, n, a, r) {
-    const o = t.actor ? Wu(t.actor) : null, i = mL({ mode: Ql(), systemId: game.system.id, context: t, snapshot: n, actions: a, resistanceDifficulty: o });
+    const o = t.actor ? Ku(t.actor) : null, i = pL({ mode: Ql(), systemId: game.system.id, context: t, snapshot: n, actions: a, resistanceDifficulty: o });
     if (!i.eligible)
       return i.reason !== "mode-legacy" && f.warn("Fallback para card ritual legado.", { reason: i.reason, castId: n.castId, itemId: t.item.id, targetCount: t.targets.length, stage: "eligibility" }), !1;
     try {
-      const l = bL({ context: t, snapshot: n, actions: a, resistanceDifficulty: o }), c = vS(t);
+      const l = TL({ context: t, snapshot: n, actions: a, resistanceDifficulty: o }), c = xS(t);
       if (!c) throw new Error("ChatMessage ainda não resolvida.");
       const u = { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: l.createdAt, messageId: typeof c.id == "string" ? c.id : null, state: l, legacyFallback: { summaryLines: [...r], itemName: t.item.name ?? "Ritual", actorId: t.actor?.id ?? null, itemId: t.item.id ?? null } };
-      return await uS(c, u), !0;
+      return await mS(c, u), !0;
     } catch (l) {
       return f.warn("Fallback para card ritual legado.", { reason: "card-build-or-persist-failed", castId: n.castId, itemId: t.item.id, targetCount: t.targets.length, stage: "build-render-persist", cause: l }), !1;
     }
@@ -14379,9 +14399,9 @@ class IL {
         source: t.source,
         originUuid: t.originUuid
       });
-      return r.ok ? (ML(n, r.value), await qa(r.value), {
+      return r.ok ? (qL(n, r.value), await ja(r.value), {
         ok: !0,
-        executedLabel: LL(r.value)
+        executedLabel: NL(r.value)
       }) : (this.handleDamageActionFailure(r.error), { ok: !1 });
     }
     if (!he())
@@ -14407,20 +14427,20 @@ class IL {
       }
       if (!o || !i) return { ok: !1, sideEffect: "none", message: "alvo ou resistência não encontrado." };
       try {
-        const c = await new ru(new Hr(new Fn())).execute({ actor: i, skill: o.skill, skillLabel: o.skillLabel });
-        return await ho(c.roll), { ok: !0, resistance: {
+        const c = await new ru(new Wr(new Fn())).execute({ actor: i, skill: o.skill, skillLabel: o.skillLabel });
+        return await bo(c.roll), { ok: !0, resistance: {
           skill: c.skill,
           skillLabel: c.skillLabel,
           formula: c.formula,
           total: c.total,
-          diceResults: vL(c.roll),
+          diceResults: PL(c.roll),
           difficulty: o.difficulty,
           outcome: c.total >= o.difficulty ? "success" : "failure",
           targetActorId: i.id ?? null,
           targetActorUuid: i.uuid ?? null,
           targetName: i.name ?? t.card.state.target.name,
           rolledAt: (/* @__PURE__ */ new Date()).toISOString(),
-          userId: DL(),
+          userId: OL(),
           usedFallbackBonus: !1
         } };
       } catch (l) {
@@ -14443,26 +14463,26 @@ class IL {
     }
     if (n.kind === "damage-application") {
       const o = await this.damage.applyDamage({ actor: a, instances: n.instances, source: n.source, originUuid: n.originUuid });
-      return o.ok ? (await qa(o.value), { ok: !0 }) : { ok: !1, sideEffect: "none", message: o.error.message };
+      return o.ok ? (await ja(o.value), { ok: !0 }) : { ok: !1, sideEffect: "none", message: o.error.message };
     }
     const r = await this.conditions.applyCondition({ actor: a, conditionId: n.conditionId, duration: n.duration, originUuid: n.originUuid, source: n.source ?? "ritual.chat-card" });
     return r.ok ? { ok: !0 } : { ok: !1, sideEffect: "none", message: r.error.message };
   }
   async resolveAlternativeActions(t) {
-    const n = ka(t.action);
+    const n = Ea(t.action);
     if (!n) return;
     const a = Array.from(
       this.pendingExecutions.entries()
-    ).filter(([, r]) => r.kind === "assisted-action" && ka(r.action) === n);
+    ).filter(([, r]) => r.kind === "assisted-action" && Ea(r.action) === n);
     for (const [r, o] of a)
-      o.kind === "assisted-action" && o.id !== t.id && (this.pendingExecutions.delete(r), await Ta(
+      o.kind === "assisted-action" && o.id !== t.id && (this.pendingExecutions.delete(r), await Ra(
         r,
         cl(o.action) ?? "✓ Outra opção escolhida"
       ));
   }
   async registerCompletedRitualCard(t, n) {
-    const a = wa();
-    await SS({
+    const a = Ca();
+    await LS({
       pendingId: a,
       context: t,
       mode: "ask",
@@ -14477,7 +14497,7 @@ class IL {
   async registerAssistedActions(t, n, a, r) {
     let o;
     for (const i of a) {
-      const l = wa();
+      const l = Ca();
       o ??= l, this.pendingExecutions.set(l, {
         kind: "assisted-action",
         id: l,
@@ -14492,7 +14512,7 @@ class IL {
         title: "Paranormal Toolkit · Ritual",
         buttonLabel: i.label,
         executedLabel: i.executedLabel,
-        choiceGroupId: ka(i),
+        choiceGroupId: Ea(i),
         skippedLabel: cl(i),
         actionSectionId: i.actionSectionId,
         actionSectionTitle: i.actionSectionTitle,
@@ -14500,7 +14520,7 @@ class IL {
         resistanceTargetActor: i.actor,
         resistanceTargetActorId: i.actor.id ?? null,
         resistanceTargetName: i.actorName,
-        actionPayload: UL(i)
+        actionPayload: GL(i)
       });
     }
     this.setAttempt(
@@ -14514,7 +14534,7 @@ class IL {
     );
   }
   async createPendingWorkflowPrompt(t, n) {
-    const a = wa();
+    const a = Ca();
     this.pendingExecutions.set(a, {
       kind: "workflow",
       id: a,
@@ -14591,7 +14611,7 @@ class IL {
     this.recentExecutionKeys.set(ul(t), Date.now());
   }
   setAttempt(t, n, a, r) {
-    this.lastAttempt = $a(
+    this.lastAttempt = wa(
       t,
       n,
       a,
@@ -14599,7 +14619,7 @@ class IL {
     );
   }
 }
-function LL(e) {
+function NL(e) {
   return nu({ inputAmount: e.totalRawDamage });
 }
 async function ll(e) {
@@ -14610,40 +14630,40 @@ async function ll(e) {
   const t = e.id ? game.actors?.get?.(e.id) : null;
   return t && typeof t == "object" && "system" in t ? t : null;
 }
-function vL(e) {
+function PL(e) {
   const t = e.dice;
   return Array.isArray(t) ? t.flatMap((n) => Array.isArray(n.results) ? n.results.flatMap((a) => typeof a.result == "number" ? [a.result] : []) : []) : [];
 }
-function DL() {
+function OL() {
   const e = game.user?.id;
   return typeof e == "string" ? e : null;
 }
-function xL(e, t) {
-  if (t.resistance || !NL(t))
+function ML(e, t) {
+  if (t.resistance || !FL(t))
     return t;
   const n = Gn(e);
   return n ? { ...t, resistance: n } : t;
 }
-function NL(e) {
-  return PL(e) && !OL(e);
+function FL(e) {
+  return BL(e) && !UL(e);
 }
-function PL(e) {
+function BL(e) {
   return (e.conditionApplications ?? []).some(
     (t) => t.actor === "target"
   );
 }
-function OL(e) {
+function UL(e) {
   return e.steps.some(
     (t) => t.type === "modifyResource" && t.actor === "target" && t.resource === "PV" && t.operation === "damage"
   );
 }
-function ka(e) {
+function Ea(e) {
   return e.kind !== "resource-operation" && e.kind !== "damage-application" ? null : e.choiceGroupId ?? null;
 }
 function cl(e) {
   return e.kind !== "resource-operation" && e.kind !== "damage-application" ? null : e.choiceGroupResolvedLabel ?? null;
 }
-function ML(e, t) {
+function qL(e, t) {
   for (const n of t.instances)
     e.damageInstances.push({
       id: n.id,
@@ -14661,17 +14681,17 @@ function ML(e, t) {
       tags: ["ordem-apply-damage"]
     });
 }
-function FL(e) {
+function jL(e) {
   return e.type === "ritual";
 }
-function BL(e) {
-  return GE(e) ?? {
+function zL(e) {
+  return VE(e) ?? {
     version: 1,
     label: `Conjuração de ${e.name ?? "ritual"}`,
     steps: [{ type: "spendRitualCost" }]
   };
 }
-function UL(e) {
+function GL(e) {
   return e.kind === "damage-application" || e.kind !== "resource-operation" ? null : {
     kind: "resource-operation",
     actorId: e.actor.id ?? null,
@@ -14682,13 +14702,13 @@ function UL(e) {
     amount: e.amount
   };
 }
-function qL(e) {
-  const t = e.actorUuid ? jL(e.actorUuid) : null;
+function VL(e) {
+  const t = e.actorUuid ? HL(e.actorUuid) : null;
   if (at(t)) return t;
-  const n = e.actorId ? zL(e.actorId) : null;
-  return n || GL(e.actorName);
+  const n = e.actorId ? WL(e.actorId) : null;
+  return n || KL(e.actorName);
 }
-function jL(e) {
+function HL(e) {
   const t = globalThis.fromUuidSync;
   if (typeof t != "function") return null;
   try {
@@ -14697,35 +14717,35 @@ function jL(e) {
     return null;
   }
 }
-function zL(e) {
+function WL(e) {
   const n = game.actors?.get?.(e);
   if (at(n)) return n;
-  for (const a of em()) {
+  for (const a of nm()) {
     const r = Bo(a);
     if (r?.id === e) return r;
   }
   return null;
 }
-function GL(e) {
-  const t = Ea(e);
+function KL(e) {
+  const t = $a(e);
   if (!t) return null;
-  for (const r of em()) {
-    const o = VL(r);
-    if (Ea(o) === t) {
+  for (const r of nm()) {
+    const o = YL(r);
+    if ($a(o) === t) {
       const i = Bo(r);
       if (i) return i;
     }
   }
   const a = game.actors?.find?.(
-    (r) => at(r) && Ea(r.name) === t
+    (r) => at(r) && $a(r.name) === t
   );
   return at(a) ? a : null;
 }
-function em() {
+function nm() {
   const e = canvas?.tokens?.placeables;
   return Array.isArray(e) ? e : [];
 }
-function VL(e) {
+function YL(e) {
   if (!e || typeof e != "object") return null;
   const t = e.name;
   if (typeof t == "string") return t;
@@ -14739,14 +14759,14 @@ function Bo(e) {
   const n = e.document?.actor;
   return at(n) ? n : null;
 }
-function Ea(e) {
+function $a(e) {
   const t = e?.trim().toLocaleLowerCase();
   return t && t.length > 0 ? t : null;
 }
 function at(e) {
   return !!(e && typeof e == "object" && "system" in e);
 }
-function $a(e, t, n, a) {
+function wa(e, t, n, a) {
   return {
     source: e.source,
     status: t,
@@ -14766,11 +14786,11 @@ function ul(e) {
   const t = e.actor?.id ?? "no-actor", n = e.item.uuid ?? e.item.id ?? e.item.name ?? "unknown-item";
   return `${t}:${n}`;
 }
-function wa() {
+function Ca() {
   const e = globalThis.crypto;
   return e?.randomUUID ? e.randomUUID() : `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
-class HL {
+class XL {
   constructor(t, n, a) {
     this.diagnostic = t, this.automationBinder = n, this.itemPatches = a;
   }
@@ -14804,7 +14824,7 @@ class HL {
     };
   }
 }
-class WL {
+class QL {
   constructor(t) {
     this.automationRegistry = t;
   }
@@ -14827,7 +14847,7 @@ class WL {
     return [...n.available, ...n.outdated];
   }
   analyzeRitual(t) {
-    const n = this.automationRegistry.findForItem(t)[0] ?? null, a = KL(t);
+    const n = this.automationRegistry.findForItem(t)[0] ?? null, a = ZL(t);
     return n ? a ? a.source.type !== "preset" ? dt({
       ritual: t,
       status: "upToDate",
@@ -14845,7 +14865,7 @@ class WL {
       status: "outdated",
       match: n,
       flag: a,
-      reason: YL(a, n.preset)
+      reason: JL(a, n.preset)
     }) : dt({
       ritual: t,
       status: "available",
@@ -14874,23 +14894,23 @@ function dt(e) {
     reason: e.reason
   };
 }
-function KL(e) {
+function ZL(e) {
   const t = e.getFlag(d, "automation");
-  return Ir(t) ? t : null;
+  return Lr(t) ? t : null;
 }
-function YL(e, t) {
+function JL(e, t) {
   return e.source.type !== "preset" ? `Automação existente pode ser substituída pelo preset ${t.label}.` : e.source.presetId !== t.id ? `Preset aplicado (${e.source.presetId}) difere do preset atual sugerido (${t.id}).` : `Preset ${t.label} aplicado em v${e.source.presetVersion}; versão atual é v${t.version}.`;
 }
 function Kt(e) {
   return (t) => t.status === e;
 }
-class XL {
+class ev {
   constructor(t) {
     this.debugOutput = t;
   }
   debugOutput;
   async createResourceOperationMessage(t) {
-    const n = this.createResourceOperationContent(t.transaction), a = vr(t.transaction);
+    const n = this.createResourceOperationContent(t.transaction), a = Dr(t.transaction);
     await this.debugOutput.chat({
       speaker: ChatMessage.getSpeaker({ actor: t.transaction.actor }),
       content: n,
@@ -14903,7 +14923,7 @@ class XL {
     });
   }
   createResourceOperationContent(t) {
-    const n = Yt(t.actorName), a = Yt(t.resource), r = Yt(QL(t)), o = Yt(ZL(t));
+    const n = Yt(t.actorName), a = Yt(t.resource), r = Yt(tv(t)), o = Yt(nv(t));
     return `
       <section class="${d}-card ${d}-resource-card">
         <header class="${d}-card__header">
@@ -14918,7 +14938,7 @@ class XL {
     `;
   }
 }
-function QL(e) {
+function tv(e) {
   switch (e.operation) {
     case "spend":
       return `Gasto de ${e.resource}`;
@@ -14930,7 +14950,7 @@ function QL(e) {
       return `Recuperação de ${e.resource}`;
   }
 }
-function ZL(e) {
+function nv(e) {
   switch (e.operation) {
     case "spend":
       return `${e.resource} gasto`;
@@ -14945,24 +14965,24 @@ function ZL(e) {
 function Yt(e) {
   return e.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
-function JL() {
-  const e = new _k(), t = new fE(e), n = new xc(new Dc()), a = new Hr(new Fn()), r = new pE(new Hu()), o = new Rk(), i = new Ok(o), l = new qk(e), c = new zk(), u = c.registerMany(
-    rf()
+function av() {
+  const e = new Tk(), t = new pE(e), n = new xc(new Dc()), a = new Wr(new Fn()), r = new gE(new Wu()), o = new Hu(), i = new Mk(o), l = new jk(e), c = new Gk(), u = c.registerMany(
+    sf()
   );
   if (!u.ok)
     throw new Error(u.error.message);
-  const m = new jk(), p = new Bk(), _ = qc(), $ = new Oc(_), T = new WL(
+  const m = new zk(), p = new Uk(), _ = qc(), $ = new Oc(_), T = new QL(
     c
-  ), k = new HL(
+  ), k = new XL(
     T,
     m,
     p
-  ), b = new yE(), L = new XL(b), E = new bE(), D = new mE(), G = new uE(
+  ), b = new _E(), L = new ev(b), E = new yE(), D = new fE(), G = new dE(
     t,
     i,
     L,
     E
-  ), q = new hE(G, E), x = new IL(
+  ), q = new bE(G, E), x = new xL(
     q,
     t,
     i,
@@ -15000,8 +15020,8 @@ function JL() {
     ritualPresetApplications: k
   };
 }
-const { ApplicationV2: ev } = foundry.applications.api;
-class Rn extends ev {
+const { ApplicationV2: rv } = foundry.applications.api;
+class Rn extends rv {
   constructor(t, n) {
     super({
       id: `${d}-ritual-preset-manager-${t.id ?? foundry.utils.randomID()}`,
@@ -15053,9 +15073,9 @@ class Rn extends ev {
       ${this.renderLastResult()}
 
       <div class="paranormal-toolkit-preset-manager__sections">
-        ${Ca("Prontos para aplicar", "available", t.available, "fa-solid fa-plus")}
-        ${Ca("Desatualizados", "outdated", t.outdated, "fa-solid fa-rotate")}
-        ${Ca("Automatizados", "upToDate", t.upToDate, "fa-solid fa-check")}
+        ${Sa("Prontos para aplicar", "available", t.available, "fa-solid fa-plus")}
+        ${Sa("Desatualizados", "outdated", t.outdated, "fa-solid fa-rotate")}
+        ${Sa("Automatizados", "upToDate", t.upToDate, "fa-solid fa-check")}
       </div>
 
       <footer class="paranormal-toolkit-preset-manager__footer">
@@ -15105,7 +15125,7 @@ class Rn extends ev {
     t.preventDefault(), await this.close();
   }
 }
-function Ca(e, t, n, a) {
+function Sa(e, t, n, a) {
   return `
     <section class="paranormal-toolkit-preset-manager__section paranormal-toolkit-preset-manager__section--${t}">
       <h3>
@@ -15113,14 +15133,14 @@ function Ca(e, t, n, a) {
         <span>${oe(e)}</span>
         <small>${n.length}</small>
       </h3>
-      ${n.length > 0 ? tv(n) : av(t)}
+      ${n.length > 0 ? ov(n) : sv(t)}
     </section>
   `;
 }
-function tv(e) {
-  return `<ol class="paranormal-toolkit-preset-manager__list">${e.map(nv).join("")}</ol>`;
+function ov(e) {
+  return `<ol class="paranormal-toolkit-preset-manager__list">${e.map(iv).join("")}</ol>`;
 }
-function nv(e) {
+function iv(e) {
   const t = e.preset, n = t ? `${t.label} v${t.version}` : "Sem preset", a = e.appliedPresetId ? `<span class="paranormal-toolkit-preset-manager__applied">Aplicado: ${oe(e.appliedPresetId)} v${oe(e.appliedPresetVersion ?? "?")}</span>` : "";
   return `
     <li class="paranormal-toolkit-preset-manager__entry">
@@ -15133,7 +15153,7 @@ function nv(e) {
     </li>
   `;
 }
-function av(e) {
+function sv(e) {
   return `<p class="paranormal-toolkit-preset-manager__empty">${oe({
     available: "Nenhum ritual pendente com preset conhecido.",
     outdated: "Nenhum ritual desatualizado encontrado.",
@@ -15145,44 +15165,44 @@ function oe(e) {
   const t = document.createElement("div");
   return t.textContent = e, t.innerHTML;
 }
-const kn = `${d}.manageRitualPresets`, dl = `__${d}_ritualPresetHeaderControlRegistered`, rv = [
+const kn = `${d}.manageRitualPresets`, dl = `__${d}_ritualPresetHeaderControlRegistered`, lv = [
   "getHeaderControlsOrdemActorSheet",
   "getHeaderControlsActorSheetV2",
   "getHeaderControlsDocumentSheetV2"
 ];
-function ov(e) {
+function cv(e) {
   const t = globalThis;
   if (!t[dl]) {
-    for (const n of rv)
+    for (const n of lv)
       Hooks.on(n, (a, r) => {
-        iv(a, r, e);
+        uv(a, r, e);
       });
     t[dl] = !0, f.info("Ação de presets de rituais registrada no menu da ficha de ator.");
   }
 }
-function iv(e, t, n) {
-  Array.isArray(t) && lv(e) && (sv(e, n), !t.some((a) => a.action === kn) && t.push({
+function uv(e, t, n) {
+  Array.isArray(t) && mv(e) && (dv(e, n), !t.some((a) => a.action === kn) && t.push({
     action: kn,
     icon: "fa-solid fa-wand-magic-sparkles",
     label: "Gerenciar presets de rituais",
     visible: !0,
     onClick: (a) => {
-      a.preventDefault(), a.stopPropagation(), tm(e, n);
+      a.preventDefault(), a.stopPropagation(), am(e, n);
     }
   }));
 }
-function sv(e, t) {
+function dv(e, t) {
   e.options && (e.options.actions ??= {}, !e.options.actions[kn] && (e.options.actions[kn] = (n) => {
-    n.preventDefault(), n.stopPropagation(), tm(e, t);
+    n.preventDefault(), n.stopPropagation(), am(e, t);
   }));
 }
-function lv(e) {
+function mv(e) {
   if (!game.user?.isGM) return !1;
-  const t = nm(e);
+  const t = rm(e);
   return t ? t.type === "agent" && It(t).length > 0 : !1;
 }
-function tm(e, t) {
-  const n = nm(e);
+function am(e, t) {
+  const n = rm(e);
   if (!n) {
     ui.notifications?.warn("Paranormal Toolkit: não foi possível identificar o ator desta ficha.");
     return;
@@ -15193,40 +15213,40 @@ function tm(e, t) {
   }
   new Rn(n, t).render({ force: !0 });
 }
-function nm(e) {
+function rm(e) {
   return ml(e.actor) ? e.actor : ml(e.document) ? e.document : null;
 }
 function ml(e) {
   return !!(e && typeof e == "object" && "items" in e && "type" in e);
 }
-const Er = "data-paranormal-toolkit-stylesheet";
-function cv(e) {
-  const t = pv(e), n = uv(t), a = mv(n), r = dv(n, t);
+const $r = "data-paranormal-toolkit-stylesheet";
+function fv(e) {
+  const t = yv(e), n = pv(t), a = hv(n), r = gv(n, t);
   if (r)
-    return r.href = a, r.setAttribute(Er, t), r;
+    return r.href = a, r.setAttribute($r, t), r;
   const o = document.createElement("link");
-  return o.rel = "stylesheet", o.href = a, o.setAttribute(Er, t), document.head.append(o), o;
+  return o.rel = "stylesheet", o.href = a, o.setAttribute($r, t), document.head.append(o), o;
 }
-function uv(e) {
+function pv(e) {
   const t = `modules/${d}/${e}`, n = foundry.utils, a = n.getRoute;
   return typeof a == "function" ? a.call(n, t) : t;
 }
-function dv(e, t) {
+function gv(e, t) {
   const n = fl(e);
   for (const a of Array.from(
     document.head.querySelectorAll('link[rel="stylesheet"]')
   ))
-    if (a.getAttribute(Er) === t || fl(a.href) === n)
+    if (a.getAttribute($r) === t || fl(a.href) === n)
       return a;
   return null;
 }
-function mv(e) {
-  const t = fv();
+function hv(e) {
+  const t = bv();
   if (!t) return e;
   const n = e.includes("?") ? "&" : "?";
   return `${e}${n}v=${encodeURIComponent(t)}`;
 }
-function fv() {
+function bv() {
   const e = game.modules.get(d), t = e?.version ?? e?.manifest?.version;
   return typeof t == "string" && t.trim().length > 0 ? t.trim() : null;
 }
@@ -15237,7 +15257,7 @@ function fl(e) {
     return e;
   }
 }
-function pv(e) {
+function yv(e) {
   return e.trim().replace(/^\/+|\/+$/gu, "");
 }
 function Ie(e, t) {
@@ -15246,7 +15266,7 @@ function Ie(e, t) {
   const a = document.createElement("span");
   return a.textContent = e, n.append(a, t), n;
 }
-function $r(e, t, n) {
+function wr(e, t, n) {
   const a = document.createElement("input");
   return a.type = "text", a.value = e, a.placeholder = t, a.disabled = !n, a;
 }
@@ -15258,7 +15278,7 @@ function on(e, t, n) {
   const o = document.createElement("span");
   return o.textContent = e, a.append(r, o), a;
 }
-function am(e, t) {
+function om(e, t) {
   const n = document.createElement("button");
   n.type = "button", n.classList.add(`${d}-ability-roll-config__icon-button`), n.title = e, n.setAttribute("aria-label", e);
   const a = document.createElement("i");
@@ -15268,7 +15288,7 @@ function mt(e, t, n = !1) {
   const a = document.createElement("option");
   return a.value = e, a.textContent = t, a.selected = n, a;
 }
-function gv(e) {
+function _v(e) {
   const { roll: t, index: n, editable: a, onChange: r, onRemove: o } = e, i = document.createElement("article");
   i.classList.add(`${d}-ability-roll-config__card`), i.dataset.abilityRollId = t.id;
   const l = document.createElement("header");
@@ -15279,11 +15299,11 @@ function gv(e) {
   u.textContent = `Rolagem ${n + 1}`;
   const m = document.createElement("span");
   c.append(u, m);
-  const p = am("Remover rolagem", "fa-solid fa-trash");
+  const p = om("Remover rolagem", "fa-solid fa-trash");
   p.disabled = !a, p.addEventListener("click", o), l.append(c, p);
   const _ = document.createElement("div");
   _.classList.add(`${d}-ability-roll-config__fields`);
-  const $ = $r(
+  const $ = wr(
     t.label,
     "Ex.: Dano adicional",
     a
@@ -15301,12 +15321,12 @@ function gv(e) {
     T.append(
       mt(
         C,
-        Kp(C),
+        Xp(C),
         t.intent === C
       )
     );
   T.addEventListener("change", () => {
-    t.intent = _v(T.value), ne(), r();
+    t.intent = kv(T.value), ne(), r();
   }), _.append(Ie("Tipo da rolagem", T));
   const k = document.createElement("div");
   k.classList.add(
@@ -15333,7 +15353,7 @@ function gv(e) {
     t.formula = G.checked ? {
       mode: "nex",
       resolution: "highest-unlocked",
-      steps: bv(
+      steps: Tv(
         t.formula.mode === "fixed" ? t.formula.formula : ""
       )
     } : {
@@ -15361,7 +15381,7 @@ function gv(e) {
   }
   function Me() {
     if (x.replaceChildren(), t.formula.mode === "fixed") {
-      const I = $r(
+      const I = wr(
         t.formula.formula,
         "Ex.: 2d6 + @attributes.str.value",
         a
@@ -15384,12 +15404,12 @@ function gv(e) {
         C.resolution === "choose-unlocked"
       )
     ), O.addEventListener("change", () => {
-      C.resolution = Av(O.value), r();
+      C.resolution = Ev(O.value), r();
     }), x.append(Ie("Comportamento", O));
     const ae = document.createElement("div");
     ae.classList.add(`${d}-ability-roll-config__steps`), C.steps.forEach((I, ue) => {
       ae.append(
-        hv({
+        Av({
           step: I,
           editable: a,
           onChange: r,
@@ -15404,9 +15424,9 @@ function gv(e) {
       "fa-solid fa-plus",
       `${d}-ability-roll-config__add-step`
     );
-    S.disabled = !a || C.steps.length >= Ma, S.addEventListener("click", () => {
-      C.steps.length >= Ma || (C.steps.push({
-        minNex: yv(
+    S.disabled = !a || C.steps.length >= Fa, S.addEventListener("click", () => {
+      C.steps.length >= Fa || (C.steps.push({
+        minNex: Rv(
           C.steps.map((I) => I.minNex)
         ),
         formula: ""
@@ -15414,53 +15434,53 @@ function gv(e) {
     }), x.append(S);
   }
 }
-function hv(e) {
+function Av(e) {
   const { step: t, editable: n, onChange: a, onRemove: r } = e, o = document.createElement("div");
   o.classList.add(`${d}-ability-roll-config__step`);
   const i = document.createElement("input");
   i.type = "number", i.min = "0", i.max = "99", i.step = "1", i.value = String(t.minNex), i.disabled = !n, i.setAttribute("aria-label", "NEX mínimo"), i.addEventListener("change", () => {
-    t.minNex = Tv(Number(i.value)), i.value = String(t.minNex), a();
+    t.minNex = $v(Number(i.value)), i.value = String(t.minNex), a();
   });
   const l = document.createElement("div");
   l.classList.add(`${d}-ability-roll-config__nex-control`);
   const c = document.createElement("span");
   c.textContent = "%", l.append(i, c);
-  const u = $r(t.formula, "Ex.: 2d6", n);
+  const u = wr(t.formula, "Ex.: 2d6", n);
   u.setAttribute("aria-label", "Fórmula da etapa"), u.addEventListener("input", () => {
     t.formula = u.value, a();
   });
-  const m = am("Remover etapa", "fa-solid fa-xmark");
+  const m = om("Remover etapa", "fa-solid fa-xmark");
   return m.disabled = !n, m.addEventListener("click", r), o.append(
     Ie("NEX mínimo", l),
     Ie("Fórmula", u),
     m
   ), o;
 }
-function bv(e) {
-  const t = Up(), n = t[0];
+function Tv(e) {
+  const t = jp(), n = t[0];
   return e.trim() && n && (n.formula = e), t;
 }
-function yv(e) {
+function Rv(e) {
   for (const t of [10, 40, 65, 99])
     if (!e.includes(t)) return t;
   for (let t = 0; t <= 99; t += 1)
     if (!e.includes(t)) return t;
   return 99;
 }
-function _v(e) {
+function kv(e) {
   return e === "damage" || e === "healing" ? e : "generic";
 }
-function Av(e) {
+function Ev(e) {
   return e === "choose-unlocked" ? "choose-unlocked" : "highest-unlocked";
 }
-function Tv(e) {
+function $v(e) {
   return Number.isFinite(e) ? Math.min(99, Math.max(0, Math.trunc(e))) : 0;
 }
-function Rv(e) {
-  let t = Sa(e.config);
+function wv(e) {
+  let t = Ia(e.config);
   const n = document.createElement("section");
   n.classList.add(`${d}-ability-roll-config`), n.dataset.paranormalToolkitAbilityRollConfig = e.itemKey;
-  const a = kv(t), r = document.createElement("p");
+  const a = Cv(t), r = document.createElement("p");
   r.classList.add(`${d}-ability-roll-config__hint`), r.textContent = "Configure uma ou mais rolagens. Cada uma pode usar uma fórmula fixa ou uma progressão liberada conforme o NEX do personagem.";
   const o = document.createElement("div");
   o.classList.add(`${d}-ability-roll-config__list`);
@@ -15470,7 +15490,7 @@ function Rv(e) {
     `${d}-ability-roll-config__add-roll`
   );
   i.addEventListener("click", () => {
-    t.rolls.length >= Oa || (t.rolls.push(_c(t.rolls.length + 1)), _(), L("Rolagem adicionada. Salve para confirmar."));
+    t.rolls.length >= Ma || (t.rolls.push(_c(t.rolls.length + 1)), _(), L("Rolagem adicionada. Salve para confirmar."));
   });
   const l = document.createElement("div");
   l.classList.add(`${d}-ability-roll-config__actions`);
@@ -15491,12 +15511,12 @@ function Rv(e) {
     } else
       t.rolls.forEach((E, D) => {
         o.append(
-          gv({
+          _v({
             roll: E,
             index: D,
             editable: e.editable,
             onChange: () => {
-              wr(a, t), L("Alterações pendentes. Salve para confirmar.");
+              Cr(a, t), L("Alterações pendentes. Salve para confirmar.");
             },
             onRemove: () => {
               t.rolls.splice(D, 1), _(), L("Rolagem removida. Salve para confirmar.");
@@ -15504,14 +15524,14 @@ function Rv(e) {
           })
         );
       });
-    wr(a, t), b(!1);
+    Cr(a, t), b(!1);
   }
   async function $() {
     k(!0), L("Salvando configuração...");
     try {
-      const E = Fr(t);
+      const E = Br(t);
       if (!E) throw new Error("Configuração inválida.");
-      t = Sa(await e.onSave(E)), _(), L("Configuração salva.");
+      t = Ia(await e.onSave(E)), _(), L("Configuração salva.");
     } catch (E) {
       console.warn(
         "Paranormal Toolkit: não foi possível salvar as rolagens da habilidade.",
@@ -15526,7 +15546,7 @@ function Rv(e) {
   async function T() {
     k(!0), L("Limpando configuração...");
     try {
-      t = Sa(await e.onClear()), _(), L("Configuração removida.");
+      t = Ia(await e.onClear()), _(), L("Configuração removida.");
     } catch (E) {
       console.warn(
         "Paranormal Toolkit: não foi possível limpar as rolagens da habilidade.",
@@ -15542,13 +15562,13 @@ function Rv(e) {
     n.classList.toggle(`${d}-ability-roll-config--busy`, E), b(E);
   }
   function b(E) {
-    c.disabled = E || !e.editable, u.disabled = E || !e.editable, i.disabled = E || !e.editable || t.rolls.length >= Oa;
+    c.disabled = E || !e.editable, u.disabled = E || !e.editable, i.disabled = E || !e.editable || t.rolls.length >= Ma;
   }
   function L(E) {
     p.textContent = E;
   }
 }
-function kv(e) {
+function Cv(e) {
   const t = document.createElement("header");
   t.classList.add(`${d}-ability-roll-config__header`);
   const n = document.createElement("div");
@@ -15558,67 +15578,67 @@ function kv(e) {
   const r = document.createElement("span");
   r.textContent = "Fórmulas de rolagem", n.append(a, r);
   const o = document.createElement("span");
-  return o.classList.add(`${d}-ability-roll-config__badge`), t.append(n, o), wr(t, e), t;
+  return o.classList.add(`${d}-ability-roll-config__badge`), t.append(n, o), Cr(t, e), t;
 }
-function wr(e, t) {
+function Cr(e, t) {
   const n = e.querySelector(
     `.${d}-ability-roll-config__badge`
   );
-  n && (n.textContent = Yp(t) ? "Configurada" : "Rascunho");
+  n && (n.textContent = Qp(t) ? "Configurada" : "Rascunho");
 }
-function Sa(e) {
+function Ia(e) {
   return JSON.parse(JSON.stringify(e));
 }
-const Ev = "[data-paranormal-toolkit-ability-roll-config]", pl = `__${d}_abilityRollConfigBlockRegistered`, $v = [
+const Sv = "[data-paranormal-toolkit-ability-roll-config]", pl = `__${d}_abilityRollConfigBlockRegistered`, Iv = [
   "renderOrdemItemSheet",
   "renderItemSheet",
   "renderItemSheetV2",
   "renderDocumentSheetV2",
   "renderApplicationV2"
 ];
-function wv() {
+function Lv() {
   const e = globalThis;
   if (!e[pl]) {
-    cv("styles/ability-roll-config.css");
-    for (const t of $v)
+    fv("styles/ability-roll-config.css");
+    for (const t of Iv)
       Hooks.on(t, (...n) => {
-        Cv(n[0], n[1]);
+        vv(n[0], n[1]);
       });
     e[pl] = !0, f.info(
       "Bloco de configuração de rolagens de habilidade registrado na ficha de item."
     );
   }
 }
-function Cv(e, t) {
-  const n = Iv(e);
+function vv(e, t) {
+  const n = xv(e);
   if (!n || n.type !== "ability") return;
-  const a = vv(t);
+  const a = Pv(t);
   if (!a) return;
   const r = a.querySelector(
     'section[data-tab="abilityAttr"]'
   );
   if (!r) return;
   for (const i of Array.from(
-    r.querySelectorAll(Ev)
+    r.querySelectorAll(Sv)
   ))
     i.remove();
-  const o = Rv({
+  const o = wv({
     itemKey: n.uuid ?? n.id ?? "ability",
-    config: jp(n),
-    editable: Lv(n),
+    config: Gp(n),
+    editable: Nv(n),
     onSave: async (i) => {
-      const l = await zp(n, i);
+      const l = await Vp(n, i);
       return ui.notifications?.info(
         "Paranormal Toolkit: rolagens da habilidade salvas."
       ), l;
     },
-    onClear: async () => (await Gp(n), ui.notifications?.info(
+    onClear: async () => (await Hp(n), ui.notifications?.info(
       "Paranormal Toolkit: rolagens da habilidade removidas."
     ), yc())
   });
-  Sv(r, o);
+  Dv(r, o);
 }
-function Sv(e, t) {
+function Dv(e, t) {
   const n = e.querySelector(
     ".class-attributes-section"
   );
@@ -15628,13 +15648,13 @@ function Sv(e, t) {
   }
   (e.querySelector(".content-item") ?? e).append(t);
 }
-function Iv(e) {
+function xv(e) {
   return gl(e.item) ? e.item : gl(e.document) ? e.document : null;
 }
-function Lv(e) {
+function Nv(e) {
   return !!(game.user?.isGM || e.isOwner === !0);
 }
-function vv(e) {
+function Pv(e) {
   if (e instanceof HTMLElement) return e;
   if (e && typeof e == "object") {
     const t = e;
@@ -15646,13 +15666,13 @@ function vv(e) {
 function gl(e) {
   return !!(e && typeof e == "object" && "type" in e && "system" in e && "getFlag" in e && "setFlag" in e);
 }
-const Cr = "data-paranormal-toolkit-ritual-resistance-outcome-editor", En = "data-paranormal-toolkit-ritual-resistance-outcome", $n = "data-paranormal-toolkit-ritual-resistance-outcome-row", wn = "data-paranormal-toolkit-ritual-resistance-outcome-field", Cn = "data-paranormal-toolkit-ritual-resistance-outcome-editor-action", Dv = {
+const Sr = "data-paranormal-toolkit-ritual-resistance-outcome-editor", En = "data-paranormal-toolkit-ritual-resistance-outcome", $n = "data-paranormal-toolkit-ritual-resistance-outcome-row", wn = "data-paranormal-toolkit-ritual-resistance-outcome-field", Cn = "data-paranormal-toolkit-ritual-resistance-outcome-editor-action", Ov = {
   success: "Sucesso na resistência",
   failure: "Falha na resistência"
-}, xv = rL();
-function Nv(e, t) {
+}, Mv = iL();
+function Fv(e, t) {
   const n = document.createElement("div");
-  return n.classList.add(`${d}-ritual-resistance-outcomes__grid`), n.setAttribute(Cr, "true"), n.append(
+  return n.classList.add(`${d}-ritual-resistance-outcomes__grid`), n.setAttribute(Sr, "true"), n.append(
     hl(
       "success",
       e.outcomes.success.conditions,
@@ -15672,15 +15692,15 @@ function Nv(e, t) {
     if (!(!o || !n.contains(o) || !t))
       switch (o.getAttribute(Cn)) {
         case "add":
-          Ov(n, o);
+          Uv(n, o);
           return;
         case "remove":
-          Mv(o);
+          qv(o);
           return;
       }
   }), n;
 }
-function Pv(e) {
+function Bv(e) {
   return {
     schemaVersion: 1,
     outcomes: {
@@ -15689,12 +15709,12 @@ function Pv(e) {
     }
   };
 }
-function rm(e, t, n) {
+function im(e, t, n) {
   for (const a of ["success", "failure"]) {
     const r = Uo(e, a);
     r && r.replaceChildren(
-      ...om(t.outcomes[a].conditions).map(
-        (o) => Zn(a, o, n)
+      ...sm(t.outcomes[a].conditions).map(
+        (o) => Jn(a, o, n)
       )
     );
   }
@@ -15703,17 +15723,17 @@ function hl(e, t, n) {
   const a = document.createElement("section");
   a.classList.add(`${d}-ritual-resistance-outcomes__card`), a.setAttribute(En, e);
   const r = document.createElement("strong");
-  r.classList.add(`${d}-ritual-resistance-outcomes__card-title`), r.textContent = Dv[e], a.append(r);
+  r.classList.add(`${d}-ritual-resistance-outcomes__card-title`), r.textContent = Ov[e], a.append(r);
   const o = document.createElement("div");
   o.classList.add(`${d}-ritual-resistance-outcomes__rows`), o.append(
-    ...om(t).map(
-      (l) => Zn(e, l, n)
+    ...sm(t).map(
+      (l) => Jn(e, l, n)
     )
   ), a.append(o);
   const i = document.createElement("button");
   return i.type = "button", i.textContent = "+ Adicionar condição", i.disabled = !n, i.classList.add(`${d}-ritual-resistance-outcomes__add`), i.setAttribute(Cn, "add"), i.setAttribute(En, e), a.append(i), a;
 }
-function Zn(e, t, n) {
+function Jn(e, t, n) {
   const a = document.createElement("div");
   a.classList.add(`${d}-ritual-resistance-outcomes__row`), a.setAttribute($n, e);
   const r = yl("Condição");
@@ -15724,7 +15744,7 @@ function Zn(e, t, n) {
   o.disabled = !n, o.setAttribute(wn, "conditionId");
   const i = document.createElement("option");
   i.value = "", i.textContent = "Nenhuma condição", i.selected = t.conditionId.length === 0, o.append(i);
-  for (const m of xv) {
+  for (const m of Mv) {
     const p = document.createElement("option");
     p.value = m.value, p.textContent = m.label, p.selected = t.conditionId === m.value, o.append(p);
   }
@@ -15748,28 +15768,28 @@ function bl(e, t) {
     )?.value.trim();
     if (!r) return [];
     const o = a.querySelector(`[${wn}="rounds"]`)?.value.trim();
-    return [{ conditionId: r, rounds: Fv(o) }];
+    return [{ conditionId: r, rounds: jv(o) }];
   }) : [];
 }
-function Ov(e, t) {
-  const n = im(
+function Uv(e, t) {
+  const n = lm(
     t.getAttribute(En)
   );
   if (!n) return;
-  Uo(e, n)?.append(Zn(n, qo(), !0));
+  Uo(e, n)?.append(Jn(n, qo(), !0));
 }
-function Mv(e) {
-  const t = e.closest(`[${$n}]`), n = im(t?.getAttribute($n)), a = t?.parentElement;
-  !t || !n || !a || (t.remove(), a.childElementCount === 0 && a.append(Zn(n, qo(), !0)));
+function qv(e) {
+  const t = e.closest(`[${$n}]`), n = lm(t?.getAttribute($n)), a = t?.parentElement;
+  !t || !n || !a || (t.remove(), a.childElementCount === 0 && a.append(Jn(n, qo(), !0)));
 }
 function Uo(e, t) {
-  return (e.matches(`[${Cr}]`) ? e : e.querySelector(`[${Cr}]`))?.querySelector(
+  return (e.matches(`[${Sr}]`) ? e : e.querySelector(`[${Sr}]`))?.querySelector(
     `.${d}-ritual-resistance-outcomes__card[${En}="${t}"]`
   )?.querySelector(
     `.${d}-ritual-resistance-outcomes__rows`
   ) ?? null;
 }
-function om(e) {
+function sm(e) {
   return e.length > 0 ? e : [qo()];
 }
 function qo() {
@@ -15781,29 +15801,29 @@ function yl(e) {
   const n = document.createElement("span");
   return n.textContent = e, t.append(n), t;
 }
-function Fv(e) {
+function jv(e) {
   if (typeof e != "string" || e.trim().length === 0) return null;
   const t = Number(e);
   if (!Number.isFinite(t)) return null;
   const n = Math.trunc(t);
   return n > 0 ? n : null;
 }
-function im(e) {
+function lm(e) {
   return e === "success" || e === "failure" ? e : null;
 }
-const jo = "data-paranormal-toolkit-ritual-resistance-outcomes", _l = "data-paranormal-toolkit-ritual-roll-section-title", Bv = "data-paranormal-toolkit-ritual-roll-field", Al = "data-paranormal-toolkit-ritual-roll-action", Tl = "data-paranormal-toolkit-ritual-unified-actions-bound", Rl = `__${d}_ritualResistanceOutcomeBlockRegistered`, Uv = [
+const jo = "data-paranormal-toolkit-ritual-resistance-outcomes", _l = "data-paranormal-toolkit-ritual-roll-section-title", zv = "data-paranormal-toolkit-ritual-roll-field", Al = "data-paranormal-toolkit-ritual-roll-action", Tl = "data-paranormal-toolkit-ritual-unified-actions-bound", Rl = `__${d}_ritualResistanceOutcomeBlockRegistered`, Gv = [
   "renderOrdemItemSheet",
   "renderItemSheet",
   "renderItemSheetV2",
   "renderDocumentSheetV2",
   "renderApplicationV2"
 ];
-function qv() {
+function Vv() {
   const e = globalThis;
   if (!e[Rl]) {
-    for (const t of Uv)
+    for (const t of Gv)
       Hooks.on(t, (...n) => {
-        jv(
+        Hv(
           n[0],
           n[1]
         );
@@ -15813,10 +15833,10 @@ function qv() {
     );
   }
 }
-function jv(e, t) {
-  const n = Jv(e);
+function Hv(e, t) {
+  const n = a0(e);
   if (!n || n.type !== "ritual") return;
-  const a = t0(t);
+  const a = o0(t);
   if (!a) return;
   const r = a.querySelector(
     'section[data-tab="ritualAttr"]'
@@ -15826,15 +15846,15 @@ function jv(e, t) {
     "[data-paranormal-toolkit-ritual-roll-config]"
   );
   if (!o) return;
-  Vv(o), zv(o);
-  const i = aL(n), l = e0(n), c = Gn(n), u = Hv(
+  Yv(o), Wv(o);
+  const i = oL(n), l = r0(n), c = Gn(n), u = Xv(
     i,
     l,
     c?.summary ?? null
   );
-  Gv(o, u), Wv(o, n, l), zo(o, i);
+  Kv(o, u), Qv(o, n, l), zo(o, i);
 }
-function zv(e) {
+function Wv(e) {
   const t = e.querySelector(
     `.${d}-ritual-roll-config__title span`
   );
@@ -15853,7 +15873,7 @@ function zv(e) {
     `${d}-ritual-resistance-outcomes__formula-title`
   ), r.setAttribute(_l, "true"), r.textContent = "Fórmula de rolagem", a.insertAdjacentElement("beforebegin", r);
 }
-function Gv(e, t) {
+function Kv(e, t) {
   const n = e.querySelector(
     `.${d}-ritual-roll-config__actions`
   );
@@ -15863,21 +15883,21 @@ function Gv(e, t) {
   }
   e.append(t);
 }
-function Vv(e) {
+function Yv(e) {
   for (const t of Array.from(
     e.querySelectorAll(`[${jo}]`)
   ))
     t.remove();
 }
-function Hv(e, t, n) {
+function Xv(e, t, n) {
   const a = document.createElement("section");
   a.classList.add(`${d}-ritual-resistance-outcomes`), a.setAttribute(jo, "true");
   const r = document.createElement("strong");
   r.classList.add(`${d}-ritual-resistance-outcomes__section-title`), r.textContent = "Efeitos da resistência", a.append(r);
   const o = document.createElement("p");
-  return o.classList.add(`${d}-ritual-resistance-outcomes__hint`), o.textContent = n ? `${n}. Configure quais condições ficam disponíveis em cada resultado.` : "Configure uma perícia e um resultado de resistência nos campos do sistema antes de usar estes efeitos.", a.append(o), a.append(Nv(e, t)), a;
+  return o.classList.add(`${d}-ritual-resistance-outcomes__hint`), o.textContent = n ? `${n}. Configure quais condições ficam disponíveis em cada resultado.` : "Configure uma perícia e um resultado de resistência nos campos do sistema antes de usar estes efeitos.", a.append(o), a.append(Fv(e, t)), a;
 }
-function Wv(e, t, n) {
+function Qv(e, t, n) {
   const a = e.querySelector(
     `button[${Al}="save"]`
   ), r = e.querySelector(
@@ -15888,7 +15908,7 @@ function Wv(e, t, n) {
     (o) => {
       if (o.preventDefault(), o.stopImmediatePropagation(), !n) return;
       const i = kl(e);
-      i && Kv(e, i, t, a, r);
+      i && Zv(e, i, t, a, r);
     },
     { capture: !0 }
   ), r?.addEventListener(
@@ -15896,7 +15916,7 @@ function Wv(e, t, n) {
     (o) => {
       if (o.preventDefault(), o.stopImmediatePropagation(), !n) return;
       const i = kl(e);
-      i && Yv(e, i, t, a, r);
+      i && Jv(e, i, t, a, r);
     },
     { capture: !0 }
   ));
@@ -15904,18 +15924,18 @@ function Wv(e, t, n) {
 function kl(e) {
   return e.querySelector(`[${jo}]`);
 }
-async function Kv(e, t, n, a, r) {
+async function Zv(e, t, n, a, r) {
   Sn(a, r, !0), Ke(e, "Salvando configuração...");
   try {
-    const o = sm(e), i = Qd(
-      Pv(t)
+    const o = cm(e), i = Zd(
+      Bv(t)
     );
     if (!o || !i)
       throw new Error("Configuração genérica do ritual inválida.");
-    await cm(n).update({
+    await dm(n).update({
       [`flags.${d}.${et}`]: o,
       [`flags.${d}.${Fo}`]: i
-    }), lm(e, o), rm(
+    }), um(e, o), im(
       t,
       i,
       !0
@@ -15933,15 +15953,15 @@ async function Kv(e, t, n, a, r) {
     Sn(a, r, !1);
   }
 }
-async function Yv(e, t, n, a, r) {
+async function Jv(e, t, n, a, r) {
   Sn(a, r, !0), Ke(e, "Limpando configuração...");
   try {
-    await cm(n).update({
+    await dm(n).update({
       [`flags.${d}.-=${et}`]: null,
       [`flags.${d}.-=${Fo}`]: null
     });
-    const o = Nt(), i = Yd();
-    lm(e, o), rm(
+    const o = Nt(), i = Xd();
+    um(e, o), im(
       t,
       i,
       !0
@@ -15959,8 +15979,8 @@ async function Yv(e, t, n, a, r) {
     Sn(a, r, !1);
   }
 }
-function sm(e) {
-  const t = Zv(
+function cm(e) {
+  const t = n0(
     Go(e, "intent")?.value
   );
   return t ? bn({
@@ -15982,7 +16002,7 @@ function sm(e) {
     }
   }) : null;
 }
-function lm(e, t) {
+function um(e, t) {
   Ue(e, "intent", t.intent), Ue(
     e,
     "damageType",
@@ -16003,9 +16023,9 @@ function lm(e, t) {
     e,
     "formula.verdadeiro",
     t.forms.verdadeiro.formula
-  ), Xv(e, t.intent);
+  ), e0(e, t.intent);
 }
-function Xv(e, t) {
+function e0(e, t) {
   for (const n of Array.from(
     e.querySelectorAll(
       '[data-paranormal-toolkit-ritual-roll-damage-row="true"]'
@@ -16024,17 +16044,17 @@ function zo(e, t) {
     `.${d}-ritual-roll-config__badge`
   );
   if (!n) return;
-  const a = sm(e);
-  n.textContent = a && Qv(a) || Zd(t) ? "Configurada" : "Rascunho";
+  const a = cm(e);
+  n.textContent = a && t0(a) || Jd(t) ? "Configurada" : "Rascunho";
 }
-function Qv(e) {
+function t0(e) {
   return Object.values(e.forms).some(
     (t) => t.formula.trim().length > 0
   );
 }
 function Go(e, t) {
   return e.querySelector(
-    `[${Bv}="${t}"]`
+    `[${zv}="${t}"]`
   );
 }
 function sn(e, t) {
@@ -16054,7 +16074,7 @@ function Ue(e, t, n) {
   );
   a && (a.value = n);
 }
-function Zv(e) {
+function n0(e) {
   return e === "damage" || e === "healing" || e === "utility" ? e : null;
 }
 function Sn(e, t, n) {
@@ -16066,18 +16086,18 @@ function Ke(e, t) {
   );
   n && (n.textContent = t);
 }
-function cm(e) {
+function dm(e) {
   if (typeof e.update != "function")
     throw new Error("O item não suporta atualização de configuração.");
   return e;
 }
-function Jv(e) {
+function a0(e) {
   return $l(e.item) ? e.item : $l(e.document) ? e.document : null;
 }
-function e0(e) {
+function r0(e) {
   return !!(game.user?.isGM || e.isOwner);
 }
-function t0(e) {
+function o0(e) {
   if (e instanceof HTMLElement) return e;
   if (e && typeof e == "object") {
     const t = e;
@@ -16089,13 +16109,13 @@ function t0(e) {
 function $l(e) {
   return !!(e && typeof e == "object" && "type" in e && "system" in e && "getFlag" in e && "setFlag" in e);
 }
-const um = "data-paranormal-toolkit-ritual-roll-config", Mt = "data-paranormal-toolkit-ritual-roll-field", xe = "data-paranormal-toolkit-ritual-roll-action", wl = `__${d}_ritualRollConfigBlockRegistered`, n0 = [
+const mm = "data-paranormal-toolkit-ritual-roll-config", Mt = "data-paranormal-toolkit-ritual-roll-field", xe = "data-paranormal-toolkit-ritual-roll-action", wl = `__${d}_ritualRollConfigBlockRegistered`, i0 = [
   "renderOrdemItemSheet",
   "renderItemSheet",
   "renderItemSheetV2",
   "renderDocumentSheetV2",
   "renderApplicationV2"
-], a0 = [
+], s0 = [
   { value: "cutting", label: "Corte" },
   { value: "impact", label: "Impacto" },
   { value: "piercing", label: "Perfurante" },
@@ -16111,18 +16131,18 @@ const um = "data-paranormal-toolkit-ritual-roll-config", Mt = "data-paranormal-t
   { value: "chemical", label: "Químico" },
   { value: "mental", label: "Mental" }
 ];
-function r0() {
+function l0() {
   const e = globalThis;
   if (!e[wl]) {
-    o0();
-    for (const t of n0)
+    c0();
+    for (const t of i0)
       Hooks.on(t, (...n) => {
-        i0(n[0], n[1]);
+        u0(n[0], n[1]);
       });
     e[wl] = !0, f.info("Bloco de configuração de fórmula de ritual registrado na ficha de item.");
   }
 }
-function o0() {
+function c0() {
   const e = `${d}-ritual-roll-config-inline-style`;
   if (document.getElementById(e)) return;
   const t = document.createElement("style");
@@ -16255,18 +16275,18 @@ function o0() {
 }
 `, document.head.append(t);
 }
-function i0(e, t) {
-  const n = A0(e);
+function u0(e, t) {
+  const n = E0(e);
   if (!n || n.type !== "ritual") return;
-  const a = k0(t);
+  const a = C0(t);
   if (!a) return;
   const r = a.querySelector('section[data-tab="ritualAttr"]');
   if (!r) return;
-  l0(r);
-  const o = mm(n), i = ad(n), l = T0(n), c = c0(n, i, o, l);
-  g0(c, n, o, l), s0(r, c), Vo(c);
+  m0(r);
+  const o = pm(n), i = rd(n), l = $0(n), c = f0(n, i, o, l);
+  _0(c, n, o, l), d0(r, c), Vo(c);
 }
-function s0(e, t) {
+function d0(e, t) {
   const n = e.querySelector('input[name="system.studentForm"]')?.closest(".resource.grid");
   if (n?.parentElement) {
     n.insertAdjacentElement("afterend", t);
@@ -16274,64 +16294,64 @@ function s0(e, t) {
   }
   (e.querySelector(".content-item.scrollable") ?? e).append(t);
 }
-function l0(e) {
-  for (const t of Array.from(e.querySelectorAll(`[${um}]`)))
+function m0(e) {
+  for (const t of Array.from(e.querySelectorAll(`[${mm}]`)))
     t.remove();
 }
-function c0(e, t, n, a) {
+function f0(e, t, n, a) {
   const r = document.createElement("section");
-  r.classList.add(`${d}-ritual-roll-config`), r.setAttribute(um, e.uuid ?? e.id ?? "ritual");
+  r.classList.add(`${d}-ritual-roll-config`), r.setAttribute(mm, e.uuid ?? e.id ?? "ritual");
   const o = document.createElement("header");
   o.classList.add(`${d}-ritual-roll-config__header`);
   const i = document.createElement("div");
   i.classList.add(`${d}-ritual-roll-config__title`), i.append(Cl("strong", "Paranormal Toolkit")), i.append(Cl("span", "Fórmula de rolagem"));
   const l = document.createElement("span");
-  l.classList.add(`${d}-ritual-roll-config__badge`), l.textContent = pm(t) ? "Configurada" : "Rascunho", o.append(i, l), r.append(o);
+  l.classList.add(`${d}-ritual-roll-config__badge`), l.textContent = hm(t) ? "Configurada" : "Rascunho", o.append(i, l), r.append(o);
   const c = document.createElement("p");
   c.classList.add(`${d}-ritual-roll-config__hint`), c.textContent = "Configure a fórmula usada pelo Toolkit quando este ritual não tiver um preset específico. Círculo, resistência, alvo e duração continuam vindo da ficha original.", r.append(c);
   const u = document.createElement("div");
-  u.classList.add(`${d}-ritual-roll-config__fields`), u.append(u0(t, a)), u.append(d0(t, a)), u.append(m0(t, a)), r.append(u), r.append(f0(t, n, a)), r.append(p0(a));
+  u.classList.add(`${d}-ritual-roll-config__fields`), u.append(p0(t, a)), u.append(g0(t, a)), u.append(h0(t, a)), r.append(u), r.append(b0(t, n, a)), r.append(y0(a));
   const m = document.createElement("p");
   return m.classList.add(`${d}-ritual-roll-config__status`), m.textContent = a ? "Salvo em flags do módulo; não altera os campos do sistema." : "Somente leitura nesta ficha.", r.append(m), r;
 }
-function u0(e, t) {
-  const n = Jn("Tipo da rolagem"), a = document.createElement("select");
+function p0(e, t) {
+  const n = ea("Tipo da rolagem"), a = document.createElement("select");
   a.setAttribute(Mt, "intent"), a.disabled = !t;
   for (const r of ["damage", "healing", "utility"]) {
     const o = document.createElement("option");
-    o.value = r, o.textContent = zE(r), o.selected = e.intent === r, a.append(o);
+    o.value = r, o.textContent = GE(r), o.selected = e.intent === r, a.append(o);
   }
   return n.append(a), n;
 }
-function d0(e, t) {
-  const n = Jn("Tipo de dano");
+function g0(e, t) {
+  const n = ea("Tipo de dano");
   n.setAttribute("data-paranormal-toolkit-ritual-roll-damage-row", "true");
   const a = document.createElement("select");
   a.setAttribute(Mt, "damageType"), a.disabled = !t;
   const r = document.createElement("option");
   r.value = "", r.textContent = "—", r.selected = !e.damageType, a.append(r);
-  for (const o of a0) {
+  for (const o of s0) {
     const i = document.createElement("option");
     i.value = o.value, i.textContent = o.label, i.selected = e.damageType === o.value, a.append(i);
   }
   return n.append(a), n;
 }
-function m0(e, t) {
-  const n = Jn("Rótulo de utilidade");
+function h0(e, t) {
+  const n = ea("Rótulo de utilidade");
   n.setAttribute("data-paranormal-toolkit-ritual-roll-utility-row", "true");
   const a = document.createElement("input");
   return a.type = "text", a.placeholder = "Resultado", a.value = e.utilityLabel ?? "Resultado", a.disabled = !t, a.setAttribute(Mt, "utilityLabel"), n.append(a), n;
 }
-function f0(e, t, n) {
+function b0(e, t, n) {
   const a = document.createElement("section");
   a.classList.add(`${d}-ritual-roll-config__forms-section`);
   const r = document.createElement("strong");
   r.classList.add(`${d}-ritual-roll-config__forms-title`), r.textContent = "Fórmulas por forma", a.append(r);
   const o = document.createElement("div");
-  return o.classList.add(`${d}-ritual-roll-config__forms-grid`), o.append(Ia("base", "Padrão", e.forms.base.formula, !0, n)), o.append(Ia("discente", "Discente", e.forms.discente.formula, t.discente, n)), o.append(Ia("verdadeiro", "Verdadeiro", e.forms.verdadeiro.formula, t.verdadeiro, n)), a.append(o), a;
+  return o.classList.add(`${d}-ritual-roll-config__forms-grid`), o.append(La("base", "Padrão", e.forms.base.formula, !0, n)), o.append(La("discente", "Discente", e.forms.discente.formula, t.discente, n)), o.append(La("verdadeiro", "Verdadeiro", e.forms.verdadeiro.formula, t.verdadeiro, n)), a.append(o), a;
 }
-function Ia(e, t, n, a, r) {
-  const o = Jn(t);
+function La(e, t, n, a, r) {
+  const o = ea(t);
   o.classList.add(`${d}-ritual-roll-config__form-card`), o.dataset.ritualRollForm = e;
   const i = document.createElement("input");
   if (i.type = "text", i.placeholder = e === "base" ? "Ex.: 3d6" : "Ex.: 6d6", i.value = n, i.disabled = !r || !a, i.setAttribute(Mt, `formula.${e}`), o.append(i), !a) {
@@ -16340,7 +16360,7 @@ function Ia(e, t, n, a, r) {
   }
   return o;
 }
-function p0(e) {
+function y0(e) {
   const t = document.createElement("div");
   t.classList.add(`${d}-ritual-roll-config__actions`);
   const n = document.createElement("button");
@@ -16348,7 +16368,7 @@ function p0(e) {
   const a = document.createElement("button");
   return a.type = "button", a.textContent = "Limpar", a.disabled = !e, a.setAttribute(xe, "clear"), t.append(n, a), t;
 }
-function Jn(e) {
+function ea(e) {
   const t = document.createElement("label");
   t.classList.add(`${d}-ritual-roll-config__field`);
   const n = document.createElement("span");
@@ -16358,46 +16378,46 @@ function Cl(e, t) {
   const n = document.createElement(e);
   return n.textContent = t, n;
 }
-function g0(e, t, n, a) {
+function _0(e, t, n, a) {
   ct(e, "intent")?.addEventListener("change", () => Vo(e)), Ll(e, "system.studentForm")?.addEventListener("change", () => Sl(e, t)), Ll(e, "system.trueForm")?.addEventListener("change", () => Sl(e, t)), e.querySelector(`[${xe}="save"]`)?.addEventListener("click", () => {
-    a && h0(e, t, n);
+    a && A0(e, t, n);
   }), e.querySelector(`[${xe}="clear"]`)?.addEventListener("click", () => {
-    a && b0(e, t);
+    a && T0(e, t);
   });
 }
-async function h0(e, t, n) {
+async function A0(e, t, n) {
   const a = e.querySelector(`[${xe}="save"]`);
   a?.setAttribute("disabled", "true"), Ye(e, "Salvando configuração...");
   try {
-    const r = y0(e, n);
-    await qE(t, r), dm(e, r), Ye(e, "Configuração salva."), ui.notifications?.info("Paranormal Toolkit: configuração de rolagem do ritual salva.");
+    const r = R0(e, n);
+    await jE(t, r), fm(e, r), Ye(e, "Configuração salva."), ui.notifications?.info("Paranormal Toolkit: configuração de rolagem do ritual salva.");
   } catch (r) {
     console.warn("Paranormal Toolkit: não foi possível salvar a configuração de rolagem do ritual.", r), Ye(e, "Não foi possível salvar a configuração."), ui.notifications?.warn("Paranormal Toolkit: não foi possível salvar a configuração de rolagem do ritual.");
   } finally {
     a?.removeAttribute("disabled");
   }
 }
-async function b0(e, t) {
+async function T0(e, t) {
   const n = e.querySelector(`[${xe}="clear"]`);
   n?.setAttribute("disabled", "true"), Ye(e, "Limpando configuração...");
   try {
-    await jE(t);
-    const a = ad(t);
-    _0(e, a), dm(e, a), Ye(e, "Configuração removida."), ui.notifications?.info("Paranormal Toolkit: configuração de rolagem do ritual removida.");
+    await zE(t);
+    const a = rd(t);
+    k0(e, a), fm(e, a), Ye(e, "Configuração removida."), ui.notifications?.info("Paranormal Toolkit: configuração de rolagem do ritual removida.");
   } catch (a) {
     console.warn("Paranormal Toolkit: não foi possível limpar a configuração de rolagem do ritual.", a), Ye(e, "Não foi possível limpar a configuração."), ui.notifications?.warn("Paranormal Toolkit: não foi possível limpar a configuração de rolagem do ritual.");
   } finally {
     n?.removeAttribute("disabled");
   }
 }
-function dm(e, t) {
+function fm(e, t) {
   const n = e.querySelector(`.${d}-ritual-roll-config__badge`);
-  n && (n.textContent = pm(t) ? "Configurada" : "Rascunho");
+  n && (n.textContent = hm(t) ? "Configurada" : "Rascunho");
 }
-function y0(e, t) {
+function R0(e, t) {
   return {
     schemaVersion: 1,
-    intent: fm(ct(e, "intent")?.value),
+    intent: gm(ct(e, "intent")?.value),
     damageType: vl(e, "damageType"),
     utilityLabel: vl(e, "utilityLabel") ?? "Resultado",
     note: "",
@@ -16408,18 +16428,18 @@ function y0(e, t) {
     }
   };
 }
-function _0(e, t) {
+function k0(e, t) {
   qe(e, "intent", t.intent), qe(e, "damageType", t.damageType ?? ""), qe(e, "utilityLabel", t.utilityLabel ?? "Resultado"), qe(e, "formula.base", t.forms.base.formula), qe(e, "formula.discente", t.forms.discente.formula), qe(e, "formula.verdadeiro", t.forms.verdadeiro.formula), Vo(e);
 }
 function Vo(e) {
-  const t = fm(ct(e, "intent")?.value), n = e.querySelectorAll('[data-paranormal-toolkit-ritual-roll-damage-row="true"]'), a = e.querySelectorAll('[data-paranormal-toolkit-ritual-roll-utility-row="true"]');
+  const t = gm(ct(e, "intent")?.value), n = e.querySelectorAll('[data-paranormal-toolkit-ritual-roll-damage-row="true"]'), a = e.querySelectorAll('[data-paranormal-toolkit-ritual-roll-utility-row="true"]');
   for (const r of Array.from(n))
     r.hidden = t !== "damage";
   for (const r of Array.from(a))
     r.hidden = t !== "utility";
 }
 function Sl(e, t) {
-  const n = mm(t);
+  const n = pm(t);
   Il(e, "discente", n.discente), Il(e, "verdadeiro", n.verdadeiro);
 }
 function Il(e, t, n) {
@@ -16443,29 +16463,29 @@ function Ye(e, t) {
   const n = e.querySelector(`.${d}-ritual-roll-config__status`);
   n && (n.textContent = t);
 }
-function mm(e) {
-  const t = R0(e);
+function pm(e) {
+  const t = w0(e);
   return {
     base: !0,
     discente: t.studentForm === !0,
     verdadeiro: t.trueForm === !0
   };
 }
-function A0(e) {
+function E0(e) {
   return Dl(e.item) ? e.item : Dl(e.document) ? e.document : null;
 }
-function T0(e) {
+function $0(e) {
   return !!(game.user?.isGM || e.isOwner === !0);
 }
-function R0(e) {
+function w0(e) {
   const t = e.system;
-  return E0(t) ? t : {};
+  return S0(t) ? t : {};
 }
 function Ll(e, t) {
   return e.closest('[data-tab="ritualAttr"]')?.querySelector(`input[name="${t}"]`) ?? null;
 }
 function ct(e, t) {
-  return e.querySelector(`[${Mt}="${$0(t)}"]`);
+  return e.querySelector(`[${Mt}="${I0(t)}"]`);
 }
 function ln(e, t) {
   return ct(e, t)?.value.trim() ?? "";
@@ -16478,13 +16498,13 @@ function qe(e, t, n) {
   const a = ct(e, t);
   a && (a.value = n);
 }
-function fm(e) {
+function gm(e) {
   return e === "healing" || e === "utility" ? e : "damage";
 }
-function pm(e) {
+function hm(e) {
   return Object.values(e.forms).some((t) => t.formula.trim().length > 0);
 }
-function k0(e) {
+function C0(e) {
   if (e instanceof HTMLElement) return e;
   if (e && typeof e == "object") {
     const t = e;
@@ -16496,15 +16516,15 @@ function k0(e) {
 function Dl(e) {
   return !!(e && typeof e == "object" && "type" in e && "system" in e && "getFlag" in e && "setFlag" in e);
 }
-function E0(e) {
+function S0(e) {
   return e !== null && typeof e == "object" && !Array.isArray(e);
 }
-function $0(e) {
+function I0(e) {
   return e.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 let re = null;
 Hooks.once("init", () => {
-  ef(), Nf(), oh(), ik(), f.info("Inicializando módulo.");
+  nf(), Of(), sh(), lk(), f.info("Inicializando módulo.");
 });
 Hooks.once("ready", () => {
   if (!si.isSupportedSystem()) {
@@ -16513,16 +16533,16 @@ Hooks.once("ready", () => {
     );
     return;
   }
-  re = JL(), re.itemUseIntegration.registerStrategies(), Yg(re.resources, re.resourceAdapter), th(re.conditions), Cp(re), mk(), ov(re), r0(), qv(), wv(), f.info("Inicializado para o sistema Ordem Paranormal."), f.info(
+  re = av(), re.itemUseIntegration.registerStrategies(), Qg(re.resources, re.resourceAdapter), ah(re.conditions), Ip(re), pk(), cv(re), l0(), Vv(), Lv(), f.info("Inicializado para o sistema Ordem Paranormal."), f.info(
     `API de debug disponível em globalThis["${d}"] e globalThis.ParanormalToolkit.`
   );
 });
-function w0() {
+function L0() {
   if (!re)
     throw new Error("Paranormal Toolkit ainda não foi inicializado para Ordem Paranormal.");
   return re;
 }
 export {
-  w0 as getToolkitServices
+  L0 as getToolkitServices
 };
 //# sourceMappingURL=main.js.map

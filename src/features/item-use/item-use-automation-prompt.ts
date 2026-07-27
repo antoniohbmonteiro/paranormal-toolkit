@@ -5,7 +5,7 @@ import { getItemUseSystemCardMode } from "./item-use-settings";
 import type { ItemUseContext } from "./item-use-context";
 import { canCurrentUserApplyAssistedActions, canCurrentUserControlAssistedActions } from "./assisted-actions/assisted-action-policy";
 import { renderPersistedRitualCard } from "./chat-card/ritual/ritual-single-target-chat-card-service";
-import type { ChatCardMessage } from "./chat-card/item-use-chat-card-storage";
+import { readRitualChatCard, type ChatCardMessage } from "./chat-card/item-use-chat-card-storage";
 
 const LEGACY_PROMPT_FLAG_KEY = "itemUsePrompts";
 const CHAT_CARD_FLAG_KEY = "chatCard";
@@ -401,12 +401,16 @@ function scheduleRenderedChatCardRehydration(handler: ItemUseAutomationPromptHan
   }
 }
 
-function rehydrateRenderedToolkitChatCards(handler: ItemUseAutomationPromptHandler): void {
-  for (const root of getRenderedChatMessageElements()) {
+export function rehydrateRenderedToolkitChatCards(
+  handler: ItemUseAutomationPromptHandler,
+  roots: HTMLElement[] = getRenderedChatMessageElements(),
+  render: (message: ChatMessageFlagDocument, root: HTMLElement, handler: ItemUseAutomationPromptHandler) => void = renderPendingPromptsIntoChatMessage,
+): void {
+  for (const root of roots) {
     const message = resolveChatMessageDocumentFromRoot(root);
-    if (!messageHasToolkitChatCard(message)) continue;
+    if (!message || !messageHasToolkitChatCard(message)) continue;
 
-    renderPendingPromptsIntoChatMessage(message, root, handler);
+    render(message, root, handler);
   }
 }
 
@@ -428,6 +432,7 @@ function getRenderedChatMessageElements(): HTMLElement[] {
 
 function messageHasToolkitChatCard(message: ChatMessageFlagDocument | null): boolean {
   if (!message) return false;
+  if (readRitualChatCard(message)) return true;
   if (readToolkitChatCard(message)) return true;
   return readLegacyPersistedPromptsFromMessage(message).length > 0;
 }

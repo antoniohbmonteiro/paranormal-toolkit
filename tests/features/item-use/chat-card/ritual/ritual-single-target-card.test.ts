@@ -45,6 +45,13 @@ describe("ritual single target card v2", () => {
     expect(model.effect?.title).toBe("Dano");
     expect(model.resistance?.action.actionId).toBe("cast:resistance");
   });
+  it("renders element and real circle in the header badge with legacy fallback", () => {
+    const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
+    state.ritualIdentity = { elementKey: "energy", elementLabel: "Energia", circle: 2 };
+    expect(buildRitualSingleTargetCardViewModel(state).header.badges?.[0]?.label).toBe("Energia 2");
+    delete state.ritualIdentity;
+    expect(buildRitualSingleTargetCardViewModel(state).header.badges?.[0]?.label).toBe("Ritual");
+  });
   it("supports healing, utility and absent conjuration", () => {
     for (const intent of ["healing", "generic"] as const) {
       const state = buildRitualChatCardState({ context, snapshot: { ...snapshot, castingCheck: null, resistance: null, rolls: [{ ...snapshot.rolls[0]!, intent }] }, actions: [], resistanceDifficulty: null });

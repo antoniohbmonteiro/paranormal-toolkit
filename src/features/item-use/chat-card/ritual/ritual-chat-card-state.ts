@@ -24,6 +24,7 @@ export interface RitualChatCardState {
   source: SerializableDocumentRef;
   item: SerializableDocumentRef;
   form: { id: string; label: string };
+  ritualIdentity?: { elementKey: string; elementLabel: string; circle: 1 | 2 | 3 | 4 } | null;
   descriptionHtml: string | null;
   cost: { amount: number; resource: "PE" | "PD"; spent: boolean } | null;
   target: SerializableDocumentRef & { tokenId: string | null; tokenUuid: string | null };

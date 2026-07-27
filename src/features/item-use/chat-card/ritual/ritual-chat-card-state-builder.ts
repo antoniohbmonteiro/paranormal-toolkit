@@ -1,3 +1,4 @@
+import { resolveOrdemRitualPresentation } from "../../../../adapters/ordem/ordem-ritual-presentation";
 import type { ItemUseContext } from "../../item-use-context";
 import type { AssistedRitualAction, RitualCastSnapshot } from "../../../rituals/ritual-assisted-workflow";
 import { resolveSafeRitualDescription } from "../../../rituals/ritual-description-resolver";
@@ -17,6 +18,7 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     source: ref(context.actor),
     item: ref(context.item),
     form: snapshot.form,
+    ritualIdentity: resolveOrdemRitualPresentation(context.item),
     descriptionHtml: resolveSafeRitualDescription(context.item),
     cost: snapshot.cost,
     target: { ...ref(target.actor), tokenId: target.tokenId, tokenUuid: target.sceneId && target.tokenId ? `Scene.${target.sceneId}.Token.${target.tokenId}` : null },
