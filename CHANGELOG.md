@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.40.0
+
+### Adicionado
+
+- Card persistente `RitualSingleTargetCard` integrado a conjurações suportadas com exatamente um alvo.
+- Schema v2 discriminado em `flags.paranormal-toolkit.chatCard`, com estado serializável, revision, ações executáveis após refresh e fallback legado.
+- Setting global `ritual.chatCard.mode` (`auto` ou `legacy`) para rollout e rollback seguro.
+- Controller delegado para resistência, dano, cura, recursos e condições, com mutações serializadas por mensagem.
+- Integração real das condições configuradas em `ritualResistanceOutcomes`: a rolagem habilita todas as condições do resultado correto e resolve somente a branch oposta.
+- Seção visual pura de efeito com títulos distintos para dano, cura e utilidade; conjuração agora é opcional.
+
+### Compatibilidade e limites
+
+- Cards schema 1, zero/múltiplos alvos e targeting de área continuam usando o renderer legado.
+- Resistência é rolada uma única vez; dano, cura e condições permanecem ações manuais.
+- O card usa a `ChatMessage` criada pelo sistema e não cria mensagens adicionais.
+
 ## 0.39.0
 
 ### Adicionado

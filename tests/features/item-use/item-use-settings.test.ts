@@ -94,6 +94,11 @@ describe("AutomationExecutionMode", () => {
         default: false
       })
     );
+    expect(game.settings.register).toHaveBeenCalledWith(
+      MODULE_ID,
+      ITEM_USE_SETTING_KEYS.ritualChatCardMode,
+      expect.objectContaining({ scope: "world", config: true, type: String, default: "auto" })
+    );
   });
 
   it("lê executionMode e settings relacionados", () => {
@@ -105,7 +110,8 @@ describe("AutomationExecutionMode", () => {
       systemCardMode: "keep",
       damageResolutionMode: "assisted",
       resistanceGateMode: "strict",
-      ritualCastingCheckEnabled: true
+      ritualCastingCheckEnabled: true,
+      ritualChatCardMode: "auto"
     });
 
     settingsStore.set(ITEM_USE_SETTING_KEYS.executionMode, "ask");
@@ -118,7 +124,8 @@ describe("AutomationExecutionMode", () => {
       systemCardMode: "replace",
       damageResolutionMode: "manual",
       resistanceGateMode: "strict",
-      ritualCastingCheckEnabled: false
+      ritualCastingCheckEnabled: false,
+      ritualChatCardMode: "auto"
     });
   });
 

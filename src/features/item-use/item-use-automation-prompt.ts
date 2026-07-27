@@ -4,6 +4,8 @@ import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import { getItemUseSystemCardMode } from "./item-use-settings";
 import type { ItemUseContext } from "./item-use-context";
 import { canCurrentUserApplyAssistedActions, canCurrentUserControlAssistedActions } from "./assisted-actions/assisted-action-policy";
+import { renderPersistedRitualCard } from "./chat-card/ritual/ritual-single-target-chat-card-service";
+import type { ChatCardMessage } from "./chat-card/item-use-chat-card-storage";
 
 const LEGACY_PROMPT_FLAG_KEY = "itemUsePrompts";
 const CHAT_CARD_FLAG_KEY = "chatCard";
@@ -366,6 +368,9 @@ function renderPendingPromptsIntoChatMessage(
   const root = resolveRootElement(html);
   if (!root) return;
 
+  const flagMessage = asChatMessageFlagDocument(message);
+  if (flagMessage && renderPersistedRitualCard(flagMessage, root)) return;
+
   const prompts = findPromptsForMessage(message, root);
 
   if (prompts.length > 0) {
@@ -379,6 +384,13 @@ function renderPendingPromptsIntoChatMessage(
   bindPromptButtons(root, handler);
   bindRollDetailToggles(root);
   bindResistanceRollButtons(root);
+}
+
+export function resolveChatMessageForItemUseContext(context: ItemUseContext): ChatCardMessage | null {
+  const direct = resolveChatMessageDocument(context.message);
+  if (direct) return direct;
+  const prompt = createPendingPrompt({ pendingId: `lookup-${Date.now()}`, context, mode: "ask" });
+  return findBestChatMessageForPrompt(prompt);
 }
 
 function scheduleRenderedChatCardRehydration(handler: ItemUseAutomationPromptHandler): void {

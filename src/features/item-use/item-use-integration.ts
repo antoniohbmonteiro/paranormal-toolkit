@@ -42,13 +42,27 @@ import {
   registerPendingItemUseAutomationPrompt,
   unregisterPendingItemUseAutomationPrompt,
   type PersistedResourceActionPayload,
+  resolveChatMessageForItemUseContext,
 } from "./item-use-automation-prompt";
+import { withRitualResistanceOutcomeConditions } from "../rituals/config/ritual-resistance-outcome-config";
+import { getOrdemRitualDifficulty } from "../../adapters/ordem/ordem-ritual-casting-adapter";
+import { getRitualChatCardMode } from "./item-use-settings";
+import { resolveRitualSingleTargetEligibility } from "./chat-card/ritual/ritual-single-target-card-eligibility";
+import { buildRitualChatCardState } from "./chat-card/ritual/ritual-chat-card-state-builder";
+import { persistRitualCard } from "./chat-card/ritual/ritual-single-target-chat-card-service";
+import { registerRitualSingleTargetCardController, type RitualCardExecutionResult } from "./chat-card/ritual/ritual-single-target-card-controller";
+import type { RitualCardAction, RitualResistanceResult, RitualSingleTargetChatCardV2 } from "./chat-card/ritual/ritual-chat-card-state";
+import type { ChatCardMessage } from "./chat-card/item-use-chat-card-storage";
+import { ResistanceEngine } from "../../core/resistance/resistance-engine";
+import { OrdemResistanceAdapter } from "../../adapters/ordem/ordem-resistance-roll-adapter";
+import { RollTargetResistanceUseCase } from "./use-cases/roll-target-resistance-use-case";
+import { animateRollWithDiceSoNice } from "../dice/dice-animation-service";
 import type { AutomationExecutionMode } from "./item-use-execution-mode";
 import {
   getItemUseSettings,
   type ItemUseSettingsSnapshot,
 } from "./item-use-settings";
-import { canCurrentUserApplyAssistedActions } from "./assisted-actions/assisted-action-policy";
+import { canCurrentUserApplyAssistedActions, canCurrentUserControlAssistedActions } from "./assisted-actions/assisted-action-policy";
 import { createPublicDamageAppliedLabel } from "./assisted-actions/assisted-action-labels";
 import { whisperDamageApplicationResultToGms } from "./assisted-actions/assisted-damage-feedback-service";
 import type {
@@ -297,6 +311,7 @@ export class ItemUseIntegration {
     registerItemUseAutomationPromptRenderer((pendingId) =>
       this.executePendingAutomation(pendingId),
     );
+    registerRitualSingleTargetCardController((input) => this.executeRitualCardAction(input));
     this.promptRendererRegistered = true;
   }
 
@@ -346,7 +361,8 @@ export class ItemUseIntegration {
   ): Promise<void> {
     this.setAttempt(context, "running", "ritual-assisted-cast");
 
-    const result = await this.ritualAssistant.run(context, definition, automationSource);
+    const resolvedDefinition = withRitualResistanceOutcomeConditions(context.item, definition);
+    const result = await this.ritualAssistant.run(context, resolvedDefinition, automationSource);
 
     switch (result.status) {
       case "cancelled":
@@ -362,6 +378,10 @@ export class ItemUseIntegration {
         ui.notifications?.warn(`Paranormal Toolkit: ${result.message}`);
         return;
       case "completed-without-actions":
+        if (await this.tryRegisterSingleTargetRitualCard(result.itemUseContext, result.castSnapshot, [], result.summaryLines)) {
+          this.setAttempt(context, "completed", "ritual-single-target-card");
+          return;
+        }
         await this.registerCompletedRitualCard(
           result.itemUseContext,
           result.summaryLines,
@@ -373,6 +393,10 @@ export class ItemUseIntegration {
         );
         return;
       case "ready":
+        if (await this.tryRegisterSingleTargetRitualCard(result.itemUseContext, result.castSnapshot, result.actions, result.summaryLines)) {
+          this.setAttempt(context, "pending", "ritual-single-target-card");
+          return;
+        }
         await this.registerAssistedActions(
           result.itemUseContext,
           result.workflowContext,
@@ -380,6 +404,31 @@ export class ItemUseIntegration {
           result.summaryLines,
         );
         return;
+    }
+  }
+
+  private async tryRegisterSingleTargetRitualCard(
+    context: ItemUseContext,
+    snapshot: import("../rituals/ritual-assisted-workflow").RitualCastSnapshot,
+    actions: AssistedRitualAction[],
+    summaryLines: string[],
+  ): Promise<boolean> {
+    const difficulty = context.actor ? getOrdemRitualDifficulty(context.actor) : null;
+    const eligibility = resolveRitualSingleTargetEligibility({ mode: getRitualChatCardMode(), systemId: game.system.id, context, snapshot, actions, resistanceDifficulty: difficulty });
+    if (!eligibility.eligible) {
+      if (eligibility.reason !== "mode-legacy") ModuleLogger.warn("Fallback para card ritual legado.", { reason: eligibility.reason, castId: snapshot.castId, itemId: context.item.id, targetCount: context.targets.length, stage: "eligibility" });
+      return false;
+    }
+    try {
+      const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: difficulty });
+      const message = resolveChatMessageForItemUseContext(context);
+      if (!message) throw new Error("ChatMessage ainda não resolvida.");
+      const card: RitualSingleTargetChatCardV2 = { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: state.createdAt, messageId: typeof message.id === "string" ? message.id : null, state, legacyFallback: { summaryLines: [...summaryLines], actions: structuredClone(state.actions), itemName: context.item.name ?? "Ritual", actorId: context.actor?.id ?? null, itemId: context.item.id ?? null } };
+      await persistRitualCard(message, card);
+      return true;
+    } catch (cause) {
+      ModuleLogger.warn("Fallback para card ritual legado.", { reason: "card-build-or-persist-failed", castId: snapshot.castId, itemId: context.item.id, targetCount: context.targets.length, stage: "build-render-persist", cause });
+      return false;
     }
   }
 
@@ -448,6 +497,46 @@ export class ItemUseIntegration {
     }
 
     return { ok: true };
+  }
+
+  private async executeRitualCardAction(input: { message: ChatCardMessage; action: RitualCardAction | null; kind: string; card: RitualSingleTargetChatCardV2 }): Promise<RitualCardExecutionResult> {
+    if (input.kind === "roll-resistance") {
+      if (!canCurrentUserControlAssistedActions()) return { ok: false, message: "apenas um usuário autorizado pode rolar resistência." };
+      const resistance = input.card.state.resistance;
+      const actor = await resolveCardActor(input.card.state.target);
+      if (!resistance || !actor) return { ok: false, message: "alvo ou resistência não encontrado." };
+      try {
+        const useCase = new RollTargetResistanceUseCase(new ResistanceEngine(new OrdemResistanceAdapter()));
+        const rolled = await useCase.execute({ actor, skill: resistance.skill, skillLabel: resistance.skillLabel });
+        await animateRollWithDiceSoNice(rolled.roll);
+        const result: RitualResistanceResult = {
+          skill: rolled.skill, skillLabel: rolled.skillLabel, formula: rolled.formula, total: rolled.total,
+          diceResults: readCardDiceResults(rolled.roll), difficulty: resistance.difficulty,
+          outcome: rolled.total >= resistance.difficulty ? "success" : "failure",
+          targetActorId: actor.id ?? null, targetActorUuid: actor.uuid ?? null,
+          targetName: actor.name ?? input.card.state.target.name,
+          rolledAt: new Date().toISOString(), userId: readCurrentUserId(), usedFallbackBonus: false,
+        };
+        return { ok: true, resistance: result };
+      } catch (cause) { return { ok: false, message: cause instanceof Error ? cause.message : "não foi possível rolar resistência." }; }
+    }
+    const action = input.action;
+    if (!action) return { ok: false, message: "ação persistida não encontrada." };
+    if (!canCurrentUserApplyAssistedActions()) return { ok: false, message: "apenas o Mestre pode aplicar ações assistidas." };
+    const actor = await resolveCardActor(action.actor);
+    if (!actor) return { ok: false, message: `não foi possível encontrar ${action.actor.name}.` };
+    if (action.kind === "resource-operation") {
+      const result = await executeAutomationResourceOperation(this.resources, actor, action.resource, action.operation, action.amount);
+      return result.ok ? { ok: true } : { ok: false, message: result.error.message };
+    }
+    if (action.kind === "damage-application") {
+      const result = await this.damage.applyDamage({ actor, instances: action.instances, source: action.source, originUuid: action.originUuid });
+      if (!result.ok) return { ok: false, message: result.error.message };
+      await whisperDamageApplicationResultToGms(result.value);
+      return { ok: true };
+    }
+    const result = await this.conditions.applyCondition({ actor, conditionId: action.conditionId, duration: action.duration, originUuid: action.originUuid, source: action.source ?? "ritual.chat-card" });
+    return result.ok ? { ok: true } : { ok: false, message: result.error.message };
   }
 
   private async resolveAlternativeActions(
@@ -693,6 +782,28 @@ function createDamageApplicationExecutedLabel(
   result: DamageApplicationResult,
 ): string {
   return createPublicDamageAppliedLabel({ inputAmount: result.totalRawDamage });
+}
+
+async function resolveCardActor(reference: { id: string | null; uuid: string | null }): Promise<Actor | null> {
+  if (reference.uuid) {
+    const document = await fromUuid(reference.uuid);
+    if (document && typeof document === "object" && "system" in document) return document as Actor;
+  }
+  const actor = reference.id ? (game.actors as { get?: (id: string) => unknown })?.get?.(reference.id) : null;
+  return actor && typeof actor === "object" && "system" in actor ? actor as Actor : null;
+}
+
+function readCardDiceResults(roll: Roll): number[] {
+  const dice = (roll as { dice?: unknown }).dice;
+  if (!Array.isArray(dice)) return [];
+  return dice.flatMap((die) => Array.isArray((die as { results?: unknown }).results)
+    ? ((die as { results: unknown[] }).results).flatMap((entry) => typeof (entry as { result?: unknown }).result === "number" ? [(entry as { result: number }).result] : [])
+    : []);
+}
+
+function readCurrentUserId(): string | null {
+  const id = (game.user as { id?: unknown } | null)?.id;
+  return typeof id === "string" ? id : null;
 }
 
 function withAssistedEffectResistance(

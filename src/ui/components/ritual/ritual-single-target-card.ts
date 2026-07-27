@@ -15,6 +15,7 @@ import {
   renderRitualDamageSection,
   type RitualDamageSectionViewModel,
 } from "./ritual-damage-section";
+import { renderRitualEffectSection, type RitualEffectSectionViewModel } from "./ritual-effect-section";
 import {
   renderRitualMetadata,
   type RitualMetadataViewModel,
@@ -32,8 +33,9 @@ export interface RitualSingleTargetCardViewModel {
   header: ChatCardHeaderViewModel;
   metadata?: RitualMetadataViewModel;
   detailRows?: readonly MetadataDetailRowViewModel[];
-  conjuration: RitualConjurationSectionViewModel;
+  conjuration?: RitualConjurationSectionViewModel;
   damage?: RitualDamageSectionViewModel;
+  effect?: RitualEffectSectionViewModel;
   resistance?: RitualResistanceSectionViewModel;
   assistedActions?: RitualAssistedActionsPanelViewModel;
 }
@@ -45,8 +47,9 @@ export function renderRitualSingleTargetCard(
     renderChatCardHeader(model.header),
     model.metadata ? renderRitualMetadata(model.metadata) : "",
     ...(model.detailRows?.map(renderMetadataDetailRow) ?? []),
-    renderRitualConjurationSection(model.conjuration),
+    model.conjuration ? renderRitualConjurationSection(model.conjuration) : "",
     model.damage ? renderRitualDamageSection(model.damage) : "",
+    model.effect ? renderRitualEffectSection(model.effect) : "",
     model.resistance ? renderRitualResistanceSection(model.resistance) : "",
     model.assistedActions ? renderRitualAssistedActionsPanel(model.assistedActions) : "",
   ]

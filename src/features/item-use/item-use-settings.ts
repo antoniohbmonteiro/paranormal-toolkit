@@ -16,6 +16,8 @@ export const ITEM_USE_SYSTEM_CARD_MODES = ["keep", "replace"] as const;
 export type ItemUseSystemCardMode = (typeof ITEM_USE_SYSTEM_CARD_MODES)[number];
 
 export const ITEM_USE_DAMAGE_RESOLUTION_MODES = ["manual", "assisted"] as const;
+export const RITUAL_CHAT_CARD_MODES = ["auto", "legacy"] as const;
+export type RitualChatCardMode = (typeof RITUAL_CHAT_CARD_MODES)[number];
 export type ItemUseDamageResolutionMode = (typeof ITEM_USE_DAMAGE_RESOLUTION_MODES)[number];
 
 const DEFAULT_ITEM_USE_SYSTEM_CARD_MODE: ItemUseSystemCardMode = "keep";
@@ -28,7 +30,8 @@ export const ITEM_USE_SETTING_KEYS = {
   damageResolutionMode: "itemUse.damageResolutionMode",
   resistanceGateMode: "itemUse.resistanceGateMode",
   autoRun: "itemUse.autoRun.enabled",
-  ritualCastingCheckEnabled: "ritual.castingCheck.enabled"
+  ritualCastingCheckEnabled: "ritual.castingCheck.enabled",
+  ritualChatCardMode: "ritual.chatCard.mode"
 } as const;
 
 export type ItemUseSettingsSnapshot = {
@@ -37,6 +40,7 @@ export type ItemUseSettingsSnapshot = {
   damageResolutionMode: ItemUseDamageResolutionMode;
   resistanceGateMode: ItemUseResistanceGateMode;
   ritualCastingCheckEnabled: boolean;
+  ritualChatCardMode: RitualChatCardMode;
 };
 
 export function registerItemUseSettings(): void {
@@ -102,6 +106,14 @@ export function registerItemUseSettings(): void {
     default: DEFAULT_RITUAL_CASTING_CHECK_ENABLED
   });
 
+  game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.ritualChatCardMode, {
+    name: "Card de ritual do Paranormal Toolkit",
+    hint: "Tenta usar o novo card para rituais com um alvo ou mantém sempre o card legado.",
+    scope: "world", config: true, type: String,
+    choices: { auto: "Automático", legacy: "Legado" } satisfies Record<RitualChatCardMode, string>,
+    default: "auto"
+  });
+
   // Setting legado da 0.8.x. Mantido escondido para não quebrar mundos/APIs antigas.
   game.settings.register(MODULE_ID, ITEM_USE_SETTING_KEYS.autoRun, {
     name: "Executar automações ao usar item",
@@ -124,8 +136,14 @@ export function getItemUseSettings(): ItemUseSettingsSnapshot {
     systemCardMode,
     damageResolutionMode,
     resistanceGateMode,
-    ritualCastingCheckEnabled: getRitualCastingCheckEnabled()
+    ritualCastingCheckEnabled: getRitualCastingCheckEnabled(),
+    ritualChatCardMode: getRitualChatCardMode()
   };
+}
+
+export function getRitualChatCardMode(): RitualChatCardMode {
+  const value = game.settings.get(MODULE_ID, ITEM_USE_SETTING_KEYS.ritualChatCardMode);
+  return RITUAL_CHAT_CARD_MODES.includes(value as RitualChatCardMode) ? value as RitualChatCardMode : "auto";
 }
 
 export function getItemUseSystemCardMode(): ItemUseSystemCardMode {
