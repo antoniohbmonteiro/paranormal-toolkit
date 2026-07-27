@@ -43,6 +43,7 @@
     "styles/components/metadata-detail-row.css",
     "styles/components/ritual-metadata.css",
     "styles/components/ritual-single-target-card.css",
+    "styles/components/ritual-description-section.css",
     "styles/components/chat-card-header.css"
   ],
   "url": "https://github.com/antoniohbmonteiro/paranormal-toolkit",

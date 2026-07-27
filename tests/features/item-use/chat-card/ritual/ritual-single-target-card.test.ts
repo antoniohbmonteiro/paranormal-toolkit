@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { resolveRitualSingleTargetEligibility } from "../../../../../src/features/item-use/chat-card/ritual/ritual-single-target-card-eligibility";
 import { buildRitualChatCardState } from "../../../../../src/features/item-use/chat-card/ritual/ritual-chat-card-state-builder";
-import { buildRitualSingleTargetCardViewModel } from "../../../../../src/features/item-use/chat-card/ritual/ritual-single-target-card-view-model-builder";
+import { buildRitualSingleTargetCardViewModel, normalizeExecutedLabel } from "../../../../../src/features/item-use/chat-card/ritual/ritual-single-target-card-view-model-builder";
 import { isRitualSingleTargetChatCard } from "../../../../../src/features/item-use/chat-card/item-use-chat-card-schema";
 import type { ItemUseContext } from "../../../../../src/features/item-use/item-use-context";
 import type { RitualCastSnapshot, AssistedRitualAction } from "../../../../../src/features/rituals/ritual-assisted-workflow";
+import { renderRitualSingleTargetCard } from "../../../../../src/ui/components/ritual/ritual-single-target-card";
 
 const actor = { id: "source", uuid: "Actor.source", name: "Conjurador", system: {} } as Actor;
 const target = { id: "target", uuid: "Actor.target", name: "Alvo", system: {} } as Actor;
@@ -23,6 +24,12 @@ describe("ritual single target card v2", () => {
   it("rejects area and unresolved actors", () => {
     expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context, snapshot: { ...snapshot, areaTargeting: true }, actions, resistanceDifficulty: 15 })).toEqual({ eligible: false, reason: "area-targeting" });
     expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: { ...context, targets: [{ ...context.targets[0]!, actor: null }] }, snapshot, actions, resistanceDifficulty: 15 })).toEqual({ eligible: false, reason: "missing-target-actor" });
+  });
+  it("falls back instead of silently discarding multiple effect rolls", () => {
+    const twoEffects = { ...snapshot, rolls: [...snapshot.rolls, { ...snapshot.rolls[0]!, id: "second" }] };
+    expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context, snapshot: twoEffects, actions, resistanceDifficulty: 15 })).toEqual({ eligible: false, reason: "multiple-effect-rolls" });
+    const ritualAndEffect = { ...snapshot, rolls: [{ ...snapshot.rolls[0]!, id: "ritual", intent: "ritual" as const }, snapshot.rolls[0]!] };
+    expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context, snapshot: ritualAndEffect, actions, resistanceDifficulty: 15 })).toEqual({ eligible: true });
   });
   it("builds serializable state without documents and keeps outcome actions pending", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15, now: 1 });
@@ -46,9 +53,36 @@ describe("ritual single target card v2", () => {
       expect(model.effect?.title).toBe(intent === "healing" ? "Cura" : "Efeito");
     }
   });
+  it.each([["cold", "Frio"], ["fire", "Fogo"], ["electric", "Eletricidade"], ["customType", "CustomType"]])("localizes damage type %s", (damageType, label) => {
+    const state = buildRitualChatCardState({ context, snapshot: { ...snapshot, rolls: [{ ...snapshot.rolls[0]!, damageType }] }, actions: [], resistanceDifficulty: 15 });
+    expect(buildRitualSingleTargetCardViewModel(state).effect?.typeLabel).toBe(label);
+  });
+  it("groups outcome conditions into one row while preserving individual state", () => {
+    const state = buildRitualChatCardState({ context, snapshot, actions: [...actions, { ...actions[0]!, conditionId: "weak", label: "Fraco", resistanceOutcome: "success" }], resistanceDifficulty: 15 });
+    expect(state.actions).toHaveLength(2);
+    const pending = buildRitualSingleTargetCardViewModel(state).assistedActions?.rows;
+    expect(pending).toHaveLength(1);
+    expect(pending?.[0]).toMatchObject({ label: "Efeitos da resistência", control: { state: "disabled" } });
+    state.resistance!.result = { skill: "will", skillLabel: "Vontade", formula: "1d20", total: 20, diceResults: [20], difficulty: 15, outcome: "success", targetActorId: "target", targetActorUuid: null, targetName: "Alvo", rolledAt: "now", userId: "gm", usedFallbackBonus: false };
+    state.actions = state.actions.map((action) => ({ ...action, state: "available" }));
+    const resolved = buildRitualSingleTargetCardViewModel(state).assistedActions?.rows;
+    expect(resolved).toHaveLength(1);
+    expect(resolved?.[0].description).toContain("Abalado + Fraco");
+    expect(resolved?.[0].control).toMatchObject({ state: "active", button: { actionKind: "apply-resistance-outcome-conditions" } });
+  });
+  it("normalizes legacy check prefixes so CompletionIndicator owns the only check", () => {
+    for (const prefix of ["✓", "✔", "✓ ✓", "✔ ✔"]) expect(normalizeExecutedLabel(`${prefix} Aplicado`)).toBe("Aplicado");
+    const resource: AssistedRitualAction = { kind: "resource-operation", actor: target, actorName: "Alvo", resource: "PV", operation: "heal", amount: 2, label: "Curar", executedLabel: "✓ ✔ ✓ Cura aplicada", actionSectionId: "healing", actionSectionTitle: "Cura" };
+    const state = buildRitualChatCardState({ context, snapshot: { ...snapshot, resistance: null }, actions: [resource], resistanceDifficulty: null });
+    state.actions[0]!.state = "completed";
+    const html = renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state));
+    expect(html).toContain("Cura aplicada");
+    expect(html).not.toContain("✓ Cura aplicada");
+    expect(html.match(/completion-indicator__check/g)).toHaveLength(1);
+  });
   it("recognizes the discriminated v2 schema", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
-    expect(isRitualSingleTargetChatCard({ schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: 1, messageId: "m", state, legacyFallback: { summaryLines: [], actions: [], itemName: item.name, actorId: actor.id, itemId: item.id } })).toBe(true);
+    expect(isRitualSingleTargetChatCard({ schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: 1, messageId: "m", state, legacyFallback: { summaryLines: [], itemName: item.name, actorId: actor.id, itemId: item.id } })).toBe(true);
     expect(isRitualSingleTargetChatCard({ schemaVersion: 3 })).toBe(false);
   });
 });

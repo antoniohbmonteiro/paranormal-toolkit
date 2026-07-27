@@ -23,7 +23,7 @@ export async function mutateRitualChatCard(message: ChatCardMessage, mutate: (ca
     const current = readRitualChatCard(message);
     if (!current) throw new Error("Card ritual v2 inválido ou ausente.");
     const updated = await mutate(current);
-    const versioned = { ...updated, revision: current.revision + 1, legacyFallback: { ...updated.legacyFallback, actions: structuredClone(updated.state.actions) } };
+    const versioned = { ...updated, revision: current.revision + 1 };
     await writeRitualChatCard(message, versioned);
     resolve(versioned);
   }).catch(reject).finally(() => { if (queues.get(key) === next) queues.delete(key); });

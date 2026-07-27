@@ -379,17 +379,19 @@ function ritualResistanceExample(
     return {
       skill: "Reflexos",
       difficultyLabel: "DT 18",
-      outcome: "evita o efeito",
+      description: "evita o efeito",
+      status: "pending",
       action: { ariaLabel: "Resistência indisponível", disabled: true },
     };
   }
   return {
     skill: "Fortitude",
     difficultyLabel: "DT 22",
-    outcome:
+    description:
       example === "long"
         ? "reduz o dano paranormal recebido à metade e evita efeitos adicionais prolongados"
         : "reduz dano à metade",
+    status: "pending",
     action: { ariaLabel: "Rolar resistência de Fortitude" },
   };
 }
@@ -557,9 +559,10 @@ function ritualSingleTargetCardExample(
       : {
           skill: "Fortitude",
           difficultyLabel: "DT 22",
-          outcome: long
+          description: long
             ? "reduz o dano paranormal recebido à metade e evita efeitos adicionais prolongados"
             : "reduz dano à metade",
+          status: "pending",
           action: { ariaLabel: "Rolar resistência de Fortitude" },
         },
     assistedActions: !failure && !long ? assistedActionsPanelExample("pending") : undefined,

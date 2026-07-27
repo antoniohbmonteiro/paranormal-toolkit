@@ -1,5 +1,6 @@
 import type { ItemUseContext } from "../../item-use-context";
 import type { AssistedRitualAction, RitualCastSnapshot } from "../../../rituals/ritual-assisted-workflow";
+import { resolveSafeRitualDescription } from "../../../rituals/ritual-description-resolver";
 import type { RitualCardAction, RitualChatCardState, RitualResistanceOutcome, SerializableDocumentRef } from "./ritual-chat-card-state";
 
 export function buildRitualChatCardState(input: { context: ItemUseContext; snapshot: RitualCastSnapshot; actions: AssistedRitualAction[]; resistanceDifficulty: number | null; now?: number }): RitualChatCardState {
@@ -16,6 +17,7 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     source: ref(context.actor),
     item: ref(context.item),
     form: snapshot.form,
+    descriptionHtml: resolveSafeRitualDescription(context.item),
     cost: snapshot.cost,
     target: { ...ref(target.actor), tokenId: target.tokenId, tokenUuid: target.sceneId && target.tokenId ? `Scene.${target.sceneId}.Token.${target.tokenId}` : null },
     conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: snapshot.castingCheck.success ? null : "Falha na conjuração" } : null,

@@ -16,6 +16,10 @@
 - Cards schema 1, zero/múltiplos alvos e targeting de área continuam usando o renderer legado.
 - Resistência é rolada uma única vez; dano, cura e condições permanecem ações manuais.
 - O card usa a `ChatMessage` criada pelo sistema e não cria mensagens adicionais.
+- Descrição segura do ritual em seção recolhível acima dos metadados.
+- Paleta turquesa própria para cura e estados visuais de sucesso/falha da resistência com badges.
+- Condições do resultado de resistência agrupadas em uma única ação visual, preservando execução e persistência individuais.
+- Labels localizados de tipo de dano, recuperação segura de execuções interrompidas e fallback legado para múltiplas rolagens de efeito.
 
 ## 0.39.0
 

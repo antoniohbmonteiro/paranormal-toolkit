@@ -28,9 +28,11 @@ import {
   renderRitualResistanceSection,
   type RitualResistanceSectionViewModel,
 } from "./ritual-resistance-section";
+import { renderRitualDescriptionSection, type RitualDescriptionSectionViewModel } from "./ritual-description-section";
 
 export interface RitualSingleTargetCardViewModel {
   header: ChatCardHeaderViewModel;
+  description?: RitualDescriptionSectionViewModel;
   metadata?: RitualMetadataViewModel;
   detailRows?: readonly MetadataDetailRowViewModel[];
   conjuration?: RitualConjurationSectionViewModel;
@@ -45,6 +47,7 @@ export function renderRitualSingleTargetCard(
 ): string {
   const content = [
     renderChatCardHeader(model.header),
+    model.description ? renderRitualDescriptionSection(model.description) : "",
     model.metadata ? renderRitualMetadata(model.metadata) : "",
     ...(model.detailRows?.map(renderMetadataDetailRow) ?? []),
     model.conjuration ? renderRitualConjurationSection(model.conjuration) : "",

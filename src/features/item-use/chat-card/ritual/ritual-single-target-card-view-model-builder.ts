@@ -1,25 +1,74 @@
+import { getToolkitDamageTypeLabel } from "../../../../core/damage/damage-types";
+import type { AssistedActionRowViewModel } from "../../../../ui/components/chat/assisted-action-row";
 import type { RitualSingleTargetCardViewModel } from "../../../../ui/components/ritual/ritual-single-target-card";
-import type { RitualCardAction, RitualChatCardState } from "./ritual-chat-card-state";
+import type { RitualCardAction, RitualChatCardState, RitualConditionAction, RitualResistanceOutcome } from "./ritual-chat-card-state";
 
 export function buildRitualSingleTargetCardViewModel(state: RitualChatCardState): RitualSingleTargetCardViewModel {
   const roll = state.mainRoll;
+  const resistanceOutcome = state.resistance?.result?.outcome ?? null;
+  const rows = createActionRows(state.actions, resistanceOutcome, state.target.name);
   return {
     header: { title: state.item.name, subtitle: state.form.label, context: `${state.source.name} → ${state.target.name}`, badges: [{ label: "Ritual", tone: "wine" }] },
+    description: state.descriptionHtml?.trim() ? { html: state.descriptionHtml } : undefined,
     metadata: { items: [state.cost ? `${state.cost.amount} ${state.cost.resource}` : null, state.target.name].filter((text): text is string => Boolean(text)).map((text) => ({ text })) },
     conjuration: state.conjuration ? { status: state.conjuration.success ? "success" : "failure", skillLabel: state.conjuration.skillLabel, total: state.conjuration.total, difficultyClass: state.conjuration.difficulty, formula: state.conjuration.formula, diceResults: state.conjuration.diceResults, consequence: state.conjuration.consequence ?? undefined } : undefined,
-    effect: roll ? { title: roll.intent === "damage" ? "Dano" : roll.intent === "healing" ? "Cura" : "Efeito", typeLabel: roll.damageType ?? undefined, formula: roll.formula, total: roll.total, diceResults: roll.diceResults } : undefined,
-    resistance: state.resistance ? { skill: state.resistance.skillLabel, difficultyLabel: `DT ${state.resistance.difficulty}`, outcome: state.resistance.result ? (state.resistance.result.outcome === "success" ? "Sucesso" : "Falha") : state.resistance.effect, action: { ariaLabel: `Rolar ${state.resistance.skillLabel}`, actionId: `${state.castId}:resistance`, disabled: Boolean(state.resistance.result) }, result: state.resistance.result ? { formula: state.resistance.result.formula, total: state.resistance.result.total, diceResults: state.resistance.result.diceResults } : undefined } : undefined,
-    assistedActions: state.actions.length ? { rows: state.actions.map(actionRow) } : undefined,
+    effect: roll ? { title: roll.intent === "damage" ? "Dano" : roll.intent === "healing" ? "Cura" : "Efeito", typeLabel: roll.damageType ? getToolkitDamageTypeLabel(roll.damageType) : undefined, formula: roll.formula, total: roll.total, diceResults: roll.diceResults } : undefined,
+    resistance: state.resistance ? {
+      skill: state.resistance.skillLabel,
+      difficultyLabel: `DT ${state.resistance.difficulty}`,
+      description: state.resistance.status === "uncertain" ? "Resultado incerto; verifique o alvo antes de prosseguir." : state.resistance.effect,
+      status: resistanceOutcome ?? "pending",
+      action: { ariaLabel: `Rolar ${state.resistance.skillLabel}`, actionId: `${state.castId}:resistance`, disabled: state.resistance.status !== "pending" },
+      result: state.resistance.result ? { formula: state.resistance.result.formula, total: state.resistance.result.total, diceResults: state.resistance.result.diceResults } : undefined,
+    } : undefined,
+    assistedActions: rows.length ? { rows } : undefined,
   };
 }
-function actionRow(action: RitualCardAction) {
-  const completed = action.state === "completed" || action.state === "resolved";
+
+export function normalizeExecutedLabel(value: string): string {
+  return value.replace(/^(?:\s*[✓✔]\s*)+/u, "").trim();
+}
+
+function createActionRows(actions: RitualCardAction[], outcome: RitualResistanceOutcome | null, targetName: string): AssistedActionRowViewModel[] {
+  const conditional = actions.filter((action): action is RitualConditionAction => action.kind === "condition-application" && action.outcome !== null);
+  const ordinary = actions.filter((action) => !(action.kind === "condition-application" && action.outcome !== null));
+  const rows = ordinary.map(actionRow);
+  if (conditional.length) rows.push(resistanceConditionsRow(conditional, outcome, targetName));
+  return rows;
+}
+
+function resistanceConditionsRow(actions: RitualConditionAction[], outcome: RitualResistanceOutcome | null, targetName: string): AssistedActionRowViewModel {
+  if (!outcome) {
+    return { label: "Efeitos da resistência", description: "Aguardando resistência", control: { state: "disabled", button: { label: "Aplicar", disabled: true, actionId: "resistance-outcome-conditions", actionKind: "apply-resistance-outcome-conditions" } } };
+  }
+  const selected = actions.filter((action) => action.outcome === outcome);
+  const available = selected.filter((action) => action.state === "available");
+  const completed = selected.filter((action) => action.state === "completed");
+  const names = selected.map(formatConditionAction).join(" + ");
+  const outcomeLabel = outcome === "success" ? "Sucesso" : "Falha";
+  if (selected.length > 0 && completed.length === selected.length) {
+    return { label: "Efeitos da resistência", description: `${outcomeLabel} · ${names}`, control: { state: "completed", indicator: { label: `Efeitos aplicados em ${targetName}` } } };
+  }
+  const partial = completed.length > 0;
+  return {
+    label: "Efeitos da resistência",
+    description: partial ? `Aplicação parcial · ${names}` : `${outcomeLabel} · ${names}`,
+    control: { state: available.length ? "active" : "disabled", button: { label: partial ? "Aplicar pendentes" : "Aplicar", disabled: !available.length, actionId: "resistance-outcome-conditions", actionKind: "apply-resistance-outcome-conditions" } },
+  };
+}
+
+function formatConditionAction(action: RitualConditionAction): string {
+  return action.label.replace(/^(?:Sucesso|Falha)\s*·\s*/iu, "").replace(/:\s*/u, " por ");
+}
+
+function actionRow(action: RitualCardAction): AssistedActionRowViewModel {
+  const terminal = action.state === "completed" || action.state === "resolved" || action.state === "uncertain";
   return {
     label: action.label,
-    description: action.state === "resolved" ? "Alternativa não aplicável" : action.actor.name,
-    control: completed
-      ? { state: "completed" as const, indicator: { label: action.state === "resolved" ? "Resolvida" : action.executedLabel } }
-      : { state: action.state === "available" ? "active" as const : "disabled" as const, button: { label: isHealing(action) ? "Curar" : "Aplicar", actionId: action.id, actionKind: action.kind === "damage-application" ? "apply-damage" : action.kind === "condition-application" ? "apply-condition" : isHealing(action) ? "apply-healing" : "apply-resource" } },
+    description: action.state === "resolved" ? "Alternativa não aplicável" : action.state === "uncertain" ? "Verifique no alvo antes de tentar novamente" : action.actor.name,
+    control: terminal
+      ? { state: "completed", indicator: { label: action.state === "resolved" ? "Resolvida" : action.state === "uncertain" ? "Aplicação incerta" : normalizeExecutedLabel(action.executedLabel) } }
+      : { state: action.state === "available" ? "active" : "disabled", button: { label: isHealing(action) ? "Curar" : "Aplicar", actionId: action.id, actionKind: action.kind === "damage-application" ? "apply-damage" : action.kind === "condition-application" ? "apply-condition" : isHealing(action) ? "apply-healing" : "apply-resource" } },
   };
 }
 function isHealing(action: RitualCardAction): boolean { return action.kind === "resource-operation" && (action.operation === "heal" || action.operation === "recover"); }

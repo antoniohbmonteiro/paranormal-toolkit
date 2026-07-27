@@ -4,7 +4,7 @@ import type { DamageApplicationInstanceInput } from "../../../../core/damage/dam
 import type { ToolkitConditionDurationInput } from "../../../conditions/condition-duration";
 
 export type RitualResistanceOutcome = "success" | "failure";
-export type RitualCardActionState = "pending" | "available" | "executing" | "completed" | "resolved";
+export type RitualCardActionState = "pending" | "available" | "executing" | "completed" | "resolved" | "uncertain";
 export type RitualRollIntent = "damage" | "healing" | "utility";
 export type SerializableDocumentRef = { id: string | null; uuid: string | null; name: string };
 export type RitualRollSnapshot = { id: string; label: string; intent: RitualRollIntent; formula: string; total: number; diceResults: number[]; damageType: string | null };
@@ -24,14 +24,15 @@ export interface RitualChatCardState {
   source: SerializableDocumentRef;
   item: SerializableDocumentRef;
   form: { id: string; label: string };
+  descriptionHtml: string | null;
   cost: { amount: number; resource: "PE" | "PD"; spent: boolean } | null;
   target: SerializableDocumentRef & { tokenId: string | null; tokenUuid: string | null };
   conjuration: RitualCastingSnapshot | null;
   mainRoll: RitualRollSnapshot | null;
-  resistance: { skill: string; skillLabel: string; difficulty: number; effect: string; status: "pending" | "executing" | "completed"; result: RitualResistanceResult | null } | null;
+  resistance: { skill: string; skillLabel: string; difficulty: number; effect: string; status: "pending" | "executing" | "completed" | "uncertain"; result: RitualResistanceResult | null } | null;
   actions: RitualCardAction[];
   createdAt: number;
 }
 
-export type RitualLegacyFallbackState = { summaryLines: string[]; actions: RitualCardAction[]; itemName: string; actorId: string | null; itemId: string | null };
+export type RitualLegacyFallbackState = { summaryLines: string[]; itemName: string; actorId: string | null; itemId: string | null };
 export interface RitualSingleTargetChatCardV2 { schemaVersion: 2; kind: "ritual"; renderer: "single-target"; revision: number; createdAt: number; messageId: string | null; state: RitualChatCardState; legacyFallback: RitualLegacyFallbackState }

@@ -53,6 +53,9 @@ O Toolkit já tem:
 - fallback automático para o card legado em zero/múltiplos alvos, área ou dados não suportados;
 - setting mundial `ritual.chatCard.mode` para rollout `auto` ou rollback `legacy`;
 - multi-target e áreas permanecem deliberadamente no fluxo legado.
+- descrição segura e recolhível, paleta própria de cura e badges de resultado na resistência;
+- agrupamento apenas visual das condições do outcome, com aplicação parcial e retry das pendentes;
+- recuperação explícita de execuções incertas e fallback para múltiplas rolagens de efeito.
 
 
 ### Concluído em 0.38.2 — Compatibilidade de tipos do carregador de estilos

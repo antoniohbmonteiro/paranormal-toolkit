@@ -57,7 +57,9 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 
 Em `ritual.chatCard.mode = auto`, conjurações suportadas com exatamente um alvo usam o novo card estruturado. O estado, a resistência e as ações manuais são persistidos e continuam disponíveis depois de recarregar o Foundry. Use `legacy` para que novas conjurações voltem diretamente ao card anterior; cards v2 existentes permanecem v2.
 
-Rituais sem alvo, com múltiplos alvos ou com área continuam automaticamente no card legado. A resistência não pode ser rolada novamente na 0.40.0 e nunca aplica dano, cura ou condições automaticamente. O setting `itemUse.systemCardMode` continua controlando independentemente se o card original do sistema é mantido (`keep`) ou substituído (`replace`).
+O card apresenta a descrição formatada do ritual em uma seção recolhível, usa cores próprias para dano, cura e resultados de resistência e agrupa as condições do outcome resolvido em uma única ação visual. As condições permanecem registradas e concluídas individualmente.
+
+Rituais sem alvo, com múltiplos alvos, com mais de uma rolagem de efeito ou com área continuam automaticamente no card legado. A resistência não pode ser rolada novamente na 0.40.0 e nunca aplica dano, cura ou condições automaticamente. O setting `itemUse.systemCardMode` continua controlando independentemente se o card original do sistema é mantido (`keep`) ou substituído (`replace`).
 
 ### Configurando condições por resistência
 

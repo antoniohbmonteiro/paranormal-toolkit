@@ -16,7 +16,7 @@ export function renderRitualEffectSection(model: RitualEffectSectionViewModel): 
     ? `<span class="paranormal-toolkit-ritual-damage-section__damage-type">${escapeHtml(model.typeLabel)}</span>`
     : undefined;
   return renderSectionCard({
-    tone: model.title === "Dano" ? "damage" : "casting",
+    tone: model.title === "Dano" ? "damage" : model.title === "Cura" ? "healing" : "casting",
     content: renderSectionHeader({ title: model.title, trailing }) + renderRollRow(model),
   });
 }

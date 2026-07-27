@@ -423,7 +423,7 @@ export class ItemUseIntegration {
       const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: difficulty });
       const message = resolveChatMessageForItemUseContext(context);
       if (!message) throw new Error("ChatMessage ainda não resolvida.");
-      const card: RitualSingleTargetChatCardV2 = { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: state.createdAt, messageId: typeof message.id === "string" ? message.id : null, state, legacyFallback: { summaryLines: [...summaryLines], actions: structuredClone(state.actions), itemName: context.item.name ?? "Ritual", actorId: context.actor?.id ?? null, itemId: context.item.id ?? null } };
+      const card: RitualSingleTargetChatCardV2 = { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: state.createdAt, messageId: typeof message.id === "string" ? message.id : null, state, legacyFallback: { summaryLines: [...summaryLines], itemName: context.item.name ?? "Ritual", actorId: context.actor?.id ?? null, itemId: context.item.id ?? null } };
       await persistRitualCard(message, card);
       return true;
     } catch (cause) {
@@ -501,10 +501,12 @@ export class ItemUseIntegration {
 
   private async executeRitualCardAction(input: { message: ChatCardMessage; action: RitualCardAction | null; kind: string; card: RitualSingleTargetChatCardV2 }): Promise<RitualCardExecutionResult> {
     if (input.kind === "roll-resistance") {
-      if (!canCurrentUserControlAssistedActions()) return { ok: false, message: "apenas um usuário autorizado pode rolar resistência." };
+      if (!canCurrentUserControlAssistedActions()) return { ok: false, sideEffect: "none", message: "apenas um usuário autorizado pode rolar resistência." };
       const resistance = input.card.state.resistance;
-      const actor = await resolveCardActor(input.card.state.target);
-      if (!resistance || !actor) return { ok: false, message: "alvo ou resistência não encontrado." };
+      let actor: Actor | null;
+      try { actor = await resolveCardActor(input.card.state.target); }
+      catch (cause) { return { ok: false, sideEffect: "none", message: cause instanceof Error ? cause.message : "não foi possível resolver o alvo." }; }
+      if (!resistance || !actor) return { ok: false, sideEffect: "none", message: "alvo ou resistência não encontrado." };
       try {
         const useCase = new RollTargetResistanceUseCase(new ResistanceEngine(new OrdemResistanceAdapter()));
         const rolled = await useCase.execute({ actor, skill: resistance.skill, skillLabel: resistance.skillLabel });
@@ -518,25 +520,27 @@ export class ItemUseIntegration {
           rolledAt: new Date().toISOString(), userId: readCurrentUserId(), usedFallbackBonus: false,
         };
         return { ok: true, resistance: result };
-      } catch (cause) { return { ok: false, message: cause instanceof Error ? cause.message : "não foi possível rolar resistência." }; }
+      } catch (cause) { return { ok: false, sideEffect: "none", message: cause instanceof Error ? cause.message : "não foi possível rolar resistência." }; }
     }
     const action = input.action;
-    if (!action) return { ok: false, message: "ação persistida não encontrada." };
-    if (!canCurrentUserApplyAssistedActions()) return { ok: false, message: "apenas o Mestre pode aplicar ações assistidas." };
-    const actor = await resolveCardActor(action.actor);
-    if (!actor) return { ok: false, message: `não foi possível encontrar ${action.actor.name}.` };
+    if (!action) return { ok: false, sideEffect: "none", message: "ação persistida não encontrada." };
+    if (!canCurrentUserApplyAssistedActions()) return { ok: false, sideEffect: "none", message: "apenas o Mestre pode aplicar ações assistidas." };
+    let actor: Actor | null;
+    try { actor = await resolveCardActor(action.actor); }
+    catch (cause) { return { ok: false, sideEffect: "none", message: cause instanceof Error ? cause.message : `não foi possível encontrar ${action.actor.name}.` }; }
+    if (!actor) return { ok: false, sideEffect: "none", message: `não foi possível encontrar ${action.actor.name}.` };
     if (action.kind === "resource-operation") {
       const result = await executeAutomationResourceOperation(this.resources, actor, action.resource, action.operation, action.amount);
-      return result.ok ? { ok: true } : { ok: false, message: result.error.message };
+      return result.ok ? { ok: true } : { ok: false, sideEffect: "none", message: result.error.message };
     }
     if (action.kind === "damage-application") {
       const result = await this.damage.applyDamage({ actor, instances: action.instances, source: action.source, originUuid: action.originUuid });
-      if (!result.ok) return { ok: false, message: result.error.message };
+      if (!result.ok) return { ok: false, sideEffect: "none", message: result.error.message };
       await whisperDamageApplicationResultToGms(result.value);
       return { ok: true };
     }
     const result = await this.conditions.applyCondition({ actor, conditionId: action.conditionId, duration: action.duration, originUuid: action.originUuid, source: action.source ?? "ritual.chat-card" });
-    return result.ok ? { ok: true } : { ok: false, message: result.error.message };
+    return result.ok ? { ok: true } : { ok: false, sideEffect: "none", message: result.error.message };
   }
 
   private async resolveAlternativeActions(

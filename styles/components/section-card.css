@@ -25,9 +25,30 @@
   --ptk-chat-section-title: #79272c;
 }
 
+.paranormal-toolkit-section-card--healing {
+  --ptk-chat-section-accent: #177f78;
+  --ptk-chat-section-border: rgba(23, 127, 120, 0.32);
+  --ptk-chat-section-background: #e8f6f3;
+  --ptk-chat-section-title: #115f5a;
+}
+
 .paranormal-toolkit-section-card--resistance {
   --ptk-chat-section-accent: #a66a13;
   --ptk-chat-section-border: rgba(166, 106, 19, 0.32);
   --ptk-chat-section-background: #fbf2df;
   --ptk-chat-section-title: #74490d;
+}
+
+.paranormal-toolkit-section-card--success {
+  --ptk-chat-section-accent: #39784d;
+  --ptk-chat-section-border: rgba(57, 120, 77, 0.32);
+  --ptk-chat-section-background: #edf6ef;
+  --ptk-chat-section-title: #285b39;
+}
+
+.paranormal-toolkit-section-card--failure {
+  --ptk-chat-section-accent: #9a3439;
+  --ptk-chat-section-border: rgba(154, 52, 57, 0.32);
+  --ptk-chat-section-background: #f8ebeb;
+  --ptk-chat-section-title: #78272c;
 }
