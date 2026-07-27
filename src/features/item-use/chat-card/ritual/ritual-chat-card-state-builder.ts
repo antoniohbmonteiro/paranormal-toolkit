@@ -8,7 +8,7 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
   const { context, snapshot } = input;
   if (!context.actor) throw new Error("Conjurador ausente.");
   const target = context.targets[0];
-  if (!target?.actor) throw new Error("Alvo ausente.");
+  if (target && !target.actor) throw new Error("Ator do alvo ausente.");
   const createdAt = input.now ?? Date.now();
   const main = snapshot.rolls.find((roll) => roll.intent !== "ritual") ?? null;
   return {
@@ -21,7 +21,7 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     ritualIdentity: resolveOrdemRitualPresentation(context.item),
     descriptionHtml: resolveSafeRitualDescription(context.item),
     cost: snapshot.cost,
-    target: { ...ref(target.actor), tokenId: target.tokenId, tokenUuid: target.sceneId && target.tokenId ? `Scene.${target.sceneId}.Token.${target.tokenId}` : null },
+    target: target?.actor ? { ...ref(target.actor), tokenId: target.tokenId, tokenUuid: target.sceneId && target.tokenId ? `Scene.${target.sceneId}.Token.${target.tokenId}` : null } : null,
     conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: snapshot.castingCheck.success ? null : "Falha na conjuração" } : null,
     mainRoll: main ? { id: main.id, label: main.intent === "damage" ? "Dano" : main.intent === "healing" ? "Cura" : "Efeito", intent: main.intent === "damage" || main.intent === "healing" ? main.intent : "utility", formula: main.formula, total: main.total, diceResults: main.diceResults, damageType: main.damageType } : null,
     resistance: snapshot.resistance && input.resistanceDifficulty !== null ? { skill: snapshot.resistance.skill, skillLabel: snapshot.resistance.label, difficulty: input.resistanceDifficulty, effect: snapshot.resistance.summary, status: "pending", result: null } : null,

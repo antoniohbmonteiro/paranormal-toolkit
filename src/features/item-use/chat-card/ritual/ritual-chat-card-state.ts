@@ -27,7 +27,7 @@ export interface RitualChatCardState {
   ritualIdentity?: { elementKey: string; elementLabel: string; circle: 1 | 2 | 3 | 4 } | null;
   descriptionHtml: string | null;
   cost: { amount: number; resource: "PE" | "PD"; spent: boolean } | null;
-  target: SerializableDocumentRef & { tokenId: string | null; tokenUuid: string | null };
+  target: (SerializableDocumentRef & { tokenId: string | null; tokenUuid: string | null }) | null;
   conjuration: RitualCastingSnapshot | null;
   mainRoll: RitualRollSnapshot | null;
   resistance: { skill: string; skillLabel: string; difficulty: number; effect: string; status: "pending" | "executing" | "completed" | "uncertain"; result: RitualResistanceResult | null } | null;

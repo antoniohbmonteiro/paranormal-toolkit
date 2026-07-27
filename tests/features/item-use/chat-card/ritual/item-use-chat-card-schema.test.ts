@@ -15,4 +15,8 @@ describe("ritual card schema normalization", () => {
     const raw = { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 1, createdAt: 1, messageId: "m", state: { schemaVersion: 1, castId: "c", renderer: "single-target", source: { id: "s", uuid: null, name: "S" }, item: { id: "i", uuid: null, name: "I" }, target: { id: "t", uuid: null, name: "T" }, form: { id: "base", label: "Padrão" }, descriptionHtml: null, cost: null, conjuration: null, mainRoll: null, resistance: null, actions: [action], createdAt: 1 }, legacyFallback: { itemName: "I", summaryLines: [] } };
     expect(normalizeRitualSingleTargetChatCard(raw)?.state.actions[0]?.state).toBe("uncertain");
   });
+  it("accepts a persisted targetless utility state", () => {
+    const raw = { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: 1, messageId: "m", state: { schemaVersion: 1, castId: "utility", renderer: "single-target", source: { id: "s", uuid: null, name: "S" }, item: { id: "i", uuid: null, name: "I" }, target: null, form: { id: "base", label: "Padrão" }, ritualIdentity: { elementKey: "energy", elementLabel: "Energia", circle: 1 }, descriptionHtml: null, cost: null, conjuration: null, mainRoll: { id: "r", label: "Efeito", intent: "utility", formula: "1d20", total: 10, diceResults: [10], damageType: null }, resistance: null, actions: [], createdAt: 1 }, legacyFallback: { itemName: "I", summaryLines: [] } };
+    expect(normalizeRitualSingleTargetChatCard(raw)?.state).toMatchObject({ target: null, ritualIdentity: { elementLabel: "Energia", circle: 1 } });
+  });
 });

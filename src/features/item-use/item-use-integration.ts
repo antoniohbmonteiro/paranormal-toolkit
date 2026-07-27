@@ -503,8 +503,10 @@ export class ItemUseIntegration {
     if (input.kind === "roll-resistance") {
       if (!canCurrentUserControlAssistedActions()) return { ok: false, sideEffect: "none", message: "apenas um usuário autorizado pode rolar resistência." };
       const resistance = input.card.state.resistance;
+      const target = input.card.state.target;
+      if (!target) return { ok: false, sideEffect: "none", message: "alvo da resistência não encontrado." };
       let actor: Actor | null;
-      try { actor = await resolveCardActor(input.card.state.target); }
+      try { actor = await resolveCardActor(target); }
       catch (cause) { return { ok: false, sideEffect: "none", message: cause instanceof Error ? cause.message : "não foi possível resolver o alvo." }; }
       if (!resistance || !actor) return { ok: false, sideEffect: "none", message: "alvo ou resistência não encontrado." };
       try {
@@ -516,7 +518,7 @@ export class ItemUseIntegration {
           diceResults: readCardDiceResults(rolled.roll), difficulty: resistance.difficulty,
           outcome: rolled.total >= resistance.difficulty ? "success" : "failure",
           targetActorId: actor.id ?? null, targetActorUuid: actor.uuid ?? null,
-          targetName: actor.name ?? input.card.state.target.name,
+          targetName: actor.name ?? target.name,
           rolledAt: new Date().toISOString(), userId: readCurrentUserId(), usedFallbackBonus: false,
         };
         return { ok: true, resistance: result };
