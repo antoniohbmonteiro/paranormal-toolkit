@@ -4,7 +4,7 @@
 
 ### Adicionado
 
-- Card persistente `RitualSingleTargetCard` integrado a conjurações suportadas com exatamente um alvo.
+- Card persistente `RitualSingleTargetCard` integrado a conjurações suportadas com zero ou um alvo compatível. Sem alvo, o card novo é usado apenas quando não há resistência, dano, cura, condição nem outra ação dependente de outro Actor.
 - Schema v2 discriminado em `flags.paranormal-toolkit.chatCard`, com estado serializável, revision, ações executáveis após refresh e fallback legado.
 - Setting global `ritual.chatCard.mode` (`auto` ou `legacy`) para rollout e rollback seguro.
 - Controller delegado para resistência, dano, cura, recursos e condições, com mutações serializadas por mensagem.
@@ -13,7 +13,7 @@
 
 ### Compatibilidade e limites
 
-- Cards schema 1, zero/múltiplos alvos e targeting de área continuam usando o renderer legado.
+- Cards schema 1 continuam usando o renderer legado. Rituais sem alvo que exigem um Actor alvo, múltiplos alvos, áreas, linhas e demais casos não suportados também permanecem no legado.
 - Resistência é rolada uma única vez; dano, cura e condições permanecem ações manuais.
 - O card usa a `ChatMessage` criada pelo sistema e não cria mensagens adicionais.
 - Descrição segura do ritual em seção recolhível acima dos metadados.
