@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.32.0`
+Versão atual: `0.39.1`
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 
@@ -36,6 +36,7 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 | Teste de Ocultismo | Rola Ocultismo contra a DT de ritual do personagem. |
 | Cards assistidos | Cria cards no chat com resultado, dano, cura, resistência e ações úteis. |
 | Resistência | Ajuda o mestre a lidar com resistência e opções como dano normal ou metade. |
+| Efeitos por resistência | Rituais genéricos podem configurar condições diferentes para sucesso e falha da resistência. |
 | Dano e cura | Permite aplicar dano/cura pelo card quando houver alvo válido. |
 | Condições | Pode aplicar condições informativas como Active Effects. |
 | Alvos por área | Permite selecionar alvos na cena para rituais com área. |
@@ -50,6 +51,12 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 3. Confira custo, alvo, duração e resistência.
 4. Conjure.
 5. Use o card no chat para aplicar dano, cura, condição ou resolver resistência quando fizer sentido.
+
+### Configurando condições por resistência
+
+Na aba **Atributos** de um ritual, use o bloco **Efeitos da resistência** do Paranormal Toolkit para escolher condições disponíveis em caso de sucesso ou falha. Essa configuração usa flags próprias do módulo e funciona no fluxo genérico, sem exigir preset específico.
+
+A resolução continua assistida: o mestre rola ou confere a resistência e escolhe no card a ação correspondente ao resultado.
 
 ### Usando alvos por área na cena
 
