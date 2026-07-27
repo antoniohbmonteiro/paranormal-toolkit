@@ -13,7 +13,7 @@ export type RitualResistanceResult = { skill: string; skillLabel: string; formul
 
 type BaseAction = { id: string; state: RitualCardActionState; label: string; executedLabel: string; actor: SerializableDocumentRef; choiceGroupId: string | null; outcome: RitualResistanceOutcome | null; completedAt: string | null; completedByUserId: string | null };
 export type RitualResourceAction = BaseAction & { kind: "resource-operation"; resource: ActorResource; operation: ResourceOperation; amount: number };
-export type RitualDamageAction = BaseAction & { kind: "damage-application"; instances: DamageApplicationInstanceInput[]; source: string | null; originUuid: string | null };
+export type RitualDamageAction = BaseAction & { kind: "damage-application"; instances: DamageApplicationInstanceInput[]; source: string | null; originUuid: string | null; resistanceLabel?: string | null };
 export type RitualConditionAction = BaseAction & { kind: "condition-application"; conditionId: string; duration: ToolkitConditionDurationInput | null; source: string | null; originUuid: string | null };
 export type RitualCardAction = RitualResourceAction | RitualDamageAction | RitualConditionAction;
 

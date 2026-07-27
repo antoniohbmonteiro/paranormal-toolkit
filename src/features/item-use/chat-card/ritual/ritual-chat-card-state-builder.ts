@@ -32,8 +32,11 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
 function ref(document: Actor | Item): SerializableDocumentRef { return { id: document.id ?? null, uuid: document.uuid ?? null, name: document.name ?? "Documento sem nome" }; }
 function parseBreakdown(value: string | null): number[] { return value?.match(/-?\d+/gu)?.map(Number).filter(Number.isFinite) ?? []; }
 function serializeAction(castId: string, action: AssistedRitualAction, index: number): RitualCardAction {
-  const base = { id: `${castId}:action:${index + 1}`, state: action.kind === "condition-application" && action.resistanceOutcome && action.resistanceOutcome !== "always" ? "pending" as const : "available" as const, label: action.label, executedLabel: action.executedLabel, actor: ref(action.actor), choiceGroupId: action.kind !== "condition-application" ? action.choiceGroupId ?? null : null, outcome: action.kind === "condition-application" && action.resistanceOutcome !== "always" ? action.resistanceOutcome as RitualResistanceOutcome | undefined ?? null : null, completedAt: null, completedByUserId: null };
+  const outcome = action.kind === "condition-application" && action.resistanceOutcome !== "always"
+    ? action.resistanceOutcome as RitualResistanceOutcome | undefined
+    : action.kind === "damage-application" ? action.resistanceOutcome : undefined;
+  const base = { id: `${castId}:action:${index + 1}`, state: outcome ? "pending" as const : "available" as const, label: action.label, executedLabel: action.executedLabel, actor: ref(action.actor), choiceGroupId: action.kind !== "condition-application" ? action.choiceGroupId ?? null : null, outcome: outcome ?? null, completedAt: null, completedByUserId: null };
   if (action.kind === "resource-operation") return { ...base, kind: action.kind, resource: action.resource, operation: action.operation, amount: action.amount };
-  if (action.kind === "damage-application") return { ...base, kind: action.kind, instances: action.instances.map((entry) => ({ ...entry })), source: action.source, originUuid: action.originUuid };
+  if (action.kind === "damage-application") return { ...base, kind: action.kind, instances: action.instances.map((entry) => ({ ...entry })), source: action.source, originUuid: action.originUuid, resistanceLabel: action.resistanceLabel ?? null };
   return { ...base, kind: action.kind, conditionId: action.conditionId, duration: action.duration ? structuredClone(action.duration) : null, source: action.source, originUuid: action.originUuid };
 }

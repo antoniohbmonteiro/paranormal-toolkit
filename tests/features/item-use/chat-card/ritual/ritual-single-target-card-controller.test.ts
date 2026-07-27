@@ -4,6 +4,7 @@ import type { ChatCardMessage } from "../../../../../src/features/item-use/chat-
 import type { RitualCardAction, RitualSingleTargetChatCardV2 } from "../../../../../src/features/item-use/chat-card/ritual/ritual-chat-card-state";
 
 function condition(id: string, outcome: "success" | "failure", state: RitualCardAction["state"] = "available"): RitualCardAction { return { id, kind: "condition-application", state, label: id, executedLabel: `✓ ${id}`, actor: { id: "target", uuid: null, name: "Alvo" }, choiceGroupId: null, outcome, completedAt: null, completedByUserId: null, conditionId: id, duration: null, source: null, originUuid: null }; }
+function damage(id: string, outcome: "success" | "failure"): RitualCardAction { return { id, kind: "damage-application", state: "pending", label: id, executedLabel: "Dano aplicado", actor: { id: "target", uuid: null, name: "Alvo" }, choiceGroupId: "resistance-damage", outcome, completedAt: null, completedByUserId: null, instances: [{ amount: outcome === "success" ? 5 : 11, damageType: "physical" }], multiplier: outcome === "success" ? 0.5 : 1, resistanceLabel: outcome === "success" ? "Metade" : "Dano normal" }; }
 function card(actions: RitualCardAction[] = []): RitualSingleTargetChatCardV2 { return { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: 1, messageId: "m", state: { schemaVersion: 1, castId: "c", renderer: "single-target", source: { id: "a", uuid: null, name: "A" }, item: { id: "i", uuid: null, name: "I" }, form: { id: "base", label: "Padrão" }, descriptionHtml: null, cost: null, target: { id: "t", uuid: null, name: "T", tokenId: null, tokenUuid: null }, conjuration: null, mainRoll: null, resistance: { skill: "will", skillLabel: "Vontade", difficulty: 15, effect: "Anula", status: "completed", result: { skill: "will", skillLabel: "Vontade", formula: "1d20", total: 20, diceResults: [20], difficulty: 15, outcome: "success", targetActorId: "t", targetActorUuid: null, targetName: "T", rolledAt: "now", userId: "gm", usedFallbackBonus: false } }, actions, createdAt: 1 }, legacyFallback: { summaryLines: [], itemName: "I", actorId: "a", itemId: "i" } }; }
 function message(initial: RitualSingleTargetChatCardV2) { let value = initial; const document: ChatCardMessage = { id: "m", getFlag: () => value, setFlag: async (_scope, _key, next) => { value = next as RitualSingleTargetChatCardV2; } }; return { document, read: () => value }; }
 
@@ -40,6 +41,20 @@ describe("single target ritual controller", () => {
     await executeRitualCardInteraction({ message: store.document, actionId: "c:resistance", kind: "roll-resistance", executor });
     expect(executor).toHaveBeenCalledTimes(1);
     expect(store.read().state.actions.map((action) => action.state)).toEqual(["available", "resolved"]);
+  });
+  it("resolves and executes only the matching resistance damage alternative", async () => {
+    const initial = card([damage("normal", "failure"), damage("half", "success")]);
+    initial.state.resistance!.status = "pending"; initial.state.resistance!.result = null;
+    const store = message(initial);
+    const executor = vi.fn(async ({ kind }: Parameters<RitualCardActionExecutor>[0]) => kind === "roll-resistance"
+      ? { ok: true as const, resistance: { skill: "will", skillLabel: "Vontade", formula: "1d20", total: 18, diceResults: [18], difficulty: 15, outcome: "success" as const, targetActorId: "t", targetActorUuid: null, targetName: "T", rolledAt: "now", userId: "gm", usedFallbackBonus: false } }
+      : { ok: true as const });
+    await executeRitualCardInteraction({ message: store.document, actionId: "c:resistance", kind: "roll-resistance", executor });
+    expect(store.read().state.actions.map((action) => action.state)).toEqual(["resolved", "available"]);
+    await executeRitualCardInteraction({ message: store.document, actionId: "half", kind: "apply-damage", executor });
+    await executeRitualCardInteraction({ message: store.document, actionId: "half", kind: "apply-damage", executor });
+    expect(store.read().state.actions.map((action) => action.state)).toEqual(["resolved", "completed"]);
+    expect(executor.mock.calls.filter(([input]) => input.kind === "apply-damage")).toHaveLength(1);
   });
   it("returns failures before side effects to available and marks thrown execution uncertain", async () => {
     const safe = message(card([condition("safe", "success")]));

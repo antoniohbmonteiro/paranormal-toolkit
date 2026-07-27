@@ -90,6 +90,8 @@ export type AssistedDamageAction = {
   actionSectionTitle: string;
   source: string | null;
   originUuid: string | null;
+  resistanceOutcome?: "success" | "failure";
+  resistanceLabel?: string;
 };
 
 export type AssistedConditionAction = {
@@ -1089,8 +1091,20 @@ function createAssistedDamageActionsForActor(
       actionSectionTitle: "Aplicar danos",
       source: "item-use.damage-action",
       originUuid: item.uuid ?? null,
+      resistanceOutcome: resolveDamageResistanceOutcome(definition, option),
+      resistanceLabel: option.label,
     };
   });
+}
+
+function resolveDamageResistanceOutcome(
+  definition: AutomationDefinition,
+  option: AutomationDamageApplicationOption,
+): "success" | "failure" | undefined {
+  if (definition.resistance?.effect !== "reducesByHalf") return undefined;
+  if (option.multiplier === 1) return "failure";
+  if (option.multiplier < 1) return "success";
+  return undefined;
 }
 
 function createAssistedResourceAction(

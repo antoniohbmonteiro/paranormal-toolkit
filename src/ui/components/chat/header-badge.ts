@@ -1,4 +1,4 @@
-export type HeaderBadgeTone = "accent" | "neutral" | "wine";
+export type HeaderBadgeTone = "accent" | "neutral" | "wine" | "energy" | "blood" | "knowledge" | "death" | "fear";
 
 export interface HeaderBadgeViewModel {
   label: string;

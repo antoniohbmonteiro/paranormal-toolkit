@@ -45,12 +45,14 @@ describe("ritual single target card v2", () => {
     expect(model.effect?.title).toBe("Dano");
     expect(model.resistance?.action.actionId).toBe("cast:resistance");
   });
-  it("renders element and real circle in the header badge with legacy fallback", () => {
+  it("maps element identity to the header badge tone with legacy fallback", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
-    state.ritualIdentity = { elementKey: "energy", elementLabel: "Energia", circle: 2 };
-    expect(buildRitualSingleTargetCardViewModel(state).header.badges?.[0]?.label).toBe("Energia 2");
+    for (const [elementKey, elementLabel, tone] of [["energy", "Energia", "energy"], ["blood", "Sangue", "blood"], ["knowledge", "Conhecimento", "knowledge"], ["death", "Morte", "death"], ["fear", "Medo", "fear"]] as const) {
+      state.ritualIdentity = { elementKey, elementLabel, circle: 2 };
+      expect(buildRitualSingleTargetCardViewModel(state).header.badges?.[0]).toMatchObject({ label: `${elementLabel} 2`, tone });
+    }
     delete state.ritualIdentity;
-    expect(buildRitualSingleTargetCardViewModel(state).header.badges?.[0]?.label).toBe("Ritual");
+    expect(buildRitualSingleTargetCardViewModel(state).header.badges?.[0]).toMatchObject({ label: "Ritual", tone: "neutral" });
   });
   it("supports healing, utility and absent conjuration", () => {
     for (const intent of ["healing", "generic"] as const) {
@@ -100,6 +102,24 @@ describe("ritual single target card v2", () => {
     const model = buildRitualSingleTargetCardViewModel(state);
     expect(model.assistedActions?.rows[0]?.description).toContain("Sucesso · 1 efeito");
     expect(model.assistedActions?.rows[0]?.control).toMatchObject({ state: "disabled", button: { label: "✓ Aplicado", disabled: true } });
+  });
+  it("groups mutually exclusive resistance damage alternatives into one row", () => {
+    const damageActions: AssistedRitualAction[] = [
+      { kind: "damage-application", actor: target, actorName: "Alvo", instances: [{ amount: 11, damageType: "physical" }], multiplier: 1, label: "Dano normal", executedLabel: "Dano aplicado", actionSectionId: "damage", actionSectionTitle: "Dano após resistência", choiceGroupId: "resistance-damage", resistanceOutcome: "failure", resistanceLabel: "Dano normal" },
+      { kind: "damage-application", actor: target, actorName: "Alvo", instances: [{ amount: 5, damageType: "physical" }], multiplier: 0.5, label: "Metade", executedLabel: "Dano aplicado", actionSectionId: "damage", actionSectionTitle: "Dano após resistência", choiceGroupId: "resistance-damage", resistanceOutcome: "success", resistanceLabel: "Metade" },
+    ];
+    const state = buildRitualChatCardState({ context, snapshot, actions: damageActions, resistanceDifficulty: 15 });
+    expect(state.actions).toHaveLength(2);
+    expect(state.actions.map((action) => action.state)).toEqual(["pending", "pending"]);
+    expect(buildRitualSingleTargetCardViewModel(state).assistedActions?.rows).toEqual([expect.objectContaining({ label: "Dano após resistência", description: "Aguardando resistência", control: expect.objectContaining({ state: "disabled" }) })]);
+
+    state.resistance!.result = { skill: "will", skillLabel: "Vontade", formula: "1d20", total: 20, diceResults: [20], difficulty: 15, outcome: "success", targetActorId: "target", targetActorUuid: null, targetName: "Alvo", rolledAt: "now", userId: "gm", usedFallbackBonus: false };
+    state.actions[0]!.state = "resolved";
+    state.actions[1]!.state = "available";
+    const row = buildRitualSingleTargetCardViewModel(state).assistedActions?.rows[0];
+    expect(row).toMatchObject({ description: "Sucesso · 5 PV — metade do dano", control: { state: "active", button: { actionId: state.actions[1]!.id } } });
+    state.actions[1]!.state = "completed";
+    expect(buildRitualSingleTargetCardViewModel(state).assistedActions?.rows[0]?.control).toMatchObject({ state: "disabled", button: { label: "✓ Aplicado", disabled: true } });
   });
   it("recognizes the discriminated v2 schema", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });

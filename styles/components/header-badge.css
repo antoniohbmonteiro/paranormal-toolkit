@@ -29,3 +29,33 @@
   background: rgba(89, 36, 42, 0.09);
   color: var(--ptk-chat-wine);
 }
+
+.paranormal-toolkit-header-badge--energy {
+  border-color: var(--ptk-chat-energy-border);
+  background: var(--ptk-chat-energy-background);
+  color: var(--ptk-chat-energy);
+}
+
+.paranormal-toolkit-header-badge--blood {
+  border-color: var(--ptk-chat-failure-border);
+  background: var(--ptk-chat-failure-background);
+  color: var(--ptk-chat-failure-text);
+}
+
+.paranormal-toolkit-header-badge--knowledge {
+  border-color: rgba(166, 106, 19, 0.38);
+  background: #fbf2cf;
+  color: #74490d;
+}
+
+.paranormal-toolkit-header-badge--death {
+  border-color: rgba(24, 22, 27, 0.9);
+  background: #29262d;
+  color: #fff;
+}
+
+.paranormal-toolkit-header-badge--fear {
+  border-color: rgba(79, 75, 86, 0.38);
+  background: rgba(79, 75, 86, 0.12);
+  color: #4f4b56;
+}
