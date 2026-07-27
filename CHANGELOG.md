@@ -15,6 +15,7 @@
 - Componentes visuais `MetadataPill` e `RitualMetadata`, com chips de metadados compactos, flexíveis e responsivos, além de exemplos isolados no Foundry.
 - Componente genérico `MetadataDetailRow`, com barra de destaque herdável, label escapado e detalhe interno confiável para composições futuras.
 - Componente visual `RitualSingleTargetCard`, compondo as fundações aprovadas em ordem previsível, com seções opcionais controladas pelo consumidor e exemplos isolados.
+- Camada visual de ações assistidas com `AssistedActionButton`, `CompletionIndicator`, `AssistedActionRow` e `RitualAssistedActionsPanel`, composta opcionalmente ao final do card isolado de ritual.
 - Helpers temporários e exclusivos para GMs para publicar e limpar exemplos visuais identificados pelo console.
 
 ### Decisões

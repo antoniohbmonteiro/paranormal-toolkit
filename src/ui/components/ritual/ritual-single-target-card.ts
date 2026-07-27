@@ -20,6 +20,10 @@ import {
   type RitualMetadataViewModel,
 } from "./ritual-metadata";
 import {
+  renderRitualAssistedActionsPanel,
+  type RitualAssistedActionsPanelViewModel,
+} from "./ritual-assisted-actions-panel";
+import {
   renderRitualResistanceSection,
   type RitualResistanceSectionViewModel,
 } from "./ritual-resistance-section";
@@ -31,6 +35,7 @@ export interface RitualSingleTargetCardViewModel {
   conjuration: RitualConjurationSectionViewModel;
   damage?: RitualDamageSectionViewModel;
   resistance?: RitualResistanceSectionViewModel;
+  assistedActions?: RitualAssistedActionsPanelViewModel;
 }
 
 export function renderRitualSingleTargetCard(
@@ -43,6 +48,7 @@ export function renderRitualSingleTargetCard(
     renderRitualConjurationSection(model.conjuration),
     model.damage ? renderRitualDamageSection(model.damage) : "",
     model.resistance ? renderRitualResistanceSection(model.resistance) : "",
+    model.assistedActions ? renderRitualAssistedActionsPanel(model.assistedActions) : "",
   ]
     .filter(Boolean)
     .join("");

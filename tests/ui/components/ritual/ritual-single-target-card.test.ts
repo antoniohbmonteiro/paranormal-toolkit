@@ -42,6 +42,9 @@ const baseModel: RitualSingleTargetCardViewModel = {
     outcome: "reduz dano à metade",
     action: { ariaLabel: "Rolar resistência de Fortitude" },
   },
+  assistedActions: {
+    rows: [{ label: "Dano", description: "Aguardando a resistência do alvo.", control: { state: "disabled", button: { label: "Aguardando resistência" } } }],
+  },
 };
 
 describe("renderRitualSingleTargetCard", () => {
@@ -55,6 +58,7 @@ describe("renderRitualSingleTargetCard", () => {
     expect(html).toContain("paranormal-toolkit-section-card--casting");
     expect(html).toContain("paranormal-toolkit-section-card--damage");
     expect(html).toContain("paranormal-toolkit-section-card--resistance");
+    expect(html).toContain("paranormal-toolkit-ritual-assisted-actions-panel");
   });
 
   it("preserves the exact component and detail-row order", () => {
@@ -73,6 +77,7 @@ describe("renderRitualSingleTargetCard", () => {
       html.indexOf("paranormal-toolkit-section-card--casting"),
       html.indexOf("paranormal-toolkit-section-card--damage"),
       html.indexOf("paranormal-toolkit-section-card--resistance"),
+      html.indexOf("paranormal-toolkit-ritual-assisted-actions-panel"),
     ];
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
@@ -120,6 +125,7 @@ describe("renderRitualSingleTargetCard", () => {
       "renderRitualConjurationSection",
       "renderRitualDamageSection",
       "renderRitualResistanceSection",
+      "renderRitualAssistedActionsPanel",
     ]) {
       expect(source).toContain(renderer);
     }

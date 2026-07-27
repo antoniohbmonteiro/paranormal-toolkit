@@ -5,6 +5,8 @@ import {
 } from "../ui/components/chat/chat-card-header";
 import { renderChatCardShell } from "../ui/components/chat/chat-card-shell";
 import { renderDiceActionButton } from "../ui/components/chat/dice-action-button";
+import { renderAssistedActionButton } from "../ui/components/chat/assisted-action-button";
+import { renderAssistedActionRow, type AssistedActionRowViewModel } from "../ui/components/chat/assisted-action-row";
 import { renderMetadataDetailRow } from "../ui/components/chat/metadata-detail-row";
 import {
   renderRollRow,
@@ -35,6 +37,7 @@ import {
   renderRitualSingleTargetCard,
   type RitualSingleTargetCardViewModel,
 } from "../ui/components/ritual/ritual-single-target-card";
+import { renderRitualAssistedActionsPanel, type RitualAssistedActionsPanelViewModel } from "../ui/components/ritual/ritual-assisted-actions-panel";
 import {
   renderRitualMetadata,
   type RitualMetadataViewModel,
@@ -94,6 +97,9 @@ export type RitualMetadataExample = "default" | "partial" | "long" | "all";
 export type MetadataDetailRowExample = "short" | "long" | "generic" | "all";
 
 export type RitualSingleTargetCardExample = "success" | "failure" | "long" | "all";
+export type AssistedActionButtonExample = "active" | "disabled" | "all";
+export type AssistedActionRowExample = "active" | "disabled" | "completed" | "all";
+export type RitualAssistedActionsPanelExample = "pending" | "available" | "completed" | "damage-only" | "all";
 
 export type ChatCardDevelopmentApi = {
   /** @deprecated Temporary visual QA helper; remove after production migration. */
@@ -126,6 +132,9 @@ export type ChatCardDevelopmentApi = {
   postRitualSingleTargetCardExample(
     example: RitualSingleTargetCardExample,
   ): Promise<unknown>;
+  postAssistedActionButtonExample(example: AssistedActionButtonExample): Promise<unknown>;
+  postAssistedActionRowExample(example: AssistedActionRowExample): Promise<unknown>;
+  postRitualAssistedActionsPanelExample(example: RitualAssistedActionsPanelExample): Promise<unknown>;
   clearChatCardExamples(): Promise<void>;
   /** @deprecated Use clearChatCardExamples. */
   clearChatCardHeaderExamples(): Promise<void>;
@@ -449,6 +458,46 @@ function renderMetadataDetailRowExample(
   return renderChatCardShell({ content: renderMetadataDetailRow(model) });
 }
 
+function assistedActionRowExample(example: Exclude<AssistedActionRowExample, "all">): AssistedActionRowViewModel {
+  if (example === "completed") return { label: "Dano", description: "9 de dano aplicado em Malvadão.", control: { state: "completed", indicator: { label: "Aplicado" } } };
+  const disabled = example === "disabled";
+  return {
+    label: "Dano",
+    description: disabled ? "Aguardando a resistência do alvo." : "A resistência falhou. Aplique o dano completo.",
+    control: { state: disabled ? "disabled" : "active", button: { label: disabled ? "Aguardando resistência" : "Aplicar 9 de dano" } },
+  };
+}
+
+function assistedActionsPanelExample(example: Exclude<RitualAssistedActionsPanelExample, "all">): RitualAssistedActionsPanelViewModel {
+  if (example === "completed") return { rows: [
+    assistedActionRowExample("completed"),
+    { label: "Efeito", description: "Vulnerável aplicado em Malvadão.", control: { state: "completed", indicator: { label: "Aplicado" } } },
+  ] };
+  if (example === "damage-only") return { rows: [assistedActionRowExample("active")] };
+  const pending = example === "pending";
+  return { rows: [
+    assistedActionRowExample(pending ? "disabled" : "active"),
+    {
+      label: "Efeito",
+      description: pending ? "Aguardando resistência antes da aplicação." : "Vulnerável · 1 rodada",
+      control: { state: pending ? "disabled" : "active", button: { label: pending ? "Aguardando resistência" : "Aplicar efeito" } },
+    },
+  ] };
+}
+
+function renderAssistedActionButtonExample(example: Exclude<AssistedActionButtonExample, "all">): string {
+  const disabled = example === "disabled";
+  return renderChatCardShell({ content: renderAssistedActionButton({ label: disabled ? "Aguardando resistência" : "Aplicar 9 de dano", disabled }) });
+}
+
+function renderAssistedActionRowExample(example: Exclude<AssistedActionRowExample, "all">): string {
+  return renderChatCardShell({ content: renderAssistedActionRow(assistedActionRowExample(example)) });
+}
+
+function renderAssistedActionsPanelExample(example: Exclude<RitualAssistedActionsPanelExample, "all">): string {
+  return renderChatCardShell({ content: renderRitualAssistedActionsPanel(assistedActionsPanelExample(example)) });
+}
+
 function ritualSingleTargetCardExample(
   example: Exclude<RitualSingleTargetCardExample, "all">,
 ): RitualSingleTargetCardViewModel {
@@ -519,6 +568,7 @@ function ritualSingleTargetCardExample(
             : "reduz dano à metade",
           action: { ariaLabel: "Rolar resistência de Fortitude" },
         },
+    assistedActions: !failure && !long ? assistedActionsPanelExample("pending") : undefined,
   };
 }
 
@@ -535,7 +585,10 @@ function createExampleMessage(
     | "ritual-resistance"
     | "ritual-metadata"
     | "metadata-detail-row"
-    | "ritual-single-target-card",
+    | "ritual-single-target-card"
+    | "assisted-action-button"
+    | "assisted-action-row"
+    | "ritual-assisted-actions-panel",
 ): Promise<unknown> {
   return ChatMessage.create({
     content,
@@ -709,6 +762,21 @@ export function createChatCardDevelopmentApi(): ChatCardDevelopmentApi {
           ),
         ),
       );
+    },
+    async postAssistedActionButtonExample(example) {
+      requireGm();
+      const examples = example === "all" ? (["active", "disabled"] as const) : [example];
+      return Promise.all(examples.map((item) => createExampleMessage(renderAssistedActionButtonExample(item), "assisted-action-button")));
+    },
+    async postAssistedActionRowExample(example) {
+      requireGm();
+      const examples = example === "all" ? (["active", "disabled", "completed"] as const) : [example];
+      return Promise.all(examples.map((item) => createExampleMessage(renderAssistedActionRowExample(item), "assisted-action-row")));
+    },
+    async postRitualAssistedActionsPanelExample(example) {
+      requireGm();
+      const examples = example === "all" ? (["pending", "available", "completed", "damage-only"] as const) : [example];
+      return Promise.all(examples.map((item) => createExampleMessage(renderAssistedActionsPanelExample(item), "ritual-assisted-actions-panel")));
     },
     clearChatCardExamples,
     clearChatCardHeaderExamples: clearChatCardExamples,
