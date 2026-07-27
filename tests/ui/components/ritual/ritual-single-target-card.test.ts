@@ -39,7 +39,8 @@ const baseModel: RitualSingleTargetCardViewModel = {
   resistance: {
     skill: "Fortitude",
     difficultyLabel: "DT 22",
-    outcome: "reduz dano à metade",
+    description: "reduz dano à metade",
+    status: "pending",
     action: { ariaLabel: "Rolar resistência de Fortitude" },
   },
   assistedActions: {
@@ -64,6 +65,7 @@ describe("renderRitualSingleTargetCard", () => {
   it("preserves the exact component and detail-row order", () => {
     const html = renderRitualSingleTargetCard({
       ...baseModel,
+      description: { html: "<p>Descrição segura</p>" },
       detailRows: [
         { label: "First:", detailHtml: "one" },
         { label: "Second:", detailHtml: "two" },
@@ -71,6 +73,7 @@ describe("renderRitualSingleTargetCard", () => {
     });
     const positions = [
       html.indexOf("paranormal-toolkit-chat-card-header"),
+      html.indexOf("paranormal-toolkit-ritual-description-section"),
       html.indexOf("paranormal-toolkit-ritual-metadata"),
       html.indexOf("First:"),
       html.indexOf("Second:"),

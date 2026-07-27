@@ -61,6 +61,7 @@ function observeRenderedChatCards(): void {
 
 function enhanceItemUseChatCards(root: ParentNode | null): void {
   if (!root) return;
+  if (root instanceof Element && (root.matches('[data-paranormal-toolkit-card-renderer="ritual-single-target"]') || root.querySelector('[data-paranormal-toolkit-card-renderer="ritual-single-target"]'))) return;
 
   removeWorkflowRollDetails(root);
   enhanceRitualMetadata(root);

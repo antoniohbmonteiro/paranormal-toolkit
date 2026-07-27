@@ -10,7 +10,7 @@ describe("renderHeaderBadge", () => {
     expect(html).not.toContain(`<Badge`);
   });
 
-  it.each(["accent", "neutral", "wine"] as const)(
+  it.each(["accent", "neutral", "wine", "energy", "blood", "knowledge", "death", "fear"] as const)(
     "renders the %s visual tone",
     (tone) => {
       expect(renderHeaderBadge({ label: "Label", tone })).toContain(

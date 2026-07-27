@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.40.0
+
+### Adicionado
+
+- Card persistente `RitualSingleTargetCard` integrado a conjurações suportadas com zero ou um alvo compatível. Sem alvo, o card novo é usado apenas quando não há resistência, dano, cura, condição nem outra ação dependente de outro Actor.
+- Schema v2 discriminado em `flags.paranormal-toolkit.chatCard`, com estado serializável, revision, ações executáveis após refresh e fallback legado.
+- Setting global `ritual.chatCard.mode` (`auto` ou `legacy`) para rollout e rollback seguro.
+- Controller delegado para resistência, dano, cura, recursos e condições, com mutações serializadas por mensagem.
+- Integração real das condições configuradas em `ritualResistanceOutcomes`: a rolagem habilita todas as condições do resultado correto e resolve somente a branch oposta.
+- Seção visual pura de efeito com títulos distintos para dano, cura e utilidade; conjuração agora é opcional.
+
+### Compatibilidade e limites
+
+- Cards schema 1 continuam usando o renderer legado. Rituais sem alvo que exigem um Actor alvo, múltiplos alvos, áreas, linhas e demais casos não suportados também permanecem no legado.
+- Resistência é rolada uma única vez; dano, cura e condições permanecem ações manuais.
+- O card usa a `ChatMessage` criada pelo sistema e não cria mensagens adicionais.
+- Descrição segura do ritual em seção recolhível acima dos metadados.
+- Paleta turquesa própria para cura e estados visuais de sucesso/falha da resistência com badges.
+- Condições do resultado de resistência agrupadas em uma única ação visual, preservando execução e persistência individuais.
+- Labels localizados de tipo de dano, recuperação segura de execuções interrompidas e fallback legado para múltiplas rolagens de efeito.
+
 ## 0.39.0
 
 ### Adicionado

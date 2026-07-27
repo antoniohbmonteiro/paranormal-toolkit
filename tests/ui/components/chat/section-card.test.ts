@@ -6,7 +6,7 @@ import {
 } from "../../../../src/ui/components/chat/section-card";
 
 describe("renderSectionCard", () => {
-  it.each(["casting", "damage", "resistance"] as const)(
+  it.each(["casting", "damage", "healing", "resistance", "success", "failure"] as const)(
     "renders the %s tone class",
     (tone) => {
       expect(renderSectionCard({ tone, content: "Content" })).toContain(
@@ -43,7 +43,7 @@ describe("renderSectionCard", () => {
     expect(css).toContain("padding: 0.5rem 0.6rem");
     expect(css).toContain("gap: 0.22rem");
     expect(css).toContain("min-width: 0");
-    for (const tone of ["casting", "damage", "resistance"]) {
+    for (const tone of ["casting", "damage", "healing", "resistance", "success", "failure"]) {
       expect(css).toContain(`paranormal-toolkit-section-card--${tone}`);
     }
     expect(css).toContain("--ptk-chat-section-accent");

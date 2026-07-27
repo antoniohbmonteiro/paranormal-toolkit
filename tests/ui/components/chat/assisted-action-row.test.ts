@@ -11,5 +11,9 @@ describe("renderAssistedActionRow", () => {
     const html=renderAssistedActionRow({label:"Dano",description:"Done",control:{state:"completed",indicator:{label:"Aplicado"}}}); expect(html).toContain("completion-indicator"); expect(html).not.toContain("<button");
     expect(renderAssistedActionRow({label:"",description:"x",control:{state:"active",button:{label:"x"}}})).toBe("");
   });
+  it("renders collapsed local details with an escaped condition list", () => {
+    const html=renderAssistedActionRow({label:"Efeitos",description:"Falha · 2 efeitos",details:{items:["Fatigado · 2 rodadas","<Fraco> · duração indefinida"]},control:{state:"active",button:{label:"Aplicar"}}});
+    expect(html).toContain("<details"); expect(html).not.toContain("<details open"); expect(html).toContain("Ver efeitos"); expect(html).toContain("Ocultar efeitos"); expect(html).toContain("Fatigado · 2 rodadas"); expect(html).toContain("&lt;Fraco&gt;");
+  });
   it("uses defensive grid and no integration", () => { const css=readFileSync("styles/components/assisted-action-row.css","utf8"); expect(css).toContain("grid-template-columns: minmax(0, 1fr) auto"); expect(css).toContain("overflow-wrap: anywhere"); expect(readFileSync("src/ui/components/chat/assisted-action-row.ts","utf8")).not.toMatch(/data-action|workflow|foundry|game/); });
 });

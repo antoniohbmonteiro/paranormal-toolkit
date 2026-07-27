@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.38.2`.
+Versão atual documentada: `v0.40.0`.
 
 O Toolkit já tem:
 
@@ -43,6 +43,20 @@ O Toolkit já tem:
 - rituais assistidos podem ser conjurados sem alvo selecionado; nesse caso o Toolkit rola e registra o resultado, mas não cria ações que alteram atores;
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos, minimização temporária de fichas abertas e remoção automática da área temporária.
 
+
+
+### Concluído em 0.40.0 — Card estruturado de ritual para zero ou um alvo
+
+- estado serializável schema v2, ViewModel puro e renderer `RitualSingleTargetCard`;
+- ações manuais persistidas e reidratáveis para dano, cura, recurso e condições;
+- resistência única persistida, com resolução independente das branches success/failure;
+- suporte ao card novo com zero ou um alvo compatível; zero alvos é aceito somente sem resistência, dano, cura, condição ou outra ação dependente de outro Actor;
+- fallback automático para o card legado quando um ritual sem alvo exige um Actor alvo, possui múltiplos alvos, usa área ou linha, ou contém dados não suportados;
+- setting mundial `ritual.chatCard.mode` para rollout `auto` ou rollback `legacy`;
+- multi-target e áreas permanecem deliberadamente no fluxo legado.
+- descrição segura e recolhível, paleta própria de cura e badges de resultado na resistência;
+- agrupamento apenas visual das condições do outcome, com aplicação parcial e retry das pendentes;
+- recuperação explícita de execuções incertas e fallback para múltiplas rolagens de efeito.
 
 
 ### Concluído em 0.38.2 — Compatibilidade de tipos do carregador de estilos
@@ -1046,4 +1060,3 @@ src/features/conditions/
 ```
 
 ### P2 — Permissões e visibilidade no chat
-

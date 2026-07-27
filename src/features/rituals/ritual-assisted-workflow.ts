@@ -90,6 +90,8 @@ export type AssistedDamageAction = {
   actionSectionTitle: string;
   source: string | null;
   originUuid: string | null;
+  resistanceOutcome?: "success" | "failure";
+  resistanceLabel?: string;
 };
 
 export type AssistedConditionAction = {
@@ -105,6 +107,17 @@ export type AssistedConditionAction = {
   executedLabel: string;
   actionSectionId: string;
   actionSectionTitle: string;
+  resistanceOutcome?: "success" | "failure" | "always";
+};
+
+export type RitualCastSnapshot = {
+  castId: string;
+  form: { id: RitualCastVariant; label: string };
+  cost: { amount: number; resource: "PE" | "PD"; spent: boolean } | null;
+  castingCheck: RitualCastingCheckSummary | null;
+  resistance: AutomationResistanceDefinition | null;
+  rolls: Array<{ id: string; formula: string; total: number; intent: WorkflowRollResult["intent"]; damageType: string | null; diceResults: number[] }>;
+  areaTargeting: boolean;
 };
 
 export type AssistedRitualAction =
@@ -144,6 +157,7 @@ export type RitualAssistedRunResult =
       workflowContext: WorkflowContext;
       itemUseContext: ItemUseContext;
       summaryLines: string[];
+      castSnapshot: RitualCastSnapshot;
     }
   | {
       status: "ready";
@@ -151,6 +165,7 @@ export type RitualAssistedRunResult =
       itemUseContext: ItemUseContext;
       actions: AssistedRitualAction[];
       summaryLines: string[];
+      castSnapshot: RitualCastSnapshot;
     };
 
 type RitualPreparationStep = Exclude<
@@ -294,6 +309,7 @@ export class RitualAssistedWorkflow {
       context,
       targetingResult.targets,
     );
+    const usedAreaTargeting = Boolean(targetingResult.areaSnapshot);
 
     if (targetingResult.areaSnapshot) {
       this.ritualEvents.emitAreaResolved(
@@ -388,6 +404,7 @@ export class RitualAssistedWorkflow {
         effectiveContext,
         castingCheck,
       );
+      const castSnapshot = createRitualCastSnapshot(castId, castOptions, form, formLabel, cost, castingCheck, definition, workflowContext, usedAreaTargeting);
 
       if (!conditionActionResult.ok) {
         emitFinished("failed", effectiveContext.targets, {
@@ -414,6 +431,7 @@ export class RitualAssistedWorkflow {
           itemUseContext: effectiveContext,
           actions,
           summaryLines,
+          castSnapshot,
         };
       }
 
@@ -423,6 +441,7 @@ export class RitualAssistedWorkflow {
         workflowContext,
         itemUseContext: effectiveContext,
         summaryLines,
+        castSnapshot,
       };
     }
 
@@ -482,6 +501,7 @@ export class RitualAssistedWorkflow {
       effectiveContext,
       castingCheck,
     );
+    const castSnapshot = createRitualCastSnapshot(castId, castOptions, form, formLabel, cost, castingCheck, definition, workflowContext, usedAreaTargeting);
 
     if (!actionResult.ok) {
       emitFinished("failed", effectiveContext.targets, {
@@ -520,6 +540,7 @@ export class RitualAssistedWorkflow {
         workflowContext,
         itemUseContext: effectiveContext,
         summaryLines,
+        castSnapshot,
       };
     }
 
@@ -530,6 +551,7 @@ export class RitualAssistedWorkflow {
       itemUseContext: effectiveContext,
       actions,
       summaryLines,
+      castSnapshot,
     };
   }
 
@@ -810,7 +832,50 @@ function createAssistedConditionAction(
     executedLabel: application.executedLabel ?? `✓ ${conditionLabel} aplicado`,
     actionSectionId: application.actionSectionId ?? "apply-effects",
     actionSectionTitle: application.actionSectionTitle ?? "Aplicar efeito",
+    resistanceOutcome: application.applyOnResistance,
   };
+}
+
+function createRitualCastSnapshot(
+  castId: string,
+  options: RitualCastOptions,
+  form: AutomationRitualFormDefinition,
+  formLabel: string,
+  cost: RitualCost | null,
+  castingCheck: RitualCastingCheckSummary | null,
+  definition: AutomationDefinition,
+  context: WorkflowContext,
+  areaTargeting: boolean,
+): RitualCastSnapshot {
+  return {
+    castId,
+    form: { id: options.variant, label: formLabel },
+    cost: cost ? { amount: calculateFinalRitualCost(cost, form)?.amount ?? cost.amount, resource: cost.resource, spent: options.spendResource } : null,
+    castingCheck,
+    resistance: definition.resistance ?? null,
+    rolls: Object.values(context.rolls).map((entry) => ({
+      id: entry.id,
+      formula: entry.formula,
+      total: entry.total,
+      intent: entry.intent,
+      damageType: entry.damageType ?? null,
+      diceResults: readRollDiceResults(entry.roll),
+    })),
+    areaTargeting,
+  };
+}
+
+function readRollDiceResults(roll: Roll): number[] {
+  const dice = (roll as { dice?: unknown }).dice;
+  if (!Array.isArray(dice)) return [];
+  return dice.flatMap((die) => {
+    const results = (die as { results?: unknown }).results;
+    if (!Array.isArray(results)) return [];
+    return results.flatMap((result) => {
+      const value = (result as { result?: unknown }).result;
+      return typeof value === "number" && Number.isFinite(value) ? [Math.trunc(value)] : [];
+    });
+  });
 }
 
 function createConditionActionDuration(
@@ -1026,8 +1091,20 @@ function createAssistedDamageActionsForActor(
       actionSectionTitle: "Aplicar danos",
       source: "item-use.damage-action",
       originUuid: item.uuid ?? null,
+      resistanceOutcome: resolveDamageResistanceOutcome(definition, option),
+      resistanceLabel: option.label,
     };
   });
+}
+
+function resolveDamageResistanceOutcome(
+  definition: AutomationDefinition,
+  option: AutomationDamageApplicationOption,
+): "success" | "failure" | undefined {
+  if (definition.resistance?.effect !== "reducesByHalf") return undefined;
+  if (option.multiplier === 1) return "failure";
+  if (option.multiplier < 1) return "success";
+  return undefined;
 }
 
 function createAssistedResourceAction(
