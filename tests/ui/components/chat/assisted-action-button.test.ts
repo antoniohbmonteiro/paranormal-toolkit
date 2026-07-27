@@ -12,5 +12,12 @@ describe("renderAssistedActionButton", () => {
     expect(css).toContain("background: #7d272b"); expect(css).toContain(":not(:disabled):hover");
     expect(css).toContain(":focus-visible"); expect(css).toContain("box-shadow: none");
   });
+  it("stays content-sized without a fixed width", () => {
+    const css=readFileSync("styles/components/assisted-action-button.css","utf8");
+    expect(css).toContain("width: fit-content");
+    expect(css).toContain("max-width: 100%");
+    expect(css).toContain("flex: 0 0 auto");
+    expect(css).not.toMatch(/(?:^|[;{]\s*)width:\s*\d+(?:px|rem|em)/m);
+  });
   it("has no runtime behavior", () => expect(readFileSync("src/ui/components/chat/assisted-action-button.ts","utf8")).not.toMatch(/data-action|addEventListener|game|foundry|workflow/));
 });
