@@ -24,10 +24,10 @@ export function buildRitualSingleTargetCardViewModel(state: RitualChatCardState)
       difficultyLabel: `DT ${state.resistance.difficulty}`,
       description: state.resistance.status === "uncertain" ? "Resultado incerto; verifique o alvo antes de prosseguir." : state.resistance.effect,
       status: resistanceOutcome ?? "pending",
-      action: { ariaLabel: `Rolar ${state.resistance.skillLabel}`, actionId: `${state.castId}:resistance`, disabled: state.resistance.status !== "pending" },
+      action: state.target ? { ariaLabel: `Rolar ${state.resistance.skillLabel}`, actionId: `${state.castId}:resistance`, disabled: state.resistance.status !== "pending" } : undefined,
       result: state.resistance.result ? { formula: state.resistance.result.formula, total: state.resistance.result.total, diceResults: state.resistance.result.diceResults } : undefined,
     } : undefined,
-    assistedActions: rows.length ? { rows } : undefined,
+    assistedActions: rows.length || state.manualTargetNotice ? { rows, note: state.manualTargetNotice ? "Nenhum alvo com ficha foi selecionado. Use os resultados do card manualmente." : undefined } : undefined,
   };
 }
 

@@ -11,7 +11,7 @@ const actor = { id: "source", uuid: "Actor.source", name: "Conjurador", system: 
 const target = { id: "target", uuid: "Actor.target", name: "Alvo", system: {} } as Actor;
 const item = { id: "ritual", uuid: "Actor.source.Item.ritual", name: "RitualCompleto", type: "ritual", system: { execution: "default", range: "short", duration: "instantaneous" } } as unknown as Item;
 const context: ItemUseContext = { source: "ordem-item-used-hook", actor, item, token: null, targets: [{ actor: target, actorId: target.id!, tokenId: "token", sceneId: "scene", name: "Alvo" }] };
-const snapshot: RitualCastSnapshot = { castId: "cast", form: { id: "base", label: "Padrão" }, cost: { amount: 2, resource: "PE", spent: true }, castingCheck: { skillLabel: "Ocultismo", formula: "1d20+5", total: 18, difficulty: 15, success: true, diceBreakdown: "(13)" }, resistance: { skill: "will", label: "Vontade", effect: "nullifies", summary: "Anula" }, rolls: [{ id: "damage", formula: "2d6", total: 8, intent: "damage", damageType: "physical", diceResults: [3, 5] }], areaTargeting: false };
+const snapshot: RitualCastSnapshot = { castId: "cast", form: { id: "base", label: "Padrão" }, cost: { amount: 2, resource: "PE", spent: true }, castingCheck: { skillLabel: "Ocultismo", formula: "1d20+5", total: 18, difficulty: 15, success: true, diceBreakdown: "(13)" }, resistance: { skill: "will", label: "Vontade", effect: "nullifies", summary: "Anula" }, rolls: [{ id: "damage", formula: "2d6", total: 8, intent: "damage", damageType: "physical", diceResults: [3, 5] }], areaTargeting: false, targetDocumentActions: true };
 const actions: AssistedRitualAction[] = [{ kind: "condition-application", actor: target, actorName: "Alvo", conditionId: "weakened", conditionLabel: "Abalado", duration: { rounds: 1 }, source: "test", originUuid: item.uuid ?? null, label: "Abalado", executedLabel: "Aplicado", actionSectionId: "apply-effects", actionSectionTitle: "Efeitos", resistanceOutcome: "success" }];
 
 describe("ritual single target card v2", () => {
@@ -24,28 +24,40 @@ describe("ritual single target card v2", () => {
     expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context, snapshot: { ...snapshot, areaTargeting: true }, actions, resistanceDifficulty: 15 })).toEqual({ eligible: false, reason: "unsupported-area-targeting" });
     expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: { ...context, targets: [{ ...context.targets[0]!, actor: null }] }, snapshot, actions, resistanceDifficulty: 15 })).toEqual({ eligible: false, reason: "missing-target-actor" });
   });
-  it("supports targetless utility rituals but requires a target for target-dependent effects", () => {
+  it("uses v2 without a target, including rituals with damage, healing, resistance or target actions", () => {
     const noTargetContext = { ...context, targets: [] };
     const utility = { ...snapshot, resistance: null, rolls: [{ ...snapshot.rolls[0]!, intent: "generic" as const }] };
     const noFormula = { ...snapshot, resistance: null, rolls: [] };
     expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: utility, actions: [], resistanceDifficulty: null })).toEqual({ eligible: true, reason: "no-target-supported" });
     expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: noFormula, actions: [], resistanceDifficulty: null })).toEqual({ eligible: true, reason: "no-target-supported" });
     for (const intent of ["damage", "healing"] as const) {
-      expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: { ...utility, rolls: [{ ...utility.rolls[0]!, intent }] }, actions: [], resistanceDifficulty: null })).toEqual({ eligible: false, reason: "missing-required-target" });
+      expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: { ...utility, rolls: [{ ...utility.rolls[0]!, intent }] }, actions: [], resistanceDifficulty: null })).toEqual({ eligible: true, reason: "no-target-supported" });
     }
-    expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: { ...utility, resistance: snapshot.resistance }, actions: [], resistanceDifficulty: 15 })).toEqual({ eligible: false, reason: "missing-required-target" });
-    expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: utility, actions, resistanceDifficulty: null })).toEqual({ eligible: false, reason: "missing-required-target" });
+    expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: { ...utility, resistance: snapshot.resistance }, actions: [], resistanceDifficulty: 15 })).toEqual({ eligible: true, reason: "no-target-supported" });
+    expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context: noTargetContext, snapshot: utility, actions, resistanceDifficulty: null })).toEqual({ eligible: true, reason: "no-target-supported" });
   });
-  it("builds a targetless utility card without target UI or fabricated documents", () => {
-    const state = buildRitualChatCardState({ context: { ...context, targets: [] }, snapshot: { ...snapshot, resistance: null, rolls: [{ ...snapshot.rolls[0]!, intent: "generic" }] }, actions: [], resistanceDifficulty: null });
+  it("builds targetless Perturbação with rolled damage, informative resistance and manual note", () => {
+    const perturbation = { ...item, name: "Perturbação" } as Item;
+    const state = buildRitualChatCardState({ context: { ...context, item: perturbation, targets: [] }, snapshot, actions, resistanceDifficulty: 15 });
     state.ritualIdentity = { elementKey: "energy", elementLabel: "Energia", circle: 1 };
     expect(state.target).toBeNull();
-    expect(state.resistance).toBeNull();
     expect(state.actions).toEqual([]);
     const model = buildRitualSingleTargetCardViewModel(state);
+    expect(model.header.title).toBe("Perturbação");
     expect(model.header).toMatchObject({ context: "Conjurador", badges: [{ label: "Energia 1", tone: "energy" }] });
     expect(model.metadata.items.map((entry) => entry.text)).toEqual(["2 PE", "Execução: Padrão", "Alcance: Curto", "Duração: Instantânea"]);
-    expect(model.effect?.title).toBe("Efeito");
+    expect(model.effect).toMatchObject({ title: "Dano", formula: "2d6", total: 8 });
+    expect(model.resistance).toMatchObject({ skill: "Vontade", difficultyLabel: "DT 15" });
+    expect(model.resistance?.action).toBeUndefined();
+    expect(model.assistedActions).toEqual({ rows: [], note: "Nenhum alvo com ficha foi selecionado. Use os resultados do card manualmente." });
+    const html = renderRitualSingleTargetCard(model);
+    expect(html).toContain("Nenhum alvo com ficha foi selecionado. Use os resultados do card manualmente.");
+    expect(html).not.toContain("data-paranormal-toolkit-card-action");
+  });
+  it("does not show the manual note for a targetless utility ritual without target actions", () => {
+    const utility = { ...snapshot, resistance: null, targetDocumentActions: false, rolls: [{ ...snapshot.rolls[0]!, intent: "generic" as const }] };
+    const state = buildRitualChatCardState({ context: { ...context, targets: [] }, snapshot: utility, actions: [], resistanceDifficulty: null });
+    expect(buildRitualSingleTargetCardViewModel(state).assistedActions).toBeUndefined();
   });
   it("falls back instead of silently discarding multiple effect rolls", () => {
     const twoEffects = { ...snapshot, rolls: [...snapshot.rolls, { ...snapshot.rolls[0]!, id: "second" }] };

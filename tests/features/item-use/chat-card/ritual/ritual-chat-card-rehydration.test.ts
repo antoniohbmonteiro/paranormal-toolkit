@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { rehydrateRenderedToolkitChatCards } from "../../../../../src/features/item-use/item-use-automation-prompt";
 
-function card(castId: string, target: object | null = { id: "t", uuid: null, name: "T", tokenId: null, tokenUuid: null }) { return { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: 1, messageId: `message-${castId}`, state: { schemaVersion: 1, castId, renderer: "single-target", source: { id: "s", uuid: null, name: "S" }, item: { id: "i", uuid: null, name: "I" }, itemImage: "icons/rituals/persisted.webp", target, form: { id: "base", label: "Padrão" }, ritualIdentity: { elementKey: "energy", elementLabel: "Energia", circle: 1 }, ritualMetadata: { execution: "Padrão", range: "Curto", duration: "Instantânea" }, descriptionHtml: null, cost: null, conjuration: null, mainRoll: null, resistance: null, actions: [], createdAt: 1 }, legacyFallback: { itemName: "I", summaryLines: [], actorId: "s", itemId: "i" } }; }
+function card(castId: string, target: object | null = { id: "t", uuid: null, name: "T", tokenId: null, tokenUuid: null }) { return { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: 1, messageId: `message-${castId}`, state: { schemaVersion: 1, castId, renderer: "single-target", source: { id: "s", uuid: null, name: "S" }, item: { id: "i", uuid: null, name: "I" }, itemImage: "icons/rituals/persisted.webp", target, form: { id: "base", label: "Padrão" }, ritualIdentity: { elementKey: "energy", elementLabel: "Energia", circle: 1 }, ritualMetadata: { execution: "Padrão", range: "Curto", duration: "Instantânea" }, descriptionHtml: null, cost: null, conjuration: null, mainRoll: null, resistance: null, actions: [], manualTargetNotice: target === null, createdAt: 1 }, legacyFallback: { itemName: "I", summaryLines: [], actorId: "s", itemId: "i" } }; }
 function root(messageId: string) { const value = { dataset: { messageId }, closest: () => value }; return value as unknown as HTMLElement; }
 
 beforeEach(() => vi.stubGlobal("game", { messages: new Map() }));
@@ -31,7 +31,7 @@ describe("initial v2 chat-card rehydration", () => {
     const render = vi.fn();
     rehydrateRenderedToolkitChatCards(async () => true, [root(message.id)], render);
     expect(render).toHaveBeenCalledOnce();
-    expect(message.getFlag().state).toMatchObject({ itemImage: "icons/rituals/persisted.webp", target: null, resistance: null, actions: [], ritualIdentity: { elementLabel: "Energia", circle: 1 } });
+    expect(message.getFlag().state).toMatchObject({ itemImage: "icons/rituals/persisted.webp", target: null, resistance: null, actions: [], manualTargetNotice: true, ritualIdentity: { elementLabel: "Energia", circle: 1 } });
   });
   it("keeps ritual metadata in the payload used after an F5 rehydration", () => {
     const message = { id: "message-refresh", getFlag: () => card("refresh") };

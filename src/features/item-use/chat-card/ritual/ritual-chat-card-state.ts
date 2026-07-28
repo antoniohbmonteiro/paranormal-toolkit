@@ -34,6 +34,7 @@ export interface RitualChatCardState {
   mainRoll: RitualRollSnapshot | null;
   resistance: { skill: string; skillLabel: string; difficulty: number; effect: string; status: "pending" | "executing" | "completed" | "uncertain"; result: RitualResistanceResult | null } | null;
   actions: RitualCardAction[];
+  manualTargetNotice?: boolean;
   createdAt: number;
 }
 

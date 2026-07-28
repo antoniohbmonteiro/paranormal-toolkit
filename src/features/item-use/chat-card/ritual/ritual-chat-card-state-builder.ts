@@ -11,6 +11,8 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
   if (target && !target.actor) throw new Error("Ator do alvo ausente.");
   const createdAt = input.now ?? Date.now();
   const main = snapshot.rolls.find((roll) => roll.intent !== "ritual") ?? null;
+  const hasTarget = Boolean(target?.actor);
+  const cardActions = hasTarget ? input.actions : input.actions.filter((action) => isSameActor(action.actor, context.actor as Actor));
   return {
     schemaVersion: 1,
     castId: snapshot.castId,
@@ -27,7 +29,8 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: resolveConjurationConsequence(snapshot.castingCheck.success, input.actions, context.actor) } : null,
     mainRoll: main ? { id: main.id, label: main.intent === "damage" ? "Dano" : main.intent === "healing" ? "Cura" : "Efeito", intent: main.intent === "damage" || main.intent === "healing" ? main.intent : "utility", formula: main.formula, total: main.total, diceResults: main.diceResults, damageType: main.damageType } : null,
     resistance: snapshot.resistance && input.resistanceDifficulty !== null ? { skill: snapshot.resistance.skill, skillLabel: snapshot.resistance.label, difficulty: input.resistanceDifficulty, effect: snapshot.resistance.summary, status: "pending", result: null } : null,
-    actions: input.actions.map((action, index) => serializeAction(snapshot.castId, action, index)),
+    actions: cardActions.map((action, index) => serializeAction(snapshot.castId, action, index)),
+    manualTargetNotice: !hasTarget && (snapshot.targetDocumentActions || Boolean(snapshot.resistance) || cardActions.length < input.actions.length),
     createdAt,
   };
 }

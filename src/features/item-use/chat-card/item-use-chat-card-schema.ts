@@ -44,6 +44,7 @@ function isRitualState(value: unknown): value is RitualChatCardState {
   if (!(value.ritualMetadata === undefined || isRitualMetadata(value.ritualMetadata))) return false;
   if (!(value.descriptionHtml === undefined || value.descriptionHtml === null || typeof value.descriptionHtml === "string")) return false;
   if (!Array.isArray(value.actions) || !value.actions.every(isCardAction)) return false;
+  if (!(value.manualTargetNotice === undefined || typeof value.manualTargetNotice === "boolean")) return false;
   if (!(value.mainRoll === null || isRecord(value.mainRoll)) || !(value.conjuration === null || isRecord(value.conjuration)) || !(value.resistance === null || isRecord(value.resistance))) return false;
   return isNonNegativeNumber(value.createdAt);
 }

@@ -10,7 +10,7 @@ export interface RitualResistanceSectionViewModel {
   difficultyLabel: string;
   description?: string;
   status: "pending" | "success" | "failure";
-  action: DiceActionButtonViewModel;
+  action?: DiceActionButtonViewModel;
   result?: { formula: string; total: number; diceResults?: readonly number[] };
 }
 
@@ -26,6 +26,6 @@ export function renderRitualResistanceSection(model: RitualResistanceSectionView
     : "";
   const result = model.result ? renderRollRow({ formula: model.result.formula, total: model.result.total, diceResults: model.result.diceResults, resultTone: resultStatus ?? "section" }) : "";
   const resolvedClass = model.result ? " paranormal-toolkit-ritual-resistance-section--resolved" : "";
-  const content = `<div class="paranormal-toolkit-ritual-resistance-section${resolvedClass}"><div class="paranormal-toolkit-ritual-resistance-section__text">${header}${comparison}${description}${result}</div>${model.result ? "" : renderDiceActionButton(model.action)}</div>`;
+  const content = `<div class="paranormal-toolkit-ritual-resistance-section${resolvedClass}"><div class="paranormal-toolkit-ritual-resistance-section__text">${header}${comparison}${description}${result}</div>${model.result || !model.action ? "" : renderDiceActionButton(model.action)}</div>`;
   return renderSectionCard({ tone: "resistance", content });
 }
