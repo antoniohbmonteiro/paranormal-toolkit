@@ -25,4 +25,7 @@ describe("Ordem ritual presentation", () => {
     const item = { system: { execution: "default", range: "short", duration: "instantaneous" } } as Item;
     expect(resolveOrdemRitualMetadataPresentation(item)).toEqual({ execution: "Padrão", range: "Curto", duration: "Instantânea" });
   });
+  it("supports Ordem's setDuration key", () => {
+    expect(resolveOrdemRitualMetadataPresentation({ system: { duration: "setDuration" } } as Item).duration).toBe("Duração definida");
+  });
 });

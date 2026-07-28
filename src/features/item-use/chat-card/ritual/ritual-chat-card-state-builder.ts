@@ -24,17 +24,27 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     descriptionHtml: resolveSafeRitualDescription(context.item),
     cost: snapshot.cost,
     target: target?.actor ? { ...ref(target.actor), tokenId: target.tokenId, tokenUuid: target.sceneId && target.tokenId ? `Scene.${target.sceneId}.Token.${target.tokenId}` : null } : null,
-    conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: resolveConjurationConsequence(snapshot.castingCheck.success, input.actions) } : null,
+    conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: resolveConjurationConsequence(snapshot.castingCheck.success, input.actions, context.actor) } : null,
     mainRoll: main ? { id: main.id, label: main.intent === "damage" ? "Dano" : main.intent === "healing" ? "Cura" : "Efeito", intent: main.intent === "damage" || main.intent === "healing" ? main.intent : "utility", formula: main.formula, total: main.total, diceResults: main.diceResults, damageType: main.damageType } : null,
     resistance: snapshot.resistance && input.resistanceDifficulty !== null ? { skill: snapshot.resistance.skill, skillLabel: snapshot.resistance.label, difficulty: input.resistanceDifficulty, effect: snapshot.resistance.summary, status: "pending", result: null } : null,
     actions: input.actions.map((action, index) => serializeAction(snapshot.castId, action, index)),
     createdAt,
   };
 }
-function resolveConjurationConsequence(success: boolean, actions: AssistedRitualAction[]): string | null {
+function resolveConjurationConsequence(success: boolean, actions: AssistedRitualAction[], caster: Actor): string | null {
   if (success) return null;
-  const sanityDamage = actions.find((action): action is Extract<AssistedRitualAction, { kind: "resource-operation" }> => action.kind === "resource-operation" && action.resource === "SAN" && action.operation === "damage");
+  const sanityDamage = actions.find((action): action is Extract<AssistedRitualAction, { kind: "resource-operation" }> =>
+    action.kind === "resource-operation"
+    && action.resource === "SAN"
+    && action.operation === "damage"
+    && action.actionSectionId === "casting-backlash"
+    && isSameActor(action.actor, caster));
   return sanityDamage && sanityDamage.amount > 0 ? `Perde ${sanityDamage.amount} SAN` : "Dano de Sanidade";
+}
+function isSameActor(candidate: Actor, caster: Actor): boolean {
+  if (candidate === caster) return true;
+  if (candidate.uuid && caster.uuid) return candidate.uuid === caster.uuid;
+  return Boolean(candidate.id && caster.id && candidate.id === caster.id);
 }
 function ref(document: Actor | Item): SerializableDocumentRef { return { id: document.id ?? null, uuid: document.uuid ?? null, name: document.name ?? "Documento sem nome" }; }
 function parseBreakdown(value: string | null): number[] { return value?.match(/-?\d+/gu)?.map(Number).filter(Number.isFinite) ?? []; }

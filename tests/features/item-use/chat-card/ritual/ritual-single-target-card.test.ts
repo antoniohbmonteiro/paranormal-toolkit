@@ -83,6 +83,14 @@ describe("ritual single target card v2", () => {
     expect(state.conjuration?.consequence).toBe("Dano de Sanidade");
     expect(renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state))).not.toContain("Falha na conjuração");
   });
+  it("does not use SAN damage dealt to the target as the casting consequence", () => {
+    const targetSanityDamage: AssistedRitualAction = { kind: "resource-operation", actor: target, actorName: "Alvo", resource: "SAN", operation: "damage", amount: 6, label: "Aplicar 6 SAN", executedLabel: "Dano aplicado", actionSectionId: "target-effect", actionSectionTitle: "Dano de Sanidade" };
+    const wrongActorBacklash: AssistedRitualAction = { ...targetSanityDamage, amount: 7, actionSectionId: "casting-backlash" };
+    const failed = { ...snapshot, castingCheck: { ...snapshot.castingCheck!, total: 5, success: false } };
+    const state = buildRitualChatCardState({ context, snapshot: failed, actions: [targetSanityDamage, wrongActorBacklash], resistanceDifficulty: 15 });
+    expect(state.conjuration?.consequence).toBe("Dano de Sanidade");
+    expect(state.conjuration?.consequence).not.toMatch(/[67] SAN/u);
+  });
   it("renders item metadata without duplicating the target pill", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
     const model = buildRitualSingleTargetCardViewModel(state);

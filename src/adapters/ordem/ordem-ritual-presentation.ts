@@ -36,7 +36,7 @@ export function resolveOrdemRitualMetadataPresentation(item: Item): OrdemRitualM
 
 const EXECUTION_LABELS: Record<string, string> = { default: "Padrão", standard: "Padrão", movement: "Movimento", free: "Livre", reaction: "Reação", complete: "Completa" };
 const RANGE_LABELS: Record<string, string> = { personal: "Pessoal", touch: "Toque", short: "Curto", medium: "Médio", long: "Longo", extreme: "Extremo", unlimited: "Ilimitado" };
-const DURATION_LABELS: Record<string, string> = { instantaneous: "Instantânea", scene: "Cena", sustained: "Sustentada", permanent: "Permanente" };
+const DURATION_LABELS: Record<string, string> = { instantaneous: "Instantânea", scene: "Cena", sustained: "Sustentada", permanent: "Permanente", setduration: "Duração definida" };
 
 function resolveChoice(value: unknown, localizationPrefix: string, labels: Record<string, string>): string | null {
   if (typeof value !== "string" || !value.trim()) return null;
