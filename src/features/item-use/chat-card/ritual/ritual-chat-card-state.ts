@@ -7,7 +7,7 @@ export type RitualResistanceOutcome = "success" | "failure";
 export type RitualCardActionState = "pending" | "available" | "executing" | "completed" | "resolved" | "uncertain";
 export type RitualRollIntent = "damage" | "healing" | "utility";
 export type SerializableDocumentRef = { id: string | null; uuid: string | null; name: string };
-export type RitualRollSnapshot = { id: string; label: string; intent: RitualRollIntent; formula: string; total: number; diceResults: number[]; damageType: string | null };
+export type RitualRollSnapshot = { id: string; label: string; intent: RitualRollIntent; formula: string; total: number; diceResults: number[]; damageType: string | null; resultLabel?: string };
 export type RitualCastingSnapshot = { skillLabel: string; formula: string; total: number; difficulty: number; success: boolean; diceResults: number[]; consequence: string | null };
 export type RitualResistanceResult = { skill: string; skillLabel: string; formula: string; total: number; diceResults: number[]; difficulty: number; outcome: RitualResistanceOutcome; targetActorId: string | null; targetActorUuid: string | null; targetName: string; rolledAt: string; userId: string | null; usedFallbackBonus: boolean };
 

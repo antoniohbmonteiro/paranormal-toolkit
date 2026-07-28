@@ -2,6 +2,7 @@ import { resolveOrdemRitualImage, resolveOrdemRitualMetadataPresentation, resolv
 import type { ItemUseContext } from "../../item-use-context";
 import type { AssistedRitualAction, RitualCastSnapshot } from "../../../rituals/ritual-assisted-workflow";
 import { resolveSafeRitualDescription } from "../../../rituals/ritual-description-resolver";
+import { readRitualRollConfig } from "../../../rituals/config/ritual-roll-config";
 import type { RitualCardAction, RitualChatCardState, RitualResistanceOutcome, SerializableDocumentRef } from "./ritual-chat-card-state";
 
 export function buildRitualChatCardState(input: { context: ItemUseContext; snapshot: RitualCastSnapshot; actions: AssistedRitualAction[]; resistanceDifficulty: number | null; now?: number }): RitualChatCardState {
@@ -27,12 +28,16 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     cost: snapshot.cost,
     target: target?.actor ? { ...ref(target.actor), tokenId: target.tokenId, tokenUuid: target.sceneId && target.tokenId ? `Scene.${target.sceneId}.Token.${target.tokenId}` : null } : null,
     conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: resolveConjurationConsequence(snapshot.castingCheck.success, input.actions, context.actor) } : null,
-    mainRoll: main ? { id: main.id, label: main.intent === "damage" ? "Dano" : main.intent === "healing" ? "Cura" : "Efeito", intent: main.intent === "damage" || main.intent === "healing" ? main.intent : "utility", formula: main.formula, total: main.total, diceResults: main.diceResults, damageType: main.damageType } : null,
+    mainRoll: main ? { id: main.id, label: main.intent === "damage" ? "Dano" : main.intent === "healing" ? "Cura" : "Efeito", intent: main.intent === "damage" || main.intent === "healing" ? main.intent : "utility", formula: main.formula, total: main.total, diceResults: main.diceResults, damageType: main.damageType, ...(main.intent !== "damage" && main.intent !== "healing" ? { resultLabel: resolveUtilityResultLabel(context.item) } : {}) } : null,
     resistance: snapshot.resistance && input.resistanceDifficulty !== null ? { skill: snapshot.resistance.skill, skillLabel: snapshot.resistance.label, difficulty: input.resistanceDifficulty, effect: snapshot.resistance.summary, status: "pending", result: null } : null,
     actions: cardActions.map((action, index) => serializeAction(snapshot.castId, action, index)),
     manualTargetNotice: !hasTarget && (snapshot.targetDocumentActions || Boolean(snapshot.resistance) || cardActions.length < input.actions.length),
     createdAt,
   };
+}
+function resolveUtilityResultLabel(item: Item): string {
+  if (typeof (item as { getFlag?: unknown }).getFlag !== "function") return "Resultado";
+  return readRitualRollConfig(item)?.utilityLabel?.trim() || "Resultado";
 }
 function resolveConjurationConsequence(success: boolean, actions: AssistedRitualAction[], caster: Actor): string | null {
   if (success) return null;

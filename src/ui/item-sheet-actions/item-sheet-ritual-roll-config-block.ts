@@ -340,12 +340,12 @@ function createDamageTypeField(config: RitualRollConfig, editable: boolean): HTM
 }
 
 function createUtilityLabelField(config: RitualRollConfig, editable: boolean): HTMLElement {
-  const wrapper = createFieldWrapper("Rótulo de utilidade");
+  const wrapper = createFieldWrapper("Rótulo do resultado");
   wrapper.setAttribute("data-paranormal-toolkit-ritual-roll-utility-row", "true");
 
   const input = document.createElement("input");
   input.type = "text";
-  input.placeholder = "Resultado";
+  input.placeholder = "Ex.: PV temporários";
   input.value = config.utilityLabel ?? "Resultado";
   input.disabled = !editable;
   input.setAttribute(FIELD_ATTRIBUTE, "utilityLabel");

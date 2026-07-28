@@ -37,7 +37,6 @@ function createRitualUpdateData(patch: AutomationPresetItemPatch): Record<string
   const updateData: Record<string, unknown> = {};
 
   setIfDefined(updateData, "name", patch.name);
-  setIfDefined(updateData, "system.description", patch.descriptionHtml);
 
   const ritual = patch.ritual;
   if (!ritual) return updateData;

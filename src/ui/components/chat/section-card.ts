@@ -1,4 +1,4 @@
-export type SectionCardTone = "casting" | "damage" | "healing" | "resistance" | "success" | "failure";
+export type SectionCardTone = "casting" | "effect" | "damage" | "healing" | "resistance" | "success" | "failure";
 
 export interface SectionCardViewModel {
   tone: SectionCardTone;
@@ -8,6 +8,7 @@ export interface SectionCardViewModel {
 
 const TONE_CLASSES: Record<SectionCardTone, string> = {
   casting: "paranormal-toolkit-section-card--casting",
+  effect: "paranormal-toolkit-section-card--effect",
   damage: "paranormal-toolkit-section-card--damage",
   healing: "paranormal-toolkit-section-card--healing",
   resistance: "paranormal-toolkit-section-card--resistance",

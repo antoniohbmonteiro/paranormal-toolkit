@@ -95,7 +95,7 @@
 
 .paranormal-toolkit-roll-row__result--section {
   border-color: var(--ptk-chat-section-border);
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--ptk-chat-result-background, rgba(255, 255, 255, 0.45));
   color: var(--ptk-chat-section-accent);
 }
 
