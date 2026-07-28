@@ -24,4 +24,8 @@ describe("ritual card schema normalization", () => {
     expect(normalizeRitualSingleTargetChatCard(raw)?.state.itemImage).toBeUndefined();
     expect(normalizeRitualSingleTargetChatCard(raw)?.state.ritualMetadata).toBeUndefined();
   });
+  it("keeps compatibility with v2 utility payloads created before result labels", () => {
+    const raw = { schemaVersion: 2, kind: "ritual", renderer: "single-target", revision: 0, createdAt: 1, messageId: "m", state: { schemaVersion: 1, castId: "old-utility", renderer: "single-target", source: { id: "s", uuid: null, name: "S" }, item: { id: "i", uuid: null, name: "I" }, target: null, form: { id: "base", label: "Padrão" }, descriptionHtml: null, cost: null, conjuration: null, mainRoll: { id: "r", label: "Efeito", intent: "utility", formula: "1d6", total: 4, diceResults: [4], damageType: null }, resistance: null, actions: [], createdAt: 1 }, legacyFallback: { itemName: "I", summaryLines: [] } };
+    expect(normalizeRitualSingleTargetChatCard(raw)?.state.mainRoll?.resultLabel).toBeUndefined();
+  });
 });

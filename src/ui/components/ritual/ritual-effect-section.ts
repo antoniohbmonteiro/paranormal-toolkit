@@ -6,6 +6,7 @@ import { renderSectionHeader } from "../chat/section-header";
 export interface RitualEffectSectionViewModel {
   title: "Dano" | "Cura" | "Efeito";
   typeLabel?: string;
+  resultLabel?: string;
   formula: string;
   total?: number;
   diceResults?: readonly number[];
@@ -15,8 +16,11 @@ export function renderRitualEffectSection(model: RitualEffectSectionViewModel): 
   const trailing = model.typeLabel?.trim()
     ? `<span class="paranormal-toolkit-ritual-damage-section__damage-type">${escapeHtml(model.typeLabel)}</span>`
     : undefined;
+  const resultLabel = typeof model.resultLabel === "string" ? model.resultLabel.trim() : "";
   return renderSectionCard({
-    tone: model.title === "Dano" ? "damage" : model.title === "Cura" ? "healing" : "casting",
-    content: renderSectionHeader({ title: model.title, trailing }) + renderRollRow(model),
+    tone: model.title === "Dano" ? "damage" : model.title === "Cura" ? "healing" : "effect",
+    content: renderSectionHeader({ title: model.title, trailing })
+      + (model.title === "Efeito" && resultLabel ? `<strong class="paranormal-toolkit-ritual-effect-section__result-label">${escapeHtml(resultLabel)}</strong>` : "")
+      + renderRollRow(model),
   });
 }

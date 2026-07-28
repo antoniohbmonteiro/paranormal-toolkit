@@ -340,13 +340,13 @@ function createDamageTypeField(config: RitualRollConfig, editable: boolean): HTM
 }
 
 function createUtilityLabelField(config: RitualRollConfig, editable: boolean): HTMLElement {
-  const wrapper = createFieldWrapper("Rótulo de utilidade");
+  const wrapper = createFieldWrapper("Rótulo do resultado");
   wrapper.setAttribute("data-paranormal-toolkit-ritual-roll-utility-row", "true");
 
   const input = document.createElement("input");
   input.type = "text";
-  input.placeholder = "Resultado";
-  input.value = config.utilityLabel ?? "Resultado";
+  input.placeholder = "Ex.: PV temporários";
+  input.value = config.utilityLabel ?? "";
   input.disabled = !editable;
   input.setAttribute(FIELD_ATTRIBUTE, "utilityLabel");
 
@@ -528,7 +528,7 @@ function collectConfig(block: HTMLElement, availability: RitualFormAvailability)
     schemaVersion: 1,
     intent,
     damageType: getOptionalFieldValue(block, "damageType"),
-    utilityLabel: getOptionalFieldValue(block, "utilityLabel") ?? "Resultado",
+    utilityLabel: getOptionalFieldValue(block, "utilityLabel") ?? "",
     note: "",
     forms: {
       base: { formula: getFieldValue(block, "formula.base") },
@@ -541,7 +541,7 @@ function collectConfig(block: HTMLElement, availability: RitualFormAvailability)
 function applyConfigToBlock(block: HTMLElement, config: RitualRollConfig): void {
   setFieldValue(block, "intent", config.intent);
   setFieldValue(block, "damageType", config.damageType ?? "");
-  setFieldValue(block, "utilityLabel", config.utilityLabel ?? "Resultado");
+  setFieldValue(block, "utilityLabel", config.utilityLabel ?? "");
   setFieldValue(block, "formula.base", config.forms.base.formula);
   setFieldValue(block, "formula.discente", config.forms.discente.formula);
   setFieldValue(block, "formula.verdadeiro", config.forms.verdadeiro.formula);

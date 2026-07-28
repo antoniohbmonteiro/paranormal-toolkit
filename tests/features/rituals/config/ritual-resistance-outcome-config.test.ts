@@ -166,7 +166,7 @@ function createRollConfig(baseFormula: string): RitualRollConfig {
     schemaVersion: 1,
     intent: "damage",
     damageType: "energy",
-    utilityLabel: "Resultado",
+    utilityLabel: "",
     note: "",
     forms: {
       base: { formula: baseFormula },

@@ -59,6 +59,38 @@ describe("ritual single target card v2", () => {
     const state = buildRitualChatCardState({ context: { ...context, targets: [] }, snapshot: utility, actions: [], resistanceDifficulty: null });
     expect(buildRitualSingleTargetCardViewModel(state).assistedActions).toBeUndefined();
   });
+  it.each([[context.targets], [[]]])("persists and renders a utility result label with current target eligibility", (targets) => {
+    const utilityItem = {
+      ...item,
+      getFlag: () => ({ schemaVersion: 1, intent: "utility", damageType: null, utilityLabel: "PV temporários", note: "", forms: { base: { formula: "3d6" }, discente: { formula: "" }, verdadeiro: { formula: "" } } }),
+    } as Item;
+    const utility = { ...snapshot, resistance: null, targetDocumentActions: false, rolls: [{ ...snapshot.rolls[0]!, formula: "3d6", total: 13, intent: "generic" as const }] };
+    const state = buildRitualChatCardState({ context: { ...context, item: utilityItem, targets }, snapshot: utility, actions: [], resistanceDifficulty: null });
+    expect(state.mainRoll?.resultLabel).toBe("PV temporários");
+    const serialized = JSON.parse(JSON.stringify(state));
+    const html = renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(serialized));
+    expect(html).toContain("PV temporários");
+    expect(html).toContain("3d6");
+    expect(html).toContain(">13</output>");
+  });
+  it.each(["", "   "])("omits an empty utility result label from the snapshot", (utilityLabel) => {
+    const utilityItem = { ...item, getFlag: () => ({ schemaVersion: 1, intent: "utility", utilityLabel, forms: {} }) } as Item;
+    const utility = { ...snapshot, rolls: [{ ...snapshot.rolls[0]!, intent: "generic" as const }] };
+    const state = buildRitualChatCardState({ context: { ...context, item: utilityItem }, snapshot: utility, actions: [], resistanceDifficulty: null });
+    expect(state.mainRoll).not.toHaveProperty("resultLabel");
+    const html = renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state));
+    expect(html).not.toContain("paranormal-toolkit-ritual-effect-section__result-label");
+    expect(html).not.toContain(">Resultado<");
+  });
+  it("defensively ignores an invalid persisted result label", () => {
+    const utility = { ...snapshot, rolls: [{ ...snapshot.rolls[0]!, intent: "generic" as const }] };
+    const state = buildRitualChatCardState({ context, snapshot: utility, actions: [], resistanceDifficulty: null });
+    if (!state.mainRoll) throw new Error("Expected utility roll");
+    (state.mainRoll as unknown as { resultLabel: unknown }).resultLabel = { invalid: true };
+    const model = buildRitualSingleTargetCardViewModel(state);
+    expect(model.effect?.resultLabel).toBeUndefined();
+    expect(() => renderRitualSingleTargetCard(model)).not.toThrow();
+  });
   it("falls back instead of silently discarding multiple effect rolls", () => {
     const twoEffects = { ...snapshot, rolls: [...snapshot.rolls, { ...snapshot.rolls[0]!, id: "second" }] };
     expect(resolveRitualSingleTargetEligibility({ mode: "auto", systemId: "ordemparanormal", context, snapshot: twoEffects, actions, resistanceDifficulty: 15 })).toEqual({ eligible: false, reason: "multiple-effect-rolls" });

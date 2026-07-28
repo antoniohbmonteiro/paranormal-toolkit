@@ -123,7 +123,7 @@ function createRollConfig(forms: {
     schemaVersion: 1,
     intent: "damage",
     damageType: "energy",
-    utilityLabel: "Resultado",
+    utilityLabel: "",
     note: "",
     forms: {
       base: { formula: forms.base },

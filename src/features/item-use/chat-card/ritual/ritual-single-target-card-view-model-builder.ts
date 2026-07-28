@@ -18,7 +18,7 @@ export function buildRitualSingleTargetCardViewModel(state: RitualChatCardState)
       state.ritualMetadata?.duration ? `Duração: ${state.ritualMetadata.duration}` : null,
     ].filter((text): text is string => Boolean(text)).map((text) => ({ text })) },
     conjuration: state.conjuration ? { status: state.conjuration.success ? "success" : "failure", skillLabel: state.conjuration.skillLabel, total: state.conjuration.total, difficultyClass: state.conjuration.difficulty, formula: state.conjuration.formula, diceResults: state.conjuration.diceResults, consequence: state.conjuration.consequence ?? undefined } : undefined,
-    effect: roll ? { title: roll.intent === "damage" ? "Dano" : roll.intent === "healing" ? "Cura" : "Efeito", typeLabel: roll.damageType ? getToolkitDamageTypeLabel(roll.damageType) : undefined, formula: roll.formula, total: roll.total, diceResults: roll.diceResults } : undefined,
+    effect: roll ? { title: roll.intent === "damage" ? "Dano" : roll.intent === "healing" ? "Cura" : "Efeito", typeLabel: roll.damageType ? getToolkitDamageTypeLabel(roll.damageType) : undefined, resultLabel: roll.intent === "utility" ? normalizeResultLabel(roll.resultLabel) : undefined, formula: roll.formula, total: roll.total, diceResults: roll.diceResults } : undefined,
     resistance: state.resistance ? {
       skill: state.resistance.skillLabel,
       difficultyLabel: `DT ${state.resistance.difficulty}`,
@@ -29,6 +29,11 @@ export function buildRitualSingleTargetCardViewModel(state: RitualChatCardState)
     } : undefined,
     assistedActions: rows.length || state.manualTargetNotice ? { rows, note: state.manualTargetNotice ? "Nenhum alvo com ficha foi selecionado. Use os resultados do card manualmente." : undefined } : undefined,
   };
+}
+
+function normalizeResultLabel(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  return value.trim() || undefined;
 }
 
 export function resolveRitualBadgeTone(elementKey: string | null | undefined): HeaderBadgeTone {

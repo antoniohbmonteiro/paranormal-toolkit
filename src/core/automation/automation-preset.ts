@@ -25,7 +25,6 @@ export type AutomationPresetRitualCircleMatcher = {
 export type AutomationPresetItemPatch = {
   kind: "ritual";
   name?: string;
-  descriptionHtml?: string;
   ritual?: AutomationPresetRitualItemPatch;
 };
 

@@ -26,11 +26,6 @@ const CICATRIZATION_HEALING_FORMULAS: RitualHealingFormulaSet = {
   verdadeiro: "7d8+7",
 };
 
-const AUTOMATED_RITUAL_DESCRIPTION = `
-<p><strong>Paranormal Toolkit</strong></p>
-<p>A descrição original foi substituída ao aplicar este preset de automação.</p>
-<p>Você pode editar este campo livremente; a automação continua sendo controlada pelo módulo.</p>
-`;
 
 export function createBuiltInAutomationPresets(): AutomationPreset[] {
   return [
@@ -469,7 +464,6 @@ function createCicatrizationItemPatch(): AutomationPresetItemPatch {
   return {
     kind: "ritual",
     name: "Cicatrização",
-    descriptionHtml: AUTOMATED_RITUAL_DESCRIPTION,
     ritual: {
       circle: 1,
       element: "death",
@@ -491,7 +485,6 @@ function createWitherItemPatch(): AutomationPresetItemPatch {
   return {
     kind: "ritual",
     name: "Definhar",
-    descriptionHtml: AUTOMATED_RITUAL_DESCRIPTION,
     ritual: {
       circle: 1,
       element: "death",
@@ -512,7 +505,6 @@ function createElectrocutionItemPatch(): AutomationPresetItemPatch {
   return {
     kind: "ritual",
     name: "Eletrocussão",
-    descriptionHtml: AUTOMATED_RITUAL_DESCRIPTION,
     ritual: {
       circle: 1,
       element: "energy",
