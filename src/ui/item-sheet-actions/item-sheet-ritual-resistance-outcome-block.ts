@@ -350,8 +350,7 @@ function collectRitualRollConfig(
     intent,
     damageType: getOptionalFormulaFieldValue(formulaBlock, "damageType"),
     utilityLabel:
-      getOptionalFormulaFieldValue(formulaBlock, "utilityLabel") ??
-      "Resultado",
+      getOptionalFormulaFieldValue(formulaBlock, "utilityLabel") ?? "",
     note: "",
     forms: {
       base: {
@@ -380,7 +379,7 @@ function applyRitualRollConfig(
   setFormulaFieldValue(
     formulaBlock,
     "utilityLabel",
-    config.utilityLabel ?? "Resultado",
+    config.utilityLabel ?? "",
   );
   setFormulaFieldValue(
     formulaBlock,
