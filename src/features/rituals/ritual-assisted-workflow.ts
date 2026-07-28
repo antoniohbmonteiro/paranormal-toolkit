@@ -118,6 +118,7 @@ export type RitualCastSnapshot = {
   resistance: AutomationResistanceDefinition | null;
   rolls: Array<{ id: string; formula: string; total: number; intent: WorkflowRollResult["intent"]; damageType: string | null; diceResults: number[] }>;
   areaTargeting: boolean;
+  targetDocumentActions: boolean;
 };
 
 export type AssistedRitualAction =
@@ -862,6 +863,7 @@ function createRitualCastSnapshot(
       diceResults: readRollDiceResults(entry.roll),
     })),
     areaTargeting,
+    targetDocumentActions: hasTargetDocumentAction(definition),
   };
 }
 
