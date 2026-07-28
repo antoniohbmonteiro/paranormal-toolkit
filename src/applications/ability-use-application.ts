@@ -13,6 +13,7 @@ type AbilityUseResolution = (value: AbilityUseOptions | null) => void;
 export class AbilityUseApplication extends ApplicationV2 {
   private readonly model: AbilityUseDialogModel;
   private spendResource: boolean;
+  private readonly selectedNexThresholds: Record<string, number>;
   private isResolved = false;
 
   static DEFAULT_OPTIONS = {
@@ -60,6 +61,9 @@ export class AbilityUseApplication extends ApplicationV2 {
 
     this.model = createAbilityUseDialogModel(input);
     this.spendResource = this.model.cost.spendResourceChecked;
+    this.selectedNexThresholds = Object.fromEntries(
+      this.model.rollChoices.map((choice) => [choice.sourceRollId, choice.selectedNexThreshold]),
+    );
   }
 
   async _renderHTML(_context: object, _options: object): Promise<HTMLElement> {
@@ -77,6 +81,7 @@ export class AbilityUseApplication extends ApplicationV2 {
       content;
 
     this.bindSpendResourceToggle(root);
+    this.bindRollChoices(root);
     this.updateInteractiveState(root);
   }
 
@@ -105,6 +110,7 @@ export class AbilityUseApplication extends ApplicationV2 {
       </header>
 
       ${costSection}
+      ${this.renderRollChoices()}
 
       <footer class="paranormal-toolkit-ritual-cast__footer">
         <button type="button" data-action="cancel">Cancelar</button>
@@ -118,6 +124,21 @@ export class AbilityUseApplication extends ApplicationV2 {
         </button>
       </footer>
     `;
+  }
+
+  private renderRollChoices(): string {
+    if (!this.model.rollChoices.length) return "";
+    const groups = this.model.rollChoices.map((choice) => `<fieldset><legend>${escapeHtml(choice.label)}</legend>${choice.options.map((option) => `<label><input type="radio" name="ability-nex-${escapeAttribute(choice.sourceRollId)}" value="${option.nexThreshold}" ${option.nexThreshold === choice.selectedNexThreshold ? "checked" : ""}><span>NEX ${option.nexThreshold}% — ${escapeHtml(option.formula)}</span></label>`).join("")}</fieldset>`).join("");
+    return `<section class="paranormal-toolkit-ritual-cast__panel paranormal-toolkit-ability-use__choices"><h3>Progressão da rolagem</h3>${groups}</section>`;
+  }
+
+  private bindRollChoices(root: HTMLElement): void {
+    root.querySelectorAll<HTMLInputElement>('.paranormal-toolkit-ability-use__choices input[type="radio"]').forEach((input) => {
+      input.addEventListener("change", () => {
+        const choice = this.model.rollChoices.find((entry) => input.name === `ability-nex-${entry.sourceRollId}`);
+        if (choice && input.checked) this.selectedNexThresholds[choice.sourceRollId] = Number(input.value);
+      });
+    });
   }
 
   private renderPaidCostSection(): string {
@@ -235,6 +256,7 @@ export class AbilityUseApplication extends ApplicationV2 {
 
     this.settle({
       spendResource: this.model.cost.hasCost && this.spendResource,
+      selectedNexThresholds: { ...this.selectedNexThresholds },
     });
     await this.close();
   }

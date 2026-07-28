@@ -5,6 +5,9 @@ import type { ResourceEngine } from "../../core/resources/resource-engine";
 import type { ItemUseContext } from "../item-use/item-use-context";
 import { resolveAbilityUseData } from "./ability-item-resolver";
 import { AbilityUseChatCardService } from "./ability-use-chat-card";
+import { finalizeAbilityRolls } from "./config/ability-roll-config";
+import { executeAbilityRolls } from "./ability-roll-executor";
+import { buildAbilityUseCardState } from "./ability-use-card-state-builder";
 import type {
   AbilityUseData,
   AbilityUseResult,
@@ -52,9 +55,13 @@ export class AbilityUseWorkflow {
       cost: ability.cost,
       currentResource: currentResourceResult.value,
       passive: ability.passive,
+      rollChoices: ability.rollPreparation.choices,
     });
 
     if (!options) return { status: "cancelled" };
+
+    const resolvedRolls = finalizeAbilityRolls(ability.rollPreparation, options.selectedNexThresholds);
+    if (!resolvedRolls) return this.fail("invalid-roll-options", "Selecione uma faixa de NEX válida para cada rolagem.");
 
     let resourceBefore = currentResourceResult.value;
     let resourceAfter = resourceBefore;
@@ -80,20 +87,30 @@ export class AbilityUseWorkflow {
       spentResource = true;
     }
 
+    let executedRolls;
     try {
-      await this.chatCards.publish(context, ability, {
-        spentResource,
-        resourceBefore,
-        resourceAfter,
-      });
+      executedRolls = await executeAbilityRolls(resolvedRolls, actor);
+    } catch (cause) {
+      const restored = await this.restoreSpentResource(ability, spentResource, resourceBefore, resourceAfter);
+      console.error(`${MODULE_ID} | Falha técnica em rolagem de habilidade.`, cause);
+      return this.fail("roll-failed", restored
+        ? "Não foi possível executar a rolagem da habilidade. O recurso gasto foi restaurado."
+        : "Não foi possível executar a rolagem nem restaurar o recurso com segurança. Confira a ficha manualmente.");
+    }
+
+    try {
+      const descriptionHtml = await enrichAbilityDescription(ability);
+      const cardState = buildAbilityUseCardState({ ability, descriptionHtml, rolls: executedRolls, spentResource, resourceBefore, resourceAfter });
+      await this.chatCards.publish(context, cardState);
     } catch (cause) {
       const resourceRestored = await this.restoreSpentResource(
         ability,
         spentResource,
         resourceBefore,
+        resourceAfter,
       );
 
-      console.error(`${MODULE_ID} | Falha ao criar card de habilidade.`, cause);
+      console.error(`${MODULE_ID} | Falha ao executar ou publicar habilidade.`, cause);
       return this.fail(
         "chat-message-failed",
         resourceRestored
@@ -133,10 +150,13 @@ export class AbilityUseWorkflow {
     ability: AbilityUseData,
     spentResource: boolean,
     resourceBefore: number,
+    resourceAfter: number,
   ): Promise<boolean> {
     if (!spentResource) return true;
 
     try {
+      const current = this.resourceAdapter.getResource(ability.actor, ability.resource);
+      if (!current.ok || current.value.value !== resourceAfter) return false;
       await this.resourceAdapter.updateResourceValue(
         ability.actor,
         ability.resource,
@@ -167,4 +187,12 @@ function canCurrentUserUseActor(actor: Actor): boolean {
 
   const candidate = actor as unknown as { isOwner?: unknown };
   return candidate.isOwner === true;
+}
+
+async function enrichAbilityDescription(ability: AbilityUseData): Promise<string> {
+  const description = ability.chatDescription || ability.description;
+  if (!description) return "";
+  const editor = (foundry as unknown as { applications?: { ux?: { TextEditor?: { implementation?: { enrichHTML?: (html:string, options?:Record<string,unknown>)=>Promise<string> } } } } }).applications?.ux?.TextEditor?.implementation;
+  if (typeof editor?.enrichHTML !== "function") return description;
+  return editor.enrichHTML(description, { relativeTo: ability.item, rollData: (ability.actor as {getRollData?:()=>unknown}).getRollData?.() ?? {} });
 }

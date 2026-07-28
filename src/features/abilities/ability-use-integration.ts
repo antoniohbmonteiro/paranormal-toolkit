@@ -8,6 +8,8 @@ import { getItemUseSettings } from "../item-use/item-use-settings";
 import { registerAbilityRollChatActions } from "./ability-roll-chat-action";
 import { registerAbilityUseChatMessageLayout } from "./ability-use-chat-message-layout";
 import { AbilityUseWorkflow } from "./ability-use-workflow";
+import { renderPersistedAbilityCard } from "./ability-use-chat-card-service";
+import { resolveRootElement } from "../item-use/chat-card/item-use-chat-card-dom";
 
 const DUPLICATE_WINDOW_MS = 1_000;
 
@@ -28,6 +30,12 @@ export class AbilityUseIntegration {
     this.strategy.register();
     registerAbilityUseChatMessageLayout();
     registerAbilityRollChatActions();
+    const rehydrate = (message: unknown, html: unknown): void => {
+      const root = resolveRootElement(html);
+      if (root instanceof HTMLElement) renderPersistedAbilityCard(message as never, root);
+    };
+    Hooks.on("renderChatMessageHTML", rehydrate);
+    Hooks.on("renderChatMessage", rehydrate);
     ModuleLogger.info("Workflow genérico de habilidades registrado.");
   }
 

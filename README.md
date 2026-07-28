@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.40.0`
+Versão atual: `0.41.0`
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 

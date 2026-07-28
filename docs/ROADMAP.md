@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.40.0`.
+Versão atual documentada: `v0.41.0`.
 
 O Toolkit já tem:
 
@@ -44,6 +44,11 @@ O Toolkit já tem:
 - seleção opcional de alvos por área na cena para rituais compatíveis, com preview visual, rotação, múltiplos alvos, minimização temporária de fichas abertas e remoção automática da área temporária.
 
 
+
+
+### Concluído em 0.41.0 — Cards persistentes de resultados de habilidade
+
+As rolagens configuradas de habilidades são resolvidas e executadas sequencialmente ao confirmar o popup. Progressões `highest-unlocked` usam a maior faixa disponível e `choose-unlocked` oferecem as faixas liberadas em radio buttons, com a maior pré-selecionada. O chat recebe um único card persistente com fórmula, total e dados individuais, sem botão de nova rolagem. Cards v2 continuam com seu fluxo legado. Dano e cura não são aplicados automaticamente e não há inferência de sucesso ou falha mecânica.
 
 ### Concluído em 0.40.0 — Card estruturado de ritual para zero ou um alvo
 

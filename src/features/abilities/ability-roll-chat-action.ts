@@ -74,6 +74,7 @@ async function handleAbilityRollClick(
   if (!rollId) return;
 
   const flag = readAbilityUseFlag(message);
+  if (flag?.version !== 2) return;
   const rollAction = flag?.rolls.find((roll) => roll.id === rollId);
   if (!flag || !rollAction) {
     ui.notifications?.warn(

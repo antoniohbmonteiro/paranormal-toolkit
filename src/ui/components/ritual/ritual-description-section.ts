@@ -1,10 +1,3 @@
-export interface RitualDescriptionSectionViewModel {
-  /** Sanitized presentation HTML prepared outside this pure component. */
-  html: string;
-}
-
-export function renderRitualDescriptionSection(model: RitualDescriptionSectionViewModel): string {
-  const html = model.html.trim();
-  if (!html) return "";
-  return `<details class="paranormal-toolkit-ritual-description-section"><summary class="paranormal-toolkit-ritual-description-section__summary">Descrição</summary><div class="paranormal-toolkit-ritual-description-section__content">${html}</div></details>`;
-}
+import { renderExpandableDescription, type ExpandableDescriptionViewModel } from "../chat/expandable-description";
+export type RitualDescriptionSectionViewModel = ExpandableDescriptionViewModel;
+export function renderRitualDescriptionSection(model: RitualDescriptionSectionViewModel): string { return renderExpandableDescription(model).replace('class="paranormal-toolkit-expandable-description', 'class="paranormal-toolkit-ritual-description-section paranormal-toolkit-expandable-description'); }

@@ -129,3 +129,19 @@ describe("ability roll configuration", () => {
     expect(getAbilityDamageTypeLabel("custom-type")).toBe("custom-type");
   });
 });
+
+describe("ability roll preparation", () => {
+  it("preselects the highest unlocked choice and finalizes only the selected threshold", async () => {
+    const { prepareAbilityRolls, finalizeAbilityRolls } = await import("../../../../src/features/abilities/config/ability-roll-config");
+    const actor = { system: { NEX: { value: 40 } } } as unknown as Actor;
+    const config = createConfig();
+    const first = config.rolls[0];
+    if (first.formula.mode !== "nex") throw new Error("fixture");
+    first.formula.resolution = "choose-unlocked";
+    const item = { getFlag: () => config } as unknown as Item;
+    const prepared = prepareAbilityRolls(actor, item);
+    expect(prepared.choices[0]).toMatchObject({ sourceRollId: "damage", selectedNexThreshold: 40, options: [{ nexThreshold: 10 }, { nexThreshold: 40 }] });
+    expect(finalizeAbilityRolls(prepared, { damage: 10 })?.map((roll) => roll.formula)).toEqual(["1d6", "2d6"]);
+    expect(finalizeAbilityRolls(prepared, { damage: 65 })).toBeNull();
+  });
+});

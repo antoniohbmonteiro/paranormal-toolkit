@@ -41,7 +41,7 @@ export function buildRitualSingleTargetCardViewModel(
               tone: resolveRitualBadgeTone(state.ritualIdentity.elementKey),
             },
           ]
-        : undefined,
+        : [{ label: "Ritual", tone: "neutral" }],
     },
     description: state.descriptionHtml?.trim()
       ? { html: state.descriptionHtml }
