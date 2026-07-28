@@ -16,6 +16,69 @@ export type ToolkitDamageType =
 
 export type DamageTypeInput = ToolkitDamageType | string | null | undefined;
 
+export type DamageTypeBadgeTone =
+  | "physical"
+  | "blood"
+  | "death"
+  | "knowledge"
+  | "energy"
+  | "fear"
+  | "fire"
+  | "cold"
+  | "electric"
+  | "chemical"
+  | "mental"
+  | "neutral";
+
+export type DamageTypePresentation = {
+  label: string;
+  tone: DamageTypeBadgeTone;
+};
+
+const PHYSICAL_DAMAGE_KEYS = new Set([
+  "cutting",
+  "cuttingdamage",
+  "corte",
+  "impact",
+  "impactdamage",
+  "impacto",
+  "piercing",
+  "piercingdamage",
+  "perfurante",
+  "ballistic",
+  "ballisticdamage",
+  "balistico",
+]);
+
+const DAMAGE_TONE_KEYS: Partial<Record<DamageTypeBadgeTone, Set<string>>> = {
+  blood: new Set(["blood", "blooddamage", "sangue"]),
+  death: new Set(["death", "deathdamage", "morte"]),
+  knowledge: new Set(["knowledge", "knowledgedamage", "conhecimento"]),
+  energy: new Set(["energy", "energydamage", "energia"]),
+  fear: new Set(["fear", "feardamage", "medo"]),
+  fire: new Set(["fire", "firedamage", "fogo"]),
+  cold: new Set(["cold", "colddamage", "frio"]),
+  electric: new Set([
+    "electric",
+    "electricdamage",
+    "eletricdamage",
+    "eletricodamage",
+    "eletricidade",
+    "eletrico",
+    "eletrica",
+  ]),
+  chemical: new Set(["chemical", "chemicaldamage", "quimico", "quimica"]),
+  mental: new Set(["mental", "mentaldamage"]),
+};
+
+export function getToolkitDamageTypePresentation(
+  damageType: DamageTypeInput,
+): DamageTypePresentation {
+  return {
+    label: getToolkitDamageTypeLabel(damageType),
+    tone: getToolkitDamageTypeTone(damageType),
+  };
+}
 
 export function getToolkitDamageTypeLabel(damageType: DamageTypeInput): string {
   const normalized = normalizeDamageTypeKey(damageType);
@@ -86,6 +149,18 @@ export function getToolkitDamageTypeLabel(damageType: DamageTypeInput): string {
     default:
       return formatFallbackDamageTypeLabel(String(damageType ?? ""));
   }
+}
+
+function getToolkitDamageTypeTone(
+  damageType: DamageTypeInput,
+): DamageTypeBadgeTone {
+  const normalized = normalizeDamageTypeKey(damageType);
+  if (!normalized) return "neutral";
+  if (PHYSICAL_DAMAGE_KEYS.has(normalized)) return "physical";
+  for (const [tone, keys] of Object.entries(DAMAGE_TONE_KEYS)) {
+    if (keys?.has(normalized)) return tone as DamageTypeBadgeTone;
+  }
+  return "neutral";
 }
 
 function normalizeDamageTypeKey(value: DamageTypeInput): string | null {

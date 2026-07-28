@@ -1,10 +1,13 @@
 import { renderRollRow } from "../chat/roll-row";
 import { renderSectionCard } from "../chat/section-card";
 import { renderSectionHeader } from "../chat/section-header";
-import { escapeHtml } from "../../rendering/escape-html";
+import {
+  renderDamageTypeBadge,
+  type DamageTypeBadgeViewModel,
+} from "../chat/damage-type-badge";
 
 export interface RitualDamageSectionViewModel {
-  damageType: string;
+  damageTypeBadge?: DamageTypeBadgeViewModel;
   formula: string;
   total?: number;
   diceResults?: readonly number[];
@@ -14,9 +17,8 @@ export interface RitualDamageSectionViewModel {
 export function renderRitualDamageSection(
   model: RitualDamageSectionViewModel,
 ): string {
-  const damageType = model.damageType.trim();
-  const trailing = damageType
-    ? `<span class="paranormal-toolkit-ritual-damage-section__damage-type">${escapeHtml(damageType)}</span>`
+  const trailing = model.damageTypeBadge
+    ? renderDamageTypeBadge(model.damageTypeBadge)
     : undefined;
   const content =
     renderSectionHeader({ title: "Dano", trailing }) +

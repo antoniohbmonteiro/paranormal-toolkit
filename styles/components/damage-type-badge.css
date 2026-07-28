@@ -1,0 +1,74 @@
+.paranormal-toolkit-damage-type-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid var(--ptk-damage-badge-border);
+  border-radius: 999px;
+  padding: 0.16rem 0.42rem;
+  background: var(--ptk-damage-badge-background);
+  color: var(--ptk-damage-badge-text);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-damage-type-badge--physical,
+.paranormal-toolkit-damage-type-badge--neutral {
+  --ptk-damage-badge-border: rgba(70, 67, 73, 0.32);
+  --ptk-damage-badge-background: rgba(94, 89, 99, 0.1);
+  --ptk-damage-badge-text: #49454d;
+}
+.paranormal-toolkit-damage-type-badge--blood {
+  --ptk-damage-badge-border: #a76b70;
+  --ptk-damage-badge-background: #f3e1e2;
+  --ptk-damage-badge-text: #70252d;
+}
+.paranormal-toolkit-damage-type-badge--death {
+  --ptk-damage-badge-border: #89858d;
+  --ptk-damage-badge-background: #e8e7e9;
+  --ptk-damage-badge-text: #35323a;
+}
+.paranormal-toolkit-damage-type-badge--knowledge {
+  --ptk-damage-badge-border: #b69a4b;
+  --ptk-damage-badge-background: #f7efcf;
+  --ptk-damage-badge-text: #695511;
+}
+.paranormal-toolkit-damage-type-badge--energy {
+  --ptk-damage-badge-border: #8d78b5;
+  --ptk-damage-badge-background: #eee8f8;
+  --ptk-damage-badge-text: #533e7d;
+}
+.paranormal-toolkit-damage-type-badge--fear {
+  --ptk-damage-badge-border: #796895;
+  --ptk-damage-badge-background: #e9e3f1;
+  --ptk-damage-badge-text: #433158;
+}
+.paranormal-toolkit-damage-type-badge--fire {
+  --ptk-damage-badge-border: #c27a57;
+  --ptk-damage-badge-background: #f8e5d9;
+  --ptk-damage-badge-text: #7d351d;
+}
+.paranormal-toolkit-damage-type-badge--cold {
+  --ptk-damage-badge-border: #6e9eb8;
+  --ptk-damage-badge-background: #e1eff5;
+  --ptk-damage-badge-text: #285b75;
+}
+.paranormal-toolkit-damage-type-badge--electric {
+  --ptk-damage-badge-border: #748ac0;
+  --ptk-damage-badge-background: #e5eafb;
+  --ptk-damage-badge-text: #334f8d;
+}
+.paranormal-toolkit-damage-type-badge--chemical {
+  --ptk-damage-badge-border: #729d73;
+  --ptk-damage-badge-background: #e4f0e2;
+  --ptk-damage-badge-text: #315f35;
+}
+.paranormal-toolkit-damage-type-badge--mental {
+  --ptk-damage-badge-border: #a36d9e;
+  --ptk-damage-badge-background: #f2e3f0;
+  --ptk-damage-badge-text: #6f3469;
+}

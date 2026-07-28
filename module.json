@@ -28,6 +28,7 @@
     "styles/components/chat-card-shell.css",
     "styles/components/section-card.css",
     "styles/components/section-header.css",
+    "styles/components/damage-type-badge.css",
     "styles/components/header-badge.css",
     "styles/components/status-badge.css",
     "styles/components/dice-action-button.css",
@@ -36,7 +37,6 @@
     "styles/components/assisted-action-row.css",
     "styles/components/roll-row.css",
     "styles/components/ritual-conjuration-section.css",
-    "styles/components/ritual-damage-section.css",
     "styles/components/ritual-resistance-section.css",
     "styles/components/ritual-assisted-actions-panel.css",
     "styles/components/metadata-pill.css",
@@ -46,7 +46,6 @@
     "styles/components/expandable-description.css",
     "styles/components/metadata-pill-group.css",
     "styles/components/ability-use-card.css",
-    "styles/components/ritual-description-section.css",
     "styles/components/chat-card-header.css"
   ],
   "url": "https://github.com/antoniohbmonteiro/paranormal-toolkit",

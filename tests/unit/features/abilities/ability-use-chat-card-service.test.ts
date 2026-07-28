@@ -25,7 +25,19 @@ function state(): AbilityUseCardState {
       before: 5,
       after: 3,
     },
-    rolls: [],
+    rolls: [
+      {
+        id: "damage",
+        sourceRollId: "damage",
+        label: "Ataque psíquico",
+        intent: "damage",
+        damageType: "fear",
+        formula: "2d6",
+        total: 7,
+        diceResults: [3, 4],
+        nexThreshold: 40,
+      },
+    ],
     createdAt: 1,
   };
 }
@@ -121,6 +133,11 @@ describe("AbilityUseChatCardService", () => {
     const wrapper = replaceChildren.mock.calls[0]?.[0] as { innerHTML: string };
     expect(wrapper.innerHTML).toContain("Premonição");
     expect(wrapper.innerHTML).toContain("Visão segura");
+    expect(wrapper.innerHTML).toContain(
+      'section-header__title">Ataque psíquico',
+    );
+    expect(wrapper.innerHTML).toContain("damage-type-badge--fear");
+    expect(wrapper.innerHTML).not.toContain("5 → 3");
   });
 
   it("preserves existing content when a v3 flag is invalid", () => {

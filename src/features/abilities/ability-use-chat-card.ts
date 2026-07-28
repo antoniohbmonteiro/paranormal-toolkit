@@ -3,10 +3,8 @@ import {
   type AbilityResultSectionViewModel,
   type AbilityUseCardViewModel,
 } from "../../ui/components/ability/ability-use-card";
-import {
-  getAbilityDamageTypeLabel,
-  type ResolvedAbilityRoll,
-} from "./config/ability-roll-config";
+import { getToolkitDamageTypePresentation } from "../../core/damage/damage-types";
+import type { ResolvedAbilityRoll } from "./config/ability-roll-config";
 
 export {
   AbilityUseChatCardService,
@@ -57,13 +55,14 @@ function convertLegacyCardModel(
       ],
     },
     rolls: model.rolls.map(convertLegacyRoll),
-    resourceStatus: createLegacyResourceStatus(model),
   };
 }
 
 function createLegacyCostLabel(model: LegacyAbilityUseCardModel): string {
   if (model.passive) return "Passiva";
-  return model.cost > 0 ? `${model.cost} ${model.resource}` : "Sem custo";
+  if (model.cost <= 0) return "Sem custo";
+  const cost = `${model.cost} ${model.resource}`;
+  return model.spentResource ? cost : `${cost} não descontados`;
 }
 
 function convertLegacyRoll(
@@ -73,8 +72,12 @@ function convertLegacyRoll(
   if (roll.nexThreshold !== null) details.push(`NEX ${roll.nexThreshold}%`);
 
   return {
-    label: roll.label,
+    label: roll.label.trim() || "Rolagem",
     detail: details.join(" · "),
+    damageTypeBadge:
+      roll.intent === "damage" && roll.damageType
+        ? getToolkitDamageTypePresentation(roll.damageType)
+        : undefined,
     tone:
       roll.intent === "damage"
         ? "damage"
@@ -88,25 +91,5 @@ function convertLegacyRoll(
 function createLegacyIntentLabel(roll: ResolvedAbilityRoll): string {
   if (roll.intent === "healing") return "Cura";
   if (roll.intent === "generic") return "Rolagem genérica";
-  return roll.damageType
-    ? `Dano · ${getAbilityDamageTypeLabel(roll.damageType)}`
-    : "Dano";
-}
-
-function createLegacyResourceStatus(
-  model: LegacyAbilityUseCardModel,
-): AbilityUseCardViewModel["resourceStatus"] {
-  if (model.passive || model.cost <= 0) {
-    return { text: "Sem gasto de recurso", tone: "neutral" };
-  }
-  if (!model.spentResource) {
-    return {
-      text: `${model.cost} ${model.resource} não descontados`,
-      tone: "not-spent",
-    };
-  }
-  return {
-    text: `${model.cost} ${model.resource} gastos (${model.resourceBefore} → ${model.resourceAfter})`,
-    tone: "spent",
-  };
+  return "Dano";
 }

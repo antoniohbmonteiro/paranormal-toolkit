@@ -3,7 +3,7 @@ import type {
   AbilityUseCardViewModel,
 } from "../../ui/components/ability/ability-use-card";
 import type { AbilityUseCardState } from "./ability-use-card-state";
-import { getAbilityDamageTypeLabel } from "./config/ability-roll-config";
+import { getToolkitDamageTypePresentation } from "../../core/damage/damage-types";
 
 export function buildAbilityUseCardViewModel(
   state: AbilityUseCardState,
@@ -15,11 +15,12 @@ export function buildAbilityUseCardViewModel(
       : undefined,
     metadata: { items: createMetadata(state) },
     rolls: state.rolls.map(createRollSection),
-    resourceStatus: createResourceStatus(state),
   };
 }
 
-function createHeader(state: AbilityUseCardState): AbilityUseCardViewModel["header"] {
+function createHeader(
+  state: AbilityUseCardState,
+): AbilityUseCardViewModel["header"] {
   return {
     image: state.ability.image
       ? { src: state.ability.image, alt: state.ability.name }
@@ -42,15 +43,20 @@ function createMetadata(
 function createCostLabel(state: AbilityUseCardState): string {
   if (state.resource.passive) return "Passiva";
   if (state.resource.cost <= 0) return "Sem custo";
-  return `${state.resource.cost} ${state.resource.type}`;
+  const cost = `${state.resource.cost} ${state.resource.type}`;
+  return state.resource.spent ? cost : `${cost} não descontados`;
 }
 
 function createRollSection(
   roll: AbilityUseCardState["rolls"][number],
 ): AbilityResultSectionViewModel {
   return {
-    label: roll.label,
+    label: roll.label.trim() || "Rolagem",
     detail: createRollDetail(roll),
+    damageTypeBadge:
+      roll.intent === "damage" && roll.damageType
+        ? getToolkitDamageTypePresentation(roll.damageType)
+        : undefined,
     tone:
       roll.intent === "damage"
         ? "damage"
@@ -78,27 +84,5 @@ function createIntentLabel(
 ): string {
   if (roll.intent === "healing") return "Cura";
   if (roll.intent === "generic") return "Rolagem genérica";
-  return roll.damageType
-    ? `Dano · ${getAbilityDamageTypeLabel(roll.damageType)}`
-    : "Dano";
-}
-
-function createResourceStatus(
-  state: AbilityUseCardState,
-): AbilityUseCardViewModel["resourceStatus"] {
-  const resource = state.resource;
-  if (resource.passive) return { text: "Habilidade passiva", tone: "neutral" };
-  if (resource.cost <= 0) {
-    return { text: "Sem custo de recurso", tone: "neutral" };
-  }
-  if (!resource.spent) {
-    return {
-      text: `${resource.cost} ${resource.type} não descontados`,
-      tone: "not-spent",
-    };
-  }
-  return {
-    text: `${resource.cost} ${resource.type} gastos (${resource.before} → ${resource.after})`,
-    tone: "spent",
-  };
+  return "Dano";
 }

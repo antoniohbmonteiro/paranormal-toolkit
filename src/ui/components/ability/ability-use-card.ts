@@ -18,11 +18,16 @@ import {
 } from "../chat/section-card";
 import { renderSectionHeader } from "../chat/section-header";
 import { escapeHtml } from "../../rendering/escape-html";
+import {
+  renderDamageTypeBadge,
+  type DamageTypeBadgeViewModel,
+} from "../chat/damage-type-badge";
 
 export type AbilityResultSectionViewModel = {
   label: string;
   detail: string;
   tone: SectionCardTone;
+  damageTypeBadge?: DamageTypeBadgeViewModel;
   roll: RollRowViewModel;
 };
 
@@ -31,10 +36,6 @@ export type AbilityUseCardViewModel = {
   description?: ExpandableDescriptionViewModel;
   metadata: MetadataPillGroupViewModel;
   rolls: AbilityResultSectionViewModel[];
-  resourceStatus: {
-    text: string;
-    tone: "spent" | "neutral" | "not-spent";
-  };
 };
 
 export function renderAbilityUseCard(model: AbilityUseCardViewModel): string {
@@ -43,7 +44,6 @@ export function renderAbilityUseCard(model: AbilityUseCardViewModel): string {
     model.description ? renderExpandableDescription(model.description) : "",
     renderMetadataPillGroup(model.metadata),
     ...model.rolls.map(renderAbilityResultSection),
-    renderResourceStatus(model.resourceStatus),
   ]
     .filter(Boolean)
     .join("");
@@ -62,21 +62,15 @@ function renderAbilityResultSection(
   result: AbilityResultSectionViewModel,
 ): string {
   const content = [
-    renderSectionHeader({ title: "Rolagem" }),
-    `<div class="paranormal-toolkit-ability-use-card__roll-label">${escapeHtml(result.label)}</div>`,
+    renderSectionHeader({
+      title: result.label.trim() || "Rolagem",
+      trailing: result.damageTypeBadge
+        ? renderDamageTypeBadge(result.damageTypeBadge)
+        : undefined,
+    }),
     `<div class="paranormal-toolkit-ability-use-card__roll-detail">${escapeHtml(result.detail)}</div>`,
     renderRollRow(result.roll),
   ].join("");
 
   return renderSectionCard({ tone: result.tone, content });
-}
-
-function renderResourceStatus(
-  status: AbilityUseCardViewModel["resourceStatus"],
-): string {
-  const classes = [
-    "paranormal-toolkit-ability-use-card__status",
-    `paranormal-toolkit-ability-use-card__status--${status.tone}`,
-  ].join(" ");
-  return `<footer class="${classes}">${escapeHtml(status.text)}</footer>`;
 }

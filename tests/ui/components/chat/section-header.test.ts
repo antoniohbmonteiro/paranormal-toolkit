@@ -48,9 +48,10 @@ describe("renderSectionHeader", () => {
       /\.paranormal-toolkit-section-header__demo-text\s*\{[^}]+\}/,
     )?.[0];
 
-    expect(title).toContain("flex: 0 0 auto");
+    expect(title).toContain("flex: 1 1 auto");
+    expect(title).toContain("overflow-wrap: anywhere");
     expect(trailing).toContain("display: flex");
-    expect(trailing).toContain("flex: 1 1 auto");
+    expect(trailing).toContain("flex: 0 1 auto");
     expect(trailing).toContain("align-items: center");
     expect(trailing).toContain("justify-content: flex-end");
     expect(trailing).toContain("min-width: 0");
