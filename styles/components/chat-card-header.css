@@ -46,6 +46,25 @@
   min-width: 0;
 }
 
+.paranormal-toolkit-chat-card-header__eyebrow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 2px;
+}
+
+.paranormal-toolkit-chat-card-header__eyebrow {
+  flex: 0 1 auto;
+  color: var(--ptk-chat-wine);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 .paranormal-toolkit-chat-card-header__heading {
   display: flex;
   align-items: flex-start;
@@ -55,6 +74,7 @@
 }
 
 .paranormal-toolkit-chat-card-header__title-group {
+  flex: 1 1 auto;
   min-width: 0;
   line-height: 1.25;
   overflow-wrap: anywhere;

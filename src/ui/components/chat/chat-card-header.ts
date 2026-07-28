@@ -1,7 +1,4 @@
-import {
-  renderHeaderBadge,
-  type HeaderBadgeViewModel,
-} from "./header-badge";
+import { renderHeaderBadge, type HeaderBadgeViewModel } from "./header-badge";
 import { escapeHtml } from "../../rendering/escape-html";
 
 export interface ChatCardHeaderImageViewModel {
@@ -11,6 +8,7 @@ export interface ChatCardHeaderImageViewModel {
 
 export interface ChatCardHeaderViewModel {
   image?: ChatCardHeaderImageViewModel;
+  eyebrow?: string;
   title: string;
   subtitle?: string;
   badges?: readonly HeaderBadgeViewModel[];
@@ -32,6 +30,13 @@ export function renderChatCardHeader(model: ChatCardHeaderViewModel): string {
   const badges = model.badges?.length
     ? `<div class="paranormal-toolkit-chat-card-header__badges">${model.badges.map(renderHeaderBadge).join("")}</div>`
     : "";
+  const eyebrow = model.eyebrow?.trim()
+    ? `<span class="paranormal-toolkit-chat-card-header__eyebrow">${escapeHtml(model.eyebrow.trim())}</span>`
+    : "";
+  const eyebrowRow = eyebrow
+    ? `<div class="paranormal-toolkit-chat-card-header__eyebrow-row">${eyebrow}${badges}</div>`
+    : "";
+  const headingBadges = eyebrow ? "" : badges;
   const context = model.context
     ? `<div class="paranormal-toolkit-chat-card-header__context">${escapeHtml(model.context)}</div>`
     : "";
@@ -39,10 +44,11 @@ export function renderChatCardHeader(model: ChatCardHeaderViewModel): string {
   return `<header class="paranormal-toolkit-chat-card-header">
   <div class="paranormal-toolkit-chat-card-header__image">${renderImage(model.image)}</div>
   <div class="paranormal-toolkit-chat-card-header__content">
+    ${eyebrowRow}
     <div class="paranormal-toolkit-chat-card-header__heading">
       <div class="paranormal-toolkit-chat-card-header__title-group">
         <span class="paranormal-toolkit-chat-card-header__title">${escapeHtml(model.title)}</span>${subtitle}
-      </div>${badges}
+      </div>${headingBadges}
     </div>${context}
   </div>
 </header>`;
