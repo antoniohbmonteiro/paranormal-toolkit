@@ -11,7 +11,9 @@ describe("renderRitualEffectSection", () => {
     expect(html).toContain("paranormal-toolkit-ritual-effect-section__result-label");
     expect(html).not.toContain("data-paranormal-toolkit-card-action");
   });
-  it("falls back to Resultado for old payloads", () => {
-    expect(renderRitualEffectSection({ title: "Efeito", formula: "1d6", total: 4 })).toContain("Resultado");
+  it.each([undefined, "", "   "])("omits the result label element when the label is %s", (resultLabel) => {
+    const html = renderRitualEffectSection({ title: "Efeito", resultLabel, formula: "1d6", total: 4 });
+    expect(html).not.toContain("paranormal-toolkit-ritual-effect-section__result-label");
+    expect(html).not.toContain(">Resultado<");
   });
 });

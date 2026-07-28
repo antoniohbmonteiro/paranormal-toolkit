@@ -73,11 +73,23 @@ describe("ritual single target card v2", () => {
     expect(html).toContain("3d6");
     expect(html).toContain(">13</output>");
   });
-  it("uses Resultado when a utility label is empty", () => {
-    const utilityItem = { ...item, getFlag: () => ({ schemaVersion: 1, intent: "utility", utilityLabel: "", forms: {} }) } as Item;
+  it.each(["", "   "])("omits an empty utility result label from the snapshot", (utilityLabel) => {
+    const utilityItem = { ...item, getFlag: () => ({ schemaVersion: 1, intent: "utility", utilityLabel, forms: {} }) } as Item;
     const utility = { ...snapshot, rolls: [{ ...snapshot.rolls[0]!, intent: "generic" as const }] };
     const state = buildRitualChatCardState({ context: { ...context, item: utilityItem }, snapshot: utility, actions: [], resistanceDifficulty: null });
-    expect(state.mainRoll?.resultLabel).toBe("Resultado");
+    expect(state.mainRoll).not.toHaveProperty("resultLabel");
+    const html = renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state));
+    expect(html).not.toContain("paranormal-toolkit-ritual-effect-section__result-label");
+    expect(html).not.toContain(">Resultado<");
+  });
+  it("defensively ignores an invalid persisted result label", () => {
+    const utility = { ...snapshot, rolls: [{ ...snapshot.rolls[0]!, intent: "generic" as const }] };
+    const state = buildRitualChatCardState({ context, snapshot: utility, actions: [], resistanceDifficulty: null });
+    if (!state.mainRoll) throw new Error("Expected utility roll");
+    (state.mainRoll as unknown as { resultLabel: unknown }).resultLabel = { invalid: true };
+    const model = buildRitualSingleTargetCardViewModel(state);
+    expect(model.effect?.resultLabel).toBeUndefined();
+    expect(() => renderRitualSingleTargetCard(model)).not.toThrow();
   });
   it("falls back instead of silently discarding multiple effect rolls", () => {
     const twoEffects = { ...snapshot, rolls: [...snapshot.rolls, { ...snapshot.rolls[0]!, id: "second" }] };

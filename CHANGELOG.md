@@ -5,7 +5,7 @@
 ### Corrigido
 
 - A seção Efeito dos cards de ritual agora usa identidade visual azul-petróleo, sem alterar as paletas de conjuração, dano, cura, resistência ou ações assistidas.
-- Resultados de utilidade exibem o rótulo configurado (ou “Resultado”) e preservam esse texto no snapshot serializável após F5.
+- Resultados de utilidade exibem o rótulo configurado quando preenchido e preservam esse texto no snapshot serializável após F5; campos vazios não geram um rótulo artificial.
 - A aplicação e a reaplicação de presets preservam exatamente `system.description` e `system.chatDescription`; os presets integrados deixaram de declarar conteúdo descritivo.
 - As automações mecânicas existentes, incluindo fórmulas, resistência, dano, cura e condições, permanecem inalteradas.
 

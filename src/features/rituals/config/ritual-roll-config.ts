@@ -51,7 +51,7 @@ export function createDefaultRitualRollConfig(): RitualRollConfig {
     schemaVersion: 1,
     intent: "damage",
     damageType: null,
-    utilityLabel: "Resultado",
+    utilityLabel: "",
     note: "",
     forms: {
       base: { formula: "" },
