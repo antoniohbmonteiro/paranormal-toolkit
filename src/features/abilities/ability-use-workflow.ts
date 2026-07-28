@@ -60,8 +60,16 @@ export class AbilityUseWorkflow {
 
     if (!options) return { status: "cancelled" };
 
-    const resolvedRolls = finalizeAbilityRolls(ability.rollPreparation, options.selectedNexThresholds);
-    if (!resolvedRolls) return this.fail("invalid-roll-options", "Selecione uma faixa de NEX válida para cada rolagem.");
+    const resolvedRolls = finalizeAbilityRolls(
+      ability.rollPreparation,
+      options.selectedNexThresholds,
+    );
+    if (!resolvedRolls) {
+      return this.fail(
+        "invalid-roll-options",
+        "Selecione uma faixa de NEX válida para cada rolagem.",
+      );
+    }
 
     let resourceBefore = currentResourceResult.value;
     let resourceAfter = resourceBefore;
@@ -91,16 +99,34 @@ export class AbilityUseWorkflow {
     try {
       executedRolls = await executeAbilityRolls(resolvedRolls, actor);
     } catch (cause) {
-      const restored = await this.restoreSpentResource(ability, spentResource, resourceBefore, resourceAfter);
-      console.error(`${MODULE_ID} | Falha técnica em rolagem de habilidade.`, cause);
-      return this.fail("roll-failed", restored
-        ? "Não foi possível executar a rolagem da habilidade. O recurso gasto foi restaurado."
-        : "Não foi possível executar a rolagem nem restaurar o recurso com segurança. Confira a ficha manualmente.");
+      const restored = await this.restoreSpentResource(
+        ability,
+        spentResource,
+        resourceBefore,
+        resourceAfter,
+      );
+      console.error(
+        `${MODULE_ID} | Falha técnica em rolagem de habilidade.`,
+        cause,
+      );
+      return this.fail(
+        "roll-failed",
+        restored
+          ? "Não foi possível executar a rolagem da habilidade. O recurso gasto foi restaurado."
+          : "Não foi possível executar a rolagem nem restaurar o recurso com segurança. Confira a ficha manualmente.",
+      );
     }
 
     try {
       const descriptionHtml = await enrichAbilityDescription(ability);
-      const cardState = buildAbilityUseCardState({ ability, descriptionHtml, rolls: executedRolls, spentResource, resourceBefore, resourceAfter });
+      const cardState = buildAbilityUseCardState({
+        ability,
+        descriptionHtml,
+        rolls: executedRolls,
+        spentResource,
+        resourceBefore,
+        resourceAfter,
+      });
       await this.chatCards.publish(context, cardState);
     } catch (cause) {
       const resourceRestored = await this.restoreSpentResource(
@@ -110,7 +136,10 @@ export class AbilityUseWorkflow {
         resourceAfter,
       );
 
-      console.error(`${MODULE_ID} | Falha ao executar ou publicar habilidade.`, cause);
+      console.error(
+        `${MODULE_ID} | Falha ao executar ou publicar habilidade.`,
+        cause,
+      );
       return this.fail(
         "chat-message-failed",
         resourceRestored
@@ -155,7 +184,10 @@ export class AbilityUseWorkflow {
     if (!spentResource) return true;
 
     try {
-      const current = this.resourceAdapter.getResource(ability.actor, ability.resource);
+      const current = this.resourceAdapter.getResource(
+        ability.actor,
+        ability.resource,
+      );
       if (!current.ok || current.value.value !== resourceAfter) return false;
       await this.resourceAdapter.updateResourceValue(
         ability.actor,
@@ -181,7 +213,6 @@ export class AbilityUseWorkflow {
   }
 }
 
-
 function canCurrentUserUseActor(actor: Actor): boolean {
   if (game.user?.isGM) return true;
 
@@ -189,10 +220,40 @@ function canCurrentUserUseActor(actor: Actor): boolean {
   return candidate.isOwner === true;
 }
 
-async function enrichAbilityDescription(ability: AbilityUseData): Promise<string> {
+async function enrichAbilityDescription(
+  ability: AbilityUseData,
+): Promise<string> {
   const description = ability.chatDescription || ability.description;
   if (!description) return "";
-  const editor = (foundry as unknown as { applications?: { ux?: { TextEditor?: { implementation?: { enrichHTML?: (html:string, options?:Record<string,unknown>)=>Promise<string> } } } } }).applications?.ux?.TextEditor?.implementation;
+  const editor = resolveFoundryTextEditor();
   if (typeof editor?.enrichHTML !== "function") return description;
-  return editor.enrichHTML(description, { relativeTo: ability.item, rollData: (ability.actor as {getRollData?:()=>unknown}).getRollData?.() ?? {} });
+  return editor.enrichHTML(description, {
+    relativeTo: ability.item,
+    rollData:
+      (ability.actor as { getRollData?: () => unknown }).getRollData?.() ?? {},
+  });
+}
+
+function resolveFoundryTextEditor(): {
+  enrichHTML?: (
+    html: string,
+    options?: Record<string, unknown>,
+  ) => Promise<string>;
+} | null {
+  return (
+    foundry as unknown as {
+      applications?: {
+        ux?: {
+          TextEditor?: {
+            implementation?: {
+              enrichHTML?: (
+                html: string,
+                options?: Record<string, unknown>,
+              ) => Promise<string>;
+            };
+          };
+        };
+      };
+    }
+  ).applications?.ux?.TextEditor?.implementation ?? null;
 }

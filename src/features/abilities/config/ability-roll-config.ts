@@ -66,7 +66,10 @@ export type ResolvedAbilityRoll = {
   nexThreshold: number | null;
 };
 
-export type AbilityRollChoiceOption = { nexThreshold: number; formula: string };
+export type AbilityRollChoiceOption = {
+  nexThreshold: number;
+  formula: string;
+};
 export type AbilityRollChoiceGroup = {
   sourceRollId: string;
   label: string;
@@ -181,30 +184,59 @@ export function resolveAbilityRolls(
   return resolveAbilityRollActions(config, resolveActorNex(actor));
 }
 
-export function prepareAbilityRolls(actor: Actor, item: Item): PreparedAbilityRolls {
+export function prepareAbilityRolls(
+  actor: Actor,
+  item: Item,
+): PreparedAbilityRolls {
   const config = readAbilityRollConfig(item);
   if (!config) return { rolls: [], choices: [] };
   const actorNex = resolveActorNex(actor);
   const rolls = resolveAbilityRollActions(config, actorNex);
   const choices: AbilityRollChoiceGroup[] = [];
   for (const entry of config.rolls) {
-    if (entry.formula.mode !== "nex" || entry.formula.resolution !== "choose-unlocked") continue;
+    if (
+      entry.formula.mode !== "nex" ||
+      entry.formula.resolution !== "choose-unlocked"
+    ) {
+      continue;
+    }
     const options = entry.formula.steps
       .filter((step) => step.minNex <= actorNex && step.formula.trim())
-      .map((step) => ({ nexThreshold: step.minNex, formula: step.formula.trim() }));
+      .map((step) => ({
+        nexThreshold: step.minNex,
+        formula: step.formula.trim(),
+      }));
     const selected = options.at(-1);
-    if (selected) choices.push({ sourceRollId: entry.id, label: entry.label, options, selectedNexThreshold: selected.nexThreshold });
+    if (selected) {
+      choices.push({
+        sourceRollId: entry.id,
+        label: entry.label,
+        options,
+        selectedNexThreshold: selected.nexThreshold,
+      });
+    }
   }
   return { rolls, choices };
 }
 
-export function finalizeAbilityRolls(prepared: PreparedAbilityRolls, selections: Record<string, number>): ResolvedAbilityRoll[] | null {
-  const choiceIds = new Set(prepared.choices.map((choice) => choice.sourceRollId));
+export function finalizeAbilityRolls(
+  prepared: PreparedAbilityRolls,
+  selections: Record<string, number>,
+): ResolvedAbilityRoll[] | null {
+  const choiceIds = new Set(
+    prepared.choices.map((choice) => choice.sourceRollId),
+  );
   for (const choice of prepared.choices) {
     const threshold = selections[choice.sourceRollId];
-    if (!choice.options.some((option) => option.nexThreshold === threshold)) return null;
+    if (!choice.options.some((option) => option.nexThreshold === threshold)) {
+      return null;
+    }
   }
-  return prepared.rolls.filter((roll) => !choiceIds.has(roll.sourceRollId) || roll.nexThreshold === selections[roll.sourceRollId]);
+  return prepared.rolls.filter(
+    (roll) =>
+      !choiceIds.has(roll.sourceRollId) ||
+      roll.nexThreshold === selections[roll.sourceRollId],
+  );
 }
 
 export function resolveAbilityRollActions(

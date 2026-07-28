@@ -1,7 +1,104 @@
-import type { AbilityUseCardViewModel } from "../../ui/components/ability/ability-use-card";
-import { getAbilityDamageTypeLabel } from "./config/ability-roll-config";
+import type {
+  AbilityResultSectionViewModel,
+  AbilityUseCardViewModel,
+} from "../../ui/components/ability/ability-use-card";
 import type { AbilityUseCardState } from "./ability-use-card-state";
-export function buildAbilityUseCardViewModel(state: AbilityUseCardState): AbilityUseCardViewModel {
+import { getAbilityDamageTypeLabel } from "./config/ability-roll-config";
+
+export function buildAbilityUseCardViewModel(
+  state: AbilityUseCardState,
+): AbilityUseCardViewModel {
+  return {
+    header: createHeader(state),
+    description: state.ability.descriptionHtml
+      ? { html: state.ability.descriptionHtml }
+      : undefined,
+    metadata: { items: createMetadata(state) },
+    rolls: state.rolls.map(createRollSection),
+    resourceStatus: createResourceStatus(state),
+  };
+}
+
+function createHeader(state: AbilityUseCardState): AbilityUseCardViewModel["header"] {
+  return {
+    image: state.ability.image
+      ? { src: state.ability.image, alt: state.ability.name }
+      : undefined,
+    eyebrow: "Habilidade",
+    title: state.ability.name,
+    context: state.actor.name,
+  };
+}
+
+function createMetadata(
+  state: AbilityUseCardState,
+): AbilityUseCardViewModel["metadata"]["items"] {
+  return [
+    { text: createCostLabel(state) },
+    { text: `Execução: ${state.ability.activationLabel}` },
+  ];
+}
+
+function createCostLabel(state: AbilityUseCardState): string {
+  if (state.resource.passive) return "Passiva";
+  if (state.resource.cost <= 0) return "Sem custo";
+  return `${state.resource.cost} ${state.resource.type}`;
+}
+
+function createRollSection(
+  roll: AbilityUseCardState["rolls"][number],
+): AbilityResultSectionViewModel {
+  return {
+    label: roll.label,
+    detail: createRollDetail(roll),
+    tone:
+      roll.intent === "damage"
+        ? "damage"
+        : roll.intent === "healing"
+          ? "healing"
+          : "effect",
+    roll: {
+      formula: roll.formula,
+      total: roll.total,
+      diceResults: roll.diceResults,
+    },
+  };
+}
+
+function createRollDetail(
+  roll: AbilityUseCardState["rolls"][number],
+): string {
+  const details = [createIntentLabel(roll)];
+  if (roll.nexThreshold !== null) details.push(`NEX ${roll.nexThreshold}%`);
+  return details.join(" · ");
+}
+
+function createIntentLabel(
+  roll: AbilityUseCardState["rolls"][number],
+): string {
+  if (roll.intent === "healing") return "Cura";
+  if (roll.intent === "generic") return "Rolagem genérica";
+  return roll.damageType
+    ? `Dano · ${getAbilityDamageTypeLabel(roll.damageType)}`
+    : "Dano";
+}
+
+function createResourceStatus(
+  state: AbilityUseCardState,
+): AbilityUseCardViewModel["resourceStatus"] {
   const resource = state.resource;
-  return { header: { image: state.ability.image ? { src: state.ability.image, alt: state.ability.name } : undefined, eyebrow: "Habilidade", title: state.ability.name, context: state.actor.name }, description: state.ability.descriptionHtml ? { html: state.ability.descriptionHtml } : undefined, metadata: { items: [{ text: resource.passive ? "Passiva" : resource.cost > 0 ? `${resource.cost} ${resource.type}` : "Sem custo" }, { text: `Execução: ${state.ability.activationLabel}` }] }, rolls: state.rolls.map((roll) => ({ label: roll.label, detail: [roll.intent === "damage" ? roll.damageType ? `Dano · ${getAbilityDamageTypeLabel(roll.damageType)}` : "Dano" : roll.intent === "healing" ? "Cura" : "Rolagem genérica", roll.nexThreshold === null ? null : `NEX ${roll.nexThreshold}%`].filter(Boolean).join(" · "), tone: roll.intent === "damage" ? "damage" : roll.intent === "healing" ? "healing" : "effect", roll: { formula: roll.formula, total: roll.total, diceResults: roll.diceResults } })), resourceStatus: resource.passive ? { text: "Habilidade passiva", tone: "neutral" } : resource.cost <= 0 ? { text: "Sem custo de recurso", tone: "neutral" } : resource.spent ? { text: `${resource.cost} ${resource.type} gastos (${resource.before} → ${resource.after})`, tone: "spent" } : { text: `${resource.cost} ${resource.type} não descontados`, tone: "not-spent" } };
+  if (resource.passive) return { text: "Habilidade passiva", tone: "neutral" };
+  if (resource.cost <= 0) {
+    return { text: "Sem custo de recurso", tone: "neutral" };
+  }
+  if (!resource.spent) {
+    return {
+      text: `${resource.cost} ${resource.type} não descontados`,
+      tone: "not-spent",
+    };
+  }
+  return {
+    text: `${resource.cost} ${resource.type} gastos (${resource.before} → ${resource.after})`,
+    tone: "spent",
+  };
 }

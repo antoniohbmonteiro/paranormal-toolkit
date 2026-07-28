@@ -62,7 +62,10 @@ export class AbilityUseApplication extends ApplicationV2 {
     this.model = createAbilityUseDialogModel(input);
     this.spendResource = this.model.cost.spendResourceChecked;
     this.selectedNexThresholds = Object.fromEntries(
-      this.model.rollChoices.map((choice) => [choice.sourceRollId, choice.selectedNexThreshold]),
+      this.model.rollChoices.map((choice) => [
+        choice.sourceRollId,
+        choice.selectedNexThreshold,
+      ]),
     );
   }
 
@@ -128,17 +131,42 @@ export class AbilityUseApplication extends ApplicationV2 {
 
   private renderRollChoices(): string {
     if (!this.model.rollChoices.length) return "";
-    const groups = this.model.rollChoices.map((choice) => `<fieldset><legend>${escapeHtml(choice.label)}</legend>${choice.options.map((option) => `<label><input type="radio" name="ability-nex-${escapeAttribute(choice.sourceRollId)}" value="${option.nexThreshold}" ${option.nexThreshold === choice.selectedNexThreshold ? "checked" : ""}><span>NEX ${option.nexThreshold}% — ${escapeHtml(option.formula)}</span></label>`).join("")}</fieldset>`).join("");
+    const groups = this.model.rollChoices
+      .map((choice) => this.renderRollChoiceGroup(choice))
+      .join("");
     return `<section class="paranormal-toolkit-ritual-cast__panel paranormal-toolkit-ability-use__choices"><h3>Progressão da rolagem</h3>${groups}</section>`;
   }
 
+  private renderRollChoiceGroup(
+    choice: AbilityUseDialogModel["rollChoices"][number],
+  ): string {
+    const options = choice.options
+      .map((option) => {
+        const checked =
+          option.nexThreshold === choice.selectedNexThreshold ? "checked" : "";
+        return `<label><input type="radio" name="ability-nex-${escapeAttribute(choice.sourceRollId)}" value="${option.nexThreshold}" ${checked}><span>NEX ${option.nexThreshold}% — ${escapeHtml(option.formula)}</span></label>`;
+      })
+      .join("");
+    return `<fieldset><legend>${escapeHtml(choice.label)}</legend>${options}</fieldset>`;
+  }
+
   private bindRollChoices(root: HTMLElement): void {
-    root.querySelectorAll<HTMLInputElement>('.paranormal-toolkit-ability-use__choices input[type="radio"]').forEach((input) => {
-      input.addEventListener("change", () => {
-        const choice = this.model.rollChoices.find((entry) => input.name === `ability-nex-${entry.sourceRollId}`);
-        if (choice && input.checked) this.selectedNexThresholds[choice.sourceRollId] = Number(input.value);
+    root
+      .querySelectorAll<HTMLInputElement>(
+        '.paranormal-toolkit-ability-use__choices input[type="radio"]',
+      )
+      .forEach((input) => {
+        input.addEventListener("change", () => {
+          const choice = this.model.rollChoices.find(
+            (entry) => input.name === `ability-nex-${entry.sourceRollId}`,
+          );
+          if (choice && input.checked) {
+            this.selectedNexThresholds[choice.sourceRollId] = Number(
+              input.value,
+            );
+          }
+        });
       });
-    });
   }
 
   private renderPaidCostSection(): string {
