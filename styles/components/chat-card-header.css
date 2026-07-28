@@ -58,7 +58,7 @@
 .paranormal-toolkit-chat-card-header__eyebrow {
   flex: 0 1 auto;
   color: var(--ptk-chat-wine);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
   line-height: 1.2;
@@ -82,8 +82,9 @@
 
 .paranormal-toolkit-chat-card-header__title {
   color: var(--ptk-chat-text-primary);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.15;
 }
 
 .paranormal-toolkit-chat-card-header__subtitle {
