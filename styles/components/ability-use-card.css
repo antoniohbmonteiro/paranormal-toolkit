@@ -1,0 +1,32 @@
+.paranormal-toolkit-ability-use-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-ability-use-card__roll-detail {
+  margin-top: 0.05rem;
+  color: var(--ptk-chat-text-secondary);
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.paranormal-toolkit-ability-use__choices fieldset {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  border: 0;
+  padding: 0;
+}
+.paranormal-toolkit-ability-use__choices label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}

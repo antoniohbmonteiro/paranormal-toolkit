@@ -1,4 +1,4 @@
-import { getToolkitDamageTypeLabel } from "../../../../core/damage/damage-types";
+import { getToolkitDamageTypePresentation } from "../../../../core/damage/damage-types";
 import type { AssistedActionRowViewModel } from "../../../../ui/components/chat/assisted-action-row";
 import type { HeaderBadgeTone } from "../../../../ui/components/chat/header-badge";
 import type { RitualSingleTargetCardViewModel } from "../../../../ui/components/ritual/ritual-single-target-card";
@@ -41,7 +41,7 @@ export function buildRitualSingleTargetCardViewModel(
               tone: resolveRitualBadgeTone(state.ritualIdentity.elementKey),
             },
           ]
-        : undefined,
+        : [{ label: "Ritual", tone: "neutral" }],
     },
     description: state.descriptionHtml?.trim()
       ? { html: state.descriptionHtml }
@@ -81,8 +81,8 @@ export function buildRitualSingleTargetCardViewModel(
               : roll.intent === "healing"
                 ? "Cura"
                 : "Efeito",
-          typeLabel: roll.damageType
-            ? getToolkitDamageTypeLabel(roll.damageType)
+          damageTypeBadge: roll.damageType
+            ? getToolkitDamageTypePresentation(roll.damageType)
             : undefined,
           resultLabel:
             roll.intent === "utility"

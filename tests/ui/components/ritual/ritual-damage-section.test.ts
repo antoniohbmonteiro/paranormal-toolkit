@@ -6,7 +6,7 @@ import {
 } from "../../../../src/ui/components/ritual/ritual-damage-section";
 
 const model: RitualDamageSectionViewModel = {
-  damageType: "Eletricidade",
+  damageTypeBadge: { label: "Eletricidade", tone: "electric" },
   formula: "3d6",
   total: 9,
   diceResults: [2, 3, 4],
@@ -23,18 +23,18 @@ describe("renderRitualDamageSection", () => {
   it("escapes the damage type in component-owned trailing markup", () => {
     const html = renderRitualDamageSection({
       ...model,
-      damageType: `<Electric & "paranormal">`,
+      damageTypeBadge: { label: `<Electric & "paranormal">`, tone: "neutral" },
     });
-    expect(html).toContain("paranormal-toolkit-ritual-damage-section__damage-type");
+    expect(html).toContain("paranormal-toolkit-damage-type-badge--neutral");
     expect(html).toContain("&lt;Electric &amp; &quot;paranormal&quot;&gt;");
     expect(html).not.toContain("<Electric");
     expect(html).not.toContain("__demo-");
   });
 
-  it.each(["", "   "])("omits trailing markup for damage type %s", (damageType) => {
-    const html = renderRitualDamageSection({ ...model, damageType });
+  it("omits trailing markup without a damage badge", () => {
+    const html = renderRitualDamageSection({ ...model, damageTypeBadge: undefined });
     expect(html).not.toContain("paranormal-toolkit-section-header__trailing");
-    expect(html).not.toContain("__damage-type");
+    expect(html).not.toContain("paranormal-toolkit-damage-type-badge");
   });
 
   it("renders normal and zero totals", () => {
@@ -80,7 +80,7 @@ describe("renderRitualDamageSection", () => {
       "renderSectionCard",
       "renderSectionHeader",
       "renderRollRow",
-      "escapeHtml",
+      "renderDamageTypeBadge",
     ]) {
       expect(source).toContain(renderer);
     }
@@ -103,26 +103,13 @@ describe("renderRitualDamageSection", () => {
     expect(source).not.toMatch(/calculate|evaluate|apply damage|resistance/i);
   });
 
-  it("uses minimal component-scoped inherited-token CSS", () => {
-    const css = readFileSync("styles/components/ritual-damage-section.css", "utf8");
-    expect(css).toContain("font-size: 10.5px");
-    expect(css).toContain("font-weight: 600");
-    expect(css).toContain("line-height: 1");
-    expect(css).toContain("min-width: 0");
-    expect(css).toContain("text-align: right");
-    expect(css).toContain("color: var(--ptk-chat-section-title)");
-    expect(css).toContain("overflow-wrap: anywhere");
-    expect(css).not.toContain("!important");
-    expect(css).not.toMatch(/#[0-9a-f]{3,8}\b/i);
-    expect(css).not.toMatch(/(^|})\s*(span|div|section|p)\b/m);
-    expect(css).not.toMatch(/[;{]\s*(transform|top)\s*:/);
-    expect(css).not.toContain("position: relative");
-    expect(css).not.toContain("white-space: nowrap");
-    for (const selector of css.matchAll(/(^|})\s*([^@][^{]+)\{/g)) {
-      expect(selector[2].trim()).toMatch(
-        /^\.paranormal-toolkit-ritual-damage-section/,
-      );
-    }
+  it("uses the shared damage type badge instead of ritual-specific CSS", () => {
+    const source = readFileSync(
+      "src/ui/components/ritual/ritual-damage-section.ts",
+      "utf8",
+    );
+    expect(source).toContain("renderDamageTypeBadge");
+    expect(source).not.toContain("ritual-damage-section__damage-type");
   });
 
   it("defines four isolated examples through shared infrastructure", () => {

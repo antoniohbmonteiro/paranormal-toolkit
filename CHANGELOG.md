@@ -1,3 +1,13 @@
+## 0.41.0
+
+- Rolagens de habilidade são executadas sequencialmente ao confirmar o popup e publicadas em um único card persistente.
+- Progressões `choose-unlocked` usam radio buttons no popup, com a maior faixa liberada pré-selecionada; `highest-unlocked` continua automático.
+- Cards v3 guardam descrição, metadados, gasto, fórmulas, totais e dados individuais para reidratação após F5.
+- Cards v2 e seus botões permanecem compatíveis, enquanto cards v3 não contêm botão, inline roll ou mensagem adicional.
+- O executor reutiliza Dice So Nice e protege rollback de PE/PD contra alterações concorrentes.
+- Descrição expansível e grupo de pills agora possuem componentes compartilhados entre rituais e habilidades.
+- Não há aplicação automática de dano/cura nem detecção mecânica de sucesso/falha.
+
 # Changelog
 
 ## 0.40.2

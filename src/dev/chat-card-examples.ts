@@ -29,6 +29,7 @@ import {
   renderRitualDamageSection,
   type RitualDamageSectionViewModel,
 } from "../ui/components/ritual/ritual-damage-section";
+import { getToolkitDamageTypePresentation } from "../core/damage/damage-types";
 import {
   renderRitualResistanceSection,
   type RitualResistanceSectionViewModel,
@@ -349,14 +350,16 @@ function ritualDamageExample(
 ): RitualDamageSectionViewModel {
   if (example === "long-type") {
     return {
-      damageType: "Eletricidade paranormal prolongada",
+      damageTypeBadge: getToolkitDamageTypePresentation(
+        "Eletricidade paranormal prolongada",
+      ),
       formula: "3d6 + 2d8 + 5",
       total: 21,
       diceResults: [2, 3, 4, 5, 2],
     };
   }
   return {
-    damageType: "Eletricidade",
+    damageTypeBadge: getToolkitDamageTypePresentation("Eletricidade"),
     formula: "3d6",
     total: example === "without-result" ? undefined : 9,
     diceResults: [2, 3, 4],
@@ -547,9 +550,11 @@ function ritualSingleTargetCardExample(
     damage: failure
       ? undefined
       : {
-          damageType: long
-            ? "Eletricidade paranormal prolongada e intensamente concentrada"
-            : "Eletricidade",
+          damageTypeBadge: getToolkitDamageTypePresentation(
+            long
+              ? "Eletricidade paranormal prolongada e intensamente concentrada"
+              : "Eletricidade",
+          ),
           formula: long ? "3d6 + 2d8 + 5" : "3d6",
           total: long ? 21 : 9,
           diceResults: long ? [2, 3, 4, 5, 2] : [2, 3, 4],

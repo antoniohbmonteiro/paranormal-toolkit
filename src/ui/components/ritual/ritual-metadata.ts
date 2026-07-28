@@ -1,15 +1,3 @@
-import {
-  renderMetadataPill,
-  type MetadataPillViewModel,
-} from "../chat/metadata-pill";
-
-export interface RitualMetadataViewModel {
-  items: readonly MetadataPillViewModel[];
-}
-
-export function renderRitualMetadata(model: RitualMetadataViewModel): string {
-  const pills = model.items.map(renderMetadataPill).filter(Boolean);
-  if (pills.length === 0) return "";
-
-  return `<div class="paranormal-toolkit-ritual-metadata">${pills.join("")}</div>`;
-}
+import { renderMetadataPillGroup, type MetadataPillGroupViewModel } from "../chat/metadata-pill-group";
+export type RitualMetadataViewModel = MetadataPillGroupViewModel;
+export function renderRitualMetadata(model: RitualMetadataViewModel): string { return renderMetadataPillGroup(model).replace('class="paranormal-toolkit-metadata-pill-group"', 'class="paranormal-toolkit-ritual-metadata"'); }

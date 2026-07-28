@@ -1,5 +1,5 @@
 import type { AbilityResource, AbilityUseData } from "./ability-use-options";
-import { resolveAbilityRolls } from "./config/ability-roll-config";
+import { prepareAbilityRolls } from "./config/ability-roll-config";
 
 type AbilitySystemData = {
   activation?: unknown;
@@ -13,6 +13,8 @@ export function resolveAbilityUseData(actor: Actor, item: Item): AbilityUseData 
   const activation = asString(system.activation);
   const passive = isPassiveActivation(activation);
   const resource = resolveAbilityResource();
+
+  const rollPreparation = prepareAbilityRolls(actor, item);
 
   return {
     actor,
@@ -29,7 +31,8 @@ export function resolveAbilityUseData(actor: Actor, item: Item): AbilityUseData 
     cost: passive ? 0 : normalizeCost(system.cost),
     resource,
     passive,
-    rolls: resolveAbilityRolls(actor, item),
+    rollPreparation,
+    rolls: rollPreparation.rolls,
   };
 }
 

@@ -173,7 +173,9 @@ describe("ritual single target card v2", () => {
   });
   it.each([["cold", "Frio"], ["fire", "Fogo"], ["electric", "Eletricidade"], ["customType", "CustomType"]])("localizes damage type %s", (damageType, label) => {
     const state = buildRitualChatCardState({ context, snapshot: { ...snapshot, rolls: [{ ...snapshot.rolls[0]!, damageType }] }, actions: [], resistanceDifficulty: 15 });
-    expect(buildRitualSingleTargetCardViewModel(state).effect?.typeLabel).toBe(label);
+    expect(
+      buildRitualSingleTargetCardViewModel(state).effect?.damageTypeBadge?.label,
+    ).toBe(label);
   });
   it("groups outcome conditions into one row while preserving individual state", () => {
     const state = buildRitualChatCardState({ context, snapshot, actions: [...actions, { ...actions[0]!, conditionId: "weak", label: "Fraco", resistanceOutcome: "success" }], resistanceDifficulty: 15 });

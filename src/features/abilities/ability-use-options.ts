@@ -1,9 +1,10 @@
-import type { ResolvedAbilityRoll } from "./config/ability-roll-config";
+import type { PreparedAbilityRolls } from "./config/ability-roll-config";
 
 export type AbilityResource = "PE" | "PD";
 
 export type AbilityUseOptions = {
   spendResource: boolean;
+  selectedNexThresholds: Record<string, number>;
 };
 
 export type AbilityUseData = {
@@ -18,7 +19,9 @@ export type AbilityUseData = {
   cost: number;
   resource: AbilityResource;
   passive: boolean;
-  rolls: ResolvedAbilityRoll[];
+  rollPreparation: PreparedAbilityRolls;
+  /** Legacy prepared actions retained for source compatibility. */
+  rolls: PreparedAbilityRolls["rolls"];
 };
 
 export type AbilityUseResult =
@@ -37,6 +40,8 @@ export type AbilityUseResult =
         | "resource-unavailable"
         | "insufficient-resource"
         | "resource-update-failed"
+        | "invalid-roll-options"
+        | "roll-failed"
         | "chat-message-failed";
       message: string;
     };

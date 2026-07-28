@@ -1,4 +1,5 @@
 import type { AbilityResource } from "./ability-use-options";
+import type { AbilityRollChoiceGroup } from "./config/ability-roll-config";
 
 export type AbilityUseDialogModelInput = {
   abilityName: string;
@@ -9,6 +10,7 @@ export type AbilityUseDialogModelInput = {
   cost: number;
   currentResource: number;
   passive: boolean;
+  rollChoices?: AbilityRollChoiceGroup[];
 };
 
 export type AbilityUseDialogModel = {
@@ -34,6 +36,7 @@ export type AbilityUseDialogModel = {
   };
   passive: boolean;
   primaryActionLabel: string;
+  rollChoices: AbilityRollChoiceGroup[];
 };
 
 export function createAbilityUseDialogModel(
@@ -67,6 +70,7 @@ export function createAbilityUseDialogModel(
     },
     passive: input.passive,
     primaryActionLabel: input.passive ? "Enviar ao chat" : "Usar habilidade",
+    rollChoices: input.rollChoices ?? [],
   };
 }
 

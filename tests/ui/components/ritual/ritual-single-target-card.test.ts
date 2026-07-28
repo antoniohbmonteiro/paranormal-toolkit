@@ -31,7 +31,7 @@ const baseModel: RitualSingleTargetCardViewModel = {
     diceResults: [8],
   },
   damage: {
-    damageType: "Eletricidade",
+    damageTypeBadge: { label: "Eletricidade", tone: "electric" },
     formula: "3d6",
     total: 9,
     diceResults: [2, 3, 4],
@@ -73,7 +73,7 @@ describe("renderRitualSingleTargetCard", () => {
     });
     const positions = [
       html.indexOf("paranormal-toolkit-chat-card-header"),
-      html.indexOf("paranormal-toolkit-ritual-description-section"),
+      html.indexOf("paranormal-toolkit-expandable-description"),
       html.indexOf("paranormal-toolkit-ritual-metadata"),
       html.indexOf("First:"),
       html.indexOf("Second:"),
@@ -123,6 +123,7 @@ describe("renderRitualSingleTargetCard", () => {
     for (const renderer of [
       "renderChatCardShell",
       "renderChatCardHeader",
+      "renderExpandableDescription",
       "renderRitualMetadata",
       "renderMetadataDetailRow",
       "renderRitualConjurationSection",

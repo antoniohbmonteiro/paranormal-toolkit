@@ -1,0 +1,43 @@
+.paranormal-toolkit-expandable-description {
+  border: 1px solid rgba(67, 61, 86, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.paranormal-toolkit-expandable-description__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 30px;
+  padding: 0.42rem 0.58rem;
+  color: var(--ptk-chat-text-primary);
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  list-style: none;
+  text-transform: uppercase;
+}
+
+.paranormal-toolkit-expandable-description__summary::-webkit-details-marker { display: none; }
+.paranormal-toolkit-expandable-description__summary::before {
+  content: "";
+  width: 0.38rem;
+  height: 0.38rem;
+  border-right: 1.5px solid currentcolor;
+  border-bottom: 1.5px solid currentcolor;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+.paranormal-toolkit-expandable-description[open] > .paranormal-toolkit-expandable-description__summary::before { transform: rotate(45deg); }
+
+.paranormal-toolkit-expandable-description__content {
+  border-top: 1px solid rgba(67, 61, 86, 0.14);
+  padding: 0.5rem 0.58rem;
+  color: var(--ptk-chat-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.paranormal-toolkit-expandable-description__content > :first-child { margin-top: 0; }
+.paranormal-toolkit-expandable-description__content > :last-child { margin-bottom: 0; }
