@@ -55,7 +55,7 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 
 ### Card estruturado de ritual para zero ou um alvo
 
-Em `ritual.chatCard.mode = auto`, conjurações suportadas com zero ou um alvo compatível usam o novo card estruturado. Zero alvos é permitido quando o ritual não possui resistência, dano, cura, condição nem outra ação que dependa de outro Actor. O estado, a resistência e as ações manuais são persistidos e continuam disponíveis depois de recarregar o Foundry. Use `legacy` para que novas conjurações voltem diretamente ao card anterior; cards v2 existentes permanecem v2.
+Em `ritual.chatCard.mode = auto`, conjurações suportadas com zero ou um alvo compatível usam o novo card estruturado. Zero alvos é permitido quando o ritual não possui resistência, dano, cura, condição nem outra ação que dependa de outro Actor. O estado, os metadados de execução, alcance e duração, a resistência e as ações manuais são persistidos e continuam disponíveis depois de recarregar o Foundry. Use `legacy` para que novas conjurações voltem diretamente ao card anterior; cards v2 existentes permanecem v2.
 
 O card apresenta a descrição formatada do ritual em uma seção recolhível, usa cores próprias para dano, cura e resultados de resistência e agrupa as condições do outcome resolvido em uma única ação visual. As condições permanecem registradas e concluídas individualmente.
 

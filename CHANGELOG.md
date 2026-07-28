@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.40.1
+
+### Corrigido
+
+- A consequência de falha de conjuração no card persistente agora informa a perda de SAN produzida pelo workflow ou usa “Dano de Sanidade” quando o valor não está disponível.
+- As pills do card persistente agora apresentam custo, execução, alcance e duração reais do ritual, sem duplicar o alvo já exibido no cabeçalho.
+- Os novos metadados são persistidos no payload v2 para reidratação após refresh, mantendo compatibilidade com cards v2 anteriores.
+
 ## 0.40.0
 
 ### Adicionado

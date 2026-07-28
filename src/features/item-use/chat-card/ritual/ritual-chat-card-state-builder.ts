@@ -1,4 +1,4 @@
-import { resolveOrdemRitualImage, resolveOrdemRitualPresentation } from "../../../../adapters/ordem/ordem-ritual-presentation";
+import { resolveOrdemRitualImage, resolveOrdemRitualMetadataPresentation, resolveOrdemRitualPresentation } from "../../../../adapters/ordem/ordem-ritual-presentation";
 import type { ItemUseContext } from "../../item-use-context";
 import type { AssistedRitualAction, RitualCastSnapshot } from "../../../rituals/ritual-assisted-workflow";
 import { resolveSafeRitualDescription } from "../../../rituals/ritual-description-resolver";
@@ -20,15 +20,21 @@ export function buildRitualChatCardState(input: { context: ItemUseContext; snaps
     itemImage: resolveOrdemRitualImage(context.item),
     form: snapshot.form,
     ritualIdentity: resolveOrdemRitualPresentation(context.item),
+    ritualMetadata: resolveOrdemRitualMetadataPresentation(context.item),
     descriptionHtml: resolveSafeRitualDescription(context.item),
     cost: snapshot.cost,
     target: target?.actor ? { ...ref(target.actor), tokenId: target.tokenId, tokenUuid: target.sceneId && target.tokenId ? `Scene.${target.sceneId}.Token.${target.tokenId}` : null } : null,
-    conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: snapshot.castingCheck.success ? null : "Falha na conjuração" } : null,
+    conjuration: snapshot.castingCheck ? { ...snapshot.castingCheck, diceResults: parseBreakdown(snapshot.castingCheck.diceBreakdown), consequence: resolveConjurationConsequence(snapshot.castingCheck.success, input.actions) } : null,
     mainRoll: main ? { id: main.id, label: main.intent === "damage" ? "Dano" : main.intent === "healing" ? "Cura" : "Efeito", intent: main.intent === "damage" || main.intent === "healing" ? main.intent : "utility", formula: main.formula, total: main.total, diceResults: main.diceResults, damageType: main.damageType } : null,
     resistance: snapshot.resistance && input.resistanceDifficulty !== null ? { skill: snapshot.resistance.skill, skillLabel: snapshot.resistance.label, difficulty: input.resistanceDifficulty, effect: snapshot.resistance.summary, status: "pending", result: null } : null,
     actions: input.actions.map((action, index) => serializeAction(snapshot.castId, action, index)),
     createdAt,
   };
+}
+function resolveConjurationConsequence(success: boolean, actions: AssistedRitualAction[]): string | null {
+  if (success) return null;
+  const sanityDamage = actions.find((action): action is Extract<AssistedRitualAction, { kind: "resource-operation" }> => action.kind === "resource-operation" && action.resource === "SAN" && action.operation === "damage");
+  return sanityDamage && sanityDamage.amount > 0 ? `Perde ${sanityDamage.amount} SAN` : "Dano de Sanidade";
 }
 function ref(document: Actor | Item): SerializableDocumentRef { return { id: document.id ?? null, uuid: document.uuid ?? null, name: document.name ?? "Documento sem nome" }; }
 function parseBreakdown(value: string | null): number[] { return value?.match(/-?\d+/gu)?.map(Number).filter(Number.isFinite) ?? []; }

@@ -41,12 +41,14 @@ function isRitualState(value: unknown): value is RitualChatCardState {
   if (!isRecord(value.form) || typeof value.form.id !== "string" || typeof value.form.label !== "string") return false;
   if (!(value.itemImage === undefined || value.itemImage === null || typeof value.itemImage === "string")) return false;
   if (!(value.ritualIdentity === undefined || value.ritualIdentity === null || isRitualIdentity(value.ritualIdentity))) return false;
+  if (!(value.ritualMetadata === undefined || isRitualMetadata(value.ritualMetadata))) return false;
   if (!(value.descriptionHtml === undefined || value.descriptionHtml === null || typeof value.descriptionHtml === "string")) return false;
   if (!Array.isArray(value.actions) || !value.actions.every(isCardAction)) return false;
   if (!(value.mainRoll === null || isRecord(value.mainRoll)) || !(value.conjuration === null || isRecord(value.conjuration)) || !(value.resistance === null || isRecord(value.resistance))) return false;
   return isNonNegativeNumber(value.createdAt);
 }
 function isRitualIdentity(value: unknown): boolean { return isRecord(value) && typeof value.elementKey === "string" && typeof value.elementLabel === "string" && [1, 2, 3, 4].includes(value.circle as number); }
+function isRitualMetadata(value: unknown): boolean { return isRecord(value) && [value.execution, value.range, value.duration].every((entry) => entry === null || typeof entry === "string"); }
 function isCardAction(value: unknown): value is RitualCardAction {
   if (!isRecord(value) || typeof value.id !== "string" || typeof value.label !== "string" || typeof value.executedLabel !== "string" || !isDocumentRef(value.actor)) return false;
   if (!["pending", "available", "executing", "completed", "resolved", "uncertain"].includes(String(value.state))) return false;

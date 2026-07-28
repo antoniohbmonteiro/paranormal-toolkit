@@ -26,6 +26,7 @@ export interface RitualChatCardState {
   itemImage?: string | null;
   form: { id: string; label: string };
   ritualIdentity?: { elementKey: string; elementLabel: string; circle: 1 | 2 | 3 | 4 } | null;
+  ritualMetadata?: { execution: string | null; range: string | null; duration: string | null };
   descriptionHtml: string | null;
   cost: { amount: number; resource: "PE" | "PD"; spent: boolean } | null;
   target: (SerializableDocumentRef & { tokenId: string | null; tokenUuid: string | null }) | null;

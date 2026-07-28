@@ -9,7 +9,7 @@ import { renderRitualSingleTargetCard } from "../../../../../src/ui/components/r
 
 const actor = { id: "source", uuid: "Actor.source", name: "Conjurador", system: {} } as Actor;
 const target = { id: "target", uuid: "Actor.target", name: "Alvo", system: {} } as Actor;
-const item = { id: "ritual", uuid: "Actor.source.Item.ritual", name: "RitualCompleto", type: "ritual" } as Item;
+const item = { id: "ritual", uuid: "Actor.source.Item.ritual", name: "RitualCompleto", type: "ritual", system: { execution: "default", range: "short", duration: "instantaneous" } } as unknown as Item;
 const context: ItemUseContext = { source: "ordem-item-used-hook", actor, item, token: null, targets: [{ actor: target, actorId: target.id!, tokenId: "token", sceneId: "scene", name: "Alvo" }] };
 const snapshot: RitualCastSnapshot = { castId: "cast", form: { id: "base", label: "Padrão" }, cost: { amount: 2, resource: "PE", spent: true }, castingCheck: { skillLabel: "Ocultismo", formula: "1d20+5", total: 18, difficulty: 15, success: true, diceBreakdown: "(13)" }, resistance: { skill: "will", label: "Vontade", effect: "nullifies", summary: "Anula" }, rolls: [{ id: "damage", formula: "2d6", total: 8, intent: "damage", damageType: "physical", diceResults: [3, 5] }], areaTargeting: false };
 const actions: AssistedRitualAction[] = [{ kind: "condition-application", actor: target, actorName: "Alvo", conditionId: "weakened", conditionLabel: "Abalado", duration: { rounds: 1 }, source: "test", originUuid: item.uuid ?? null, label: "Abalado", executedLabel: "Aplicado", actionSectionId: "apply-effects", actionSectionTitle: "Efeitos", resistanceOutcome: "success" }];
@@ -44,7 +44,7 @@ describe("ritual single target card v2", () => {
     expect(state.actions).toEqual([]);
     const model = buildRitualSingleTargetCardViewModel(state);
     expect(model.header).toMatchObject({ context: "Conjurador", badges: [{ label: "Energia 1", tone: "energy" }] });
-    expect(model.metadata.items.map((entry) => entry.text)).toEqual(["2 PE"]);
+    expect(model.metadata.items.map((entry) => entry.text)).toEqual(["2 PE", "Execução: Padrão", "Alcance: Curto", "Duração: Instantânea"]);
     expect(model.effect?.title).toBe("Efeito");
   });
   it("falls back instead of silently discarding multiple effect rolls", () => {
@@ -66,6 +66,29 @@ describe("ritual single target card v2", () => {
     expect(model.conjuration?.status).toBe("success");
     expect(model.effect?.title).toBe("Dano");
     expect(model.resistance?.action.actionId).toBe("cast:resistance");
+  });
+  it("shows the persisted SAN loss produced by the workflow on a failed conjuration", () => {
+    const sanityAction: AssistedRitualAction = { kind: "resource-operation", actor, actorName: "Conjurador", resource: "SAN", operation: "damage", amount: 1, label: "Aplicar 1 SAN", executedLabel: "Dano aplicado", actionSectionId: "casting-backlash", actionSectionTitle: "Dano na sanidade" };
+    const failed = { ...snapshot, castingCheck: { ...snapshot.castingCheck!, total: 5, success: false } };
+    const state = buildRitualChatCardState({ context, snapshot: failed, actions: [sanityAction], resistanceDifficulty: 15 });
+    const html = renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state));
+    expect(state.conjuration?.consequence).toBe("Perde 1 SAN");
+    expect(html).toContain("Consequência:</");
+    expect(html).toContain("Perde 1 SAN");
+    expect(html).not.toContain("Falha na conjuração");
+  });
+  it("falls back to sanity damage when the workflow has no SAN amount", () => {
+    const failed = { ...snapshot, castingCheck: { ...snapshot.castingCheck!, total: 5, success: false } };
+    const state = buildRitualChatCardState({ context, snapshot: failed, actions: [], resistanceDifficulty: 15 });
+    expect(state.conjuration?.consequence).toBe("Dano de Sanidade");
+    expect(renderRitualSingleTargetCard(buildRitualSingleTargetCardViewModel(state))).not.toContain("Falha na conjuração");
+  });
+  it("renders item metadata without duplicating the target pill", () => {
+    const state = buildRitualChatCardState({ context, snapshot, actions, resistanceDifficulty: 15 });
+    const model = buildRitualSingleTargetCardViewModel(state);
+    expect(model.header.context).toBe("Conjurador → Alvo");
+    expect(model.metadata.items.map((entry) => entry.text)).toEqual(["2 PE", "Execução: Padrão", "Alcance: Curto", "Duração: Instantânea"]);
+    expect(model.metadata.items).not.toContainEqual({ text: "Alvo" });
   });
   it("persists and renders the real ritual image with a generic fallback when absent", () => {
     const picturedItem = { ...item, img: "icons/rituals/custom.webp" } as Item;
