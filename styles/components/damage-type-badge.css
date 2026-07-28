@@ -16,59 +16,63 @@
   text-transform: uppercase;
 }
 
-.paranormal-toolkit-damage-type-badge--physical,
+.paranormal-toolkit-damage-type-badge--physical {
+  --ptk-damage-badge-border: #9a8b7a;
+  --ptk-damage-badge-background: #eee9e2;
+  --ptk-damage-badge-text: #4b4137;
+}
 .paranormal-toolkit-damage-type-badge--neutral {
-  --ptk-damage-badge-border: rgba(70, 67, 73, 0.32);
-  --ptk-damage-badge-background: rgba(94, 89, 99, 0.1);
-  --ptk-damage-badge-text: #49454d;
+  --ptk-damage-badge-border: #98929a;
+  --ptk-damage-badge-background: #f0eef1;
+  --ptk-damage-badge-text: #464249;
 }
 .paranormal-toolkit-damage-type-badge--blood {
-  --ptk-damage-badge-border: #a76b70;
-  --ptk-damage-badge-background: #f3e1e2;
-  --ptk-damage-badge-text: #70252d;
+  --ptk-damage-badge-border: #963f49;
+  --ptk-damage-badge-background: #ead0d3;
+  --ptk-damage-badge-text: #5d1720;
 }
 .paranormal-toolkit-damage-type-badge--death {
-  --ptk-damage-badge-border: #89858d;
-  --ptk-damage-badge-background: #e8e7e9;
-  --ptk-damage-badge-text: #35323a;
+  --ptk-damage-badge-border: #1c1c1c;
+  --ptk-damage-badge-background: #29272b;
+  --ptk-damage-badge-text: #f6f5f7;
 }
 .paranormal-toolkit-damage-type-badge--knowledge {
-  --ptk-damage-badge-border: #b69a4b;
-  --ptk-damage-badge-background: #f7efcf;
-  --ptk-damage-badge-text: #695511;
+  --ptk-damage-badge-border: #b59535;
+  --ptk-damage-badge-background: #faf2cf;
+  --ptk-damage-badge-text: #66500b;
 }
 .paranormal-toolkit-damage-type-badge--energy {
-  --ptk-damage-badge-border: #8d78b5;
-  --ptk-damage-badge-background: #eee8f8;
-  --ptk-damage-badge-text: #533e7d;
+  --ptk-damage-badge-border: #8665bd;
+  --ptk-damage-badge-background: #eee5fa;
+  --ptk-damage-badge-text: #4e2e82;
 }
 .paranormal-toolkit-damage-type-badge--fear {
-  --ptk-damage-badge-border: #796895;
-  --ptk-damage-badge-background: #e9e3f1;
-  --ptk-damage-badge-text: #433158;
+  --ptk-damage-badge-border: #71677d;
+  --ptk-damage-badge-background: #e4e0e8;
+  --ptk-damage-badge-text: #3d3448;
 }
 .paranormal-toolkit-damage-type-badge--fire {
-  --ptk-damage-badge-border: #c27a57;
-  --ptk-damage-badge-background: #f8e5d9;
-  --ptk-damage-badge-text: #7d351d;
+  --ptk-damage-badge-border: #c36b35;
+  --ptk-damage-badge-background: #fae4d2;
+  --ptk-damage-badge-text: #7b3215;
 }
 .paranormal-toolkit-damage-type-badge--cold {
-  --ptk-damage-badge-border: #6e9eb8;
-  --ptk-damage-badge-background: #e1eff5;
-  --ptk-damage-badge-text: #285b75;
+  --ptk-damage-badge-border: #6c9fc0;
+  --ptk-damage-badge-background: #e3f1f8;
+  --ptk-damage-badge-text: #245a79;
 }
 .paranormal-toolkit-damage-type-badge--electric {
-  --ptk-damage-badge-border: #748ac0;
-  --ptk-damage-badge-background: #e5eafb;
-  --ptk-damage-badge-text: #334f8d;
+  --ptk-damage-badge-border: #329bb6;
+  --ptk-damage-badge-background: #ddf3f7;
+  --ptk-damage-badge-text: #11617a;
 }
 .paranormal-toolkit-damage-type-badge--chemical {
-  --ptk-damage-badge-border: #729d73;
-  --ptk-damage-badge-background: #e4f0e2;
-  --ptk-damage-badge-text: #315f35;
+  --ptk-damage-badge-border: #738f53;
+  --ptk-damage-badge-background: #e8f0dc;
+  --ptk-damage-badge-text: #3c5d24;
 }
 .paranormal-toolkit-damage-type-badge--mental {
-  --ptk-damage-badge-border: #a36d9e;
-  --ptk-damage-badge-background: #f2e3f0;
-  --ptk-damage-badge-text: #6f3469;
+  --ptk-damage-badge-border: #a95491;
+  --ptk-damage-badge-background: #f5e1f0;
+  --ptk-damage-badge-text: #70265e;
 }
