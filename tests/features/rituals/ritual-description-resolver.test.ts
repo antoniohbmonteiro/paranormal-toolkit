@@ -12,3 +12,13 @@ describe("ritual description resolver", () => {
     expect(html).toBe("<p>Um <strong>ritual</strong></p><ol><li>Passo</li></ol>");
   });
 });
+
+it("preserves HTML entities without double escaping them", () => {
+  const html = sanitizeRitualDescriptionHtml(
+    "<p>Voc&ecirc; recebe uma percep&ccedil;&atilde;o agu&ccedil;ada.&nbsp;</p>"
+  );
+
+  expect(html).toBe(
+    "<p>Voc&ecirc; recebe uma percep&ccedil;&atilde;o agu&ccedil;ada.&nbsp;</p>"
+  );
+});
