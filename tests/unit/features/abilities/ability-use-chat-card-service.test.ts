@@ -8,7 +8,7 @@ import type { ItemUseContext } from "../../../../src/features/item-use/item-use-
 
 function state(): AbilityUseCardState {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     ability: {
       name: "Premonição",
       image: null,
@@ -38,6 +38,8 @@ function state(): AbilityUseCardState {
         nexThreshold: 40,
       },
     ],
+    targets: [],
+    actions: [],
     createdAt: 1,
   };
 }
@@ -85,7 +87,7 @@ describe("AbilityUseChatCardService", () => {
         content: expect.stringContaining("Visão segura"),
         flags: {
           "paranormal-toolkit": {
-            abilityUse: { version: 3, state: state() },
+            abilityUse: { version: 3, revision: 0, state: state() },
           },
         },
       }),
@@ -104,7 +106,7 @@ describe("AbilityUseChatCardService", () => {
         content: expect.stringContaining("Premonição"),
         flags: {
           "paranormal-toolkit": {
-            abilityUse: { version: 3, state: state() },
+            abilityUse: { version: 3, revision: 0, state: state() },
           },
         },
       }),
@@ -121,7 +123,7 @@ describe("AbilityUseChatCardService", () => {
       append: vi.fn(),
     } as unknown as HTMLElement;
     const message = {
-      getFlag: vi.fn(() => ({ version: 3, state: state() })),
+      getFlag: vi.fn(() => ({ version: 3, revision: 0, state: state() })),
     };
 
     expect(renderPersistedAbilityCard(message, host)).toBe(true);
@@ -159,5 +161,31 @@ describe("AbilityUseChatCardService", () => {
     expect(rendered).toBe(false);
     expect(replaceChildren).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalled();
+  });
+
+  it("rehydrates schema 1 in memory without rewriting the message", () => {
+    setCardMode("replace");
+    const legacyState = state() as unknown as Record<string, unknown>;
+    legacyState.schemaVersion = 1;
+    delete legacyState.targets;
+    delete legacyState.actions;
+    const setFlag = vi.fn();
+    const update = vi.fn();
+    const replaceChildren = vi.fn();
+    const host = {
+      classList: { contains: () => true },
+      querySelector: () => null,
+      replaceChildren,
+      append: vi.fn(),
+    } as unknown as HTMLElement;
+
+    expect(renderPersistedAbilityCard({
+      getFlag: () => ({ version: 3, state: legacyState }),
+      setFlag,
+      update,
+    }, host)).toBe(true);
+    expect(replaceChildren).toHaveBeenCalledOnce();
+    expect(setFlag).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 });

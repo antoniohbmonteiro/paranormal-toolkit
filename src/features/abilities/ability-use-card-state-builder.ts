@@ -5,11 +5,21 @@ import type {
   SerializableAbilityRef,
 } from "./ability-use-card-state";
 import type { AbilityUseData } from "./ability-use-options";
+import type { WorkflowTarget } from "../../core/workflow/workflow-target";
+import {
+  canResolveWorkflowTargetActor,
+  createWorkflowTargetReferences,
+} from "../../core/workflow/workflow-target-reference";
+import {
+  createAbilityAssistedActionId,
+  type AbilityAssistedAction,
+} from "./ability-use-card-state";
 
 type AbilityUseCardStateBuilderInput = {
   ability: AbilityUseData;
   descriptionHtml: string;
   rolls: ExecutedAbilityRoll[];
+  targets: readonly WorkflowTarget[];
   spentResource: boolean;
   resourceBefore: number;
   resourceAfter: number;
@@ -21,9 +31,10 @@ export function buildAbilityUseCardState(
 ): AbilityUseCardState {
   const { ability } = input;
   const descriptionHtml = normalizeDescriptionHtml(input.descriptionHtml);
+  const targets = createWorkflowTargetReferences(input.targets);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     ability: {
       name: ability.name,
       image: ability.image || null,
@@ -41,8 +52,36 @@ export function buildAbilityUseCardState(
       after: input.resourceAfter,
     },
     rolls: input.rolls,
+    targets,
+    actions: createAssistedActions(input.rolls, targets),
     createdAt: input.now ?? Date.now(),
   };
+}
+
+function createAssistedActions(
+  rolls: readonly ExecutedAbilityRoll[],
+  targets: ReturnType<typeof createWorkflowTargetReferences>,
+): AbilityAssistedAction[] {
+  return rolls.flatMap((roll) => {
+    if (roll.intent === "generic" || !isActionableTotal(roll.total)) return [];
+    const kind = roll.intent;
+
+    return targets
+      .filter(canResolveWorkflowTargetActor)
+      .map((target): AbilityAssistedAction => ({
+        id: createAbilityAssistedActionId(roll.id, target.id, kind),
+        kind,
+        rollId: roll.id,
+        targetId: target.id,
+        state: "available",
+        completedAt: null,
+        completedByUserId: null,
+      }));
+  });
+}
+
+function isActionableTotal(value: number): boolean {
+  return Number.isInteger(value) && value > 0;
 }
 
 function normalizeDescriptionHtml(value: string): string | null {

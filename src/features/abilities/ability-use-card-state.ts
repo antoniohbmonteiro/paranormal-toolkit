@@ -1,5 +1,6 @@
 import type { ExecutedAbilityRoll } from "./ability-roll-executor";
 import type { AbilityResource } from "./ability-use-options";
+import type { WorkflowTargetReference } from "../../core/workflow/workflow-target-reference";
 
 export type SerializableAbilityRef = {
   id: string | null;
@@ -8,7 +9,7 @@ export type SerializableAbilityRef = {
 };
 
 export type AbilityUseCardState = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   ability: {
     name: string;
     image: string | null;
@@ -26,5 +27,32 @@ export type AbilityUseCardState = {
     after: number;
   };
   rolls: ExecutedAbilityRoll[];
+  targets: WorkflowTargetReference[];
+  actions: AbilityAssistedAction[];
   createdAt: number;
 };
+
+export type AbilityAssistedActionKind = "damage" | "healing";
+export type AbilityAssistedActionState =
+  | "available"
+  | "executing"
+  | "completed"
+  | "uncertain";
+
+export type AbilityAssistedAction = {
+  id: string;
+  kind: AbilityAssistedActionKind;
+  rollId: string;
+  targetId: string;
+  state: AbilityAssistedActionState;
+  completedAt: string | null;
+  completedByUserId: string | null;
+};
+
+export function createAbilityAssistedActionId(
+  rollId: string,
+  targetId: string,
+  kind: AbilityAssistedActionKind,
+): string {
+  return `${rollId}:${targetId}:${kind}`;
+}

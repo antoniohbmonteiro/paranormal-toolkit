@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildAbilityUseCardViewModel } from "../../../../src/features/abilities/ability-use-card-view-model-builder";
 import type { AbilityUseCardState } from "../../../../src/features/abilities/ability-use-card-state";
 import { renderAbilityUseCard } from "../../../../src/ui/components/ability/ability-use-card";
@@ -8,7 +8,7 @@ function state(
   resource: Partial<AbilityUseCardState["resource"]> = {},
 ): AbilityUseCardState {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     ability: {
       name: "Habilidade",
       image: null,
@@ -39,9 +39,15 @@ function state(
         nexThreshold: 40,
       },
     ],
+    targets: [],
+    actions: [],
     createdAt: 1,
   };
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("ability use result presentation", () => {
   it.each([
@@ -122,5 +128,64 @@ describe("ability use result presentation", () => {
     expect(sectionHeaderCss).toContain("overflow-wrap: anywhere");
     expect(abilityCss).toContain("max-width: 100%");
     expect(abilityCss).not.toMatch(/grid-template-columns|width:\s*\d+px/iu);
+  });
+
+  it("renders one manual assisted action per persisted target", () => {
+    vi.stubGlobal("game", { user: { isGM: true } });
+    const input = state();
+    input.targets = [1, 2, 3].map((index) => ({
+      id: `token:scene:target-${index}`,
+      name: `Target ${index}`,
+      sceneId: "scene",
+      tokenId: `target-${index}`,
+      tokenUuid: `Scene.scene.Token.target-${index}`,
+      actorId: `actor-${index}`,
+      actorUuid: `Actor.actor-${index}`,
+    }));
+    input.actions = input.targets.map((target) => ({
+      id: `damage:${target.id}:damage`,
+      kind: "damage",
+      rollId: "damage",
+      targetId: target.id,
+      state: "available",
+      completedAt: null,
+      completedByUserId: null,
+    }));
+
+    const html = renderAbilityUseCard(buildAbilityUseCardViewModel(input));
+    expect(html).toContain("AÇÕES ASSISTIDAS");
+    expect(html.match(/data-paranormal-toolkit-card-action="apply-ability-action"/g))
+      .toHaveLength(3);
+    expect(html).toContain("Aplicar 6 de dano");
+    expect(html).toContain("Target 3");
+    expect(html).toContain("Medo");
+  });
+
+  it("renders completed and uncertain actions without an active control", () => {
+    vi.stubGlobal("game", { user: { isGM: true } });
+    const input = state();
+    input.targets = [{
+      id: "actor:Actor.target",
+      name: "Target",
+      sceneId: null,
+      tokenId: null,
+      tokenUuid: null,
+      actorId: "target",
+      actorUuid: "Actor.target",
+    }];
+    input.actions = ["completed", "uncertain"].map((actionState, index) => ({
+      id: `damage-${index}:actor:Actor.target:damage`,
+      kind: "damage" as const,
+      rollId: "damage",
+      targetId: "actor:Actor.target",
+      state: actionState as "completed" | "uncertain",
+      completedAt: actionState === "completed" ? "now" : null,
+      completedByUserId: actionState === "completed" ? "gm" : null,
+    }));
+
+    const html = renderAbilityUseCard(buildAbilityUseCardViewModel(input));
+    expect(html).toContain("Dano aplicado");
+    expect(html).toContain("Aplicação incerta");
+    expect(html).not.toContain("apply-ability-action");
   });
 });

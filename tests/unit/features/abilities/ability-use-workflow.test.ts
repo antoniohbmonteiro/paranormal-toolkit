@@ -31,6 +31,7 @@ type FixtureOptions = {
   resource?: "PE" | "PD";
   rolls?: unknown[] | null;
   chatPublishError?: Error;
+  targets?: ItemUseContext["targets"];
 };
 
 function fixedRoll(id: string, formula: string): unknown {
@@ -82,7 +83,7 @@ function createFixture(options: FixtureOptions = {}) {
     actor,
     item,
     token: null,
-    targets: [],
+    targets: options.targets ?? [],
   };
   const workflow = new AbilityUseWorkflow(
     resources,
@@ -237,6 +238,48 @@ describe("AbilityUseWorkflow", () => {
       fixture.context,
       expect.objectContaining({
         resource: expect.objectContaining({ spent: false }),
+      }),
+    );
+  });
+
+  it("publishes assisted actions for the targets captured by ItemUseContext", async () => {
+    const targetActor = {
+      id: "target",
+      uuid: "Actor.target",
+      name: "Existido",
+    } as Actor;
+    const fixture = createFixture({
+      rolls: [{
+        id: "damage",
+        label: "Dano",
+        intent: "damage",
+        damageType: "energy",
+        formula: { mode: "fixed", formula: "2d6" },
+      }],
+      targets: [{
+        tokenId: "token",
+        actorId: "target",
+        sceneId: "scene",
+        name: "Existido",
+        actor: targetActor,
+      }],
+    });
+    vi.spyOn(AbilityUseApplication, "request").mockResolvedValue({
+      spendResource: false,
+      selectedNexThresholds: {},
+    });
+
+    await fixture.workflow.run(fixture.context);
+
+    expect(fixture.chatCards.publish).toHaveBeenCalledWith(
+      fixture.context,
+      expect.objectContaining({
+        schemaVersion: 2,
+        targets: [expect.objectContaining({ id: "token:scene:token" })],
+        actions: [expect.objectContaining({
+          id: "damage:token:scene:token:damage",
+          targetId: "token:scene:token",
+        })],
       }),
     );
   });

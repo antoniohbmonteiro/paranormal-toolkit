@@ -123,6 +123,7 @@ export class AbilityUseWorkflow {
         ability,
         descriptionHtml,
         rolls: executedRolls,
+        targets: context.targets,
         spentResource,
         resourceBefore,
         resourceAfter,

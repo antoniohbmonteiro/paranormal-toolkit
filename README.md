@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.41.0`
+Versão atual: `0.42.0`
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 
@@ -37,12 +37,18 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 | Cards assistidos | Cria cards no chat com resultado, dano, cura, resistência e ações úteis. |
 | Resistência | Ajuda o mestre a lidar com resistência e opções como dano normal ou metade. |
 | Efeitos por resistência | Rituais genéricos podem configurar condições diferentes para sucesso e falha da resistência. |
-| Dano e cura | Permite aplicar dano/cura pelo card quando houver alvo válido. |
+| Dano e cura | Permite aplicar manualmente dano/cura pelo card nos targets originais do uso. |
 | Condições | Pode aplicar condições informativas como Active Effects. |
 | Alvos por área | Permite selecionar alvos na cena para rituais com área. |
 | Presets de rituais | Alguns rituais conhecidos já possuem automações configuradas. |
 
 ## Como usar
+
+### Usando uma habilidade com rolagens
+
+Ao usar uma habilidade com fórmulas configuradas, o Toolkit executa cada rolagem uma única vez e persiste fórmula, total e dados individuais no card. Rolagens genéricas continuam informativas. Resultados de dano ou cura criam uma ação assistida independente para cada target selecionado no momento do uso.
+
+As ações permanecem manuais e exclusivas do Mestre: aplicar usa exatamente o total já exibido, sem nova rolagem. Alterar os targets selecionados depois da publicação não muda os Actors vinculados ao card, e habilidades sem target continuam utilizáveis sem oferecer uma ação que possa atingir um alvo posterior.
 
 ### Usando um ritual
 

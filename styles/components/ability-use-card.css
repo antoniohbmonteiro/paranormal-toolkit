@@ -17,6 +17,29 @@
   overflow-wrap: anywhere;
 }
 
+.paranormal-toolkit-ability-use-card__assisted-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 0.2rem;
+  border-top: 1px solid rgba(89, 36, 42, 0.18);
+  padding-top: 0.55rem;
+}
+
+.paranormal-toolkit-ability-use-card__assisted-actions-title {
+  margin: 0;
+  color: var(--ptk-chat-wine);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.paranormal-toolkit-ability-use-card__assisted-actions-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
 .paranormal-toolkit-ability-use__choices fieldset {
   display: grid;
   gap: 6px;

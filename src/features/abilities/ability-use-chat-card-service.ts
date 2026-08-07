@@ -9,11 +9,18 @@ import {
 import { buildAbilityUseCardViewModel } from "./ability-use-card-view-model-builder";
 import type { AbilityUseCardState } from "./ability-use-card-state";
 
-type AbilityChatMessage = {
+export type AbilityChatMessage = {
   id?: unknown;
   getFlag?: (scope: string, key: string) => unknown;
+  setFlag?: (
+    scope: string,
+    key: string,
+    value: unknown,
+  ) => Promise<unknown> | unknown;
   update?: (data: Record<string, unknown>) => Promise<unknown>;
 };
+
+const mutationQueues = new Map<string, Promise<unknown>>();
 
 export class AbilityUseChatCardService {
   async publish(
@@ -21,7 +28,7 @@ export class AbilityUseChatCardService {
     state: AbilityUseCardState,
   ): Promise<void> {
     const content = renderCardState(state);
-    const flag: AbilityUseMessageFlagV3 = { version: 3, state };
+    const flag: AbilityUseMessageFlagV3 = { version: 3, revision: 0, state };
     const messageData = createMessageData(context, content, flag);
     const message = context.message as AbilityChatMessage | null;
 
@@ -54,6 +61,49 @@ export function renderPersistedAbilityCard(
 
   placeRehydratedCard(resolveMessageHost(root), renderCardState(flag.state));
   return true;
+}
+
+export function readAbilityUseCard(
+  message: AbilityChatMessage | null,
+): AbilityUseMessageFlagV3 | null {
+  const raw = message?.getFlag?.(MODULE_ID, "abilityUse");
+  const flag = normalizeAbilityUseMessageFlag(raw);
+  return flag?.version === 3 ? flag : null;
+}
+
+export async function mutateAbilityUseCard(
+  message: AbilityChatMessage,
+  mutate: (
+    flag: AbilityUseMessageFlagV3,
+  ) => AbilityUseMessageFlagV3 | Promise<AbilityUseMessageFlagV3>,
+): Promise<AbilityUseMessageFlagV3> {
+  if (typeof message.setFlag !== "function") {
+    throw new Error("ChatMessage não permite persistência de flags.");
+  }
+  const key = typeof message.id === "string" ? message.id : "unknown";
+  const previous = mutationQueues.get(key) ?? Promise.resolve();
+  let resolveResult!: (value: AbilityUseMessageFlagV3) => void;
+  let rejectResult!: (reason?: unknown) => void;
+  const result = new Promise<AbilityUseMessageFlagV3>((resolve, reject) => {
+    resolveResult = resolve;
+    rejectResult = reject;
+  });
+  const next = previous
+    .catch(() => undefined)
+    .then(async () => {
+      const current = readAbilityUseCard(message);
+      if (!current) throw new Error("Card de habilidade v3 inválido ou ausente.");
+      const updated = await mutate(current);
+      const versioned = { ...updated, revision: current.revision + 1 };
+      await Promise.resolve(message.setFlag?.(MODULE_ID, "abilityUse", versioned));
+      resolveResult(versioned);
+    })
+    .catch(rejectResult)
+    .finally(() => {
+      if (mutationQueues.get(key) === next) mutationQueues.delete(key);
+    });
+  mutationQueues.set(key, next);
+  return result;
 }
 
 function renderCardState(state: AbilityUseCardState): string {

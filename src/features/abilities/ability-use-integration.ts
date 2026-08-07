@@ -2,6 +2,7 @@ import { OrdemItemUsedHookStrategy } from "../../adapters/ordem/item-use/ordem-i
 import { ModuleLogger } from "../../core/module-logger";
 import type { ResourceAdapter } from "../../core/resources/actor-resource";
 import type { ResourceEngine } from "../../core/resources/resource-engine";
+import type { DamageEngine } from "../../core/damage/damage-engine";
 import { readAutomationFlagValue } from "../automation/automation-flag-reader";
 import type { ItemUseContext } from "../item-use/item-use-context";
 import { getItemUseSettings } from "../item-use/item-use-settings";
@@ -10,17 +11,25 @@ import { registerAbilityUseChatMessageLayout } from "./ability-use-chat-message-
 import { AbilityUseWorkflow } from "./ability-use-workflow";
 import { renderPersistedAbilityCard } from "./ability-use-chat-card-service";
 import { resolveRootElement } from "../item-use/chat-card/item-use-chat-card-dom";
+import { AbilityAssistedActionService } from "./ability-assisted-action-service";
+import { registerAbilityAssistedActionController } from "./ability-assisted-action-controller";
 
 const DUPLICATE_WINDOW_MS = 1_000;
 
 export class AbilityUseIntegration {
   private readonly workflow: AbilityUseWorkflow;
   private readonly strategy: OrdemItemUsedHookStrategy;
+  private readonly assistedActions: AbilityAssistedActionService;
   private readonly inFlight = new Set<string>();
   private readonly recentExecutions = new Map<string, number>();
 
-  constructor(resources: ResourceEngine, resourceAdapter: ResourceAdapter) {
+  constructor(
+    resources: ResourceEngine,
+    resourceAdapter: ResourceAdapter,
+    damage: DamageEngine,
+  ) {
     this.workflow = new AbilityUseWorkflow(resources, resourceAdapter);
+    this.assistedActions = new AbilityAssistedActionService(damage, resources);
     this.strategy = new OrdemItemUsedHookStrategy((context) =>
       this.handleItemUsed(context),
     );
@@ -36,6 +45,7 @@ export class AbilityUseIntegration {
     };
     Hooks.on("renderChatMessageHTML", rehydrate);
     Hooks.on("renderChatMessage", rehydrate);
+    registerAbilityAssistedActionController(this.assistedActions);
     ModuleLogger.info("Workflow genérico de habilidades registrado.");
   }
 
@@ -86,8 +96,9 @@ export class AbilityUseIntegration {
 export function registerAbilityUseIntegration(
   resources: ResourceEngine,
   resourceAdapter: ResourceAdapter,
+  damage: DamageEngine,
 ): AbilityUseIntegration {
-  const integration = new AbilityUseIntegration(resources, resourceAdapter);
+  const integration = new AbilityUseIntegration(resources, resourceAdapter, damage);
   integration.register();
   return integration;
 }

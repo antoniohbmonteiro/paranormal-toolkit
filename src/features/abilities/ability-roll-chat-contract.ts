@@ -1,5 +1,15 @@
 import { sanitizePersistedHtml } from "../../ui/rendering/sanitize-persisted-html";
 import type { AbilityUseCardState } from "./ability-use-card-state";
+import {
+  createAbilityAssistedActionId,
+  type AbilityAssistedAction,
+  type AbilityAssistedActionKind,
+  type AbilityAssistedActionState,
+} from "./ability-use-card-state";
+import {
+  createWorkflowTargetReferenceId,
+  type WorkflowTargetReference,
+} from "../../core/workflow/workflow-target-reference";
 import type {
   AbilityRollIntent,
   ResolvedAbilityRoll,
@@ -25,6 +35,7 @@ export type AbilityUseMessageFlagV2 = {
 
 export type AbilityUseMessageFlagV3 = {
   version: 3;
+  revision: number;
   state: AbilityUseCardState;
 };
 
@@ -45,7 +56,9 @@ function normalizeVersion3(
   value: Record<string, unknown>,
 ): AbilityUseMessageFlagV3 | null {
   const state = normalizeAbilityUseCardState(value.state);
-  return state ? { version: 3, state } : null;
+  return state
+    ? { version: 3, revision: normalizeNonNegativeInteger(value.revision), state }
+    : null;
 }
 
 function normalizeVersion2(
@@ -83,8 +96,17 @@ function normalizeAbilityUseCardState(
   const rolls = normalizeExecutedRolls(value.rolls);
   if (!rolls) return null;
 
+  const targets =
+    value.schemaVersion === 2 ? normalizeTargets(value.targets) : [];
+  if (!targets) return null;
+  const actions =
+    value.schemaVersion === 2
+      ? normalizeActions(value.actions, rolls, targets)
+      : [];
+  if (!actions) return null;
+
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     ability: {
       name: abilityName,
       image: normalizeNullableString(value.ability.image),
@@ -112,28 +134,123 @@ function normalizeAbilityUseCardState(
       after: normalizeNumber(value.resource.after),
     },
     rolls,
+    targets,
+    actions,
     createdAt: normalizeNumber(value.createdAt),
   };
 }
 
 function hasValidStateShape(value: unknown): value is {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   ability: Record<string, unknown>;
   actor: Record<string, unknown>;
   item: Record<string, unknown>;
   resource: Record<string, unknown>;
   rolls: unknown[];
+  targets?: unknown;
+  actions?: unknown;
   createdAt: unknown;
 } {
   return Boolean(
     isRecord(value) &&
-      value.schemaVersion === 1 &&
+      (value.schemaVersion === 1 || value.schemaVersion === 2) &&
       isRecord(value.ability) &&
       isRecord(value.actor) &&
       isRecord(value.item) &&
       isRecord(value.resource) &&
-      Array.isArray(value.rolls),
+      Array.isArray(value.rolls) &&
+      (value.schemaVersion === 1 ||
+        (Array.isArray(value.targets) && Array.isArray(value.actions))),
   );
+}
+
+function normalizeTargets(value: unknown): WorkflowTargetReference[] | null {
+  if (!Array.isArray(value)) return null;
+  const targets = value.map(normalizeTarget);
+  if (!targets.every((target): target is WorkflowTargetReference => target !== null)) {
+    return null;
+  }
+  if (new Set(targets.map((target) => target.id)).size !== targets.length) return null;
+  return targets;
+}
+
+function normalizeTarget(
+  value: unknown,
+  index: number,
+): WorkflowTargetReference | null {
+  if (!isRecord(value)) return null;
+  const target: WorkflowTargetReference = {
+    id: normalizeString(value.id),
+    name: normalizeString(value.name),
+    sceneId: normalizeNullableString(value.sceneId),
+    tokenId: normalizeNullableString(value.tokenId),
+    tokenUuid: normalizeNullableString(value.tokenUuid),
+    actorId: normalizeNullableString(value.actorId),
+    actorUuid: normalizeNullableString(value.actorUuid),
+  };
+  if (!target.id || !target.name) return null;
+  const expectedId = createWorkflowTargetReferenceId(target, index);
+  const expectedTokenUuid =
+    target.sceneId && target.tokenId
+      ? `Scene.${target.sceneId}.Token.${target.tokenId}`
+      : null;
+  return target.id === expectedId && target.tokenUuid === expectedTokenUuid
+    ? target
+    : null;
+}
+
+function normalizeActions(
+  value: unknown,
+  rolls: AbilityUseCardState["rolls"],
+  targets: WorkflowTargetReference[],
+): AbilityAssistedAction[] | null {
+  if (!Array.isArray(value)) return null;
+  const actions = value.map((entry) => normalizeAction(entry, rolls, targets));
+  if (!actions.every((action): action is AbilityAssistedAction => action !== null)) {
+    return null;
+  }
+  if (new Set(actions.map((action) => action.id)).size !== actions.length) return null;
+  return actions;
+}
+
+function normalizeAction(
+  value: unknown,
+  rolls: AbilityUseCardState["rolls"],
+  targets: WorkflowTargetReference[],
+): AbilityAssistedAction | null {
+  if (!isRecord(value)) return null;
+  const id = normalizeString(value.id);
+  const rollId = normalizeString(value.rollId);
+  const targetId = normalizeString(value.targetId);
+  const kind = normalizeActionKind(value.kind);
+  const state = normalizeActionState(value.state);
+  if (!id || !rollId || !targetId || !kind || !state) return null;
+  const roll = rolls.find((entry) => entry.id === rollId);
+  if (!roll || roll.intent !== kind || !targets.some((target) => target.id === targetId)) {
+    return null;
+  }
+  if (id !== createAbilityAssistedActionId(rollId, targetId, kind)) return null;
+  return {
+    id,
+    kind,
+    rollId,
+    targetId,
+    state: state === "executing" ? "uncertain" : state,
+    completedAt: normalizeNullableString(value.completedAt),
+    completedByUserId: normalizeNullableString(value.completedByUserId),
+  };
+}
+
+function normalizeActionKind(value: unknown): AbilityAssistedActionKind | null {
+  return value === "damage" || value === "healing" ? value : null;
+}
+
+function normalizeActionState(value: unknown): AbilityAssistedActionState | null {
+  return ["available", "executing", "completed", "uncertain"].includes(
+    String(value),
+  )
+    ? (value as AbilityAssistedActionState)
+    : null;
 }
 
 function normalizeExecutedRolls(
@@ -228,6 +345,10 @@ function normalizeNumber(value: unknown): number {
 
 function normalizeNonNegativeNumber(value: unknown): number {
   return Math.max(0, normalizeNumber(value));
+}
+
+function normalizeNonNegativeInteger(value: unknown): number {
+  return Math.max(0, Math.trunc(normalizeNumber(value)));
 }
 
 function isFiniteNumber(value: unknown): value is number {

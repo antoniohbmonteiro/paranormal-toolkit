@@ -94,7 +94,13 @@ describe("normalizeAbilityUseMessageFlag", () => {
 
     expect(flag).toMatchObject({
       version: 3,
-      state: { rolls: [{ total: 7, diceResults: [3, 4] }] },
+      revision: 0,
+      state: {
+        schemaVersion: 2,
+        targets: [],
+        actions: [],
+        rolls: [{ total: 7, diceResults: [3, 4] }],
+      },
     });
     expect(
       normalizeAbilityUseMessageFlag({
@@ -102,6 +108,41 @@ describe("normalizeAbilityUseMessageFlag", () => {
         state: { schemaVersion: 1 },
       }),
     ).toBeNull();
+  });
+
+  it("normalizes interrupted schema 2 actions to uncertain and validates deterministic identity", () => {
+    const raw = version3Flag() as {
+      version: 3;
+      state: Record<string, unknown> & { rolls: Array<Record<string, unknown>> };
+    };
+    raw.state.schemaVersion = 2;
+    raw.state.targets = [{
+      id: "token:scene:token",
+      name: "Existido",
+      sceneId: "scene",
+      tokenId: "token",
+      tokenUuid: "Scene.scene.Token.token",
+      actorId: "target",
+      actorUuid: "Actor.target",
+    }];
+    raw.state.actions = [{
+      id: "r:token:scene:token:damage",
+      kind: "damage",
+      rollId: "r",
+      targetId: "token:scene:token",
+      state: "executing",
+      completedAt: null,
+      completedByUserId: null,
+    }];
+
+    const normalized = normalizeAbilityUseMessageFlag(raw);
+    expect(normalized).toMatchObject({
+      version: 3,
+      state: { actions: [{ state: "uncertain" }] },
+    });
+
+    raw.state.actions[0]!.id = "random-id";
+    expect(normalizeAbilityUseMessageFlag(raw)).toBeNull();
   });
 
   it("sanitizes persisted description HTML before it reaches rendered DOM markup", () => {

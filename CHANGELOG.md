@@ -1,3 +1,22 @@
+## 0.42.0
+
+### Adicionado
+
+- Cards persistentes de habilidade agora registram os targets selecionados no momento do uso e oferecem ações assistidas manuais para resultados de dano e cura.
+- Cada combinação entre uma rolagem acionável e um target válido possui identidade e estado persistentes próprios, incluindo suporte a múltiplos targets e proteção contra aplicação duplicada.
+- Dano usa o total já rolado, preserva o tipo configurado e passa pelo `DamageEngine`; cura usa o mesmo total por meio de `ResourceEngine.heal`.
+- Dano aplicado por habilidade reutiliza o feedback privado aos Mestres já usado pelas ações assistidas de ritual.
+
+### Compatibilidade e limites
+
+- Rolagens genéricas e habilidades sem target continuam apenas informativas; nenhuma ação relê os targets atuais ou refaz a rolagem.
+- Cards v3 com state schema 1 são normalizados somente em memória e continuam válidos sem regravação da `ChatMessage`.
+- Aplicação permanece exclusiva do Mestre e manual. Execuções interrompidas ou com resultado técnico incerto não são liberadas automaticamente para retry.
+
+### Corrigido
+
+- Descrições de ritual preservam entidades HTML durante a sanitização e persistência do card.
+
 ## 0.41.0
 
 - Rolagens de habilidade são executadas sequencialmente ao confirmar o popup e publicadas em um único card persistente.

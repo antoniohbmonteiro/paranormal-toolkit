@@ -35,7 +35,11 @@ Hooks.once("ready", () => {
 
   services = createToolkitServices();
   services.itemUseIntegration.registerStrategies();
-  registerAbilityUseIntegration(services.resources, services.resourceAdapter);
+  registerAbilityUseIntegration(
+    services.resources,
+    services.resourceAdapter,
+    services.damage,
+  );
   registerConditionLifecycleHooks(services.conditions);
   registerGlobalApi(services);
   registerRitualLogActionCleanup();

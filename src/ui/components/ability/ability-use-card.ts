@@ -22,6 +22,10 @@ import {
   renderDamageTypeBadge,
   type DamageTypeBadgeViewModel,
 } from "../chat/damage-type-badge";
+import {
+  renderAssistedActionRow,
+  type AssistedActionRowViewModel,
+} from "../chat/assisted-action-row";
 
 export type AbilityResultSectionViewModel = {
   label: string;
@@ -36,6 +40,7 @@ export type AbilityUseCardViewModel = {
   description?: ExpandableDescriptionViewModel;
   metadata: MetadataPillGroupViewModel;
   rolls: AbilityResultSectionViewModel[];
+  assistedActions?: { rows: readonly AssistedActionRowViewModel[] };
 };
 
 export function renderAbilityUseCard(model: AbilityUseCardViewModel): string {
@@ -44,6 +49,9 @@ export function renderAbilityUseCard(model: AbilityUseCardViewModel): string {
     model.description ? renderExpandableDescription(model.description) : "",
     renderMetadataPillGroup(model.metadata),
     ...model.rolls.map(renderAbilityResultSection),
+    model.assistedActions
+      ? renderAbilityAssistedActions(model.assistedActions.rows)
+      : "",
   ]
     .filter(Boolean)
     .join("");
@@ -56,6 +64,14 @@ export function renderAbilityUseCard(model: AbilityUseCardViewModel): string {
     "</div>",
   ].join("");
   return renderChatCardShell({ content: card });
+}
+
+function renderAbilityAssistedActions(
+  rows: readonly AssistedActionRowViewModel[],
+): string {
+  const content = rows.map(renderAssistedActionRow).filter(Boolean).join("");
+  if (!content) return "";
+  return `<section class="paranormal-toolkit-ability-use-card__assisted-actions"><h4 class="paranormal-toolkit-ability-use-card__assisted-actions-title">AÇÕES ASSISTIDAS</h4><div class="paranormal-toolkit-ability-use-card__assisted-actions-rows">${content}</div></section>`;
 }
 
 function renderAbilityResultSection(

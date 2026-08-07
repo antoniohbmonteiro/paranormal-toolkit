@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.41.0`.
+Versão atual documentada: `v0.42.0`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,15 @@ O Toolkit já tem:
 
 
 
+
+### Concluído em 0.42.0 — Targets e ações assistidas de habilidade
+
+- targets de habilidades são capturados durante o uso e persistidos como referências serializáveis, sem armazenar Documents do Foundry;
+- rolagens de dano e cura geram uma ação manual independente para cada target válido, com suporte a zero, um ou múltiplos targets;
+- ações usam o total já rolado, preservam o tipo de dano e nunca consultam a seleção atual nem executam uma nova rolagem;
+- dano passa por `DamageEngine` e pelo adapter de Ordem; cura reutiliza `ResourceEngine.heal`;
+- estado da ação, conclusão e execuções incertas sobrevivem à reidratação, enquanto cards v3 anteriores continuam válidos sem regravação automática;
+- rolagens genéricas permanecem exclusivamente informativas e o multi-target legado de rituais não foi alterado.
 
 ### Concluído em 0.41.0 — Cards persistentes de resultados de habilidade
 

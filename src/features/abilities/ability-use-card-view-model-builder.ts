@@ -4,6 +4,8 @@ import type {
 } from "../../ui/components/ability/ability-use-card";
 import type { AbilityUseCardState } from "./ability-use-card-state";
 import { getToolkitDamageTypePresentation } from "../../core/damage/damage-types";
+import type { AssistedActionRowViewModel } from "../../ui/components/chat/assisted-action-row";
+import { canCurrentUserApplyAssistedActions } from "../item-use/assisted-actions/assisted-action-policy";
 
 export function buildAbilityUseCardViewModel(
   state: AbilityUseCardState,
@@ -15,7 +17,61 @@ export function buildAbilityUseCardViewModel(
       : undefined,
     metadata: { items: createMetadata(state) },
     rolls: state.rolls.map(createRollSection),
+    assistedActions: createAssistedActionRows(state),
   };
+}
+
+function createAssistedActionRows(
+  state: AbilityUseCardState,
+): AbilityUseCardViewModel["assistedActions"] {
+  if (!state.actions.length) return undefined;
+  const canApply = canCurrentUserApplyAssistedActions();
+  const rows = state.actions.flatMap((action): AssistedActionRowViewModel[] => {
+    const roll = state.rolls.find((entry) => entry.id === action.rollId);
+    const target = state.targets.find((entry) => entry.id === action.targetId);
+    if (!roll || !target) return [];
+    const noun = action.kind === "damage" ? "dano" : "cura";
+    const typeLabel =
+      action.kind === "damage" && roll.damageType
+        ? ` · ${getToolkitDamageTypePresentation(roll.damageType).label}`
+        : "";
+    const description = `${roll.label} · ${roll.total} de ${noun}${typeLabel}`;
+    if (action.state === "completed") {
+      return [{
+        label: target.name,
+        description,
+        control: {
+          state: "completed",
+          indicator: { label: action.kind === "damage" ? "Dano aplicado" : "Cura aplicada" },
+        },
+      }];
+    }
+    if (action.state === "uncertain") {
+      return [{
+        label: target.name,
+        description,
+        control: { state: "completed", indicator: { label: "Aplicação incerta" } },
+      }];
+    }
+    const active = action.state === "available" && canApply;
+    return [{
+      label: target.name,
+      description,
+      control: {
+        state: active ? "active" : "disabled",
+        button: {
+          label:
+            action.state === "executing"
+              ? "Aplicando..."
+              : `Aplicar ${roll.total} de ${noun}`,
+          disabled: !active,
+          actionId: action.id,
+          actionKind: "apply-ability-action",
+        },
+      },
+    }];
+  });
+  return rows.length ? { rows } : undefined;
 }
 
 function createHeader(
