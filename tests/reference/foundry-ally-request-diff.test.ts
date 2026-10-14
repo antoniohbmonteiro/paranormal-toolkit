@@ -32,15 +32,12 @@ function load(relative: string, globals: Record<string, unknown>, dependencies: 
   runInContext(`(function(exports, require) { ${code}\n})(nativeExports, nativeRequire);`, vm, { filename, timeout: 2000 });
   return exports;
 }
-function nativeFlow(initial?: unknown) {
-  class Operator {}
-  class Deletion extends Operator {}
-  class Replacement extends Operator {}
-  const operators = { DataFieldOperator: Operator, ForcedDeletion: Deletion, ForcedReplacement: Replacement };
+function nativeFlow(initial?: unknown, flagKey = "allyRequest") {
   const logging = { logCompatibilityWarning: () => {} };
   const globals: Record<string, any> = { console, CONFIG: { debug: { documents: false } },
     CONST: { vtt: "Foundry" }, ui: { notifications: { error: (message: string) => { throw new Error(message); } } } };
   const toNative = (value: unknown) => runInContext(`JSON.parse(${JSON.stringify(JSON.stringify(value))})`, context(globals));
+  const operators = load("common/data/operators.mjs", globals, {});
   const helpers = load("common/utils/helpers.mjs", globals, {
     "./color.mjs": { default: class {} }, "../data/operators.mjs": operators, "./logging.mjs": logging,
   });
@@ -52,7 +49,7 @@ function nativeFlow(initial?: unknown) {
     "../abstract/singleton-collection.mjs": { default: class {} },
     "../abstract/embedded-collection.mjs": { default: class {} },
     "../abstract/embedded-collection-delta.mjs": { default: class {} },
-    "../utils/_module.mjs": { AsyncFunction: Object.getPrototypeOf(async function () {}).constructor, Color: class {} },
+    "../utils/_module.mjs": { ...helpers, AsyncFunction: Object.getPrototypeOf(async function () {}).constructor, Color: class {} },
     "./operators.mjs": operators, "./validation-failure.mjs": {},
   });
   const Document = load("common/abstract/document.mjs", globals, {
@@ -61,9 +58,9 @@ function nativeFlow(initial?: unknown) {
     "../data/fields.mjs": fields, "../data/operators.mjs": operators,
   }).default;
   const updates: Record<string, unknown>[] = [], events: { changes: any; full: unknown; userId: string }[] = [];
-  const flagField = Object.create(fields.ObjectField.prototype);
+  const flagField = new fields.ObjectField();
   flagField.validate = () => undefined;
-  const actor: any = { id: "iris", flags: toNative({ "paranormal-toolkit": initial === undefined ? {} : { allyRequest: initial } }),
+  const actor: any = { id: "iris", flags: toNative({ "paranormal-toolkit": initial === undefined ? {} : { [flagKey]: initial } }),
     _preUpdate: async () => true, _onUpdate: () => {}, getFlag: Document.prototype.getFlag,
     setFlag: Document.prototype.setFlag, update: Document.prototype.update,
     updateSource: (changes: any, options: any) => {
@@ -78,14 +75,18 @@ function nativeFlow(initial?: unknown) {
   const hooks = { call: () => true, onError: (name: string, error: Error) => { throw new Error(name, { cause: error }); },
     callAll: (name: string, doc: any, changes: any, _options: unknown, userId: string) => {
       if (name === "updateActor") events.push({ changes: structuredClone(changes),
-        full: structuredClone(doc.getFlag("paranormal-toolkit", "allyRequest")), userId });
+        full: structuredClone(doc.getFlag("paranormal-toolkit", flagKey)), userId });
     } };
-  const documentClass: any = { documentName: "Actor", cleanData: (data: any) => toNative(data),
+  const documentClass: any = { documentName: "Actor", cleanData: (data: any) => {
+    data = toNative(data);
+    if (data.flags) data.flags = flagField.clean(data.flags);
+    return data;
+  },
     shimData: (data: any) => data, _preUpdateOperation: async () => true, _onUpdateOperation: async () => {} };
   const Backend = load("client/data/client-backend.mjs", globals, {
     "@common/abstract/backend.mjs": { default: class { async _getParent() { return null; } } },
     "../helpers/socket-interface.mjs": { default: { dispatch: async (_name: string, data: any) => ({
-      ...data, result: structuredClone(data.operation.updates), userId: origin.id,
+      ...data, result: toNative(data.operation.updates), userId: origin.id,
     }) } },
     "../helpers/hooks.mjs": { default: hooks },
     "../utils/helpers.mjs": { getDocumentClass: () => documentClass },
@@ -99,7 +100,7 @@ function nativeFlow(initial?: unknown) {
     return backend._updateDocuments(documentClass, { diff: true, recursive: true, ...operation, updates: data }, origin);
   };
   actor.constructor = documentClass;
-  return { actor, updates, events, toNative };
+  return { actor, updates, events, toNative, operators };
 }
 describe.skipIf(!root)("native Foundry request diff and post-update hook (server doubled)", () => {
   const first = { id: "request-01", revision: 0, action: "assign", beneficiaryId: "joao" };
@@ -122,6 +123,17 @@ describe.skipIf(!root)("native Foundry request diff and post-update hook (server
     expect(flow.events[0].changes.flags["paranormal-toolkit"].allyRequest).toEqual(first);
     expect(readUpdatedAllyRequest(flow.actor, flow.events[0].changes, flow.events[0].userId)).toEqual(first);
     await flow.actor.setFlag("paranormal-toolkit", "allyRequest", flow.toNative(first));
+    expect(flow.events).toHaveLength(1);
+  });
+  it("atomically removes a legacy gate while replacing links and preserving managed effect identities", async () => {
+    const managed = [{ effectId: "existing-effect", actorId: "joao" }];
+    const flow = nativeFlow({ version: 1, validatedRuntime: null, managed,
+      links: [{ allyId: "iris", approval: { scope: "old" }, pending: null }] }, "allyLedger");
+    const next = { version: 2, managed, links: [{ allyId: "iris", suppressedSources: [], notice: null }] };
+    await flow.actor.setFlag("paranormal-toolkit", "allyLedger",
+      { ...flow.toNative(next), validatedRuntime: new flow.operators.ForcedDeletion() });
+    expect(flow.events[0].full).toEqual(next);
+    expect(flow.actor.getFlag("paranormal-toolkit", "allyLedger")).not.toHaveProperty("validatedRuntime");
     expect(flow.events).toHaveLength(1);
   });
 });

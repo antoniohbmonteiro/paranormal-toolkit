@@ -1,5 +1,4 @@
-import { prepareAllyApproval, readAllySupportView, submitAllyRequest } from "../adapters/foundry/foundry-ally-request-adapter";
-import { escapeHtml } from "../ui/rendering/escape-html";
+import { readAllySupportView, submitAllyRequest } from "../adapters/foundry/foundry-ally-request-adapter";
 import type { AllyRequest } from "../features/allies/ally-operation-authority";
 import { readFoundryAllyProfile } from "../adapters/foundry/foundry-ally-actor-resolver";
 import { getActorItems } from "../features/automation/actor-item-resolver";
@@ -20,9 +19,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
       assignSupport: AllySheet.onAssignSupport,
       activateSupport: AllySheet.onActivateSupport,
       deactivateSupport: AllySheet.onDeactivateSupport,
-      approveSupport: AllySheet.onApproveSupport,
       reconcileSupport: AllySheet.onReconcileSupport,
-      validateSupport: AllySheet.onValidateSupport,
     },
   };
 
@@ -121,30 +118,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   }
   private static async onActivateSupport(this: AllySheet): Promise<void> { await this.requestSupport("activate"); }
   private static async onDeactivateSupport(this: AllySheet): Promise<void> { await this.requestSupport("deactivate"); }
-  private static async onApproveSupport(this: AllySheet): Promise<void> {
-    if (!this.canEdit() || !game.user?.isGM) return;
-    try {
-      const review = await prepareAllyApproval(this.actor);
-      const confirmed = await foundry.applications.api.DialogV2.confirm({
-        window: { title: "Aprovar suporte do Aliado" },
-        content: `<p>Beneficiário: ${escapeHtml(review.beneficiaryName)}</p><p>Benefícios autorizados:</p><ul>
-          ${review.benefits.map(benefit => `<li>${escapeHtml(benefit.itemName)} — Defesa ${escapeHtml(String(benefit.value))}</li>`).join("")}
-          </ul><p>Alterar o vínculo ou estes benefícios exige nova aprovação.</p>`,
-      });
-      if (confirmed && this.canEdit()) await submitAllyRequest(this.actor, "approve", {}, review);
-    } catch (error) {
-      ui.notifications?.warn(error instanceof Error ? error.message : "Falha ao aprovar suporte.");
-    }
-  }
   private static async onReconcileSupport(this: AllySheet): Promise<void> { await this.requestSupport("reconcile"); }
-  private static async onValidateSupport(this: AllySheet): Promise<void> {
-    if (!game.user?.isGM) return;
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: "Validação do ambiente Allies" },
-      content: "<p>Confirme somente após testar neste mundo: efeito add/initial de Defesa participa da Defesa e esquiva sem alterar o valor salvo; dois jogadores não conseguem alterar o Journal operacional nem a referência nas flags dos GMs; dois GMs processam uma única solicitação.</p><p>Esta confirmação registra a validação manual para a versão atual de Foundry e Ordem.</p>",
-    });
-    if (confirmed) await this.requestSupport("validate");
-  }
 
   private static async onCreateAbility(this: AllySheet): Promise<void> {
     if (!this.canEdit() || !readFoundryAllyProfile(this.actor)) return;

@@ -41,12 +41,19 @@ export function registerAllyLifecycleHooks(): AllySupportService {
   Hooks.on("userConnected", reconcile);
   Hooks.on("updateUser", reconcile);
   // Own projection writes carry this option; external edits still trigger recovery.
-  for (const name of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
+  for (const name of ["createActiveEffect", "updateActiveEffect"]) {
     Hooks.on(name, (_effect: unknown, _changesOrOptions: unknown, optionsOrUser: unknown) => {
       const options = name === "updateActiveEffect" ? optionsOrUser : _changesOrOptions;
       if (!(options as { allyReconciliation?: boolean } | undefined)?.allyReconciliation) reconcile();
     });
   }
+  Hooks.on("deleteActiveEffect", (effect: { id?: string; parent?: Actor }, options: { allyReconciliation?: boolean }, userId: string) => {
+    if (options?.allyReconciliation || !service.isExecutor()) return;
+    if (effect.id && effect.parent?.id && !effect.parent.isToken) {
+      return service.suppressEffect(effect.parent.id, effect.id, userId).catch(report);
+    }
+    reconcile();
+  });
   reconcile();
   return service;
 }

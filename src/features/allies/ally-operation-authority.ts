@@ -3,28 +3,26 @@ export function electAllyExecutor(users: AllyUser[]): string | null {
   return users.filter(user => user.isGM && user.active).map(user => user.id).sort()[0] ?? null;
 }
 export type AllyRequest = {
-  id: string; revision: number; action: "assign" | "activate" | "deactivate" | "approve" | "reconcile" | "validate";
-  beneficiaryId?: string; combatId?: string; scope?: string;
+  id: string; revision: number; action: "assign" | "activate" | "deactivate" | "reconcile";
+  beneficiaryId?: string; combatId?: string;
 };
 export function readAllyRequest(value: unknown): AllyRequest | null {
   if (!value || typeof value !== "object") return null;
   const data = value as Record<string, unknown>;
   if (typeof data.id !== "string" || !/^[a-zA-Z0-9_-]{8,80}$/.test(data.id)
     || !Number.isSafeInteger(data.revision) || (data.revision as number) < 0
-    || !["assign", "activate", "deactivate", "approve", "reconcile", "validate"].includes(String(data.action))) return null;
+    || !["assign", "activate", "deactivate", "reconcile"].includes(String(data.action))) return null;
   if (data.action === "assign" && (typeof data.beneficiaryId !== "string" || !data.beneficiaryId)) return null;
-  if (data.scope !== undefined && typeof data.scope !== "string") return null;
   if (data.beneficiaryId !== undefined && typeof data.beneficiaryId !== "string") return null;
   if (data.combatId !== undefined && typeof data.combatId !== "string") return null;
   return { id: data.id, revision: data.revision as number, action: data.action as AllyRequest["action"],
-    ...(["assign", "approve"].includes(String(data.action)) && typeof data.beneficiaryId === "string" ? { beneficiaryId: data.beneficiaryId } : {}),
-    ...(typeof data.scope === "string" ? { scope: data.scope } : {}),
+    ...(data.action === "assign" && typeof data.beneficiaryId === "string" ? { beneficiaryId: data.beneficiaryId } : {}),
     ...(typeof data.combatId === "string" ? { combatId: data.combatId } : {}) };
 }
 
 export function authorizeAllyRequest(request: AllyRequest, user: AllyUser | undefined, ownsAlly: boolean): void {
   if (!user || !user.active || (!user.isGM && !ownsAlly)) throw new Error("Solicitante não autorizado.");
-  if (["approve", "validate", "reconcile"].includes(request.action) && !user.isGM) {
+  if (request.action === "reconcile" && !user.isGM) {
     throw new Error("Esta operação exige um GM.");
   }
 }

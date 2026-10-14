@@ -1,19 +1,20 @@
-import { allyScopeFingerprint, type AllyAbilityDefinition } from "../../core/allies/ally-definition";
+import type { AllyAbilityDefinition } from "../../core/allies/ally-definition";
 import { resolveAllyBenefits } from "../../core/allies/ally-benefit-resolver";
 import { createAllySupportState, transitionAllySupport, type AllySupportState, type AllyCombatSnapshot } from "../../core/allies/ally-support-state";
-import { authorizeAllyRequest, electAllyExecutor, type AllyRequest, type AllyUser } from "./ally-operation-authority";
+import { authorizeAllyRequest, electAllyExecutor, readAllyRequest, type AllyRequest, type AllyUser } from "./ally-operation-authority";
 import { AllyReconciliationService, type AllyManagedEffect } from "./ally-reconciliation-service";
+import { buildAllySupportChange, type AllyNoticeSnapshot, type AllySupportChange } from "./ally-support-notifications";
 
 export type AllyLink = {
   allyId: string; state: AllySupportState;
-  approval: { beneficiaryId: string; scope: string } | null;
-  pending: { request: AllyRequest; userId: string } | null;
+  suppressedSources: string[];
+  notice: AllyNoticeSnapshot | null;
   diagnostic: string | null;
 };
 export type AllyLedger = {
-  version: 1; revision: number; nextSequence: number; links: AllyLink[];
+  version: 2; revision: number; nextSequence: number; links: AllyLink[];
   orders: { sourceKey: string; activationSequence: number; sequence: number }[];
-  managed: AllyManagedEffect[]; validatedRuntime: string | null; diagnostic: string | null;
+  managed: AllyManagedEffect[]; diagnostic: string | null;
 };
 export interface AllyStore {
   load(create?: boolean): Promise<AllyLedger | null>;
@@ -28,12 +29,11 @@ export interface AllySupportEnvironment {
   abilities(allyId: string): { id: string; definition: AllyAbilityDefinition }[] | null;
   resolveCombat(allyId: string, beneficiaryId: string, chosenId?: string, previousId?: string): AllyCombatSnapshot | null;
   combat(id: string): AllyCombatSnapshot | null;
-  runtimeIdentity(): string;
   publish(ledger: AllyLedger): Promise<void>;
+  notify(change: AllySupportChange): Promise<void>;
 }
 export function createAllyLedger(): AllyLedger {
-  return { version: 1, revision: 0, nextSequence: 1, links: [], managed: [], orders: [],
-    validatedRuntime: null, diagnostic: null };
+  return { version: 2, revision: 0, nextSequence: 1, links: [], managed: [], orders: [], diagnostic: null };
 }
 
 export class AllySupportService {
@@ -54,6 +54,9 @@ export class AllySupportService {
   }
   process(allyId: string, request: AllyRequest, userId: string): Promise<void> {
     return this.enqueue(async () => {
+      const parsed = readAllyRequest(request);
+      if (!parsed) throw new Error("Solicitação de suporte inválida.");
+      request = parsed;
       const user = this.environment.users().find(entry => entry.id === userId);
       authorizeAllyRequest(request, user, this.environment.ownsAlly(allyId, userId));
       if (!this.environment.allyExists(allyId)) throw new Error("Aliado ausente ou inválido.");
@@ -63,69 +66,51 @@ export class AllySupportService {
       if (request.revision !== ledger.revision) throw new Error("O suporte mudou. Atualize a ficha e solicite novamente.");
       let link = ledger.links.find(entry => entry.allyId === allyId);
       if (!link) {
-        link = { allyId, state: createAllySupportState(), approval: null, pending: null, diagnostic: null };
+        link = { allyId, state: createAllySupportState(), suppressedSources: [], diagnostic: null,
+          notice: { beneficiaryId: null, status: "inactive", benefits: [] } };
         ledger.links.push(link);
       }
-      if (user!.isGM && ["assign", "activate", "approve"].includes(request.action)
-        && request.scope !== this.scope(allyId)) {
-        throw new Error("Os benefícios mudaram desde a revisão do GM. Revise antes de aprovar.");
-      }
-      if (request.action === "validate") ledger.validatedRuntime = this.environment.runtimeIdentity();
-      else if (request.action === "approve") {
-        const pending = link.pending;
-        const beneficiary = pending?.request.beneficiaryId ?? link.state.beneficiaryId;
-        if (!beneficiary || request.beneficiaryId !== beneficiary) {
-          throw new Error("O beneficiário mudou desde a revisão do GM.");
-        }
-        if (pending) {
-          const owner = this.environment.users().find(entry => entry.id === pending.userId);
-          authorizeAllyRequest(pending.request, owner, this.environment.ownsAlly(allyId, pending.userId));
-          this.apply(ledger, link, pending.request, true);
-        } else if (link.state.beneficiaryId) {
-          this.approve(link, link.state.beneficiaryId);
-        }
-        link.pending = null;
-      } else if (request.action !== "reconcile") {
-        const beneficiaryId = request.action === "assign" ? request.beneficiaryId! : link.state.beneficiaryId;
+      if (request.action !== "reconcile") {
         if (request.action === "activate" && !link.state.beneficiaryId) {
-          throw new Error("Atribua e aprove um beneficiário antes de ativar.");
+          throw new Error("Atribua um beneficiário antes de ativar.");
         }
-        const scope = request.action === "deactivate" ? "" : this.scope(allyId);
-        const authorized = request.action === "deactivate" || (beneficiaryId
-          && link.approval?.beneficiaryId === beneficiaryId && link.approval.scope === scope);
-        if (!user!.isGM && !authorized) {
-          if (beneficiaryId && !this.environment.agentExists(beneficiaryId)) throw new Error("Selecione um Agente persistente do mundo.");
-          link.pending = { request, userId };
-          link.diagnostic = "Aguardando aprovação do vínculo e benefícios pelo GM.";
-        } else {
-          this.apply(ledger, link, request, user!.isGM);
-          link.pending = null;
+        if (request.action === "activate" && !this.environment.agentExists(link.state.beneficiaryId!)) {
+          throw new Error("Selecione um Agente persistente do mundo.");
         }
+        if (request.action !== "deactivate" && !this.environment.abilities(allyId)) {
+          throw new Error("Configuração de habilidade inválida. Os dados foram preservados.");
+        }
+        this.apply(ledger, link, request);
       }
       await this.persist(ledger, true);
       await this.reconcileLedger(ledger);
     });
   }
   reconcile(): Promise<void> {
+    return this.enqueue(() => this.reconcileLoaded());
+  }
+  suppressEffect(actorId: string, effectId: string, userId: string): Promise<void> {
     return this.enqueue(async () => {
+      const user = this.environment.users().find(entry => entry.id === userId);
+      if (!user?.isGM || !user.active) { await this.reconcileLoaded(); return; }
       const ledger = await this.store.load();
-      if (ledger) {
-        this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
-        await this.reconcileLedger(ledger);
-      }
+      if (!ledger) return;
+      this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
+      const tracked = ledger.managed.find(effect => effect.actorId === actorId && effect.effectId === effectId);
+      const link = tracked && ledger.links.find(entry => entry.allyId === tracked.allyId);
+      if (!link || !tracked) return;
+      if (!link.suppressedSources.includes(tracked.sourceKey)) link.suppressedSources.push(tracked.sourceKey);
+      await this.persist(ledger);
+      await this.reconcileLedger(ledger);
     });
   }
-  private scope(allyId: string): string {
-    const abilities = this.environment.abilities(allyId);
-    if (!abilities) throw new Error("Configuração de habilidade inválida. Os dados foram preservados.");
-    return allyScopeFingerprint(abilities);
+  private async reconcileLoaded(): Promise<void> {
+    const ledger = await this.store.load();
+    if (!ledger) return;
+    this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
+    await this.reconcileLedger(ledger);
   }
-  private approve(link: AllyLink, beneficiaryId: string): void {
-    if (!this.environment.agentExists(beneficiaryId)) throw new Error("Beneficiário ausente ou inválido.");
-    link.approval = { beneficiaryId, scope: this.scope(link.allyId) };
-    link.diagnostic = null;
-  }
-  private apply(ledger: AllyLedger, link: AllyLink, request: AllyRequest, approve: boolean): void {
+  private apply(ledger: AllyLedger, link: AllyLink, request: AllyRequest): void {
     let action;
     if (request.action === "assign") {
       if (!this.environment.agentExists(request.beneficiaryId!)) throw new Error("Selecione um Agente persistente do mundo.");
@@ -134,14 +119,12 @@ export class AllySupportService {
       action = { type: "assign" as const, beneficiaryId: request.beneficiaryId!, combat };
     } else if (request.action === "activate" || request.action === "deactivate") action = { type: request.action };
     else return;
-    if (approve && request.action !== "deactivate") {
-      const beneficiary = request.beneficiaryId ?? link.state.beneficiaryId;
-      if (!beneficiary) throw new Error("Atribua um beneficiário antes de ativar.");
-      this.approve(link, beneficiary);
-    }
     const previous = link.state;
     link.state = transitionAllySupport(previous, action, ledger.nextSequence);
-    if (link.state.sequence !== previous.sequence) ledger.nextSequence++;
+    if (link.state.sequence !== previous.sequence) {
+      ledger.nextSequence++;
+      link.suppressedSources = [];
+    }
   }
   private async persist(ledger: AllyLedger, force = false): Promise<void> {
     const snapshot = JSON.stringify({ ...ledger, revision: 0 });
@@ -156,9 +139,7 @@ export class AllySupportService {
     for (const link of ledger.links) {
       if (!this.environment.allyExists(link.allyId)) {
         link.state = { ...link.state, status: "inactive" };
-        link.approval = null;
-        link.pending = null;
-        link.diagnostic = "Aliado ausente ou perfil inválido. Novo vínculo exige aprovação.";
+        link.diagnostic = "Aliado ausente ou perfil inválido.";
         continue;
       }
       if (link.state.wait) {
@@ -167,14 +148,12 @@ export class AllySupportService {
         }, ledger.nextSequence);
       }
       const abilities = this.environment.abilities(link.allyId);
-      const valid = abilities && link.state.beneficiaryId && this.environment.agentExists(link.state.beneficiaryId)
-        && link.approval?.beneficiaryId === link.state.beneficiaryId
-        && link.approval.scope === allyScopeFingerprint(abilities);
+      const valid = abilities && link.state.beneficiaryId && this.environment.agentExists(link.state.beneficiaryId);
       if (!valid) {
-        link.diagnostic = link.pending ? "Aguardando aprovação do GM." : "Vínculo ou benefícios precisam de aprovação do GM.";
+        link.diagnostic = !abilities ? "Configuração de habilidade inválida." : link.state.beneficiaryId ? "Beneficiário ausente ou inválido." : null;
         continue;
       }
-      if (!link.pending) link.diagnostic = null;
+      link.diagnostic = null;
       sources.push({ allyId: link.allyId, state: link.state, abilities: abilities! });
     }
     for (const source of [...sources].sort((a, b) => a.state.sequence - b.state.sequence)) {
@@ -186,20 +165,39 @@ export class AllySupportService {
         }
       }
     }
-    const orderedSources = sources.map(source => ({ ...source, sequenceBySource: Object.fromEntries(
-      ledger.orders.filter(entry => entry.activationSequence === source.state.sequence).map(entry => [entry.sourceKey, entry.sequence]),
-    ) }));
+    const orderedSources = sources.map(source => {
+      const suppressed = new Set(ledger.links.find(link => link.allyId === source.allyId)?.suppressedSources);
+      return { ...source,
+        abilities: source.abilities.map(item => ({ ...item, definition: { ...item.definition,
+          benefits: item.definition.benefits.filter(benefit => !suppressed.has(JSON.stringify([source.allyId, item.id, benefit.id]))) } })),
+        sequenceBySource: Object.fromEntries(ledger.orders.filter(entry => entry.activationSequence === source.state.sequence)
+          .map(entry => [entry.sourceKey, entry.sequence])),
+      };
+    });
     ledger.orders = ledger.orders.filter(entry => ledger.links.some(link => link.state.sequence === entry.activationSequence));
-    const validated = ledger.validatedRuntime === this.environment.runtimeIdentity();
-    ledger.diagnostic = validated ? null : "GM: valide Defesa/esquiva e permissões multiplayer neste ambiente antes de aplicar efeitos.";
+    ledger.diagnostic = null;
     try {
-      // Removal also runs with an invalidated gate, so old projections cannot remain active.
-      await this.reconciliation.reconcile(validated ? resolveAllyBenefits(orderedSources) : [], ledger.managed,
+      await this.reconciliation.reconcile(resolveAllyBenefits(orderedSources), ledger.managed,
         async managed => { ledger.managed = managed; await this.persist(ledger); });
     } catch (error) {
       ledger.diagnostic = `Reconciliação interrompida: ${error instanceof Error ? error.message : "falha desconhecida"}`;
     }
+    const changes: AllySupportChange[] = [];
+    if (!ledger.diagnostic) for (const link of ledger.links) {
+      const next: AllyNoticeSnapshot = { beneficiaryId: link.state.beneficiaryId, status: link.state.status,
+        benefits: ledger.managed.filter(effect => effect.allyId === link.allyId)
+          .map(effect => ({ sourceKey: effect.sourceKey, value: effect.value }))
+          .sort((a, b) => a.sourceKey < b.sourceKey ? -1 : a.sourceKey > b.sourceKey ? 1 : 0) };
+      const change = buildAllySupportChange(link.allyId, link.notice, next);
+      if (change) changes.push(change);
+      link.notice = next;
+    }
+    // Commit notification baselines before best-effort publication; never replay on reload.
     await this.persist(ledger);
+    for (const change of changes) {
+      try { await this.environment.notify(change); }
+      catch (error) { console.warn("Paranormal Toolkit | Allies: falha ao informar mudança no chat.", error); }
+    }
     await this.environment.publish(ledger);
   }
 }

@@ -22,7 +22,7 @@ function actor(id: string, type = "agent") {
 beforeEach(() => {
   vi.stubGlobal("game", { user: user("gm", true), users: [user("gm", true), user("player")], actors: { contents: [], get: vi.fn() },
     system: { version: "8.0.2" }, release: { version: "14.369" } });
-  vi.stubGlobal("foundry", { utils: { randomID: () => "stable-id-000" } });
+  vi.stubGlobal("foundry", { utils: { randomID: () => "stable-id-000" }, data: { operators: { ForcedDeletion: class {} } } });
 });
 describe("protected store (native document operations doubled)", () => {
   it("ignores player anchors and creates one restricted record, anchoring every GM", async () => {
@@ -59,13 +59,25 @@ describe("protected store (native document operations doubled)", () => {
   });
   it("fails closed for unknown ledger versions and corrupted state", () => {
     expect(readAllyLedger(createAllyLedger())).toEqual(createAllyLedger());
-    expect(() => readAllyLedger({ ...createAllyLedger(), version: 2 })).toThrow("corrompido");
+    expect(() => readAllyLedger({ ...createAllyLedger(), version: 3 })).toThrow("corrompido");
     expect(() => readAllyLedger({ ...createAllyLedger(), links: [{ allyId: "a", state: { status: "active" } }] })).toThrow();
     const value = createAllyLedger();
     value.managed.push({ effectId: "effect", actorId: "joao", sourceKey: "s", allyId: "a", value: 5 });
     const read = readAllyLedger(value);
     read.managed[0].value = 10;
     expect(value.managed[0].value).toBe(5);
+  });
+  it("saves migration in one flag operation, removing the obsolete gate with the v14 operator", async () => {
+    const gm = user("gm", true, "JournalEntry.ledger"), record = journal();
+    const old = { ...createAllyLedger(), version: 1, validatedRuntime: null };
+    record.getFlag.mockReturnValue(old as any);
+    vi.stubGlobal("game", { user: gm, users: [gm, user("player")] });
+    vi.stubGlobal("fromUuid", vi.fn(async () => record));
+    const store = new FoundryAllyStore(); const migrated = await store.load();
+    await store.save(migrated!);
+    expect(record.setFlag).toHaveBeenCalledTimes(1);
+    expect(record.setFlag).toHaveBeenCalledWith("paranormal-toolkit", "allyLedger",
+      { ...createAllyLedger(), validatedRuntime: expect.any(foundry.data.operators.ForcedDeletion) });
   });
 });
 describe("request and Ordem adapters", () => {
@@ -78,7 +90,7 @@ describe("request and Ordem adapters", () => {
     const { readAllySupportView } = await import("../../../../src/adapters/foundry/foundry-ally-request-adapter");
     expect(await readAllySupportView(ally as any)).toMatchObject({ revision: 0, beneficiaryId: null, status: "inactive" });
   });
-  it("keeps the exact scope reviewed by the GM when source values change after the dialog", async () => {
+  it("submits current support operations without an approval scope or review dialog", async () => {
     const gm = user("gm", true, "JournalEntry.ledger");
     const record = journal(), ally = actor("iris", "paranormal-toolkit.ally"), joao = actor("joao");
     const definition = { version: 1, benefits: [{ id: "d", kind: "defense", value: 5 }] };
@@ -86,20 +98,17 @@ describe("request and Ordem adapters", () => {
     const ledger = createAllyLedger();
     ledger.revision = 7;
     ledger.links.push({ allyId: "iris", state: { beneficiaryId: "joao", status: "inactive", sequence: 0, wait: null },
-      approval: null, pending: null, diagnostic: null });
+      suppressedSources: [], notice: null, diagnostic: null });
     record.getFlag.mockReturnValue(ledger);
     vi.stubGlobal("game", { user: gm, users: [gm, user("player")],
       actors: { get: (id: string) => id === "iris" ? ally : joao },
       system: { version: "8.0.2" }, release: { version: "14.369" } });
     vi.stubGlobal("fromUuid", vi.fn(async () => record));
-    const { prepareAllyApproval } = await import("../../../../src/adapters/foundry/foundry-ally-request-adapter");
-    const review = await prepareAllyApproval(ally as any);
     definition.benefits[0].value = 99;
-    await submitAllyRequest(ally as any, "approve", {}, review);
+    await submitAllyRequest(ally as any, "activate");
     expect(ally.setFlag).toHaveBeenCalledWith("paranormal-toolkit", "allyRequest",
-      expect.objectContaining({ revision: 7, beneficiaryId: "joao", scope: review.scope }));
-    expect(review.scope).toContain('"value":5');
-    expect(review.benefits[0].value).toBe(5);
+      { id: "stable-id-000", revision: 7, action: "activate" });
+    expect(new FoundryAllyEnvironment().abilities("iris")![0].definition.benefits[0].value).toBe(99);
   });
   it("rejects a request without an executor before updating an actor", async () => {
     const ally = actor("iris", "paranormal-toolkit.ally");
@@ -107,6 +116,21 @@ describe("request and Ordem adapters", () => {
     vi.stubGlobal("game", { user: player, users: [player], actors: { get: () => ally } });
     await expect(submitAllyRequest(ally as any, "activate")).rejects.toThrow("Nenhum GM");
     expect(ally.setFlag).not.toHaveBeenCalled();
+  });
+  it("cleans old presentation flags once and ignores unrelated display fields on subsequent reconciliation", async () => {
+    const ally = actor("iris", "paranormal-toolkit.ally");
+    const mirror = { revision: 0, beneficiaryId: null, status: "inactive", waitRound: null, diagnostic: null };
+    ally.getFlag.mockReturnValue({ ...mirror, validated: false, pending: true, pendingAction: "activate", pendingBeneficiaryId: "joao" } as any);
+    vi.stubGlobal("game", { actors: { contents: [ally] } });
+    const environment = new FoundryAllyEnvironment();
+    await environment.publish(createAllyLedger());
+    expect(ally.setFlag).toHaveBeenCalledWith("paranormal-toolkit", "allySupport", expect.objectContaining({
+      validated: expect.any(foundry.data.operators.ForcedDeletion), pending: expect.any(foundry.data.operators.ForcedDeletion),
+      pendingAction: expect.any(foundry.data.operators.ForcedDeletion), pendingBeneficiaryId: expect.any(foundry.data.operators.ForcedDeletion),
+    }));
+    ally.getFlag.mockReturnValue({ ...mirror, extraDisplayField: "ignored" } as any);
+    await environment.publish(createAllyLedger());
+    expect(ally.setFlag).toHaveBeenCalledTimes(1);
   });
   it("rejects synthetic beneficiaries and resolves ambiguous combats explicitly", () => {
     const ally = actor("iris", "paranormal-toolkit.ally"), joao = actor("joao");

@@ -35,4 +35,13 @@ describe("ally sheet renderer", () => {
     expect(html).toContain("<fieldset disabled>");
     expect(html).not.toContain('data-action="createAbility"');
   });
+  it("offers support and GM reconciliation without approval or environment gates", () => {
+    const html = renderAllySheet({ ...model(), support: { revision: 0, beneficiaryId: null,
+      status: "inactive", waitRound: null, diagnostic: null, isGM: true, beneficiaries: [], combats: [] } });
+    expect(html).toContain('data-action="assignSupport"');
+    expect(html).toContain('data-action="activateSupport"');
+    expect(html).toContain('data-action="deactivateSupport"');
+    expect(html).toContain('data-action="reconcileSupport"');
+    expect(html).not.toMatch(/approveSupport|validateSupport|aprova|validado|validação/);
+  });
 });

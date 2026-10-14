@@ -4,6 +4,8 @@
 
 A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. O incremento 1 de suporte passivo está implementado e aguarda seu smoke, detalhado ao final deste documento. A versão continua em **0.42.0**, sem release.
 
+**Decisão funcional vigente:** suporte passivo automático pelo proprietário, sem aprovação de vínculo/benefícios nem registro de validação manual do ambiente. O GM executor continua automático e recebe avisos privados. As seções anteriores à seção final “Suporte automático sem aprovação” registram evidências históricas; seus gates e roteiros de aprovação foram substituídos pelo roteiro final.
+
 A ficha permite editar nome, caminho de imagem, descrição e identificação de drone; criar, abrir, importar por arraste e remover Items nativos `ability`. A importação usa a API nativa de ActorSheetV2. Outros tipos de Item, Actors, folders e Active Effects não são aceitos pelo arraste desta ficha. Remover uma habilidade pede confirmação e revalida a permissão depois dela.
 
 A ficha não oferece botão de uso. A ficha nativa do Item continua disponível para edição; seus controles próprios pertencem ao sistema e não são desativados globalmente por esta PoC. Usar macros ou controles nativos de uso não constitui um cenário suportado desta PoC.
@@ -177,6 +179,8 @@ Arquivos da PoC (3 modificados, 12 novos):
 | tests/reference/ordem-ally-compatibility.test.ts | Novo |
 
 ## Incremento 1 — suporte passivo (aguardando smoke)
+
+> Histórico da primeira implementação. Os gates de aprovação e validação descritos abaixo foram removidos pela decisão funcional documentada na seção final.
 
 Implementação na branch `codex/ally-actor-poc`, mantendo o worktree e a versão 0.42.0. O domínio não importa namespace, Documents ou serviços do Toolkit. O perfil v1 da PoC permanece intacto; o estado operacional usa contratos v1 próprios.
 
@@ -437,3 +441,67 @@ Arquivos de produção: novo resolver; `foundry-ally-request-adapter.ts`; `ally-
 O snippet é somente leitura. A causa específica de uma eventual rejeição da Íris persistente permanece pendente dessa observação; os dados informados passam nos testes nativos. **A correção não será considerada validada no Foundry até o smoke do usuário.**
 
 Após a entrega, o usuário informou que o erro ainda ocorre. A validação manual permanece reprovada; este commit registra a resolução de origem e os diagnósticos, sem declarar o bug resolvido. O novo stack e a identidade do bundle carregado ainda não foram informados.
+
+## Suporte automático sem aprovação — 2026-10-14
+
+### Fluxo vigente
+
+- O proprietário do Aliado solicita atribuição, ativação, desativação e troca. Não há botão de aprovação nem de validação do ambiente.
+- A atribuição inicial seleciona imediatamente o beneficiário; clicar Ativar cria os efeitos automaticamente. Suporte já ativo permanece ativo ao iniciar combate. Trocar fora de combate remove os efeitos anteriores e concede os novos imediatamente; em combate, a retirada é imediata e a concessão aguarda a próxima rodada. A mesma referência não reinicia o suporte ou muda prioridade; desativar/reativar não elimina uma espera de rodada existente.
+- Editar os benefícios da habilidade original provoca reconciliação automática, preservando identidade e precedência da fonte. Apenas o benefício vencedor por chave mecânica é aplicado; o anterior retorna quando o vencedor deixa de ser elegível.
+- Dados continuam vindo das habilidades do Actor persistente original, inclusive nas solicitações pela ficha de tokens vinculados/não vinculados. Beneficiários continuam limitados a agentes persistentes do mundo.
+- Ownership, nonce, revision, usuário nativo do hook, eleição do executor e whitelist de benefícios permanecem validados. Flags de solicitação não fornecem mudanças arbitrárias de Active Effects. O Foundry autoriza cada escrita; nenhum bypass de permissões foi introduzido.
+- Um GM executor conectado continua necessário para o registro protegido e as escritas entre proprietários distintos. Sem GM, a solicitação é recusada antes de atualizar a flag. Nenhuma confirmação manual é necessária; todos os GMs podem desativar suporte pela ficha.
+
+### Migração do registro protegido
+
+O Journal operacional permanece protegido e ancorado nas flags dos GMs. `AllyLedger` passa de v1 para **v2**; o perfil do Actor continua v1 e os metadados do módulo permanecem **0.42.0**. O reader valida v1 antes da conversão, preservando beneficiaryId, estado, espera de combate, revision, nextSequence, orders e managed effect IDs. Approval, pending administrativo e validatedRuntime não integram o novo contrato.
+
+Uma solicitação antiga aguardando aprovação não equivale a vínculo efetivado e não é executada automaticamente durante a migração: o usuário deve solicitar novamente. O vínculo já efetivado continua intacto. Estado `pending` por espera de combate continua válido.
+
+O primeiro processamento/reconciliação com links inicializa o baseline de notificações e persiste v2. Um registro v1 vazio é interpretado como v2 e gravado na próxima operação. A flag é atualizada em uma única operação; `foundry.data.operators.ForcedDeletion` remove validatedRuntime, sem apagar o registro e recriá-lo. Arrays de links são substituídos pelo contrato novo, preservando os valores efetivos. Flags antigas de apresentação também são retiradas com o operador v14; campos de apresentação adicionais não disparam escritas repetidas.
+
+Registros corrompidos ou de versão desconhecida bloqueiam execução e permanecem intactos. Efeitos existentes que já correspondem ao desejo canônico preservam seus IDs; migração não os recria apenas para mudar o contrato.
+
+### Avisos e controle manual
+
+O executor envia uma mensagem privada aos GMs por Aliado que mudou efetivamente, agregando eventos: ativação, desativação, mudança de beneficiário, alteração dos benefícios aplicados e conclusão de espera de combate. Mostra Aliado, beneficiário anterior/atual e Defesa anterior/atual. Nomes são escapados e não há botões ou comandos no aviso. Uma atribuição inicial e uma ativação posterior são duas operações distintas e podem gerar dois avisos.
+
+O baseline protegido contém somente estado e benefícios efetivamente projetados. É atualizado depois de a reconciliação terminar e persistido antes de publicar no chat. Reconciliações iguais, revisões sem alteração funcional, reload e inicialização de baseline legado não geram avisos. Falhas mecânicas não anunciam sucesso; recuperação concluída anuncia uma vez. Falha de chat é registrada no console, preserva os efeitos e não é repetida automaticamente. Os avisos são de melhor esforço; não há outbox, auditoria ou transação distribuída.
+
+Quando **um GM remove manualmente** um efeito registrado, o hook usa o userId nativo e os IDs protegidos do Actor/efeito; a flag de origem do efeito sozinha não autoriza supressão. A fonte daquele benefício fica suprimida no link. Reconciliar, editar o valor e recarregar não a recriam. Atribuir o mesmo beneficiário ou clicar Ativar enquanto já ativo não remove a supressão. Desativar e ativar novamente, ou trocar realmente de beneficiário, inicia um novo contexto e limpa a supressão. Não há veto permanente.
+
+Outra fonte elegível pode retornar depois de suprimir o vencedor, conforme a regra de substituição aprovada. Para retirar todo o suporte de um Aliado, o GM usa Desativar. Exclusões do próprio reconciliador carregam `allyReconciliation` e não criam supressões; uma remoção por jogador não é tratada como decisão manual do GM e pode ser reparada pelo reconciliador.
+
+### Arquivos e validação
+
+| Arquivos | Alteração |
+|---|---|
+| `src/features/allies/ally-support-service.ts` | Operações imediatas; reconciliação sem gate; supressão por fonte e snapshots de mudanças. |
+| `src/features/allies/ally-operation-authority.ts` | Somente assign/activate/deactivate/reconcile; mantém autorização e parser estrito. |
+| `src/features/allies/ally-support-notifications.ts` (novo) | Contrato serializável e classificação pura de mudanças. |
+| `src/adapters/foundry/foundry-ally-store.ts` | Leitura v1/v2, migração e persistência protegida. |
+| `src/adapters/foundry/foundry-ally-request-adapter.ts` | Solicitações sem review/scope; apresentação limpa e envio pelo executor. |
+| `src/adapters/foundry/foundry-ally-notifications.ts` (novo) | Chat privado aos GMs, com nomes escapados e resumo de efeitos. |
+| `src/features/allies/ally-lifecycle-hooks.ts` | Remoção manual de efeito encaminhada pela identidade nativa. |
+| `src/applications/ally-sheet.ts`, `src/ui/components/ally/ally-sheet.ts` | Retirada de ações/botões/mensagens administrativos; interface mínima preservada. |
+| `src/types/foundry-shim.d.ts` | Operador público ForcedDeletion v14. |
+| `tests/unit/features/allies/ally-support-service.test.ts` | Ativação/troca automática, edição, remoção, permissões, falhas, avisos, supressão e reload. |
+| `tests/unit/features/allies/ally-ledger-migration.test.ts` (novo) | Vínculos/esperas/IDs preservados; pedidos antigos não executados; corrupção recusada. |
+| `tests/unit/features/allies/ally-notifications.test.ts` (novo) | Destinatários GM, conteúdo escapado, resumo e eleição. |
+| `tests/unit/features/allies/ally-foundry-adapters.test.ts`, `ally-lifecycle-hooks.test.ts`, `tests/ui/components/ally/ally-sheet.test.ts` | Migração de flags, hook nativo, solicitação sem aprovação e ausência dos gates na UI. |
+| `tests/reference/foundry-ally-request-diff.test.ts` | Operadores/limpeza nativos e transporte JSON; remoção atômica do gate sem perder IDs. Socket/servidor continuam substituídos. |
+| `README.md`, este relatório | Fluxo vigente e roteiro atual. |
+
+`ally-reconciliation-service.ts` foi inspecionado e reutilizado sem alteração: conserva diff, retirada antes da concessão, IDs persistidos antes de criar, recuperação e bloqueio de substituição se a retirada falhar. Não houve alteração no sistema Ordem, em workflows de comandos/recursos, CSS ou versão.
+
+Validação: `npm run check` aprovado com **591 testes em 83 arquivos**, incluindo fontes nativas Foundry 14.369 e Ordem 8.0.2; Node v24.19.0, Vitest 3.2.6, Vite 7.3.6. `npm run build` separado e `git diff --check` aprovados. Build final: 252 módulos, entrada importando `main-Copc4sf2.js`; dist continua ignorado pelo Git. Os testes de domínio/portas utilizam Documents/persistência substituídos; as referências executam fontes reais, com dependências explicitamente substituídas. Não comprovam execução e ownership no servidor do seu mundo. Smoke desta decisão funcional: pendente do usuário.
+
+### Smoke curto vigente
+
+1. Construir com `npm run build` em `D:/dev/paranormal-toolkit`; conferir que a instalação aponta para essa pasta, como foi confirmado nesta tarefa. Recarregar todos os clientes. Conferir o chunk importado pelo `dist/main.js` atual; os nomes de chunks nas seções históricas pertencem a builds anteriores.
+2. Como proprietário de Íris, configurar Defesa +5, escolher João (agent persistente), clicar Atribuir / trocar e Ativar. Com GM conectado, o efeito deve aparecer automaticamente; não deve existir aprovação/validação administrativa na ficha. Somente GMs recebem avisos discretos.
+3. Desativar e conferir retirada sem mudar a Defesa salva. Reativar, editar +5 para +10 e conferir ajuste automático, um efeito e um aviso de mudança. Reconciliar várias vezes/recarregar: IDs e quantidade permanecem, sem novos avisos.
+4. Trocar para Rafa fora de combate: retirar de João e aplicar em Rafa. Em combate, trocar novamente: retirar imediatamente, manter espera e aplicar somente na próxima rodada, com aviso de conclusão. Repetir a mesma referência não reinicia suporte.
+5. Como GM, remover o efeito gerenciado manualmente. Reconciliar/recarregar/editar o valor: aquela fonte permanece suprimida. Desativar e ativar novamente restaura o benefício; conferir fallback com dois Aliados se aplicável.
+6. Repetir pela ficha de um token não vinculado e com dois jogadores de proprietários distintos/dois GMs. Conferir um vínculo original e um executor; usuário sem ownership e revisão obsoleta continuam recusados. Em cópia de mundo com registro v1/efeitos existentes, confirmar migração sem recriação dos efeitos inalterados e sem executar aprovação antiga.

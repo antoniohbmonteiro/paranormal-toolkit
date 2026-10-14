@@ -292,7 +292,7 @@ declare const foundry: {
     };
   };
   abstract: { TypeDataModel: typeof TypeDataModel };
-  data: { fields: {
+  data: { operators: { ForcedDeletion: new () => object }; fields: {
     NumberField: typeof FoundryDataField;
     HTMLField: typeof FoundryDataField;
     BooleanField: typeof FoundryDataField;

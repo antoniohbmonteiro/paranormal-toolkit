@@ -9,8 +9,7 @@ export type AllySheetViewModel = {
   abilities: { id: string; name: string }[];
   support?: {
     revision: number; beneficiaryId: string | null; status: string; waitRound: number | null;
-    diagnostic: string | null; pending: boolean; validated: boolean; isGM: boolean;
-    pendingBeneficiaryId?: string | null; pendingAction?: string | null; available?: boolean;
+    diagnostic: string | null; isGM: boolean; available?: boolean;
     beneficiaries: { id: string; name: string }[]; combats: { id: string; name: string }[];
   };
 };
@@ -52,7 +51,6 @@ function renderSupport(model: AllySheetViewModel): string {
   return `<section aria-label="Suporte">
     <h2>Suporte</h2>
     <p>Estado: ${escapeHtml(names[support.status] ?? "Desconhecido")}${support.waitRound !== null ? ` — rodada ${escapeHtml(String(support.waitRound))}` : ""}</p>
-    ${support.pending ? `<p>Solicitação: ${escapeHtml(support.pendingAction === "assign" ? "atribuir / trocar" : "ativar")} — beneficiário: ${escapeHtml(support.beneficiaries.find(actor => actor.id === support.pendingBeneficiaryId)?.name ?? "ausente")}</p>` : ""}
     ${support.diagnostic ? `<p role="status">${escapeHtml(support.diagnostic)}</p>` : ""}
     ${enabled ? `<label>Beneficiário <select data-ally-beneficiary>
       <option value="">Selecione um Agente</option>
@@ -64,9 +62,6 @@ function renderSupport(model: AllySheetViewModel): string {
     <button type="button" data-action="assignSupport">Atribuir / trocar</button>
     <button type="button" data-action="activateSupport">Ativar</button>
     <button type="button" data-action="deactivateSupport">Desativar</button>
-    ${support.isGM ? `<button type="button" data-action="approveSupport">Aprovar vínculo / benefícios</button>
-      <button type="button" data-action="reconcileSupport">Reconciliar</button>
-      ${!support.validated ? '<button type="button" data-action="validateSupport">Registrar validação manual do ambiente</button>' : ""}` : ""}
-    ${support.pending ? "<p>Solicitação aguardando aprovação do GM.</p>" : ""}` : ""}
+    ${support.isGM ? '<button type="button" data-action="reconcileSupport">Reconciliar</button>' : ""}` : ""}
   </section>`;
 }

@@ -44,6 +44,12 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 
 ## Como usar
 
+### Suporte passivo de Aliados (`feature/allies`)
+
+Na ficha do Aliado, configure os benefícios de Defesa nas habilidades, selecione um Agente persistente e clique em **Atribuir / trocar**, depois **Ativar**. Os efeitos são aplicados automaticamente; **Desativar** os remove. A troca durante combate retira os benefícios anteriores e aguarda a próxima rodada para aplicar no novo beneficiário. Editar benefícios reconcilia automaticamente.
+
+O proprietário opera o suporte sem aprovação administrativa. Um GM conectado executa as escritas protegidas automaticamente e os GMs recebem avisos privados das mudanças efetivas. Remover um efeito gerenciado como GM suprime aquela fonte até uma nova ativação ou troca real de beneficiário. Comandos ativos permanecem fora desta etapa. Evidências e roteiro estão em [ALLY-ACTOR-POC.md](docs/ALLY-ACTOR-POC.md).
+
 ### Usando uma habilidade com rolagens
 
 Ao usar uma habilidade com fórmulas configuradas, o Toolkit executa cada rolagem uma única vez e persiste fórmula, total e dados individuais no card. Rolagens genéricas continuam informativas. Resultados de dano ou cura criam uma ação assistida independente para cada target selecionado no momento do uso.

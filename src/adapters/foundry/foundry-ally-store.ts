@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../../constants";
 import { createAllyLedger, type AllyLedger, type AllyStore } from "../../features/allies/ally-support-service";
 import { readAllyRequest } from "../../features/allies/ally-operation-authority";
+import { isAllyNoticeSnapshot } from "../../features/allies/ally-support-notifications";
 
 export const ALLY_STORE_FLAG = "allyStore";
 export const ALLY_LEDGER_FLAG = "allyLedger";
@@ -8,11 +9,13 @@ export const ALLY_LEDGER_FLAG = "allyLedger";
 export function readAllyLedger(value: unknown): AllyLedger {
   const fail = (): never => { throw new Error("Registro Allies corrompido ou incompatível; nenhuma normalização foi aplicada."); };
   if (!value || typeof value !== "object") return fail();
+  const raw = value as Record<string, unknown>;
+  const legacy = raw.version === 1;
   const ledger = value as AllyLedger;
-  if (ledger.version !== 1 || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0
+  if ((!legacy && raw.version !== 2) || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0
     || !Number.isSafeInteger(ledger.nextSequence) || ledger.nextSequence < 1
     || !Array.isArray(ledger.links) || !Array.isArray(ledger.managed) || !Array.isArray(ledger.orders)
-    || !(ledger.validatedRuntime === null || typeof ledger.validatedRuntime === "string")
+    || (legacy && !(raw.validatedRuntime === null || typeof raw.validatedRuntime === "string"))
     || !(ledger.diagnostic === null || typeof ledger.diagnostic === "string")) return fail();
   const allyIds = new Set<string>();
   for (const link of ledger.links) {
@@ -29,10 +32,21 @@ export function readAllyLedger(value: unknown): AllyLedger {
     if (link.state.wait !== null && (!link.state.wait || typeof link.state.wait !== "object")) return fail();
     if (link.state.wait && (typeof link.state.wait.combatId !== "string"
       || !Number.isSafeInteger(link.state.wait.round) || link.state.wait.round < 1)) return fail();
-    if (link.approval !== null && (!link.approval || typeof link.approval.beneficiaryId !== "string"
-      || typeof link.approval.scope !== "string")) return fail();
-    if (link.pending !== null && (!link.pending || typeof link.pending.userId !== "string"
-      || !readAllyRequest(link.pending.request))) return fail();
+    if (legacy) {
+      const old = link as unknown as { approval: { beneficiaryId: string; scope: string } | null;
+        pending: { userId: string; request: Record<string, unknown> } | null };
+      if (old.approval !== null && (!old.approval || typeof old.approval.beneficiaryId !== "string"
+        || typeof old.approval.scope !== "string")) return fail();
+      if (old.pending !== null) {
+        const request = old.pending?.request;
+        if (!old.pending || typeof old.pending.userId !== "string" || !request
+          || !["assign", "activate", "deactivate", "approve", "validate", "reconcile"].includes(String(request.action))
+          || (request.scope !== undefined && typeof request.scope !== "string")
+          || !readAllyRequest({ ...request, action: ["approve", "validate"].includes(String(request.action)) ? "reconcile" : request.action })) return fail();
+      }
+    } else if (!Array.isArray(link.suppressedSources) || !link.suppressedSources.every(key => typeof key === "string")
+      || new Set(link.suppressedSources).size !== link.suppressedSources.length
+      || !(link.notice === null || isAllyNoticeSnapshot(link.notice))) return fail();
   }
   const orderKeys = new Set<string>();
   const orderSequences = new Set<number>();
@@ -54,7 +68,12 @@ export function readAllyLedger(value: unknown): AllyLedger {
     if (effects.has(key)) return fail();
     effects.add(key);
   }
-  return structuredClone(ledger);
+  const copy = structuredClone(ledger);
+  return { version: 2, revision: copy.revision, nextSequence: copy.nextSequence,
+    managed: copy.managed, orders: copy.orders, diagnostic: legacy ? null : copy.diagnostic,
+    links: copy.links.map(link => ({ allyId: link.allyId, state: link.state,
+      diagnostic: legacy ? null : link.diagnostic, suppressedSources: legacy ? [] : link.suppressedSources,
+      notice: legacy ? null : link.notice })) };
 }
 
 export class FoundryAllyStore implements AllyStore {
@@ -115,6 +134,10 @@ export class FoundryAllyStore implements AllyStore {
     this.assertWriter();
     if (!this.journal) throw new Error("O registro operacional não foi carregado.");
     this.assertProtected(this.journal);
-    await this.journal.setFlag(MODULE_ID, ALLY_LEDGER_FLAG, readAllyLedger(ledger));
+    const previous = this.journal.getFlag(MODULE_ID, ALLY_LEDGER_FLAG);
+    const removeLegacyGate = previous && typeof previous === "object" && Object.hasOwn(previous, "validatedRuntime");
+    await this.journal.setFlag(MODULE_ID, ALLY_LEDGER_FLAG, {
+      ...readAllyLedger(ledger), ...(removeLegacyGate ? { validatedRuntime: new foundry.data.operators.ForcedDeletion() } : {}),
+    });
   }
 }

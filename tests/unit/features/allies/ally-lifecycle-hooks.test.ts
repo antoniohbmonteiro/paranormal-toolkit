@@ -23,6 +23,7 @@ function fixture(realService = false) {
     system: { version: "8.0.2" }, release: { version: "14.369" } });
   const warn = vi.fn();
   vi.stubGlobal("ui", { notifications: { warn } });
+  vi.stubGlobal("ChatMessage", { create: vi.fn(async () => {}) });
   vi.spyOn(console, "error").mockImplementation(() => {});
   let ledger = createAllyLedger();
   vi.spyOn(FoundryAllyStore.prototype, "load").mockImplementation(async () => structuredClone(ledger));
@@ -115,13 +116,10 @@ describe("ally request updates (Foundry hooks/documents doubled)", () => {
     await f.emit({ [`${path}.id`]: "request-01" });
     expect(f.process).toHaveBeenCalledTimes(1);
   });
-  it("assigns a persistent world agent through the real service after a diff and approval", async () => {
+  it("assigns a persistent world agent immediately through the real service after a diff", async () => {
     const f = fixture(true); await f.emit({ [`${path}.id`]: "request-01" });
-    expect(f.ledger().links[0].pending?.request.beneficiaryId).toBe("joao");
-    f.flags.allyRequest = { id: "approve-01", revision: f.ledger().revision, action: "approve", beneficiaryId: "joao", scope: "[]" };
-    await f.emit({ [path]: f.flags.allyRequest }, "gm");
     expect(f.ledger().links[0].state.beneficiaryId).toBe("joao");
-    expect(f.ledger().links[0].approval).toEqual({ beneficiaryId: "joao", scope: "[]" });
+    expect(f.ledger().links[0]).not.toHaveProperty("pending");
   });
   it("shares one canonical support link when submitting through tokens and the directory", async () => {
     const f = fixture(true);
@@ -158,5 +156,20 @@ describe("ally request updates (Foundry hooks/documents doubled)", () => {
     expect(f.reconcile).toHaveBeenCalledTimes(previous);
     f.hooks.get("updateActiveEffect")![0]({}, {}, {}, "actual-player");
     expect(f.reconcile).toHaveBeenCalledTimes(previous + 1);
+  });
+  it("routes manual effect deletions using the native caller and skips its own removals", async () => {
+    const f = fixture();
+    const suppress = vi.spyOn(AllySupportService.prototype, "suppressEffect").mockResolvedValue();
+    const effect = { id: "effect-1", parent: f.agent, getFlag: () => ({ allyId: "forged" }) };
+    const callback = f.hooks.get("deleteActiveEffect")![0];
+    await callback(effect, {}, "gm");
+    expect(suppress).toHaveBeenCalledWith("joao", "effect-1", "gm");
+    await callback(effect, { allyReconciliation: true }, "gm");
+    expect(suppress).toHaveBeenCalledTimes(1);
+    await callback(effect, {}, "actual-player");
+    expect(suppress).toHaveBeenLastCalledWith("joao", "effect-1", "actual-player");
+    const current = (globalThis as any).game;
+    current.user = { id: "gm-b", isGM: true, active: true }; current.users.push(current.user);
+    await callback(effect, {}, "gm"); expect(suppress).toHaveBeenCalledTimes(2);
   });
 });
