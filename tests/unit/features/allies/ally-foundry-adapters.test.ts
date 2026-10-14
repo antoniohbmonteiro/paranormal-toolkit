@@ -73,7 +73,7 @@ describe("request and Ordem adapters", () => {
     const gm = user("gm", true, "JournalEntry.ledger");
     const record = journal(), ally = actor("iris", "paranormal-toolkit.ally");
     ally.getFlag.mockReturnValue({ status: "active", beneficiaryId: "forged", revision: 99 } as any);
-    vi.stubGlobal("game", { user: gm, users: [gm, user("player")], system: { version: "8.0.2" }, release: { version: "14.369" } });
+    vi.stubGlobal("game", { user: gm, users: [gm, user("player")], actors: { get: () => ally }, system: { version: "8.0.2" }, release: { version: "14.369" } });
     vi.stubGlobal("fromUuid", vi.fn(async () => record));
     const { readAllySupportView } = await import("../../../../src/adapters/foundry/foundry-ally-request-adapter");
     expect(await readAllySupportView(ally as any)).toMatchObject({ revision: 0, beneficiaryId: null, status: "inactive" });
@@ -104,7 +104,7 @@ describe("request and Ordem adapters", () => {
   it("rejects a request without an executor before updating an actor", async () => {
     const ally = actor("iris", "paranormal-toolkit.ally");
     const player = user("player");
-    vi.stubGlobal("game", { user: player, users: [player] });
+    vi.stubGlobal("game", { user: player, users: [player], actors: { get: () => ally } });
     await expect(submitAllyRequest(ally as any, "activate")).rejects.toThrow("Nenhum GM");
     expect(ally.setFlag).not.toHaveBeenCalled();
   });

@@ -47,7 +47,7 @@ export function renderAllySheet(model: AllySheetViewModel): string {
 function renderSupport(model: AllySheetViewModel): string {
   const support = model.support;
   if (!support) return "";
-  const enabled = model.editable && model.profile !== null && support.available !== false;
+  const enabled = model.editable && support.available !== false;
   const names: Record<string, string> = { inactive: "Inativo", active: "Ativo", pending: "Aguardando rodada" };
   return `<section aria-label="Suporte">
     <h2>Suporte</h2>

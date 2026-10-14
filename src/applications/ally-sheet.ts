@@ -1,7 +1,7 @@
 import { prepareAllyApproval, readAllySupportView, submitAllyRequest } from "../adapters/foundry/foundry-ally-request-adapter";
 import { escapeHtml } from "../ui/rendering/escape-html";
 import type { AllyRequest } from "../features/allies/ally-operation-authority";
-import { readAllyProfile } from "../core/allies/ally-profile";
+import { readFoundryAllyProfile } from "../adapters/foundry/foundry-ally-actor-resolver";
 import { getActorItems } from "../features/automation/actor-item-resolver";
 import { renderAllySheet, type AllySheetViewModel } from "../ui/components/ally/ally-sheet";
 
@@ -31,7 +31,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
     return {
       name: this.actor.name,
       image: this.actor.img,
-      profile: readAllyProfile(this.actor.system),
+      profile: readFoundryAllyProfile(this.actor),
       editable: this.canEdit(),
       support: {
         ...await readAllySupportView(this.actor), isGM: Boolean(game.user?.isGM),
@@ -61,7 +61,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
     _event: SubmitEvent, _form: HTMLFormElement, submitData: Record<string, unknown>,
   ): Promise<{ updated?: Actor }> {
     if (!this.canEdit()) throw new Error("Você não possui permissão para editar este Aliado.");
-    if (!readAllyProfile(this.actor.system)) throw new Error("Dados do Aliado inválidos ou de versão não suportada.");
+    if (!readFoundryAllyProfile(this.actor)) throw new Error("Dados do Aliado inválidos ou de versão não suportada.");
     const system = submitData.system as Record<string, unknown> | undefined;
     if (typeof submitData.name !== "string" || !submitData.name.trim()) throw new Error("Informe o nome do Aliado.");
     if (typeof submitData.img !== "string" || typeof system?.description !== "string" || typeof system.isDrone !== "boolean") {
@@ -75,7 +75,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   }
 
   async _onDropDocument(event: DragEvent, document: { documentName: string }): Promise<Item | null | undefined> {
-    if (!this.canEdit() || !readAllyProfile(this.actor.system)) return null;
+    if (!this.canEdit() || !readFoundryAllyProfile(this.actor)) return null;
     if (document.documentName !== "Item") {
       ui.notifications?.warn("Esta ficha aceita apenas itens do tipo habilidade.");
       return null;
@@ -84,7 +84,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   }
 
   async _onDropItem(event: DragEvent, item: Item): Promise<Item | null | undefined> {
-    if (!this.canEdit() || !readAllyProfile(this.actor.system)) return null;
+    if (!this.canEdit() || !readFoundryAllyProfile(this.actor)) return null;
     if (item.type !== "ability") {
       ui.notifications?.warn("Esta ficha aceita apenas itens do tipo habilidade.");
       return null;
@@ -147,7 +147,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   }
 
   private static async onCreateAbility(this: AllySheet): Promise<void> {
-    if (!this.canEdit() || !readAllyProfile(this.actor.system)) return;
+    if (!this.canEdit() || !readFoundryAllyProfile(this.actor)) return;
     const [item] = await this.actor.createEmbeddedDocuments("Item", [{
       name: "Nova habilidade", type: "ability", system: { abilityType: "ability" },
     }]);
@@ -160,7 +160,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   }
 
   private static async onRemoveAbility(this: AllySheet, _event: PointerEvent, target: HTMLElement): Promise<void> {
-    if (!this.canEdit() || !readAllyProfile(this.actor.system)) return;
+    if (!this.canEdit() || !readFoundryAllyProfile(this.actor)) return;
     const item = this.findAbility(target.dataset.itemId);
     if (!item?.id) return;
     const confirmed = await foundry.applications.api.DialogV2.confirm({

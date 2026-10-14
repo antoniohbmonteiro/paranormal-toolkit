@@ -4,6 +4,7 @@ import { AllySupportService, createAllyLedger } from "../../../../src/features/a
 import { FoundryAllyStore } from "../../../../src/adapters/foundry/foundry-ally-store";
 import { createAllyProfile } from "../../../../src/core/allies/ally-profile";
 import { readAllyRequest } from "../../../../src/features/allies/ally-operation-authority";
+import { submitAllyRequest } from "../../../../src/adapters/foundry/foundry-ally-request-adapter";
 
 const scope = "paranormal-toolkit";
 const path = `flags.${scope}.allyRequest`;
@@ -105,6 +106,15 @@ describe("ally request updates (Foundry hooks/documents doubled)", () => {
     await f.emit({ [`${path}.id`]: "request-01" });
     expect(f.process).not.toHaveBeenCalled(); expect(f.actor.getFlag).not.toHaveBeenCalled();
   });
+  it("ignores synthetic and stale-instance updates even with a copied original id and fresh nonce", async () => {
+    const f = fixture();
+    const callback = f.hooks.get("updateActor")![0];
+    await callback({ ...f.actor, isToken: true, token: { baseActor: f.actor } }, { [`${path}.id`]: "request-01" }, {}, "gm");
+    await callback({ ...f.actor }, { [`${path}.id`]: "request-01" }, {}, "gm");
+    expect(f.process).not.toHaveBeenCalled();
+    await f.emit({ [`${path}.id`]: "request-01" });
+    expect(f.process).toHaveBeenCalledTimes(1);
+  });
   it("assigns a persistent world agent through the real service after a diff and approval", async () => {
     const f = fixture(true); await f.emit({ [`${path}.id`]: "request-01" });
     expect(f.ledger().links[0].pending?.request.beneficiaryId).toBe("joao");
@@ -112,6 +122,20 @@ describe("ally request updates (Foundry hooks/documents doubled)", () => {
     await f.emit({ [path]: f.flags.allyRequest }, "gm");
     expect(f.ledger().links[0].state.beneficiaryId).toBe("joao");
     expect(f.ledger().links[0].approval).toEqual({ beneficiaryId: "joao", scope: "[]" });
+  });
+  it("shares one canonical support link when submitting through tokens and the directory", async () => {
+    const f = fixture(true);
+    let nonce = 0;
+    vi.stubGlobal("foundry", { utils: { randomID: () => `token-request-${++nonce}` } });
+    const token = { ...f.actor, isToken: true, token: { baseActor: f.actor }, setFlag: vi.fn() };
+    await submitAllyRequest(token as any, "assign", { beneficiaryId: "joao" });
+    await f.emit({ [`${path}.id`]: "token-request-1" }, "gm");
+    await submitAllyRequest(f.actor as any, "assign", { beneficiaryId: "joao" });
+    await f.emit({ [`${path}.id`]: "token-request-2" }, "gm");
+    expect(f.ledger().links).toHaveLength(1);
+    expect(f.ledger().links[0]).toMatchObject({ allyId: "iris", state: { beneficiaryId: "joao" } });
+    expect(token.setFlag).not.toHaveBeenCalled();
+    expect(f.warn).not.toHaveBeenCalled();
   });
   it("preserves stale revision, ownership and persistent-agent checks in the real service", async () => {
     const f = fixture(true); await f.emit({ [`${path}.id`]: "request-01" });

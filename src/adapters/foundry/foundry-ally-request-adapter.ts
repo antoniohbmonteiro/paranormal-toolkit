@@ -1,7 +1,7 @@
 import { MODULE_ID } from "../../constants";
 import { allyScopeFingerprint } from "../../core/allies/ally-definition";
 import { FoundryAllyStore } from "./foundry-ally-store";
-import { readAllyProfile } from "../../core/allies/ally-profile";
+import { resolveFoundryAllyActor, reportAllyActorResolution } from "./foundry-ally-actor-resolver";
 import type { AllyCombatSnapshot } from "../../core/allies/ally-support-state";
 import { getActorItems } from "../../features/automation/actor-item-resolver";
 import { ALLY_TYPE, readAllyAbility } from "../../features/allies/config/ally-ability-config";
@@ -80,6 +80,10 @@ function presentationFromLedger(actor: Actor, ledger: AllyLedger, runtime: strin
   };
 }
 export async function readAllySupportView(actor: Actor): Promise<AllySupportPresentation> {
+  const resolved = resolveFoundryAllyActor(actor);
+  if (!resolved) return { revision: 0, beneficiaryId: null, status: "unknown", waitRound: null,
+    diagnostic: "Aliado original ausente ou perfil inválido.", pending: false, validated: false, available: false };
+  actor = resolved;
   if (!game.user?.isGM) return readAllyPresentation(actor);
   try {
     const ledger = await new FoundryAllyStore().load();
@@ -98,6 +102,12 @@ export type AllyApprovalReview = {
 };
 export async function prepareAllyApproval(actor: Actor): Promise<AllyApprovalReview> {
   if (!game.user?.isGM) throw new Error("A revisão exige um GM.");
+  const resolved = resolveFoundryAllyActor(actor);
+  if (!resolved) { reportAllyActorResolution(actor); throw new Error("Aliado inválido."); }
+  if (!actor.canUserModify(game.user, "update") || !resolved.canUserModify(game.user, "update")) {
+    throw new Error("Sem permissão para solicitar suporte.");
+  }
+  actor = resolved;
   const view = await readAllySupportView(actor);
   const beneficiaryId = view.pendingBeneficiaryId ?? view.beneficiaryId;
   if (view.available === false || !beneficiaryId) throw new Error(view.diagnostic ?? "Nenhum vínculo para aprovar.");
@@ -116,8 +126,12 @@ export async function submitAllyRequest(
   actor: Actor, action: AllyRequest["action"], fields: { beneficiaryId?: string; combatId?: string } = {},
   review?: AllyApprovalReview,
 ): Promise<void> {
-  if (actor.type !== ALLY_TYPE || actor.isToken || !readAllyProfile(actor.system)) throw new Error("Aliado inválido.");
-  if (!game.user || !actor.canUserModify(game.user, "update")) throw new Error("Sem permissão para solicitar suporte.");
+  const resolved = resolveFoundryAllyActor(actor);
+  if (!resolved) { reportAllyActorResolution(actor); throw new Error("Aliado inválido."); }
+  if (!game.user || !actor.canUserModify(game.user, "update") || !resolved.canUserModify(game.user, "update")) {
+    throw new Error("Sem permissão para solicitar suporte.");
+  }
+  actor = resolved;
   if (!electAllyExecutor(allyUsers())) throw new Error("Nenhum GM executor conectado. O suporte não foi alterado.");
   const view = await readAllySupportView(actor);
   if (view.available === false) throw new Error(view.diagnostic ?? "Registro operacional indisponível.");
@@ -148,7 +162,7 @@ export class FoundryAllyEnvironment implements AllySupportEnvironment {
   }
   allyExists(allyId: string): boolean {
     const actor = game.actors.get?.(allyId);
-    return Boolean(actor && actor.type === ALLY_TYPE && !actor.isToken && readAllyProfile(actor.system));
+    return Boolean(actor && !actor.isToken && resolveFoundryAllyActor(actor));
   }
   agentExists(id: string): boolean {
     const actor = game.actors.get?.(id);

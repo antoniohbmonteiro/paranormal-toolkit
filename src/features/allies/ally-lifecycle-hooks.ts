@@ -21,7 +21,8 @@ export function registerAllyLifecycleHooks(): AllySupportService {
   const reconcile = (): void => { void service.reconcile().catch(report); };
   const seenRequests = new WeakMap<Actor, Set<string>>();
   Hooks.on("updateActor", (actor: Actor, changes: Record<string, unknown>, _options: unknown, userId: string) => {
-    if (actor.type !== ALLY_TYPE || !service.isExecutor()) return;
+    // Synthetic flags cannot authorize writes to the original world Actor.
+    if (actor.type !== ALLY_TYPE || actor.isToken || game.actors.get?.(actor.id!) !== actor || !service.isExecutor()) return;
     const request = readUpdatedAllyRequest(actor, changes, userId);
     if (request === undefined) return;
     if (!request) { report(new Error("Solicitação de suporte inválida.")); return; }

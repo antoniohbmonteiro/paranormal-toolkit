@@ -191,4 +191,26 @@ describe("ally sheet handlers (Foundry doubles)", () => {
     expect(actor.update).not.toHaveBeenCalled();
     expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled();
   });
+  it.each(["directory", "linked", "unlinked"])("assigns from the %s sheet to the same persistent Actor", async origin => {
+    const { actor } = fixture();
+    const original = { ...actor, id: "iris", uuid: "Actor.iris", type: "paranormal-toolkit.ally", isToken: false,
+      getFlag: vi.fn(() => ({ revision: 7 })), setFlag: vi.fn(async () => {}) };
+    const synthetic = { ...original, uuid: "Scene.scene.Token.token.Actor.iris", isToken: true,
+      token: { baseActor: original }, setFlag: vi.fn() };
+    const document = origin === "unlinked" ? synthetic : original;
+    const player = { id: "owner", isGM: false, active: true };
+    vi.stubGlobal("game", { user: player, users: [player, { id: "gm", isGM: true, active: true }],
+      actors: { contents: [original], get: () => original } });
+    vi.stubGlobal("foundry", { ...(globalThis as any).foundry,
+      utils: { ...(globalThis as any).foundry.utils, randomID: () => "sheet-request-01" } });
+    const sheet = new AllySheet({ document });
+    const button = { closest: () => ({ querySelector: (selector: string) => ({
+      value: selector.includes("beneficiary") ? "joao" : "",
+    }) }) };
+    await AllySheet.DEFAULT_OPTIONS.actions.assignSupport.call(sheet, {} as PointerEvent, button as any);
+    expect(original.setFlag).toHaveBeenCalledWith("paranormal-toolkit", "allyRequest",
+      { id: "sheet-request-01", revision: 7, action: "assign", beneficiaryId: "joao" });
+    expect(synthetic.setFlag).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+  });
 });

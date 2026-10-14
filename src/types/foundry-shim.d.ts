@@ -100,6 +100,7 @@ type TokenTargetOptionsLike = {
 };
 
 type TokenLike = {
+  baseActor?: Actor | null;
   id?: string | null;
   uuid?: string | null;
   name?: string;

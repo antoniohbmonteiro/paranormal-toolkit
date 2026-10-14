@@ -367,3 +367,73 @@ Hooks.off("updateActor", allyUpdateProbe);
 Executar o registro do probe antes dos cliques e a última linha separadamente depois. O callback não altera Documents. Informar build real, quem clicou, delta, flag completa e resultado; o bug só será considerado validado após esse smoke.
 
 Validação automatizada desta correção: `npm run check` aprovado com **543 testes em 79 arquivos**, incluindo as sete verificações opcionais de Foundry/Ordem; `npm run build` separado aprovado (249 módulos); `git diff --check` aprovado, também conferindo o novo arquivo de referência. Node.js v24.19.0, Vitest 3.2.6 e Vite 7.3.6. Versões 0.42.0 preservadas. Resultado manual do mundo: **pendente do usuário**.
+
+## Correção da origem do suporte e diagnóstico do DataModel — 2026-10-14
+
+### Evidência e limites da investigação
+
+- **Solicitação diferencial:** a causa reproduzida na seção anterior permanece confirmada. O reader estrito, a captura da flag completa e o userId nativo de `7e32732` foram preservados.
+- **Token não vinculado:** `submitAllyRequest()` rejeitava qualquer `actor.isToken`, antes de resolver sua origem. Esta causa de “Aliado inválido” foi reproduzida. Na API pública instalada do Foundry 14.369, `Actor.token` retorna o TokenDocument e `TokenDocument.baseActor` retorna o Actor do mundo de `game.actors`. Um token vinculado já utiliza o Actor do mundo.
+- **Íris persistente com o perfil informado:** não foi possível reproduzir a rejeição. O `AllyDataModel` atual, construído sobre TypeDataModel, DataModel, campos, validação e primitivas **nativos** do Foundry 14.369, aceita schemaVersion 1, descrição vazia e isDrone true. Tanto as propriedades inicializadas como `toObject(true)` passam no reader. Não há evidência de colisão de schemaVersion nem necessidade de alterar o schema.
+- **Build divergente:** a junction `C:/Users/Antonio/AppData/Local/FoundryVTT/Data/modules/paranormal-toolkit` aponta para `C:/Users/Antonio/.codex/worktrees/ally-actor-poc/paranormal-toolkit`, enquanto esta correção está em `D:/dev/paranormal-toolkit`, branch `feature/allies`, baseada em `7e32732`. A entrada instalada importa `main-9M2iSYp7.js`; o build anterior deste checkout importava `main-BjhG87lE.js`. O sourcemap instalado contém o handler anterior e **não contém `readUpdatedAllyRequest`**. Portanto, a instalação consultada não contém sequer o fix diferencial. Isso confirma a divergência de deployment, mas não prova qual instância produziu a rejeição do Actor persistente no smoke anterior. A consulta HTTP local foi recusada por ausência de servidor escutando na porta configurada 30000; o cache/browser daquele smoke não foi observado.
+
+### Implementação
+
+`src/adapters/foundry/foundry-ally-actor-resolver.ts` centraliza dois comportamentos:
+
+1. Serializar o system DataModel pela API pública `toObject(true)` e validar com o mesmo `readAllyProfile` estrito. Objetos simples continuam passando pelo mesmo contrato. Não converter campos inválidos, alterar defaults ou preencher dados artificialmente. Falha de serialização bloqueia o perfil. Isso evita depender de propriedades preparadas sem assumir que elas causaram o erro relatado.
+2. Resolver a origem: Actor persistente → instância atual da coleção; token sintético → `actor.token.baseActor` → instância atual da coleção. Exigir subtipo, identidade UUID quando disponível, Actor não sintético presente no mundo e perfil persistido válido. Nunca usar apenas o id sintético como fallback quando o original estiver ausente.
+
+Solicitação, apresentação e revisão do GM usam esse Actor original. Solicitar exige update permission tanto na origem como no original. Revision, beneficiário, aprovação e fingerprint vêm do mesmo fluxo existente; os benefícios continuam vindo dos Items do Actor original. Nenhuma flag de suporte é gravada no token. Edições nativas de perfil/Items em um token sintético continuam sendo edições daquele token; não se tornam fontes mecânicas autorizadas do suporte do Actor original.
+
+O hook somente processa solicitações de Actors persistentes que sejam a instância atual de `game.actors`. Uma flag copiada/adulterada no Actor sintético não é encaminhada ao original. Reconciliação e validações protegidas continuam existentes; beneficiários sintéticos permanecem recusados.
+
+Quando a origem é recusada, o console registra URL do bundle, UUID/tipo/isToken da origem, baseActor, Actor atual da coleção, nome da classe do model, formato dos campos preparados/serializados e validade do perfil original. Não registra conteúdo da descrição, saldos ou payloads de autorização. A apresentação informa ausência do original ou perfil inválido. Sem redesign: o renderer apenas deixa os controles de suporte dependerem da disponibilidade do original, independentemente da validade do perfil local do token.
+
+Arquivos de produção: novo resolver; `foundry-ally-request-adapter.ts`; `ally-lifecycle-hooks.ts`; `ally-sheet.ts`; renderer `src/ui/components/ally/ally-sheet.ts`; `foundry-shim.d.ts` (baseActor público). Nenhuma alteração no AllyDataModel, domínio, sistema Ordem ou versão 0.42.0.
+
+### Testes
+
+- `tests/unit/features/allies/ally-actor-resolution.test.ts`: 14 regressões para origem persistente, token vinculado/não vinculado, ausência/tipo/UUID inválidos do original, instância antiga da ficha, perfis inválidos, erro de serialização, permissions em ambas as origens e mesma revision/estado entre múltiplos tokens. Documents substituídos.
+- `tests/unit/features/allies/ally-lifecycle-hooks.test.ts`: duas regressões novas; ignora solicitações sintéticas/instâncias antigas e exercita token → solicitação no original → delta → serviço real → vínculo único, alternando com o diretório. Preserva os casos de identidade falsa, replay, revisão antiga, ownership e beneficiário persistente. Persistência/hook substituídos.
+- `tests/reference/foundry-ally-data-model.test.ts`, com loader em `tests/reference/helpers/foundry-data-model.ts`: quatro verificações com o código real do AllyDataModel e a construção/validação/serialização nativas. Defaults, edição com updateSource, diferença simulada entre preparação e fonte, e fonte corrompida. Model sem parent Document; coleções não utilizadas são substituídas. A divergência de propriedades é criada explicitamente no teste; não é apresentada como ocorrência confirmada no mundo.
+- Ajustados dois fixtures de `ally-foundry-adapters.test.ts` para representar Actors registrados no mundo.
+- `tests/unit/features/allies/ally-actor.test.ts`: três regressões do handler real do botão Atribuir / trocar, acionado na ficha do diretório, vinculada e sintética; o ActorSheetV2/DOM são substituídos.
+
+`npm run check`: **566 testes aprovados em 81 arquivos**, incluindo os 11 casos de referência Foundry/Ordem, usando as variáveis de referência documentadas anteriormente. Node v24.19.0, Vitest 3.2.6, Vite 7.3.6; 250 módulos no build. Testes nativos são opcionais sem as variáveis e não substituem persistência/multiplayer no servidor real.
+
+`npm run build` separado e `git diff --check` aprovados. Conferidos também os novos arquivos por diff sem index, sem erros de whitespace. Os sourcemaps do build final correspondem ao código atual em 248 entradas de src, normalizando somente finais de linha. Arquivos gerados continuam ignorados pelo Git.
+
+### Smoke do usuário
+
+1. Disponibilizar **a pasta dist inteira deste checkout** na instalação de teste, ou ajustar a instalação para apontar para `D:/dev/paranormal-toolkit`. Não basta construir aqui enquanto a junction continua servindo o dist do worktree antigo. Nenhuma junction ou arquivo do worktree antigo foi alterado nesta tarefa.
+2. Recarregar todos os clientes. Este build importa `main-DOqL1aQG.js` em `dist/main.js`. No console, conferir a URL realmente carregada:
+
+   ```javascript
+   performance.getEntriesByType("resource")
+     .map(entry => entry.name)
+     .filter(url => url.includes("/modules/paranormal-toolkit/dist/"));
+   ```
+
+   Confirmar o chunk atual, não apenas main.js ou versão 0.42.0; a versão permanece igual entre builds. Se persistir algum erro, o diagnóstico também imprime `bundle`.
+3. No diretório, abrir Íris (`Actor.pc26OJV8AOmi6WS6`), selecionar um agent persistente e atribuir. Aprovar como GM quando necessário; ativar e desativar.
+4. Colocar um token vinculado e dois não vinculados de Íris. Abrir cada ficha e alternar atribuição/ativação/desativação. Todas devem apresentar o mesmo beneficiário/estado/revision após reabrir; somente a flag do Actor original recebe a solicitação.
+5. Repetir atribuição ao mesmo beneficiário para exercitar o delta parcial; editar nome/descrição e confirmar que isso não gera solicitações. Conferir vínculo único e ausência de efeitos duplicados, inclusive após reload/reconciliação.
+6. Em cópia descartável, testar token cujo original esteja ausente/inválido; os controles devem ficar indisponíveis e nenhuma concessão deve aparecer. Testar usuário que controla o token, mas não pode atualizar o original: deve receber “Sem permissão”. Beneficiário sintético permanece proibido.
+7. Repetir com dois jogadores/dois GMs e os gates mecânicos anteriores. Se o Actor persistente ainda falhar, enviar o diagnóstico completo e comparar a instância da ficha com a coleção:
+
+   ```javascript
+   const ally = game.actors.get("pc26OJV8AOmi6WS6");
+   console.log({
+     uuid: ally.uuid, type: ally.type, isToken: ally.isToken,
+     modelClass: ally.system.constructor.name,
+     registeredModel: ally.system instanceof CONFIG.Actor.dataModels[ally.type],
+     instanceProfile: { schemaVersion: ally.system.schemaVersion,
+       descriptionType: typeof ally.system.description, isDroneType: typeof ally.system.isDrone },
+     modelSource: ally.system.toObject(true), actorSource: ally.toObject(true).system
+   });
+   ```
+
+O snippet é somente leitura. A causa específica de uma eventual rejeição da Íris persistente permanece pendente dessa observação; os dados informados passam nos testes nativos. **A correção não será considerada validada no Foundry até o smoke do usuário.**
+
+Após a entrega, o usuário informou que o erro ainda ocorre. A validação manual permanece reprovada; este commit registra a resolução de origem e os diagnósticos, sem declarar o bug resolvido. O novo stack e a identidade do bundle carregado ainda não foram informados.
