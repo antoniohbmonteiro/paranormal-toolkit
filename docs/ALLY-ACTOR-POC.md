@@ -296,3 +296,74 @@ Registrar: versões de Foundry/Ordem, caso que falhou, valores antes/depois, est
 - Node.js v24.19.0; Vitest 3.2.6; Vite 7.3.6. Inspeção de fonte Foundry 14.369 e Ordem 8.0.2; **smoke real deste incremento pendente**.
 - `git diff --check`: aprovado. `dist` continua ignorado; o build local deve ser instalado inteiro para o smoke.
 - Metadata de versão preservada em 0.42.0. Nenhuma tag, release ou alteração no checkout principal/sistema.
+
+## Correção do recebimento de solicitações — 2026-10-14
+
+### Causa e evidência
+
+A hipótese de update diferencial foi reproduzida com as fontes instaladas do Foundry **14.369**. `Document.setFlag()` envia o objeto completo em `flags.paranormal-toolkit.allyRequest`. `ClientDatabaseBackend` usa o diff de `updateSource()` no envio e novamente no recebimento; `ObjectField._updateDiff()` omite campos iguais à fonte. O `updateActor` é chamado depois de atualizar o Actor, com essas diferenças.
+
+Exemplo reproduzido: flag antiga contém `{id: "request-01", revision: 0, action: "assign", beneficiaryId: "joao"}`; nova solicitação mantém os campos e muda apenas `id`. O hook recebe:
+
+```json
+{"flags":{"paranormal-toolkit":{"allyRequest":{"id":"request-02"}}},"_id":"iris"}
+```
+
+Nesse momento, `actor.getFlag("paranormal-toolkit", "allyRequest")` já retorna a solicitação completa. O handler anterior passava o delta para `readAllyRequest()`, que corretamente rejeitava a ausência de `revision`/ação/beneficiário. O defeito era confundir delta com solicitação completa, não o schema nem o tipo agent.
+
+`tests/reference/foundry-ally-request-diff.test.ts` executa os métodos reais de setFlag/update, o cálculo nativo de diferenças de ObjectField e o backend cliente que dispara o hook. Schema/coleção e socket/servidor são substituídos. Não há Foundry vendorizado, escrita na instalação ou alteração do mundo. **Essa reprodução confirma o caminho defeituoso do código; a validação no seu runtime/mundo permanece pendente.**
+
+### Correção e arquivos
+
+- `src/adapters/foundry/foundry-ally-request-adapter.ts`: detecta novo ID no delta em formatos aninhados, pontilhados ou mistos; lê imediatamente a flag completa do Actor; aplica o mesmo reader estrito e confere nonce/campos presentes contra o snapshot.
+- `src/features/allies/ally-lifecycle-hooks.ts`: somente o GM executor captura/processa; deduplica IDs por Actor durante sua sessão. O userId continua vindo do hook, nunca da flag.
+- `src/types/foundry-shim.d.ts`: tipa somente lastModifiedBy, metadado nativo utilizado para rejeitar snapshot sobrescrito por outro autor antes do callback.
+- `tests/unit/features/allies/ally-lifecycle-hooks.test.ts`: 25 casos, incluindo fluxo com serviço/ambiente reais e persistência/Documents substituídos.
+- `tests/reference/foundry-ally-request-diff.test.ts`: dois casos contra fontes nativas.
+- Este relatório: evidência, limites e roteiro.
+
+Sem mudança em `readAllyRequest()`, schema persistido, versão 0.42.0, UI, sistema Ordem, benefícios ou cobrança. Atualização sem mudança de nonce não é solicitação nova: nome, descrição, espelho, remoção da flag e edição/replay do mesmo ID não disparam execução. Snapshot com outro nonce/autor ou campos inconsistentes é recusado. Revision, ownership, beneficiário persistente, eleição, vínculo e escopo continuam validados pelo serviço.
+
+A captura é síncrona e produz dados independentes do Actor antes de entrar na fila. IDs vistos só filtram callbacks repetidos na sessão do executor; após reload, solicitações antigas continuam bloqueadas pela revisão canônica persistida. Ready/reconciliação não reapresentam flags antigas como pedidos.
+
+Para reproduzir as fontes opcionais em PowerShell:
+
+```powershell
+$env:PARANORMAL_TOOLKIT_FOUNDRY_REFERENCE = 'C:/Program Files/Foundry Virtual Tabletop/resources/app'
+$env:PARANORMAL_TOOLKIT_ORDEM_REFERENCE = 'D:/dev/ordemparanormal_fvtt'
+npm run check
+```
+
+Sem as variáveis, os testes correspondentes são ignorados explicitamente. Não presumir que um teste ignorado confirmou o comportamento nativo.
+
+### Repetição do smoke deste fix
+
+1. Disponibilizar **a pasta dist inteira** construída de `D:/dev/paranormal-toolkit` na instalação de teste e recarregar todos os clientes, especialmente o GM executor.
+2. Usar um Aliado persistente e um Actor real de tipo agent do mundo. Clicar **Atribuir / trocar**. Deve registrar atribuição (GM) ou pedido de aprovação (jogador), sem “Solicitação de suporte inválida”.
+3. Aguardar atualização do estado, aprovar quando necessário e repetir a atribuição ao mesmo beneficiário. O suporte não deve reiniciar nem duplicar efeitos. Repetir sem mudar o contexto também exercita diferenças que omitem campos iguais.
+4. Editar nome/descrição e recarregar. Nenhuma atribuição/pedido antigo deve ser executado novamente.
+5. Repetir com dois proprietários e dois GMs. O solicitante registrado precisa ser o usuário nativo da operação, mesmo se uma flag contiver um userId falso.
+6. Confirmar que pedidos com revisão antiga, usuário sem ownership e beneficiário sintético/ausente continuam recusados. Usar IDs novos para esses testes; editar um pedido antigo sem mudar ID não é uma nova submissão.
+7. O gate mecânico/multiplayer do incremento permanece vigente: esta correção não o aprova nem o remove.
+
+Observação opcional, somente leitura, para capturar o formato **real do seu mundo** no console do GM executor:
+
+```javascript
+const allyUpdateProbe = Hooks.on("updateActor", (actor, changes, options, userId) => {
+  if (actor.type !== "paranormal-toolkit.ally") return;
+  const prefix = "flags.paranormal-toolkit.allyRequest.";
+  const flat = foundry.utils.flattenObject(changes);
+  if (!Object.keys(flat).some(key => key.startsWith(prefix))) return;
+  console.log("Ally request probe", {
+    userId,
+    changes: foundry.utils.deepClone(changes),
+    fullRequest: foundry.utils.deepClone(actor.getFlag("paranormal-toolkit", "allyRequest"))
+  });
+});
+// Remove the probe after testing.
+Hooks.off("updateActor", allyUpdateProbe);
+```
+
+Executar o registro do probe antes dos cliques e a última linha separadamente depois. O callback não altera Documents. Informar build real, quem clicou, delta, flag completa e resultado; o bug só será considerado validado após esse smoke.
+
+Validação automatizada desta correção: `npm run check` aprovado com **543 testes em 79 arquivos**, incluindo as sete verificações opcionais de Foundry/Ordem; `npm run build` separado aprovado (249 módulos); `git diff --check` aprovado, também conferindo o novo arquivo de referência. Node.js v24.19.0, Vitest 3.2.6 e Vite 7.3.6. Versões 0.42.0 preservadas. Resultado manual do mundo: **pendente do usuário**.

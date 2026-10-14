@@ -5,11 +5,48 @@ import { readAllyProfile } from "../../core/allies/ally-profile";
 import type { AllyCombatSnapshot } from "../../core/allies/ally-support-state";
 import { getActorItems } from "../../features/automation/actor-item-resolver";
 import { ALLY_TYPE, readAllyAbility } from "../../features/allies/config/ally-ability-config";
-import { electAllyExecutor, type AllyRequest, type AllyUser } from "../../features/allies/ally-operation-authority";
+import { electAllyExecutor, readAllyRequest, type AllyRequest, type AllyUser } from "../../features/allies/ally-operation-authority";
 import type { AllyLedger, AllySupportEnvironment } from "../../features/allies/ally-support-service";
 
 export const ALLY_REQUEST_FLAG = "allyRequest";
 export const ALLY_PRESENTATION_FLAG = "allySupport";
+
+type ChangedProperty = { found: false } | { found: true; value: unknown };
+
+function readChangedProperty(value: unknown, path: string[]): ChangedProperty {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return { found: false };
+  const data = value as Record<string, unknown>;
+  for (let length = 1; length <= path.length; length++) {
+    const key = path.slice(0, length).join(".");
+    if (!Object.hasOwn(data, key)) continue;
+    if (length === path.length) return { found: true, value: data[key] };
+    const child = readChangedProperty(data[key], path.slice(length));
+    if (child.found) return child;
+  }
+  return { found: false };
+}
+
+// Undefined means no new submission; null means the submitted snapshot is invalid.
+export function readUpdatedAllyRequest(
+  actor: Pick<Actor, "getFlag" | "_stats">, changes: Record<string, unknown>, userId: string,
+): AllyRequest | null | undefined {
+  const path = ["flags", MODULE_ID, ALLY_REQUEST_FLAG];
+  const nonce = readChangedProperty(changes, [...path, "id"]);
+  if (!nonce.found) return undefined;
+  // A later update in the same batch must not inherit the original caller's authority.
+  const lastModifiedBy = actor._stats?.lastModifiedBy;
+  if (typeof lastModifiedBy === "string" && lastModifiedBy !== userId) return null;
+  const value = actor.getFlag(MODULE_ID, ALLY_REQUEST_FLAG);
+  const request = readAllyRequest(value);
+  if (!request || request.id !== nonce.value) return null;
+  const snapshot = value as Record<string, unknown>;
+  for (const key of ["id", "revision", "action", "beneficiaryId", "combatId", "scope"]) {
+    const change = readChangedProperty(changes, [...path, key]);
+    if (change.found && !Object.is(change.value, snapshot[key])) return null;
+  }
+  return request;
+}
+
 export type AllySupportPresentation = {
   revision: number; beneficiaryId: string | null; status: string; waitRound: number | null;
   diagnostic: string | null; pending: boolean; validated: boolean;

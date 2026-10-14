@@ -312,6 +312,7 @@ declare class Roll {
 }
 
 declare class Actor {
+  _stats?: { lastModifiedBy?: string | null };
   id: string | null;
   uuid?: string | null;
   name: string;
