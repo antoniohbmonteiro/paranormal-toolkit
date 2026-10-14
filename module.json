@@ -13,11 +13,20 @@
       "url": "https://github.com/antoniohbmonteiro"
     }
   ],
+  "documentTypes": {
+    "Actor": {
+      "ally": { "htmlFields": ["description"] }
+    }
+  },
+  "languages": [
+    { "lang": "pt-BR", "name": "Português (Brasil)", "path": "lang/pt-BR.json" }
+  ],
   "esmodules": [
     "dist/main.js"
   ],
   "styles": [
     "styles/paranormal-toolkit.css",
+    "styles/ally-sheet.css",
     "styles/item-use-workflow-dice-toggle.css",
     "styles/ritual-cast-dialog.css",
     "styles/ability-use-dialog.css",

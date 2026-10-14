@@ -1,3 +1,4 @@
+import { isAllySourceItem } from "../allies/config/ally-ability-config";
 import type { AutomationDefinition } from "../../core/automation/automation-definition";
 import type { RitualEventBus } from "../../core/public-api/ritual-event-bus";
 import type { RitualAutomationSourceInput } from "../../core/public-api/ritual-event-types";
@@ -156,6 +157,10 @@ export class ItemUseIntegration {
   }
 
   async handleItemUsed(context: ItemUseContext): Promise<void> {
+    if (isAllySourceItem(context.item)) {
+      this.setAttempt(context, "ignored", "ally-source-item");
+      return;
+    }
     const settings = getItemUseSettings();
 
     if (settings.executionMode === "disabled") {

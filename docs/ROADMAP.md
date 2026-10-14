@@ -46,6 +46,12 @@ O Toolkit já tem:
 
 
 
+### P1 — Allies: suporte passivo em validação
+
+Na branch isolada `codex/ally-actor-poc`, a PoC de Actor passou no smoke informado pelo usuário. O incremento 1 adiciona beneficiário persistente, ativação/desativação/troca com espera por rodada, bônus passivo de Defesa, precedência sem soma, Journal operacional protegido e reconciliação pelo GM executor. Sua validação real de efeitos e multiplayer ainda está pendente; a aplicação de bônus exige registro manual do gate pelo GM.
+
+Comandos, custos PE/PD, piloto e condições/modificações aguardam os incrementos seguintes. Prioridade é funcionalidade, com controles mínimos; nenhum incremento implica release ou bump. A versão permanece 0.42.0. Roteiro e limitações em [ALLY-ACTOR-POC.md](ALLY-ACTOR-POC.md).
+
 ### Concluído em 0.42.0 — Targets e ações assistidas de habilidade
 
 - targets de habilidades são capturados durante o uso e persistidos como referências serializáveis, sem armazenar Documents do Foundry;

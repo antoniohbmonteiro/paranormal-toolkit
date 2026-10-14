@@ -1,3 +1,4 @@
+import { isAllySourceItem } from "../allies/config/ally-ability-config";
 import { OrdemItemUsedHookStrategy } from "../../adapters/ordem/item-use/ordem-item-used-hook-strategy";
 import { ModuleLogger } from "../../core/module-logger";
 import type { ResourceAdapter } from "../../core/resources/actor-resource";
@@ -51,7 +52,7 @@ export class AbilityUseIntegration {
 
   private async handleItemUsed(context: ItemUseContext): Promise<void> {
     if (getItemUseSettings().executionMode === "disabled") return;
-    if (!isGenericAbility(context.item)) return;
+    if (isAllySourceItem(context.item) || !isGenericAbility(context.item)) return;
 
     const executionKey = createExecutionKey(context);
     if (this.isDuplicate(executionKey)) return;

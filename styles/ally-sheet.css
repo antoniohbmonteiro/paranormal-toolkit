@@ -1,0 +1,9 @@
+.paranormal-toolkit-ally-sheet .ally-sheet-content { overflow-y: auto; padding: 12px; }
+.paranormal-toolkit-ally-sheet fieldset { display: grid; gap: 12px; margin-block: 12px; }
+.paranormal-toolkit-ally-sheet label { display: grid; gap: 4px; }
+.paranormal-toolkit-ally-sheet label:has(input[type="checkbox"]) { display: flex; align-items: center; }
+.paranormal-toolkit-ally-sheet textarea { resize: vertical; }
+.paranormal-toolkit-ally-sheet ul { padding: 0; list-style: none; }
+.paranormal-toolkit-ally-sheet li { display: flex; align-items: center; gap: 8px; margin-block: 8px; }
+.paranormal-toolkit-ally-sheet li span { flex: 1; }
+.paranormal-toolkit-ally-sheet .ally-poc-notice { opacity: .8; }

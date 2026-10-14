@@ -154,6 +154,8 @@ type GameSettingRegistrationData = BooleanGameSettingRegistrationData | StringGa
 
 type FoundryUserLike = {
   id?: string;
+  getFlag?: (scope: string, key: string) => unknown;
+  setFlag?: (scope: string, key: string, value: unknown) => Promise<unknown>;
   color?: string | null;
   isGM?: boolean;
   active?: boolean;
@@ -180,7 +182,10 @@ type FoundryModuleLike = {
 declare const game: {
   system: {
     id: string;
+    version?: string;
   };
+  release?: { version?: string };
+  combats?: FoundryCollectionLike<AllyCombatLike>;
   user?: FoundryUserLike | null;
   users: FoundryUserLike[];
   actors: FoundryCollectionLike<Actor>;
@@ -228,6 +233,7 @@ declare const Hooks: {
 };
 
 declare const CONFIG: {
+  Actor: { documentClass: typeof Actor; dataModels: Record<string, typeof TypeDataModel> };
   Item?: {
     documentClass?: {
       prototype?: unknown;
@@ -257,12 +263,39 @@ declare class ApplicationV2 {
   close(options?: Record<string, unknown>): Promise<this> | this;
 }
 
+declare class TypeDataModel {
+  static defineSchema(): Record<string, FoundryDataField>;
+}
+
+declare class FoundryDataField {
+  constructor(options?: Record<string, unknown>);
+}
+
+declare class ActorSheetV2 extends ApplicationV2 {
+  actor: Actor;
+  isEditable: boolean;
+  _prepareContext(options: Record<string, unknown>): Promise<object>;
+  _onDropItem(event: DragEvent, item: Item): Promise<Item | null | undefined>;
+}
+
 declare const foundry: {
+  documents: { JournalEntry: { create(data: Record<string, unknown>): Promise<AllyJournalLike | null> } };
   applications: {
+    sheets: { ActorSheetV2: typeof ActorSheetV2 };
+    apps: { DocumentSheetConfig: {
+      registerSheet(documentClass: typeof Actor, scope: string, sheetClass: typeof ActorSheetV2, options: Record<string, unknown>): void;
+    } };
     api: {
       ApplicationV2: typeof ApplicationV2;
+      DialogV2: { confirm(options: Record<string, unknown>): Promise<boolean | null> };
     };
   };
+  abstract: { TypeDataModel: typeof TypeDataModel };
+  data: { fields: {
+    NumberField: typeof FoundryDataField;
+    HTMLField: typeof FoundryDataField;
+    BooleanField: typeof FoundryDataField;
+  } };
   utils: {
     getProperty(object: unknown, path: string): unknown;
     randomID(): string;
@@ -282,16 +315,27 @@ declare class Actor {
   id: string | null;
   uuid?: string | null;
   name: string;
+  img: string;
   type: string;
   system: Record<string, unknown>;
   items: ItemCollectionLike;
+  isToken?: boolean;
+  effects?: { get(id: string): AllyEffectLike | undefined };
+  getFlag(scope: string, key: string): unknown;
+  setFlag(scope: string, key: string, value: unknown): Promise<this>;
   token?: TokenLike | null;
   getActiveTokens?(): TokenLike[];
+  canUserModify(user: FoundryUserLike, action: string): boolean;
+  deleteEmbeddedDocuments(embeddedName: "Item", ids: string[]): Promise<Item[]>;
+  deleteEmbeddedDocuments(embeddedName: "ActiveEffect", ids: string[], options?: Record<string, unknown>): Promise<unknown>;
+  createEmbeddedDocuments(embeddedName: "Item", data: Record<string, unknown>[]): Promise<Item[]>;
   update(data: Record<string, unknown>): Promise<this>;
-  createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[]): Promise<Array<{ id?: string | null }>>;
+  createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<Array<{ id?: string | null }>>;
 }
 
 declare class Item {
+  documentName: "Item";
+  sheet: { render(options: Record<string, unknown>): Promise<unknown> | unknown };
   id: string | null;
   name: string;
   type: string;
@@ -304,6 +348,22 @@ declare class Item {
   unsetFlag(scope: string, key: string): Promise<this>;
   update(data: Record<string, unknown>): Promise<this>;
 }
+
+type AllyEffectLike = {
+  disabled: boolean; transfer: boolean;
+  changes: { key: string; type: string; phase: string; priority: number; value: string }[];
+  getFlag(scope: string, key: string): unknown;
+};
+type AllyCombatLike = {
+  id: string; started: boolean; round: number | null; name?: string;
+  combatants: { contents?: { actorId?: string; actor?: Actor | null }[] };
+};
+type AllyJournalLike = {
+  documentName: string; uuid: string;
+  testUserPermission(user: FoundryUserLike, level: string): boolean;
+  getFlag(scope: string, key: string): unknown;
+  setFlag(scope: string, key: string, value: unknown): Promise<unknown>;
+};
 
 declare global {
   // eslint-disable-next-line no-var
