@@ -1,10 +1,14 @@
 import { readAllySupportView, submitAllyRequest } from "../adapters/foundry/foundry-ally-request-adapter";
 import type { AllyRequest } from "../features/allies/ally-operation-authority";
-import { readFoundryAllyProfile } from "../adapters/foundry/foundry-ally-actor-resolver";
+import { readFoundryAllyProfile, resolveFoundryAllyActor } from "../adapters/foundry/foundry-ally-actor-resolver";
 import { getActorItems } from "../features/automation/actor-item-resolver";
 import { renderAllySheet, type AllySheetViewModel } from "../ui/components/ally/ally-sheet";
 
 export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
+  get actor(): Actor {
+    const origin = super.actor;
+    return resolveFoundryAllyActor(origin) ?? origin;
+  }
   static DEFAULT_OPTIONS = {
     classes: ["paranormal-toolkit-ally-sheet"],
     tag: "form",

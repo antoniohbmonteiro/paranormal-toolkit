@@ -3,7 +3,7 @@ import type { AllySupportState } from "../../core/allies/ally-support-state";
 export type AllyNoticeSnapshot = {
   beneficiaryId: string | null;
   status: AllySupportState["status"];
-  benefits: { sourceKey: string; value: number }[];
+  benefits: { sourceKey: string; value?: number; signature?: string; label?: string }[];
 };
 export type AllySupportChange = {
   allyId: string; before: AllyNoticeSnapshot; after: AllyNoticeSnapshot;
@@ -20,8 +20,9 @@ export function buildAllySupportChange(
     events.push(before.status === "pending" ? "transitionCompleted" : "activated");
   }
   if (before.status !== "inactive" && after.status === "inactive") events.push("deactivated");
+  const mechanics = (snapshot: AllyNoticeSnapshot) => JSON.stringify(snapshot.benefits.map(({ sourceKey, value, signature }) => ({ sourceKey, value, signature })));
   if (before.status === "active" && after.status === "active" && before.beneficiaryId === after.beneficiaryId
-    && JSON.stringify(before.benefits) !== JSON.stringify(after.benefits)) events.push("benefitsChanged");
+    && mechanics(before) !== mechanics(after)) events.push("benefitsChanged");
   return events.length ? { allyId, before, after, events } : null;
 }
 
@@ -31,6 +32,7 @@ export function isAllyNoticeSnapshot(value: unknown): value is AllyNoticeSnapsho
   return (data.beneficiaryId === null || typeof data.beneficiaryId === "string")
     && ["inactive", "active", "pending"].includes(data.status)
     && Array.isArray(data.benefits) && data.benefits.every(benefit => benefit
-      && typeof benefit.sourceKey === "string" && typeof benefit.value === "number" && Number.isFinite(benefit.value))
+      && typeof benefit.sourceKey === "string" && ((typeof benefit.value === "number" && Number.isFinite(benefit.value))
+        || (typeof benefit.signature === "string" && typeof benefit.label === "string")))
     && new Set(data.benefits.map(benefit => benefit.sourceKey)).size === data.benefits.length;
 }

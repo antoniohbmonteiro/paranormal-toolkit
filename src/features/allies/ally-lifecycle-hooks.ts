@@ -47,9 +47,10 @@ export function registerAllyLifecycleHooks(): AllySupportService {
       if (!(options as { allyReconciliation?: boolean } | undefined)?.allyReconciliation) reconcile();
     });
   }
-  Hooks.on("deleteActiveEffect", (effect: { id?: string; parent?: Actor }, options: { allyReconciliation?: boolean }, userId: string) => {
+  Hooks.on("deleteActiveEffect", (effect: { id?: string; parent?: Actor | Item }, options: { allyReconciliation?: boolean }, userId: string) => {
     if (options?.allyReconciliation || !service.isExecutor()) return;
-    if (effect.id && effect.parent?.id && !effect.parent.isToken) {
+    if (effect.parent?.documentName === "Item") { reconcile(); return; }
+    if (effect.id && effect.parent?.documentName === "Actor" && effect.parent.id && !effect.parent.isToken) {
       return service.suppressEffect(effect.parent.id, effect.id, userId).catch(report);
     }
     reconcile();

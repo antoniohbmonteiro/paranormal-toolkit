@@ -12,6 +12,6 @@ export function registerAllyActor(): void {
   CONFIG.Actor.dataModels[ALLY_ACTOR_TYPE] = AllyDataModel;
   foundry.applications.apps.DocumentSheetConfig.registerSheet(
     CONFIG.Actor.documentClass, MODULE_ID, AllySheet,
-    { types: [ALLY_ACTOR_TYPE], makeDefault: true, label: "Aliado (PoC)" },
+    { types: [ALLY_ACTOR_TYPE], makeDefault: true, label: "Aliado" },
   );
 }

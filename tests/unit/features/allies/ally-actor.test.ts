@@ -12,9 +12,10 @@ class Field {
 }
 class Model {}
 class NativeSheet {
-  actor: any;
+  document: any;
+  get actor() { return this.document; }
   isEditable = true;
-  constructor(options: { document: any }) { this.actor = options.document; }
+  constructor(options: { document: any }) { this.document = options.document; }
   async _prepareContext() { return {}; }
   async _onDropItem(event: unknown, item: unknown) { return nativeDrop(event, item); }
 }
@@ -74,7 +75,7 @@ describe("ally actor registration and schema (Foundry doubles)", () => {
     expect(actorConfig.dataModels.agent).toBe(agent);
     expect(actorConfig.dataModels.threat).toBe(threat);
     expect(registerSheet).toHaveBeenCalledExactlyOnceWith(nativeActor, "paranormal-toolkit", AllySheet,
-      { types: ["paranormal-toolkit.ally"], makeDefault: true, label: "Aliado (PoC)" });
+      { types: ["paranormal-toolkit.ally"], makeDefault: true, label: "Aliado" });
     expect(Object.getPrototypeOf(AllySheet)).toBe(NativeSheet);
     expect(Object.getPrototypeOf(AllyDataModel)).toBe(Model);
   });
@@ -98,9 +99,12 @@ describe("ally actor registration and schema (Foundry doubles)", () => {
     const manifest = JSON.parse(readFileSync(new URL("../../../../module.json", import.meta.url), "utf8"));
     const language = JSON.parse(readFileSync(new URL("../../../../lang/pt-BR.json", import.meta.url), "utf8"));
     expect(manifest.documentTypes.Actor.ally.htmlFields).toEqual(["description"]);
-    expect(manifest.version).toBe("0.42.0");
+    const pkg = JSON.parse(readFileSync(new URL("../../../../package.json", import.meta.url), "utf8"));
+    const lock = JSON.parse(readFileSync(new URL("../../../../package-lock.json", import.meta.url), "utf8"));
+    expect(manifest.version).toBe(pkg.version);
+    expect(lock.version).toBe(pkg.version); expect(lock.packages[""].version).toBe(pkg.version);
     expect(manifest.languages).toContainEqual({ lang: "pt-BR", name: "Português (Brasil)", path: "lang/pt-BR.json" });
-    expect(language.TYPES.Actor.ally).toBe("Aliado (PoC)");
+    expect(language.TYPES.Actor.ally).toBe("Aliado");
   });
 });
 
@@ -204,6 +208,7 @@ describe("ally sheet handlers (Foundry doubles)", () => {
     vi.stubGlobal("foundry", { ...(globalThis as any).foundry,
       utils: { ...(globalThis as any).foundry.utils, randomID: () => "sheet-request-01" } });
     const sheet = new AllySheet({ document });
+    expect(sheet.actor).toBe(original);
     const button = { closest: () => ({ querySelector: (selector: string) => ({
       value: selector.includes("beneficiary") ? "joao" : "",
     }) }) };

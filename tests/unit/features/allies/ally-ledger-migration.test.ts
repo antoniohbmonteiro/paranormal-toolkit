@@ -15,7 +15,7 @@ describe("protected Allies ledger migration", () => {
   it("preserves effective links, waits, effect identities, precedence and revision without replaying old requests", () => {
     const old = legacyLedger(), before = structuredClone(old), next = readAllyLedger(old);
     expect(old).toEqual(before);
-    expect(next).toMatchObject({ version: 2, revision: 4, nextSequence: 3,
+    expect(next).toMatchObject({ version: 3, revision: 4, nextSequence: 3,
       managed: old.managed, orders: old.orders, diagnostic: null });
     expect(next.links[0]).toEqual({ allyId: "iris", state: old.links[0].state,
       notice: null, suppressedSources: [], diagnostic: null });

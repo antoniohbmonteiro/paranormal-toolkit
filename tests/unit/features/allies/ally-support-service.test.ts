@@ -1,3 +1,5 @@
+import { defenseBenefit } from "../../../helpers/ally-effects";
+import { describeAllyEffect } from "../../../../src/adapters/ordem/ordem-ally-benefit-adapter";
 import { describe, expect, it, vi } from "vitest";
 import { AllySupportService, createAllyLedger, type AllyLedger, type AllySupportEnvironment } from "../../../../src/features/allies/ally-support-service";
 import { AllyReconciliationService, type AllyManagedEffect } from "../../../../src/features/allies/ally-reconciliation-service";
@@ -7,7 +9,7 @@ import { readAllyLedger } from "../../../../src/adapters/foundry/foundry-ally-st
 function fixture() {
   let ledger: AllyLedger | null = null;
   const effects = new Map<string, AllyManagedEffect>();
-  const sources = new Map(["iris", "guardian"].map(id => [id, [{ id: "item", definition: { version: 1 as const, benefits: [{ id: "defense", kind: "defense" as const, value: 5 }] } }]]));
+  const sources = new Map(["iris", "guardian"].map(id => [id, [{ id: "item", definition: { version: 2 as const, benefits: [defenseBenefit()] } }]]));
   let counter = 0;
   const env: AllySupportEnvironment = {
     currentUserId: () => "gm-a",
@@ -18,6 +20,7 @@ function fixture() {
     abilities: id => sources.get(id) ?? null,
     resolveCombat: () => null,
     combat: () => null,
+    describeEffect: describeAllyEffect,
     notify: vi.fn(async () => {}),
     publish: vi.fn(async () => {}),
   };
@@ -33,6 +36,7 @@ function fixture() {
     matches: (effect: AllyManagedEffect) => JSON.stringify(effects.get(effect.effectId)) === JSON.stringify(effect),
     exists: (effect: AllyManagedEffect) => effects.has(effect.effectId),
     create: vi.fn(async (effect: AllyManagedEffect) => { effects.set(effect.effectId, structuredClone(effect)); }),
+    update: vi.fn(async (effect: AllyManagedEffect) => { effects.set(effect.effectId, structuredClone(effect)); }),
     remove: vi.fn(async (effect: AllyManagedEffect) => { effects.delete(effect.effectId); }),
   };
   const service = new AllySupportService(store, env, new AllyReconciliationService(adapter));
@@ -103,12 +107,12 @@ describe("passive support service (Foundry ports doubled)", () => {
   it("automatically accepts benefit edits without stealing precedence", async () => {
     const f = fixture(); await f.activate(); await f.activate("guardian");
     const sequence = f.ledger().orders.find(entry => entry.sourceKey.includes("iris"))?.sequence;
-    f.sources.get("iris")![0].definition.benefits[0].value = 99;
+    f.sources.get("iris")![0].definition.benefits[0].template.system.changes[0].value = 99;
     await f.service.reconcile();
     expect([...f.effects.values()][0].allyId).toBe("guardian");
     expect(f.ledger().orders.find(entry => entry.sourceKey.includes("iris"))?.sequence).toBe(sequence);
     await f.request("deactivate", "gm-a", "guardian");
-    expect([...f.effects.values()][0].value).toBe(99);
+    expect([...f.effects.values()][0].template!.system.changes[0].value).toBe(99);
   });
   it("reconciles repeatedly without new effect identities or precedence changes", async () => {
     const f = fixture(); await f.activate();
@@ -118,6 +122,16 @@ describe("passive support service (Foundry ports doubled)", () => {
     expect(f.adapter.create).toHaveBeenCalledTimes(1);
     expect(f.ledger().orders).toEqual(before);
     expect(f.ledger().revision).toBe(revision);
+  });
+  it("preserves projections and reports an invalid active source until repaired or deactivated", async () => {
+    const f = fixture(); await f.activate();
+    const id = f.ledger().managed[0].effectId;
+    f.env.abilities = () => null;
+    await f.service.reconcile();
+    expect(f.effects.has(id)).toBe(true);
+    expect(f.adapter.remove).not.toHaveBeenCalled();
+    expect(f.ledger().diagnostic).toContain("preservadas");
+    await f.request("deactivate"); expect(f.effects.size).toBe(0);
   });
   it("cleans up deleted skills/allies and falls back to the previous source", async () => {
     const f = fixture(); await f.activate(); await f.activate("guardian");
@@ -191,7 +205,7 @@ describe("passive support recovery and canonical configuration", () => {
   });
   it("does not replace effects when an empty ability is added", async () => {
     const f = fixture(); await f.activate();
-    f.sources.get("iris")!.push({ id: "empty", definition: { version: 1, benefits: [] } });
+    f.sources.get("iris")!.push({ id: "empty", definition: { version: 2, benefits: [] } });
     await f.service.reconcile();
     expect(f.effects.size).toBe(1);
     expect(f.adapter.create).toHaveBeenCalledTimes(1);
@@ -200,7 +214,7 @@ describe("passive support recovery and canonical configuration", () => {
     const f = fixture(); await f.activate();
     await f.service.process("iris", { id: "forged-01", revision: f.ledger().revision,
       action: "activate", scope: "arbitrary", benefits: [{ value: 999 }], userId: "gm-a" } as any, "player");
-    expect([...f.effects.values()][0].value).toBe(5);
+    expect([...f.effects.values()][0].template!.system.changes[0].value).toBe(5);
   });
   it("does not automatically reactivate an Ally after deletion and restoration", async () => {
     const f = fixture(); await f.activate();
@@ -234,7 +248,7 @@ describe("support notifications and manual GM suppression", () => {
     expect(f.adapter.remove).not.toHaveBeenCalled();
     expect(f.env.notify).not.toHaveBeenCalled();
     expect(f.ledger().links[0].state.beneficiaryId).toBe("joao");
-    expect(f.ledger().version).toBe(2);
+    expect(f.ledger().version).toBe(3);
   });
   it("emits changes only once across no-op requests, reconciliation and service reload", async () => {
     const f = fixture(); await f.activate();
@@ -250,9 +264,9 @@ describe("support notifications and manual GM suppression", () => {
   it("notifies benefit edits and removals without changing support precedence", async () => {
     const f = fixture(); await f.activate();
     const sequence = f.ledger().links[0].state.sequence;
-    f.sources.get("iris")![0].definition.benefits[0].value = 10;
+    f.sources.get("iris")![0].definition.benefits[0].template.system.changes[0].value = 10;
     await f.service.reconcile();
-    expect([...f.effects.values()][0].value).toBe(10);
+    expect([...f.effects.values()][0].template!.system.changes[0].value).toBe(10);
     expect(f.env.notify).toHaveBeenLastCalledWith(expect.objectContaining({ events: ["benefitsChanged"],
       before: expect.objectContaining({ benefits: [expect.objectContaining({ value: 5 })] }),
       after: expect.objectContaining({ benefits: [expect.objectContaining({ value: 10 })] }) }));
@@ -302,13 +316,13 @@ describe("support notifications and manual GM suppression", () => {
     const f = fixture(); await f.activate();
     const effect = [...f.effects.values()][0]; f.effects.delete(effect.effectId);
     await f.service.suppressEffect(effect.actorId, effect.effectId, "gm-b");
-    f.sources.get("iris")![0].definition.benefits[0].value = 10;
+    f.sources.get("iris")![0].definition.benefits[0].template.system.changes[0].value = 10;
     await f.service.reconcile();
     await new AllySupportService(f.store, f.env, new AllyReconciliationService(f.adapter)).reconcile();
     expect(f.effects.size).toBe(0); expect(f.adapter.create).toHaveBeenCalledTimes(1);
     expect(f.ledger().links[0].suppressedSources).toEqual([effect.sourceKey]);
     await f.request("deactivate", "gm-b"); await f.request("activate", "player");
-    expect([...f.effects.values()][0].value).toBe(10);
+    expect([...f.effects.values()][0].template!.system.changes[0].value).toBe(10);
     expect(f.ledger().links[0].suppressedSources).toEqual([]);
   });
   it("does not let a player or a forged effect identity suppress a canonical benefit", async () => {

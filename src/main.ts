@@ -5,6 +5,7 @@ import { SystemGuard } from "./core/system-guard";
 import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
 import { registerAllyLifecycleHooks } from "./features/allies/ally-lifecycle-hooks";
 import { registerAllyActor } from "./features/allies/ally-registration";
+import { registerAllyEffectSheetIntegration } from "./features/allies/ally-effect-sheet-integration";
 import { registerAbilityUseIntegration } from "./features/abilities/ability-use-integration";
 import { registerConditionLifecycleHooks } from "./features/conditions/condition-lifecycle-hooks";
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
@@ -21,6 +22,7 @@ let services: ToolkitServices | null = null;
 
 Hooks.once("init", () => {
   registerAllyActor();
+  registerAllyEffectSheetIntegration();
   registerDebugOutputSettings();
   registerItemUseSettings();
   registerDiceAnimationSettings();

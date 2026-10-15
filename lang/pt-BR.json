@@ -1,7 +1,7 @@
 {
   "TYPES": {
     "Actor": {
-      "ally": "Aliado (PoC)"
+      "ally": "Aliado"
     }
   }
 }

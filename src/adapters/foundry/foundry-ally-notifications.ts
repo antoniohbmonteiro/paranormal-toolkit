@@ -11,7 +11,7 @@ export async function publishAllySupportChange(change: AllySupportChange): Promi
     benefitsChanged: "Benefícios mecânicos modificados", transitionCompleted: "Transição de combate concluída — suporte ativo",
   };
   const benefits = (values: AllySupportChange["after"]["benefits"]) => values.length
-    ? values.map(value => `Defesa ${value.value >= 0 ? "+" : ""}${value.value}`).join(", ") : "Nenhum benefício aplicado";
+    ? values.map(value => typeof value.value === "number" ? `Defesa ${value.value >= 0 ? "+" : ""}${value.value}` : value.label ?? "Efeito personalizado").join(", ") : "Nenhum benefício aplicado";
   await ChatMessage.create({ whisper,
     content: `<p><strong>Aliados — ${escapeHtml(actorName(change.allyId))}</strong>: ${change.events.map(event => events[event]).join("; ")}.</p>
       <p>Beneficiário: ${escapeHtml(actorName(change.before.beneficiaryId))} → ${escapeHtml(actorName(change.after.beneficiaryId))}.<br>

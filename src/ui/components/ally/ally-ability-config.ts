@@ -1,12 +1,23 @@
-import type { AllyAbilityDefinition } from "../../../core/allies/ally-definition";
 import { escapeHtml } from "../../rendering/escape-html";
 
-export function renderAllyAbilityConfig(config: AllyAbilityDefinition): string {
-  return `<p>Benefícios passivos desta habilidade. Alterações exigem aprovação do GM.</p>
-    ${config.benefits.map(benefit => `<div>
-      <label>Bônus de Defesa <input type="number" step="any" required data-benefit-value="${escapeHtml(benefit.id)}" value="${escapeHtml(String(benefit.value))}"></label>
-      <button type="button" data-action="removeBenefit" data-benefit-id="${escapeHtml(benefit.id)}">Remover</button>
-    </div>`).join("")}
-    <button type="button" data-action="addBenefit">Adicionar bônus de Defesa</button>
-    <button type="submit">Salvar benefícios</button>`;
+export type AllyEffectConfigView = { name: string; editable: boolean; effects: {
+  id: string; name: string; disabled: boolean; diagnostic: string | null;
+}[] };
+export function renderAllyAbilityConfig(view: AllyEffectConfigView): string {
+  const disabled = view.editable ? "" : " disabled";
+  return `<p>Benefícios passivos de ${escapeHtml(view.name)}. Efeitos criados aqui participam automaticamente do suporte e são projetados somente no beneficiário.</p>
+    <details><summary>Adicionar efeito</summary>
+      <label>Nome <input data-effect-name value="Bônus de Defesa"${disabled}></label>
+      <label>Bônus de Defesa <input data-effect-value type="number" step="any" value="5"${disabled}></label>
+      <button type="button" data-action="createDefense"${disabled}>Criar Bônus de Defesa</button>
+      <button type="button" data-action="createCustom"${disabled}>Criar Personalizado e abrir editor nativo</button>
+    </details>
+    <p>Edite mudanças, fases e valores no editor nativo. Desabilitar um efeito suspende seu benefício sem excluí-lo. Efeitos antigos não identificados como suporte permanecem na ficha nativa da habilidade.</p>
+    <p>Chaves desconhecidas podem não produzir resultado mecânico no sistema.</p>
+    <ul>${view.effects.map(effect => `<li>
+      <strong>${escapeHtml(effect.name)}</strong>${effect.disabled ? " (desativado)" : ""}
+      ${effect.diagnostic ? `<p role="alert">${escapeHtml(effect.diagnostic)}</p>` : ""}
+      <button type="button" data-action="editEffect" data-effect-id="${escapeHtml(effect.id)}"${disabled}>Editar efeito nativo</button>
+      <button type="button" data-action="removeEffect" data-effect-id="${escapeHtml(effect.id)}"${disabled}>Excluir efeito</button>
+    </li>`).join("")}</ul>`;
 }

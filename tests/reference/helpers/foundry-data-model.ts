@@ -51,7 +51,8 @@ export function foundryDataModel(root: string) {
     "../../core/allies/ally-profile": profile,
   });
   return {
-    TypeDataModel, fields, AllyDataModel,
+    TypeDataModel, DataModel, fields, AllyDataModel, helpers, load,
+    evaluate: (code: string) => runInContext(code, vm),
     nativeObject: (value: unknown) => runInContext(`JSON.parse(${JSON.stringify(JSON.stringify(value))})`, vm),
   };
 }

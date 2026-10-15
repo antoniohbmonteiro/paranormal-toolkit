@@ -1,10 +1,12 @@
-# Aliados — PoC do Actor e suporte passivo
+# Aliados — Actor e benefícios passivos
 
 ## Resultado e limites
 
-A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. O incremento 1 de suporte passivo está implementado e aguarda seu smoke, detalhado ao final deste documento. A versão continua em **0.42.0**, sem release.
+A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. A evolução atual dos passivos usa Active Effects nativos em Items ability, com editor no diretório e no Aliado; aguarda o smoke final descrito ao fim deste documento. Versão preparada: **0.43.0**, sem tag, release ou push.
 
 **Decisão funcional vigente:** suporte passivo automático pelo proprietário, sem aprovação de vínculo/benefícios nem registro de validação manual do ambiente. O GM executor continua automático e recebe avisos privados. As seções anteriores à seção final “Suporte automático sem aprovação” registram evidências históricas; seus gates e roteiros de aprovação foram substituídos pelo roteiro final.
+
+**Fonte de verdade vigente:** os Active Effects identificados como suporte no Item nativo ability. A criação pelo editor Toolkit já inclui essa identificação, sem seleção adicional. A seção final “Efeitos passivos nativos” substitui o editor/configuração `allyAbility` v1 e os roteiros anteriores que o utilizavam.
 
 A ficha permite editar nome, caminho de imagem, descrição e identificação de drone; criar, abrir, importar por arraste e remover Items nativos `ability`. A importação usa a API nativa de ActorSheetV2. Outros tipos de Item, Actors, folders e Active Effects não são aceitos pelo arraste desta ficha. Remover uma habilidade pede confirmação e revalida a permissão depois dela.
 
@@ -505,3 +507,85 @@ Validação: `npm run check` aprovado com **591 testes em 83 arquivos**, incluin
 4. Trocar para Rafa fora de combate: retirar de João e aplicar em Rafa. Em combate, trocar novamente: retirar imediatamente, manter espera e aplicar somente na próxima rodada, com aviso de conclusão. Repetir a mesma referência não reinicia suporte.
 5. Como GM, remover o efeito gerenciado manualmente. Reconciliar/recarregar/editar o valor: aquela fonte permanece suprimida. Desativar e ativar novamente restaura o benefício; conferir fallback com dois Aliados se aplicável.
 6. Repetir pela ficha de um token não vinculado e com dois jogadores de proprietários distintos/dois GMs. Conferir um vínculo original e um executor; usuário sem ownership e revisão obsoleta continuam recusados. Em cópia de mundo com registro v1/efeitos existentes, confirmar migração sem recriação dos efeitos inalterados e sem executar aprovação antiga.
+
+## Efeitos passivos nativos — 0.43.0 (vigente)
+
+Esta seção substitui o editor e o modelo mecânico de Defesa das etapas históricas acima. O Actor continua sendo `paranormal-toolkit.ally`, com o mesmo perfil v1, e a habilidade continua sendo um Item nativo `ability`. Não existem novos tipos de Item, comandos ativos, cobrança de recursos, aprimoramentos automáticos ou conteúdo de livros nesta entrega.
+
+### Uso do editor
+
+No diretório, criar uma habilidade normal, abrir sua ficha do Ordem e acessar **Benefícios passivos — Toolkit** no menu de controles do cabeçalho. Na ficha do Aliado, o botão de benefícios da habilidade abre exatamente a mesma aplicação. A ficha nativa e seus campos permanecem disponíveis.
+
+**Adicionar efeito → Bônus de Defesa** recebe nome e valor numérico finito, incluindo +5, +7 ou +10, e cria um Active Effect nativo. **Personalizado** cria um efeito e abre sua ficha nativa; permite várias mudanças e propriedades fora dos presets. Ambos gravam `allyPassive: {version: 1}` na própria criação, sem atualização intermediária ou confirmação de participação. Editar na ficha nativa preserva essa identificação. O editor lista apenas os efeitos identificados como suporte, incluindo os previamente selecionados. Cada efeito oferece somente **Editar efeito nativo** e **Excluir efeito**, com confirmação para excluir o original do Item. Não existem ações Usar/Retirar do suporte. As operações conferem `Item.canUserModify(user, "update")`, além da autorização normal do Foundry; o serviço também rejeita editar/excluir efeitos não identificados como suporte.
+
+Arrastar a habilidade para o Aliado copia seus efeitos incorporados pelo fluxo nativo. A cópia pode ser editada sem modificar o Item do diretório. A ficha aberta por token vinculado ou não vinculado resolve o Actor persistente original também para edição das habilidades e arraste, sem criar suporte ou fonte mecânica por token.
+
+### Fonte, projeção e concorrência
+
+Os dados mecânicos são os Active Effects incorporados ao Item. `flags.paranormal-toolkit.allyPassive = {version: 1}` apenas identifica uma fonte; não mantém uma segunda definição editável. Benefícios usam `transfer: false`, reforçado nos hooks públicos de criação/atualização e cópia de Item. Efeitos antigos não selecionados conservam seu comportamento nativo e não são marcados, ativados ou apagados por esta mudança; continuam acessíveis na ficha nativa. Desabilitar um benefício suspende sua projeção sem excluir a fonte; reabilitar permite aplicá-lo novamente, respeitando precedência e supressão manual. Excluir a fonte confirmada dispara a retirada automática da projeção. Editar uma fonte elegível atualiza a projeção no mesmo ID.
+
+O editor entra pelo hook público `getHeaderControlsItemSheetV2`, usando `onClick`. A integração não substitui a ficha do Ordem nem inspeciona seu HTML. Foram conferidas as implementações instaladas de ItemSheetV2/DocumentSheetV2, do despacho de controles de ApplicationV2, do Active Effect e da ficha de habilidade do Ordem.
+
+O domínio recebe somente templates serializáveis lidos dos efeitos; o adapter projeta as mudanças nativas em `system.changes`, com `type`, `phase`, `priority` e valores tipados. O preset de Defesa utiliza `system.defense.value`, adição na fase inicial. Cada projeção tem `origin` apontando para o UUID do **Actor Aliado persistente**, além de metadados próprios com Aliado, Item, efeito de origem e identidade da fonte. Não se copiam flags arbitrárias de terceiros para executar mecânicas.
+
+As disputas são resolvidas por beneficiário, caminho da mudança, fase e tipo. A última fonte que entrou no suporte vence para essa chave, conforme a sequência protegida já persistida. Alterar valor ou reconciliar não muda a precedência. Mudanças independentes do mesmo efeito continuam aplicadas; mudanças repetidas pertencentes ao próprio efeito vencedor são preservadas. Status usam a identidade do status como chave. Retirar a fonte vencedora permite retornar à anterior elegível. A projeção pode, portanto, conter um subconjunto das mudanças do efeito de origem.
+
+Continuam vigentes ownership do Aliado, revisão, identidade nativa do hook, rejeição de replay, executor GM eleito e registro protegido. Não há aprovação manual. As notificações usam alterações mecânicas efetivas, preservando o formato de Defesa anterior e acrescentando resumo para efeitos personalizados. Reconciliar sem mudança não gera mensagens. A remoção manual pelo GM de uma projeção registrada conserva a política de supressão; excluir um efeito de origem do Item apenas dispara a reconciliação correspondente.
+
+### Causa confirmada da recriação nos turnos
+
+No Foundry **14.369**, `BaseActiveEffect.migrateData()` converte o antigo campo raiz `changes` para `system.changes`. Também converte valores numéricos textuais, como `"5"`, para `5`. O builder anterior enviava o formato antigo com valor textual, e `matches()` exigia igualdade com esse texto. O documento nativo continha o número; a comparação falhava em cada reconciliação disparada pelo combate e o reconciliador removia/criava o efeito.
+
+A comparação atual usa `effect.toObject(true)` normalizado, evitando os dados preparados que o próprio sistema pode modificar ao avaliar fórmulas. São comparados template configurado, origem e metadados. Dados derivados de preparação, referências de Documents e início de duração não fazem parte dessa comparação. Uma edição segura atualiza a mesma projeção por `updateEmbeddedDocuments`, usando `ForcedReplacement` público para substituir seu `system` sem deixar campos antigos. A identidade é preservada. Cinco reconciliações sem alteração geram zero criações, atualizações ou exclusões de Active Effects. O hook `updateCombat` permanece para as esperas de rodada; a configuração de exibição nativa não foi ocultada para mascarar popups.
+
+### Migração e recuperação
+
+Um serviço separado, executado pelo GM durante a preparação das fontes e a abertura do editor, converte benefícios `allyAbility` v1 para efeitos nativos. O valor e a identidade lógica anteriores são preservados. IDs de efeitos são determinísticos; uma tentativa interrompida pode continuar sem duplicar fontes. `legacyId` conserva a identidade usada por ordem, vínculos e supressão. Somente após confirmar as criações é gravado `allyEffectsMigration: {version: 1}`.
+
+A flag antiga, incluindo campos desconhecidos, permanece intacta como dado legado. Depois do marcador, somente os efeitos nativos alimentam a aplicação. Versões desconhecidas, colisões ou efeitos divergentes não são convertidos silenciosamente. A leitura do registro aceita v1/v2 e normaliza para **ledger v3**, preservando estado, revision, beneficiário, espera de combate, ordens, IDs gerenciados, supressões e baseline de notificações. Projeções antigas são atualizadas no mesmo ID, sem exclusão apenas para migrar o contrato.
+
+Uma fonte ativa inválida interrompe conservadoramente a reconciliação mecânica, publica diagnóstico e preserva projeções existentes até correção ou desativação. Isso pode pausar também atualizações de outros suportes enquanto houver fonte inválida; evita retirar bônus ou substituir dados com configuração incompreendida. A migração não altera o repositório do sistema Ordem.
+
+### Arquivos desta entrega
+
+| Área | Arquivos |
+|---|---|
+| Domínio | `src/core/allies/ally-passive-effect.ts` (novo), `ally-definition.ts`, `ally-benefit-resolver.ts` |
+| Configuração | `src/features/allies/config/ally-ability-config.ts`; `src/features/allies/ally-effect-config-service.ts`, `ally-effect-migration-service.ts`, `ally-effect-sheet-integration.ts` (novos) |
+| Aplicações | `src/applications/ally-ability-config-application.ts`, `ally-sheet.ts`; `src/ui/components/ally/ally-ability-config.ts` |
+| Mecânica Ordem | `src/adapters/ordem/ordem-ally-effect-presets.ts` (novo), `ordem-ally-benefit-adapter.ts` |
+| Operação | `src/features/allies/ally-support-service.ts`, `ally-reconciliation-service.ts`, `ally-lifecycle-hooks.ts`, `ally-support-notifications.ts` |
+| Persistência/avisos | `src/adapters/foundry/foundry-ally-store.ts`, `foundry-ally-request-adapter.ts`, `foundry-ally-notifications.ts` |
+| Registro/tipos | `src/main.ts`, `src/types/foundry-shim.d.ts`, `src/features/allies/ally-registration.ts`, `lang/pt-BR.json` |
+| Testes novos | `tests/helpers/ally-effects.ts`, `tests/unit/features/allies/ally-native-effects.test.ts`, `ally-effect-sheet-integration.test.ts`, `tests/reference/foundry-ally-native-effects.test.ts` |
+| Regressões atualizadas | `tests/core/allies/ally-benefit-resolver.test.ts`; testes `ally-actor`, `ally-foundry-adapters`, `ally-ledger-migration`, `ally-lifecycle-hooks`, `ally-support-service` em `tests/unit/features/allies`; `tests/ui/components/ally/ally-ability-config.test.ts`; `tests/reference/helpers/foundry-data-model.ts` |
+| Versão/documentação | `module.json`, `package.json`, `package-lock.json`, `README.md`, este relatório |
+
+### Evidências automatizadas e limites
+
+`npm run check`: **621 testes aprovados em 86 arquivos**, typecheck e build aprovados, com as referências Foundry 14.369 e Ordem 8.0.2 habilitadas. Runtime: Node v24.19.0, Vitest 3.2.6 e Vite 7.3.6. O build processa 257 módulos; `dist/main.js` está atualizado, e `dist` continua ignorado pelo Git. Build separado e `git diff --check` também aprovados.
+
+As regressões cobrem editor em Item independente e incorporado, permissões, presets configuráveis, efeito personalizado, marcação automática, cópia e edição independente, origem, aplicação, alteração +5 para +10 no mesmo ID, cinco passagens sem escritas, transições existentes, concorrência entre fontes, múltiplas mudanças, supressão e migração recuperável/idempotente. Os handlers reais de criação do editor são exercitados nos dois contextos, verificando a flag na própria operação de criação, abertura da ficha personalizada, ausência das ações de seleção e cancelamento/confirmação da exclusão. Um teste integrado com Documents substituídos cria Defesa +5 e Religião +6, copia para Íris, projeta em Mauro, edita, desabilita/reabilita e exclui a fonte, preservando efeitos antigos não marcados. Testes de referência executam a migração e os campos reais de Active Effect do Foundry e o caminho real `_onDropItem` de ActorSheetV2. Banco, servidor, interface e algumas dependências dos Documents são substituídos nesses testes; eles não comprovam persistência ou permissões no servidor de um mundo em execução.
+
+Efeitos personalizados aceitam caminhos de dados genéricos, mas bloqueiam estruturas inválidas, metadados de autorização/identidade, caminhos internos/protótipos e substituição de funções do Actor. Uma chave desconhecida não passa a ser uma mecânica do Ordem por ter sido configurada: pode não produzir resultado. Tipos de efeito de outros módulos, fórmulas e durações temporárias precisam de smoke específico; não foi criada automação própria de duração, RD, comandos ou recursos. Smoke no Foundry desta entrega **pendente do usuário**.
+
+### Smoke manual desta versão
+
+Usar mundo de teste com um GM conectado e recarregar todos os clientes após o build em `D:/dev/paranormal-toolkit`.
+
+1. Criar Item `ability` no diretório e abrir sua ficha nativa.
+2. Pelo menu do cabeçalho, abrir **Benefícios passivos — Toolkit**.
+3. Em **Adicionar efeito**, preencher nome e valor 5; usar **Bônus de Defesa**.
+4. Abrir o efeito na ficha nativa, conferir mudança `system.defense.value`, tipo adição, fase inicial, valor 5 e transferência desativada.
+5. Arrastar a habilidade para Íris e confirmar efeito e seleção preservados.
+6. Abrir o mesmo editor pela habilidade incorporada e conferir os campos nativos da habilidade preservados.
+7. Atribuir Mauro, um `agent` persistente; ativar o suporte.
+8. Conferir Defesa +5, sem alterar a Defesa base salva e sem aplicar o efeito à própria Íris.
+9. Na projeção de Mauro, conferir origem Íris e registrar seu ID.
+10. Avançar cinco turnos sem mudanças: mesmo ID, sem remoção/adição, sem popups do Toolkit ou novos avisos de suporte.
+11. Editar o efeito incorporado na Íris para +10: uma projeção, mesmo ID, benefício +10.
+12. Abrir o Item original do diretório: ele continua +5.
+13. Desativar: somente a projeção gerenciada desaparece. Reativar e trocar fora/dentro de combate, conferindo retirada imediata e espera até a próxima rodada quando aplicável.
+14. Criar **Personalizado**, configurar adição +6 em `system.skills.religion.mod`, fase inicial, e conferir aplicação automática sem seleção adicional. Testar desabilitar/reabilitar pela ficha nativa e excluir pelo Toolkit, cancelando primeiro a confirmação: a fonte só deve ser excluída após confirmar e a projeção deve acompanhar. Testar múltiplas mudanças e precedência com outro Aliado; retirar o vencedor restaura o anterior. Conferir que efeitos antigos não selecionados continuam intactos na ficha nativa e fora do suporte.
+15. Como GM, remover uma projeção; reconciliar e recarregar não devem recriá-la. Desativar/ativar inicia novo contexto. Repetir por token não vinculado e com proprietários distintos/dois GMs.
+16. Em cópia descartável com benefícios legados, confirmar migração, valores e IDs de projeções preservados, sem duplicação após reload. Se houver configuração inválida, conferir diagnóstico e preservação dos dados.

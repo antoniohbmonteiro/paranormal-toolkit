@@ -15,7 +15,7 @@ function fixture(realService = false) {
     getFlag: vi.fn((_scope: string, key: string) => flags[key]),
     setFlag: vi.fn(async (_scope: string, key: string, value: unknown) => { flags[key] = value; }),
     canUserModify: vi.fn(() => true) };
-  const agent = { id: "joao", type: "agent", isToken: false };
+  const agent = { id: "joao", documentName: "Actor", type: "agent", isToken: false };
   const gm = { id: "gm", isGM: true, active: true }, player = { id: "actual-player", isGM: false, active: true };
   vi.stubGlobal("Hooks", { on: (name: string, callback: Function) => hooks.set(name, [...hooks.get(name) ?? [], callback]) });
   vi.stubGlobal("game", { user: gm, users: [gm, player],

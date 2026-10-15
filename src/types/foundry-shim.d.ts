@@ -190,6 +190,7 @@ declare const game: {
   user?: FoundryUserLike | null;
   users: FoundryUserLike[];
   actors: FoundryCollectionLike<Actor>;
+  items: FoundryCollectionLike<Item>;
   messages: FoundryCollectionLike<ChatMessageDocumentLike>;
   modules: Map<string, FoundryModuleLike>;
   settings: {
@@ -230,6 +231,7 @@ declare const ui: {
 declare const Hooks: {
   once(hook: string, callback: (...args: any[]) => void): void;
   on(hook: string, callback: (...args: any[]) => void): void;
+  off(hook: string, callback: (...args: any[]) => void): void;
   callAll(hook: string, ...args: unknown[]): void;
 };
 
@@ -273,7 +275,7 @@ declare class FoundryDataField {
 }
 
 declare class ActorSheetV2 extends ApplicationV2 {
-  actor: Actor;
+  get actor(): Actor;
   isEditable: boolean;
   _prepareContext(options: Record<string, unknown>): Promise<object>;
   _onDropItem(event: DragEvent, item: Item): Promise<Item | null | undefined>;
@@ -292,7 +294,7 @@ declare const foundry: {
     };
   };
   abstract: { TypeDataModel: typeof TypeDataModel };
-  data: { operators: { ForcedDeletion: new () => object }; fields: {
+  data: { operators: { ForcedDeletion: new () => object; ForcedReplacement: new (value: unknown) => object }; fields: {
     NumberField: typeof FoundryDataField;
     HTMLField: typeof FoundryDataField;
     BooleanField: typeof FoundryDataField;
@@ -313,6 +315,7 @@ declare class Roll {
 }
 
 declare class Actor {
+  documentName: "Actor";
   _stats?: { lastModifiedBy?: string | null };
   id: string | null;
   uuid?: string | null;
@@ -333,6 +336,7 @@ declare class Actor {
   createEmbeddedDocuments(embeddedName: "Item", data: Record<string, unknown>[]): Promise<Item[]>;
   update(data: Record<string, unknown>): Promise<this>;
   createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<Array<{ id?: string | null }>>;
+  updateEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown>;
 }
 
 declare class Item {
@@ -345,6 +349,12 @@ declare class Item {
   system: Record<string, unknown>;
   parent: Actor | null;
   actor?: Actor | null;
+  effects?: { contents: AllyEffectLike[]; get(id: string): AllyEffectLike | undefined };
+  canUserModify(user: FoundryUserLike, action: string): boolean;
+  createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<AllyEffectLike[]>;
+  deleteEmbeddedDocuments(embeddedName: "ActiveEffect", ids: string[]): Promise<unknown>;
+  toObject(source?: boolean): Record<string, unknown>;
+  updateSource(data: Record<string, unknown>): unknown;
   getFlag(scope: string, key: string): unknown;
   setFlag(scope: string, key: string, value: unknown): Promise<this>;
   unsetFlag(scope: string, key: string): Promise<this>;
@@ -352,8 +362,14 @@ declare class Item {
 }
 
 type AllyEffectLike = {
+  id: string; name: string; uuid?: string; parent?: Actor | Item;
   disabled: boolean; transfer: boolean;
-  changes: { key: string; type: string; phase: string; priority: number; value: string }[];
+  system?: Record<string, unknown>;
+  toObject(source?: boolean): Record<string, unknown>;
+  update(data: Record<string, unknown>): Promise<unknown>;
+  updateSource(data: Record<string, unknown>): unknown;
+  unsetFlag(scope: string, key: string): Promise<unknown>;
+  sheet: { render(options: Record<string, unknown>): unknown };
   getFlag(scope: string, key: string): unknown;
 };
 type AllyCombatLike = {

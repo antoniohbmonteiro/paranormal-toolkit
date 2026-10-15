@@ -12,7 +12,7 @@ export type AllyLink = {
   diagnostic: string | null;
 };
 export type AllyLedger = {
-  version: 2; revision: number; nextSequence: number; links: AllyLink[];
+  version: 3; revision: number; nextSequence: number; links: AllyLink[];
   orders: { sourceKey: string; activationSequence: number; sequence: number }[];
   managed: AllyManagedEffect[]; diagnostic: string | null;
 };
@@ -27,13 +27,15 @@ export interface AllySupportEnvironment {
   allyExists(allyId: string): boolean;
   agentExists(actorId: string): boolean;
   abilities(allyId: string): { id: string; definition: AllyAbilityDefinition }[] | null;
+  prepareSources?(): Promise<void>;
+  describeEffect(effect: AllyManagedEffect): AllyNoticeSnapshot["benefits"][number];
   resolveCombat(allyId: string, beneficiaryId: string, chosenId?: string, previousId?: string): AllyCombatSnapshot | null;
   combat(id: string): AllyCombatSnapshot | null;
   publish(ledger: AllyLedger): Promise<void>;
   notify(change: AllySupportChange): Promise<void>;
 }
 export function createAllyLedger(): AllyLedger {
-  return { version: 2, revision: 0, nextSequence: 1, links: [], managed: [], orders: [], diagnostic: null };
+  return { version: 3, revision: 0, nextSequence: 1, links: [], managed: [], orders: [], diagnostic: null };
 }
 
 export class AllySupportService {
@@ -60,6 +62,7 @@ export class AllySupportService {
       const user = this.environment.users().find(entry => entry.id === userId);
       authorizeAllyRequest(request, user, this.environment.ownsAlly(allyId, userId));
       if (!this.environment.allyExists(allyId)) throw new Error("Aliado ausente ou inválido.");
+      await this.environment.prepareSources?.();
       const ledger = await this.store.load(true);
       if (!ledger) throw new Error("Registro operacional indisponível.");
       this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
@@ -105,6 +108,7 @@ export class AllySupportService {
     });
   }
   private async reconcileLoaded(): Promise<void> {
+    await this.environment.prepareSources?.();
     const ledger = await this.store.load();
     if (!ledger) return;
     this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
@@ -148,6 +152,10 @@ export class AllySupportService {
         }, ledger.nextSequence);
       }
       const abilities = this.environment.abilities(link.allyId);
+      if (!abilities && link.state.status !== "inactive") {
+        ledger.diagnostic = "Habilidade com efeitos inválidos ou migração pendente. Projeções existentes preservadas; revise a origem ou desative o suporte.";
+        await this.persist(ledger); await this.environment.publish(ledger); return;
+      }
       const valid = abilities && link.state.beneficiaryId && this.environment.agentExists(link.state.beneficiaryId);
       if (!valid) {
         link.diagnostic = !abilities ? "Configuração de habilidade inválida." : link.state.beneficiaryId ? "Beneficiário ausente ou inválido." : null;
@@ -186,7 +194,7 @@ export class AllySupportService {
     if (!ledger.diagnostic) for (const link of ledger.links) {
       const next: AllyNoticeSnapshot = { beneficiaryId: link.state.beneficiaryId, status: link.state.status,
         benefits: ledger.managed.filter(effect => effect.allyId === link.allyId)
-          .map(effect => ({ sourceKey: effect.sourceKey, value: effect.value }))
+          .map(effect => this.environment.describeEffect(effect))
           .sort((a, b) => a.sourceKey < b.sourceKey ? -1 : a.sourceKey > b.sourceKey ? 1 : 0) };
       const change = buildAllySupportChange(link.allyId, link.notice, next);
       if (change) changes.push(change);

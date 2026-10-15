@@ -1,10 +1,12 @@
+import { AllyEffectConfigService } from "../../../../src/features/allies/ally-effect-config-service";
+import { buildDefenseTemplate } from "../../../../src/adapters/ordem/ordem-ally-effect-presets";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FoundryAllyStore, readAllyLedger } from "../../../../src/adapters/foundry/foundry-ally-store";
 import { FoundryAllyEnvironment, submitAllyRequest } from "../../../../src/adapters/foundry/foundry-ally-request-adapter";
 import { buildAllyDefenseEffect, OrdemAllyBenefitAdapter } from "../../../../src/adapters/ordem/ordem-ally-benefit-adapter";
 import { createAllyLedger } from "../../../../src/features/allies/ally-support-service";
 import { createAllyProfile } from "../../../../src/core/allies/ally-profile";
-import { readAllyAbility, writeAllyAbility } from "../../../../src/features/allies/config/ally-ability-config";
+import { readAllyAbility } from "../../../../src/features/allies/config/ally-ability-config";
 
 function user(id: string, isGM = false, reference: unknown = undefined) {
   return { id, isGM, active: true, getFlag: vi.fn(() => reference), setFlag: vi.fn(async () => {}) };
@@ -59,7 +61,7 @@ describe("protected store (native document operations doubled)", () => {
   });
   it("fails closed for unknown ledger versions and corrupted state", () => {
     expect(readAllyLedger(createAllyLedger())).toEqual(createAllyLedger());
-    expect(() => readAllyLedger({ ...createAllyLedger(), version: 3 })).toThrow("corrompido");
+    expect(() => readAllyLedger({ ...createAllyLedger(), version: 4 })).toThrow("corrompido");
     expect(() => readAllyLedger({ ...createAllyLedger(), links: [{ allyId: "a", state: { status: "active" } }] })).toThrow();
     const value = createAllyLedger();
     value.managed.push({ effectId: "effect", actorId: "joao", sourceKey: "s", allyId: "a", value: 5 });
@@ -93,8 +95,9 @@ describe("request and Ordem adapters", () => {
   it("submits current support operations without an approval scope or review dialog", async () => {
     const gm = user("gm", true, "JournalEntry.ledger");
     const record = journal(), ally = actor("iris", "paranormal-toolkit.ally"), joao = actor("joao");
-    const definition = { version: 1, benefits: [{ id: "d", kind: "defense", value: 5 }] };
-    (ally as any).items = [{ id: "item", name: "Defense", type: "ability", getFlag: () => definition }];
+    const template = buildDefenseTemplate("Bônus de Defesa", 5);
+    (ally as any).items = [{ id: "item", name: "Defense", type: "ability", getFlag: () => undefined,
+      effects: { contents: [{ id: "effect-source", disabled: false, transfer: false, getFlag: () => ({ version: 1 }), toObject: () => template }] } }];
     const ledger = createAllyLedger();
     ledger.revision = 7;
     ledger.links.push({ allyId: "iris", state: { beneficiaryId: "joao", status: "inactive", sequence: 0, wait: null },
@@ -104,11 +107,11 @@ describe("request and Ordem adapters", () => {
       actors: { get: (id: string) => id === "iris" ? ally : joao },
       system: { version: "8.0.2" }, release: { version: "14.369" } });
     vi.stubGlobal("fromUuid", vi.fn(async () => record));
-    definition.benefits[0].value = 99;
+    template.system.changes[0].value = 99;
     await submitAllyRequest(ally as any, "activate");
     expect(ally.setFlag).toHaveBeenCalledWith("paranormal-toolkit", "allyRequest",
       { id: "stable-id-000", revision: 7, action: "activate" });
-    expect(new FoundryAllyEnvironment().abilities("iris")![0].definition.benefits[0].value).toBe(99);
+    expect(new FoundryAllyEnvironment().abilities("iris")![0].definition.benefits[0].template.system.changes[0].value).toBe(99);
   });
   it("rejects a request without an executor before updating an actor", async () => {
     const ally = actor("iris", "paranormal-toolkit.ally");
@@ -150,12 +153,12 @@ describe("request and Ordem adapters", () => {
     vi.stubGlobal("game", { actors: { get: () => beneficiary } });
     const effect = { actorId: "joao", effectId: "id", sourceKey: "source", value: 5, allyId: "iris" };
     expect(buildAllyDefenseEffect(effect)).toMatchObject({ transfer: false,
-      changes: [{ key: "system.defense.value", value: "5", type: "add", phase: "initial", priority: 20 }] });
+      system: { changes: [{ key: "system.defense.value", value: 5, type: "add", phase: "initial", priority: 20 }] } });
     const guard = vi.fn(), adapter = new OrdemAllyBenefitAdapter(guard);
     await adapter.create(effect);
     expect(beneficiary.createEmbeddedDocuments).toHaveBeenCalledWith("ActiveEffect", [buildAllyDefenseEffect(effect)],
       { keepId: true, allyReconciliation: true });
-    beneficiary.effects.get.mockReturnValue({ ...buildAllyDefenseEffect(effect), getFlag: () => ({ version: 1, sourceKey: "source", allyId: "iris" }) } as any);
+    beneficiary.effects.get.mockReturnValue({ ...buildAllyDefenseEffect(effect), toObject: () => buildAllyDefenseEffect(effect), getFlag: () => ({ version: 2, sourceKey: "source", allyId: "iris", itemId: null, sourceEffectId: null }) } as any);
     expect(adapter.matches(effect)).toBe(true);
     await adapter.remove(effect);
     expect(beneficiary.deleteEmbeddedDocuments).toHaveBeenCalledWith("ActiveEffect", ["id"], { allyReconciliation: true });
@@ -163,10 +166,10 @@ describe("request and Ordem adapters", () => {
   });
   it("preserves malformed source configs and enforces native edit permission", async () => {
     const ally = actor("iris", "paranormal-toolkit.ally");
-    const item = { type: "ability", parent: ally, getFlag: vi.fn(() => ({ version: 2 })), setFlag: vi.fn() };
+    const item = { type: "ability", parent: ally, canUserModify: () => ally.canUserModify(), getFlag: vi.fn(() => ({ version: 2 })), setFlag: vi.fn() };
     expect(readAllyAbility(item as any)).toBeNull();
     ally.canUserModify.mockReturnValue(false);
-    await expect(writeAllyAbility(item as any, { version: 1, benefits: [] })).rejects.toThrow("permissão");
+    await expect(new AllyEffectConfigService(item as any).create(buildDefenseTemplate("Defesa", 5))).rejects.toThrow("permissão");
     expect(item.setFlag).not.toHaveBeenCalled();
   });
 });

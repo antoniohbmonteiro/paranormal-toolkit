@@ -2,6 +2,7 @@ import { MODULE_ID } from "../../constants";
 import { createAllyLedger, type AllyLedger, type AllyStore } from "../../features/allies/ally-support-service";
 import { readAllyRequest } from "../../features/allies/ally-operation-authority";
 import { isAllyNoticeSnapshot } from "../../features/allies/ally-support-notifications";
+import { readEffectTemplate } from "../../core/allies/ally-passive-effect";
 
 export const ALLY_STORE_FLAG = "allyStore";
 export const ALLY_LEDGER_FLAG = "allyLedger";
@@ -12,7 +13,7 @@ export function readAllyLedger(value: unknown): AllyLedger {
   const raw = value as Record<string, unknown>;
   const legacy = raw.version === 1;
   const ledger = value as AllyLedger;
-  if ((!legacy && raw.version !== 2) || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0
+  if ((!legacy && raw.version !== 2 && raw.version !== 3) || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0
     || !Number.isSafeInteger(ledger.nextSequence) || ledger.nextSequence < 1
     || !Array.isArray(ledger.links) || !Array.isArray(ledger.managed) || !Array.isArray(ledger.orders)
     || (legacy && !(raw.validatedRuntime === null || typeof raw.validatedRuntime === "string"))
@@ -63,13 +64,15 @@ export function readAllyLedger(value: unknown): AllyLedger {
   for (const effect of ledger.managed) {
     if (!effect || typeof effect.actorId !== "string" || typeof effect.effectId !== "string"
       || typeof effect.allyId !== "string" || typeof effect.sourceKey !== "string"
-      || typeof effect.value !== "number" || !Number.isFinite(effect.value)) return fail();
+      || (effect.template ? !readEffectTemplate(effect.template) : typeof effect.value !== "number" || !Number.isFinite(effect.value))
+      || (effect.itemId !== undefined && typeof effect.itemId !== "string")
+      || (effect.sourceEffectId !== undefined && typeof effect.sourceEffectId !== "string")) return fail();
     const key = JSON.stringify([effect.actorId, effect.effectId]);
     if (effects.has(key)) return fail();
     effects.add(key);
   }
   const copy = structuredClone(ledger);
-  return { version: 2, revision: copy.revision, nextSequence: copy.nextSequence,
+  return { version: 3, revision: copy.revision, nextSequence: copy.nextSequence,
     managed: copy.managed, orders: copy.orders, diagnostic: legacy ? null : copy.diagnostic,
     links: copy.links.map(link => ({ allyId: link.allyId, state: link.state,
       diagnostic: legacy ? null : link.diagnostic, suppressedSources: legacy ? [] : link.suppressedSources,
