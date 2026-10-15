@@ -248,7 +248,7 @@ describe("support notifications and manual GM suppression", () => {
     expect(f.adapter.remove).not.toHaveBeenCalled();
     expect(f.env.notify).not.toHaveBeenCalled();
     expect(f.ledger().links[0].state.beneficiaryId).toBe("joao");
-    expect(f.ledger().version).toBe(3);
+    expect(f.ledger().version).toBe(4);
   });
   it("emits changes only once across no-op requests, reconciliation and service reload", async () => {
     const f = fixture(); await f.activate();

@@ -44,9 +44,10 @@ Hooks.once("ready", () => {
     services.resources,
     services.resourceAdapter,
     services.damage,
+    services.allyUses.gateway,
   );
   registerConditionLifecycleHooks(services.conditions);
-  registerAllyLifecycleHooks();
+  registerAllyLifecycleHooks(services);
   registerGlobalApi(services);
   registerRitualLogActionCleanup();
   registerActorSheetRitualPresetAction(services);

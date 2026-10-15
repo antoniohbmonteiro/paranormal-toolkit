@@ -4,16 +4,27 @@ import { OrdemAllyBenefitAdapter } from "../../adapters/ordem/ordem-ally-benefit
 import { AllyReconciliationService } from "./ally-reconciliation-service";
 import { AllySupportService } from "./ally-support-service";
 import { ALLY_TYPE } from "./config/ally-ability-config";
+import type { ToolkitServices } from "../../toolkit-services";
+import { FoundryAllyItemAdapter } from "../../adapters/foundry/foundry-ally-item-adapter";
+import { FoundryAllyReceiptAdapter } from "../../adapters/foundry/foundry-ally-receipt-adapter";
+import { AllyGrantedAbilityService } from "./ally-granted-ability-service";
+import { AllyGrantedAbilityUseService } from "./ally-granted-ability-use-service";
+import { AbilityAssistedActionService } from "../abilities/ability-assisted-action-service";
 
-export function registerAllyLifecycleHooks(): AllySupportService {
+export function registerAllyLifecycleHooks(dependencies?: ToolkitServices): AllySupportService {
   const environment = new FoundryAllyEnvironment();
   let service: AllySupportService;
+  const assertExecutor = () => { if (!service.isExecutor()) throw new Error("O GM executor mudou."); };
+  const items = new FoundryAllyItemAdapter(assertExecutor);
   const effects = new OrdemAllyBenefitAdapter(() => {
     if (!service.isExecutor()) throw new Error("O GM executor mudou.");
   });
   service = new AllySupportService(new FoundryAllyStore(() => {
     if (!service.isExecutor()) throw new Error("O GM executor mudou.");
-  }), environment, new AllyReconciliationService(effects));
+  }), environment, new AllyReconciliationService(effects), dependencies ? new AllyGrantedAbilityService(items) : undefined);
+  if (dependencies) dependencies.allyUses.register(new AllyGrantedAbilityUseService(service, items,
+    new FoundryAllyReceiptAdapter(assertExecutor), dependencies.abilityWorkflow,
+    dependencies.resourceAdapter, dependencies.workflow, new AbilityAssistedActionService(dependencies.damage, dependencies.resources)), service);
   const report = (error: unknown): void => {
     console.error("Paranormal Toolkit | Allies", error);
     ui.notifications?.warn(error instanceof Error ? error.message : "Falha ao reconciliar Aliados.");
@@ -33,7 +44,17 @@ export function registerAllyLifecycleHooks(): AllySupportService {
     return service.process(actor.id!, request, userId).catch(report);
   });
   for (const name of ["createItem", "updateItem", "deleteItem"]) {
-    Hooks.on(name, (item: Item) => { if (item.parent?.type === ALLY_TYPE) reconcile(); });
+    Hooks.on(name, (item: Item, changesOrOptions: Record<string, unknown>, optionsOrUser: unknown, nativeUserId?: string) => {
+      const options = name === "updateItem" ? optionsOrUser : changesOrOptions;
+      if ((options as { allyGrantReconciliation?: boolean })?.allyGrantReconciliation) return;
+      if (item.parent?.type === ALLY_TYPE) { reconcile(); return; }
+      if (item.parent?.type !== "agent" || item.parent.isToken) return;
+      if (name === "deleteItem" && item.id && item.parent.id) {
+        const userId = typeof optionsOrUser === "string" ? optionsOrUser : nativeUserId;
+        if (userId) return service.suppressGrant(item.parent.id, item.id, userId).catch(report);
+      }
+      reconcile();
+    });
   }
   Hooks.on("deleteActor", reconcile);
   Hooks.on("updateCombat", reconcile);
@@ -44,11 +65,12 @@ export function registerAllyLifecycleHooks(): AllySupportService {
   for (const name of ["createActiveEffect", "updateActiveEffect"]) {
     Hooks.on(name, (_effect: unknown, _changesOrOptions: unknown, optionsOrUser: unknown) => {
       const options = name === "updateActiveEffect" ? optionsOrUser : _changesOrOptions;
-      if (!(options as { allyReconciliation?: boolean } | undefined)?.allyReconciliation) reconcile();
+      const ownWrite = options as { allyReconciliation?: boolean; allyGrantReconciliation?: boolean } | undefined;
+      if (!ownWrite?.allyReconciliation && !ownWrite?.allyGrantReconciliation) reconcile();
     });
   }
-  Hooks.on("deleteActiveEffect", (effect: { id?: string; parent?: Actor | Item }, options: { allyReconciliation?: boolean }, userId: string) => {
-    if (options?.allyReconciliation || !service.isExecutor()) return;
+  Hooks.on("deleteActiveEffect", (effect: { id?: string; parent?: Actor | Item }, options: { allyReconciliation?: boolean; allyGrantReconciliation?: boolean }, userId: string) => {
+    if (options?.allyReconciliation || options?.allyGrantReconciliation || !service.isExecutor()) return;
     if (effect.parent?.documentName === "Item") { reconcile(); return; }
     if (effect.id && effect.parent?.documentName === "Actor" && effect.parent.id && !effect.parent.isToken) {
       return service.suppressEffect(effect.parent.id, effect.id, userId).catch(report);

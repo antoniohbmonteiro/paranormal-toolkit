@@ -6,6 +6,7 @@ import type { WorkflowLifecycleEventSummary } from "./workflow-lifecycle-event";
 import type { WorkflowPhase } from "./workflow-phase";
 import type { WorkflowRollRequest, WorkflowRollResult } from "./workflow-roll";
 import type { WorkflowTarget, WorkflowTokenRef } from "./workflow-target";
+import type { WorkflowExecutionControl } from "./workflow-execution-control";
 
 export type { WorkflowDamageInstance };
 export type { WorkflowHealingInstance };
@@ -18,6 +19,8 @@ export type WorkflowRitualCostEntry = RitualCost & {
 };
 
 export type WorkflowContext = {
+  executionControl?: WorkflowExecutionControl;
+  rollData?: Record<string, unknown>;
   id: string;
   sourceActor: Actor;
   sourceToken: WorkflowTokenRef | null;
@@ -35,6 +38,8 @@ export type WorkflowContext = {
 };
 
 export type WorkflowContextInput = {
+  executionControl?: WorkflowExecutionControl;
+  rollData?: Record<string, unknown>;
   sourceActor: Actor;
   sourceToken?: WorkflowTokenRef | null;
   item: Item;
@@ -44,6 +49,8 @@ export type WorkflowContextInput = {
 
 export function createWorkflowContext(input: WorkflowContextInput): WorkflowContext {
   return {
+    executionControl: input.executionControl,
+    rollData: input.rollData,
     id: createWorkflowId(),
     sourceActor: input.sourceActor,
     sourceToken: input.sourceToken ?? null,

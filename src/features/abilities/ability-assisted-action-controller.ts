@@ -2,6 +2,7 @@ import type {
   AbilityAssistedActionExecutionResult,
   AbilityAssistedActionService,
 } from "./ability-assisted-action-service";
+import type { ManagedItemUseInterceptor } from "../item-use/item-use-route";
 import type { AbilityAssistedAction } from "./ability-use-card-state";
 import {
   mutateAbilityUseCard,
@@ -15,6 +16,7 @@ let registered = false;
 
 export function registerAbilityAssistedActionController(
   service: AbilityAssistedActionService,
+  managedUses?: ManagedItemUseInterceptor,
 ): void {
   if (registered) return;
   registered = true;
@@ -23,6 +25,7 @@ export function registerAbilityAssistedActionController(
       message as AbilityChatMessage,
       resolveRootElement(html),
       service,
+      managedUses,
     );
   };
   Hooks.on("renderChatMessageHTML", enhance);
@@ -33,6 +36,7 @@ export function bindAbilityAssistedActionButtons(
   message: AbilityChatMessage,
   root: ParentNode | null,
   service: AbilityAssistedActionService,
+  managedUses?: ManagedItemUseInterceptor,
 ): number {
   if (!root) return 0;
   const buttons = Array.from(
@@ -49,6 +53,7 @@ export function bindAbilityAssistedActionButtons(
         message,
         actionId: button.dataset.paranormalToolkitActionId ?? null,
         service,
+        managedUses,
         button,
       });
     });
@@ -63,8 +68,10 @@ export async function executeAbilityAssistedActionInteraction(input: {
   service: AbilityAssistedActionService;
   button?: HTMLButtonElement;
   root?: HTMLElement;
+  managedUses?: ManagedItemUseInterceptor;
 }): Promise<void> {
   if (!input.actionId) return;
+  if (await input.managedUses?.interceptAction?.(input.message, input.actionId)) return;
   if (input.button) input.button.disabled = true;
   let claimedAction: AbilityAssistedAction | null = null;
   let sideEffectPossible = false;
@@ -112,6 +119,7 @@ export async function executeAbilityAssistedActionInteraction(input: {
       input.message,
       input.root ?? resolveHost(input.button),
       input.service,
+      input.managedUses,
     );
   }
 }
@@ -190,9 +198,10 @@ function rerender(
   message: AbilityChatMessage,
   root: HTMLElement | null,
   service: AbilityAssistedActionService,
+  managedUses?: ManagedItemUseInterceptor,
 ): void {
   if (!root || !renderPersistedAbilityCard(message, root)) return;
-  bindAbilityAssistedActionButtons(message, root, service);
+  bindAbilityAssistedActionButtons(message, root, service, managedUses);
 }
 
 function resolveHost(button: HTMLButtonElement | undefined): HTMLElement | null {

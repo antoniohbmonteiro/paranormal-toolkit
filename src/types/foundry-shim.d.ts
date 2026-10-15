@@ -181,6 +181,7 @@ type FoundryModuleLike = {
 };
 
 declare const game: {
+  time?: { serverTime: number };
   system: {
     id: string;
     version?: string;
@@ -255,7 +256,7 @@ type ChatMessageDocumentLike = {
 };
 
 declare const ChatMessage: {
-  create(data: ChatMessageCreateData): Promise<unknown>;
+  create(data: ChatMessageCreateData, options?: Record<string, unknown>): Promise<unknown>;
   getSpeaker(options: { actor?: Actor | null }): ChatSpeakerData;
 };
 
@@ -331,9 +332,9 @@ declare class Actor {
   token?: TokenLike | null;
   getActiveTokens?(): TokenLike[];
   canUserModify(user: FoundryUserLike, action: string): boolean;
-  deleteEmbeddedDocuments(embeddedName: "Item", ids: string[]): Promise<Item[]>;
+  deleteEmbeddedDocuments(embeddedName: "Item", ids: string[], options?: Record<string, unknown>): Promise<Item[]>;
   deleteEmbeddedDocuments(embeddedName: "ActiveEffect", ids: string[], options?: Record<string, unknown>): Promise<unknown>;
-  createEmbeddedDocuments(embeddedName: "Item", data: Record<string, unknown>[]): Promise<Item[]>;
+  createEmbeddedDocuments(embeddedName: "Item", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<Item[]>;
   update(data: Record<string, unknown>): Promise<this>;
   createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<Array<{ id?: string | null }>>;
   updateEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown>;
@@ -352,13 +353,14 @@ declare class Item {
   effects?: { contents: AllyEffectLike[]; get(id: string): AllyEffectLike | undefined };
   canUserModify(user: FoundryUserLike, action: string): boolean;
   createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<AllyEffectLike[]>;
-  deleteEmbeddedDocuments(embeddedName: "ActiveEffect", ids: string[]): Promise<unknown>;
+  deleteEmbeddedDocuments(embeddedName: "ActiveEffect", ids: string[], options?: Record<string, unknown>): Promise<unknown>;
+  updateEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown>;
   toObject(source?: boolean): Record<string, unknown>;
   updateSource(data: Record<string, unknown>): unknown;
   getFlag(scope: string, key: string): unknown;
   setFlag(scope: string, key: string, value: unknown): Promise<this>;
   unsetFlag(scope: string, key: string): Promise<this>;
-  update(data: Record<string, unknown>): Promise<this>;
+  update(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<this>;
 }
 
 type AllyEffectLike = {

@@ -1,4 +1,5 @@
 import { isAllySourceItem } from "../allies/config/ally-ability-config";
+import type { ManagedItemUseInterceptor } from "./item-use-route";
 import type { AutomationDefinition } from "../../core/automation/automation-definition";
 import type { RitualEventBus } from "../../core/public-api/ritual-event-bus";
 import type { RitualAutomationSourceInput } from "../../core/public-api/ritual-event-types";
@@ -126,6 +127,7 @@ export class ItemUseIntegration {
     private readonly conditions: ConditionEngine,
     private readonly debugOutput: DebugOutputService,
     ritualEvents: RitualEventBus,
+    private readonly managedUses?: ManagedItemUseInterceptor,
   ) {
     this.ritualAssistant = new RitualAssistedWorkflow(
       workflow,
@@ -161,6 +163,7 @@ export class ItemUseIntegration {
       this.setAttempt(context, "ignored", "ally-source-item");
       return;
     }
+    if (await this.managedUses?.intercept(context)) return;
     const settings = getItemUseSettings();
 
     if (settings.executionMode === "disabled") {
@@ -230,6 +233,8 @@ export class ItemUseIntegration {
   }
 
   async executePendingAutomation(pendingId: string): Promise<boolean> {
+    const managed = await this.managedUses?.executePending?.(pendingId);
+    if (managed !== undefined) return managed;
     const pending = this.pendingExecutions.get(pendingId);
 
     if (!pending) {

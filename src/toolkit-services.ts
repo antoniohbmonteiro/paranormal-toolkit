@@ -1,4 +1,6 @@
 import { OrdemDamageAdapter } from "./adapters/ordem/ordem-damage-adapter";
+import { FoundryAllyAbilityRequests } from "./adapters/foundry/foundry-ally-ability-request-adapter";
+import { AbilityUseWorkflow } from "./features/abilities/ability-use-workflow";
 import { OrdemResourceAdapter } from "./adapters/ordem/ordem-resource-adapter";
 import { OrdemResistanceAdapter } from "./adapters/ordem/ordem-resistance-roll-adapter";
 import { OrdemRitualAdapter } from "./adapters/ordem/ordem-ritual-adapter";
@@ -30,6 +32,8 @@ import { RitualPresetDiagnosticService } from "./features/rituals/presets/ritual
 import { ChatMessageService } from "./ui/chat-message-service";
 
 export type ToolkitServices = {
+  allyUses: FoundryAllyAbilityRequests;
+  abilityWorkflow: AbilityUseWorkflow;
   ordem: OrdemSystemAdapter;
   resourceAdapter: OrdemResourceAdapter;
   ritualAdapter: OrdemRitualAdapter;
@@ -55,6 +59,7 @@ export type ToolkitServices = {
 };
 
 export function createToolkitServices(): ToolkitServices {
+  const allyUses = new FoundryAllyAbilityRequests();
   const resourceAdapter = new OrdemResourceAdapter();
   const resources = new ResourceEngine(resourceAdapter);
   const damage = new DamageEngine(new OrdemDamageAdapter());
@@ -103,6 +108,7 @@ export function createToolkitServices(): ToolkitServices {
     conditions,
     debugOutput,
     ritualEvents,
+    allyUses.gateway,
   );
 
   itemUseIntegration.addStrategy(
@@ -112,6 +118,8 @@ export function createToolkitServices(): ToolkitServices {
   );
 
   return {
+    allyUses,
+    abilityWorkflow: new AbilityUseWorkflow(resources, resourceAdapter),
     ordem,
     resourceAdapter,
     ritualAdapter,

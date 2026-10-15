@@ -1,4 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { AllyItemUseGateway } from "../../../../src/features/item-use/item-use-route";
 let AbilityUseIntegration: any, AbilityUseWorkflow: any, ItemUseIntegration: any;
 beforeAll(async () => {
   vi.stubGlobal("foundry", { ...(globalThis as any).foundry,
@@ -16,6 +17,18 @@ function context(ally = true) {
   return { actor, item, targets: [], source: "ordem-item-used-hook" };
 }
 describe("Ally source routing (workflow dependencies doubled)", () => {
+  it.each([false, true])("intercepts both real integrations once before generic/automation execution (automation=%s)", async automation => {
+    const submit = vi.fn(async () => {});
+    const gateway = new AllyItemUseGateway(() => "managed", submit, vi.fn());
+    const run = vi.spyOn(AbilityUseWorkflow.prototype, "run").mockResolvedValue({ status: "completed" });
+    const engine = { runAutomation: vi.fn() };
+    const generic = new AbilityUseIntegration({}, {}, {}, gateway);
+    const structured = new ItemUseIntegration(engine, {}, {}, {}, {}, {}, {}, gateway);
+    const input: any = { ...context(false), message: { id: "native-message" } };
+    input.item.getFlag.mockReturnValue(automation ? { schemaVersion: 1, source: { type: "manual", label: "Teste", appliedAt: "now" }, definition: { version: 1, label: "Teste", steps: [] } } : undefined);
+    await Promise.all([generic.handleItemUsed(input), structured.handleItemUsed(input)]);
+    expect(submit).toHaveBeenCalledOnce(); expect(run).not.toHaveBeenCalled(); expect(engine.runAutomation).not.toHaveBeenCalled();
+  });
   it("never starts a generic ability workflow from an Ally source", async () => {
     const run = vi.spyOn(AbilityUseWorkflow.prototype, "run").mockResolvedValue({ status: "completed" });
     const integration = new AbilityUseIntegration({}, {}, {});

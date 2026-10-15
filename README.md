@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.43.0`
+Versão candidata: `0.44.0` — P1/P2 de Aliados aguardam smoke multiplayer.
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 
@@ -44,7 +44,7 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 
 ## Como usar
 
-### Suporte passivo de Aliados (`feature/allies`)
+### Suporte e habilidades de Aliados (`feature/allies`)
 
 Crie um Item normal do tipo habilidade no diretório de Itens. No menu da ficha nativa (três pontos), abra **Benefícios passivos — Toolkit**. Em **Adicionar efeito**, informe nome e valor para criar um **Bônus de Defesa**, ou use **Personalizado** para abrir o editor nativo de Active Effects. Ambos já participam automaticamente do suporte, sem seleção adicional; sua transferência para o próprio Aliado permanece desativada. Efeitos antigos não identificados como suporte continuam intactos na ficha nativa e não são incluídos automaticamente.
 
@@ -52,7 +52,11 @@ Arraste a habilidade para o Aliado. O botão **Benefícios** abre o mesmo editor
 
 Editar o efeito da cópia atualiza a projeção existente: Defesa +5 pode virar +7 ou +10 sem acumular valores. Desabilitar no editor nativo suspende o benefício; reabilitar restaura sua elegibilidade. **Excluir efeito** pede confirmação, exclui o efeito original do Item e retira sua projeção. Turnos e reconciliações sem mudanças preservam o ID e não escrevem no efeito. Benefícios antigos migram automaticamente para efeitos nativos; flags desconhecidas são preservadas. Efeitos personalizados admitem múltiplas mudanças, mas a interpretação mecânica de uma chave depende do sistema. Regras de conflitos, migração e limitações estão no relatório abaixo.
 
-O proprietário opera o suporte sem aprovação administrativa. Um GM conectado executa as escritas protegidas automaticamente e os GMs recebem avisos privados das mudanças efetivas. Remover um efeito gerenciado como GM suprime aquela fonte até uma nova ativação ou troca real de beneficiário. Comandos ativos permanecem fora desta etapa. Evidências e roteiro estão em [ALLY-ACTOR-POC.md](docs/ALLY-ACTOR-POC.md).
+O proprietário opera o suporte sem aprovação administrativa. Um GM conectado executa as escritas protegidas automaticamente e os GMs recebem avisos privados das mudanças efetivas. Remover um efeito gerenciado como GM suprime aquela fonte até uma nova ativação ou troca real de beneficiário.
+
+Enquanto o suporte estiver ativo, todas as habilidades do Aliado também aparecem na ficha do beneficiário, incluindo as passivas e as sem ativação preenchida. Edite a habilidade no Aliado para atualizar a concessão. O beneficiário executa e paga: usa o diálogo e o card de habilidades existentes ou a automação configurada, que tem precedência. A automação cobra somente seus próprios steps; a habilidade genérica mantém a regra global de PE/PD e a opção de gasto manual. Remover uma concessão como GM a suprime até uma nova ativação ou troca real; as habilidades normais permanecem intactas.
+
+Efeitos `allyPassive` continuam exclusivamente no suporte passivo. Outros efeitos nativos reconhecidos preservam transferência, desabilitação e duração configuradas; efeitos desconhecidos bloqueiam o uso com diagnóstico, preservando a origem. O uso concedido exige GM executor conectado. Operações interrompidas com resultado incerto não são repetidas automaticamente; o GM deve conferir recursos e resultados. Evidências, recuperação e roteiro multiplayer estão em [ALLY-ACTOR-POC.md](docs/ALLY-ACTOR-POC.md).
 
 ### Usando uma habilidade com rolagens
 

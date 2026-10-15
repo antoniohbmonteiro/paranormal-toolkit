@@ -1,8 +1,8 @@
-# Aliados — Actor e benefícios passivos
+# Aliados — Actor, suporte e concessões
 
 ## Resultado e limites
 
-A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. A evolução atual dos passivos usa Active Effects nativos em Items ability, com editor no diretório e no Aliado; aguarda o smoke final descrito ao fim deste documento. Versão preparada: **0.43.0**, sem tag, release ou push.
+A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. Os passivos usam Active Effects nativos em Items ability. A candidata **0.44.0** acrescenta P1/P2: concessões e execução autorizada pelos motores existentes. A implementação está em `D:/dev/paranormal-toolkit`, branch `feature/allies`, sem worktree adicional, tag, release, commit ou push nesta etapa. A seção final P1/P2 descreve o comportamento vigente e o smoke ainda pendente.
 
 **Decisão funcional vigente:** suporte passivo automático pelo proprietário, sem aprovação de vínculo/benefícios nem registro de validação manual do ambiente. O GM executor continua automático e recebe avisos privados. As seções anteriores à seção final “Suporte automático sem aprovação” registram evidências históricas; seus gates e roteiros de aprovação foram substituídos pelo roteiro final.
 
@@ -14,7 +14,7 @@ A ficha não oferece botão de uso. A ficha nativa do Item continua disponível 
 
 Na execução original da PoC, o agente não executou testes no servidor Foundry. Posteriormente, o usuário informou aprovação do smoke citado acima. A preparação e migração verificadas abaixo utilizam fontes reais do sistema com substitutos das dependências Foundry; isso **não comprova** o ciclo real de preparação, arraste, formulário, persistência, ownership no servidor ou migração global do mundo.
 
-**Recomendação atual: validar o suporte passivo no Foundry real antes de implementar comandos; decidir release separadamente.** Até aqui, não foi demonstrada necessidade de herdar AgentData ou modificar OrdemActor globalmente.
+**Recomendação atual: validar a candidata P1/P2 no Foundry real antes de publicar release.** Não houve herança de AgentData ou alteração global de OrdemActor. Os registros abaixo de etapas anteriores são históricos; suas recomendações de escopo e versões não substituem a seção final vigente.
 
 ## Contratos e isolamento
 
@@ -589,3 +589,84 @@ Usar mundo de teste com um GM conectado e recarregar todos os clientes após o b
 14. Criar **Personalizado**, configurar adição +6 em `system.skills.religion.mod`, fase inicial, e conferir aplicação automática sem seleção adicional. Testar desabilitar/reabilitar pela ficha nativa e excluir pelo Toolkit, cancelando primeiro a confirmação: a fonte só deve ser excluída após confirmar e a projeção deve acompanhar. Testar múltiplas mudanças e precedência com outro Aliado; retirar o vencedor restaura o anterior. Conferir que efeitos antigos não selecionados continuam intactos na ficha nativa e fora do suporte.
 15. Como GM, remover uma projeção; reconciliar e recarregar não devem recriá-la. Desativar/ativar inicia novo contexto. Repetir por token não vinculado e com proprietários distintos/dois GMs.
 16. Em cópia descartável com benefícios legados, confirmar migração, valores e IDs de projeções preservados, sem duplicação após reload. Se houver configuração inválida, conferir diagnóstico e preservação dos dados.
+
+## P1/P2 — candidata 0.44.0 (vigente)
+
+### Concessões e roteamento
+
+Todos os Items `ability` incorporados ao Aliado são concedidos ao beneficiário persistente enquanto o suporte está ativo, independentemente de ativação ou custo. A identidade usa Aliado/Item original e destinatário, nunca o nome. Renomear e editar atualiza o mesmo Item; não há execução na criação. Inativação, troca, exclusão de fonte ou Aliado retiram somente concessões registradas. A troca em combate retira imediatamente e concede ao novo beneficiário na rodada prevista. Uma exclusão pelo jogador é reconciliada; exclusão pelo GM suprime aquela concessão até desativação/reativação ou troca real. A supressão é independente dos passivos.
+
+O ledger protegido migra de v1/v2/v3 para **v4**, preservando vínculos, revisões de suporte, ordens, projeções e supressões anteriores. Novos inventários não adotam Items por nome ou apenas por flag. Antes da criação, o GM reserva o ID no ledger e publica `allyGrantProtocol`/`allyGrantRouteIndex` nos Users GM ancorados no mesmo Journal. A entrada só sai do índice após exclusão confirmada. IDs reservados ocupados por documentos sem criação confirmada pelo GM são preservados com diagnóstico.
+
+As duas integrações compartilham o mesmo `AllyItemUseGateway`. Ele reconhece a concessão pelo par Actor/Item do índice protegido e assume a mensagem nativa sincronamente antes de qualquer preparação normal. Flag removida não converte concessão em habilidade comum; flag copiada sem registro bloqueia o uso. Índice inconsistente exige recuperação pelo executor. Items normais mantêm seus settings e continuam funcionando sem GM quando o índice é válido. Items originais no Aliado mantêm o retorno já existente, sem execução pelo Toolkit.
+
+O solicitante vem do hook nativo `updateActor`, com ownership atual, revisão/identidade da solicitação e origem conferidos; o payload não escolhe outro usuário. O executor não chama `Item.roll()` nem reemite o hook. Invoca os pontos preparados dos motores existentes usando controle interno não serializável. Cards e confirmações também retornam ao caminho autorizado, sem reentrada por `executePendingAutomation()`.
+
+### Motores e efeitos nativos
+
+`automation` válida tem precedência; configuração inválida não faz fallback. A automação usa apenas seus steps de recursos. O motor genérico preserva diálogo, NEX, PE/PD global e gasto manual. Ambos usam dados do beneficiário. Alvos são referências capturadas no uso; ações de dano/cura permanecem manuais pelo GM e usam resultados persistidos, inclusive após retirada do suporte, sem nova rolagem. Nenhum workflow de ritual foi substituído.
+
+- Efeitos identificados por `allyPassive` não entram na concessão: continuam somente na projeção passiva.
+- Efeitos base nativos com operações conhecidas, sem flags/handlers/implementações externas, preservam configuração, `transfer`, `disabled`, status e duração. Transferíveis participam da preparação nativa ao conceder; não transferíveis permanecem incorporados, sem aplicação inventada no uso.
+- Qualquer efeito desconhecido preserva a origem, gera diagnóstico e bloqueia a execução. A concessão fica visível, sem copiar um subconjunto dos efeitos nativos como se fosse completo. Corrigir a origem reavalia automaticamente.
+- IDs dos efeitos copiados são inventariados separadamente. Reconciliar sem mudanças não atualiza o Item nem reinicia início de duração. Colisões com efeitos não gerenciados são bloqueadas, preservando esses documentos. Efeitos adicionais na cópia bloqueiam o uso autorizado até conferência.
+
+Não há regra de pilotagem, terceiro motor, controle de economia de ações, popup/card próprio de Aliados ou reformulação da ficha.
+
+### Recibos, falhas e retenção
+
+Admissão exige mensagem real do solicitante, criada há até dois minutos por `_stats.createdTime` e tempo do Foundry. O GM emite sequência monotônica; executar exige recibo já admitido. Uma execução nova intencional exige nova mensagem. Preparação expira em 15 minutos ou na troca de geração operacional.
+
+| Estado | Gravação e recuperação |
+|---|---|
+| `prepared` | Antes do diálogo/confirmação; confirma uma vez ou cancela. |
+| `running` | Antes da primeira mutação/rolagem; checkpoint antes de cada operação e resultado após confirmação. Não retoma automaticamente. |
+| `resolved` | Resultados persistidos antes da publicação; recupera apenas publicação. |
+| `completed` | Card e recibo protegidos verificados; ações históricas têm seu próprio estado. |
+| `cancelled` / `failed` | Terminais; não repetem a execução. Falhas conhecidas sem escrita, como saldo insuficiente, não são tratadas como cobrança incerta. |
+| `uncertain` | Operação possivelmente executada ou `running` abandonado; conferência manual, sem repetição ou estorno presumido. |
+
+O executor verifica eleição e geração persistida antes das novas escritas. Perder e recuperar a liderança invalida o contexto anterior. A fila é compartilhada com suporte e ações históricas. Os recibos têm sequência própria e não invalidam a revisão de suporte apresentada ao proprietário. Uma falha de persistência interrompe o avanço; operações já possivelmente ocorridas nunca são compensadas automaticamente.
+
+O GM assume autoria nativa da mensagem original na preparação; em `keep`, o resultado usa uma segunda mensagem de GM com ID reservado. Speaker, visibilidade e apresentação existentes são preservados. O card guarda o recibo completo, vinculado à própria mensagem e ledger. O adapter relê e verifica conteúdo e proteção antes de compactar. Copiar flags para outra mensagem não cria um recibo válido. Uma falha de publicação mantém o resultado recuperável, sem gastar ou rolar outra vez.
+
+O ledger guarda até **256 recibos em andamento**. Após publicação verificada, remove o detalhe e avança o marcador durável de identidades aposentadas na mesma gravação. Recibos ainda abertos são exceções explícitas; uma identidade ausente nunca é recriada por confirmação. Casos sem publicação confirmada permanecem no ledger; atingir o limite recusa novas preparações sem descarte. Excluir um card perde seu histórico, mas não reabre a execução. As mensagens de GM conservam detalhes enquanto existirem. Ações históricas gravam estado do card e recibo juntos; uma ação abandonada em `executing` vira `uncertain` na recuperação.
+
+Essa coordenação não é uma transação atômica do servidor contra alterações nativas ou outros módulos. Não oferece antitrapaça contra clientes modificados; preserva as permissões nativas e não utiliza flags de jogador como autorização mecânica. Ausência de GM impede iniciar uso concedido. Mensagens ou autoria removidas/alteradas administrativamente podem impedir recuperação, conservando recibos no registro para diagnóstico.
+
+### Arquivos P1/P2
+
+Todos os caminhos são relativos a `D:/dev/paranormal-toolkit`.
+
+| Área | Arquivos adicionados ou alterados |
+|---|---|
+| Domínio/controle | `src/core/allies/ally-grant.ts`, `ally-passive-effect.ts`; `src/core/serialization/json-data.ts`; `src/core/workflow/workflow-execution-control.ts`, `workflow-context.ts` |
+| Operação | `src/features/allies/ally-granted-ability-service.ts`, `ally-granted-ability-use-service.ts`, `ally-execution-receipts.ts`, `ally-operation-queue.ts`, `ally-support-service.ts`, `ally-lifecycle-hooks.ts` |
+| Foundry | `src/adapters/foundry/foundry-ally-item-adapter.ts`, `foundry-ally-item-effects.ts`, `foundry-ally-ability-request-adapter.ts`, `foundry-ally-receipt-adapter.ts`, `foundry-ally-request-adapter.ts`, `foundry-ally-store.ts` |
+| Integração/motores | `src/features/item-use/item-use-route.ts`, `item-use-integration.ts`; `src/features/abilities/ability-use-integration.ts`, `ability-use-workflow.ts`, `ability-roll-executor.ts`, `ability-assisted-action-controller.ts`; `src/core/automation/automation-runner.ts`, `automation-roll-executor.ts` |
+| Composição/tipos | `src/main.ts`, `src/toolkit-services.ts`, `src/types/foundry-shim.d.ts` |
+| Testes | `tests/helpers/ally-grant-world.ts`; `tests/unit/features/allies/ally-grants.test.ts`, `ally-source-routing.test.ts`, `ally-foundry-adapters.test.ts`, `ally-ledger-migration.test.ts`, `ally-support-service.test.ts`; `tests/reference/foundry-ally-authority.test.ts`, `ordem-ally-compatibility.test.ts` |
+| Candidata/documentação | `module.json`, `package.json`, `package-lock.json`, `README.md`, `docs/ROADMAP.md`, este relatório |
+
+### Validação P1/P2
+
+Testes de concessões executam os serviços, os dois motores e os adapters de recursos reais do Toolkit com Documents, banco, rede, dados de rolagem e diálogo substituídos. Cobrem roteamento compartilhado, adulterações, custos, NEX, supressão, combate, exclusões, estabilidade e falhas em oito gravações críticas, cobrança ambígua, publicação, compactação/replay, limite de 256 e troca de geração. Testes de referência carregam permissões nativas de User/ChatMessage, campos estatísticos e preparação dos efeitos transferíveis do Foundry **14.369**, com herança/banco substituídos. A referência Ordem **8.0.2** usa o checkout local, incluindo seu cálculo atual de pool d20. Nenhum arquivo do sistema foi alterado.
+
+`npm run check`: **675 testes aprovados em 88 arquivos**, typecheck e build aprovados, com ambas as referências habilitadas. Node **24.19.0**, Vitest **3.2.6**, Vite **7.3.6**; 269 módulos no bundle. `npm run build` separado e `git diff --check` também aprovados. `dist` permanece ignorado pelo Git e deve ser servido a partir desta pasta. O Vite informa que o import dinâmico do diálogo já importado estaticamente permanece no mesmo chunk; o build conclui normalmente.
+
+Para incluir as referências nesta máquina, definir `PARANORMAL_TOOLKIT_ORDEM_REFERENCE=D:/dev/ordemparanormal_fvtt` e `PARANORMAL_TOOLKIT_FOUNDRY_REFERENCE=C:/Program Files/Foundry Virtual Tabletop/resources/app` antes de `npm run check`. Sem essas variáveis, as suites de referência correspondentes são ignoradas explicitamente. **Nenhum smoke de P1/P2 no servidor Foundry foi executado pelo agente.** A proteção entre clientes, tempo, autoria e propagação do índice precisam da validação abaixo.
+
+### Smoke P1/P2 — dois jogadores e dois GMs
+
+1. Executar `npm run build` em `D:/dev/paranormal-toolkit`; conferir que o módulo servido pelo Foundry aponta para essa pasta e mostra 0.44.0. Recarregar os quatro clientes. Registrar build Foundry e versão/commit do Ordem.
+2. Jogador A possui Íris; jogador B possui Mauro. Criar na Íris habilidades ativa, passiva e com ativação vazia, além de duas homônimas. Deixar um Item normal homônimo em Mauro. Ativar suporte: todas as concessões aparecem uma vez; Item normal permanece intacto. Conferir que `allyPassive` aparece uma única vez nos efeitos do Actor.
+3. Editar nome, custo, fórmula e faixas de NEX na fonte. Registrar IDs da concessão/efeitos; conferir atualização nesses mesmos IDs, reload e cinco turnos sem escritas repetidas. Repetir com outro Aliado, sem fusão por nome.
+4. Usar habilidade genérica com custo 2 e uma rolagem: diálogo e card existentes, dados/NEX de Mauro, uma rolagem e uma cobrança. Repetir em PE/PD e com gasto manual. Criar uma automação com custo explícito 1 PE e custo nativo 9: somente 1 PE. Testar modo `ask`, confirmar como GM e clicar novamente sem novo gasto. Configuração inválida deve bloquear sem fallback.
+5. Com dois targets originais e rolagens de dano/cura, mudar os targets depois do uso; retirar suporte e aplicar pelo card como GM. Apenas os alvos originais devem receber os totais persistidos, uma vez, sem rolar novamente. Jogador não aplica ações de GM.
+6. Testar efeito nativo transferível, não transferível, desabilitado e temporário. Conferir transferência nativa e início de duração estável. Adicionar efeito com integração desconhecida à origem: concessão visível com diagnóstico, execução bloqueada e fonte intacta; passivos independentes continuam. Corrigir e conferir recuperação.
+7. Excluir concessão como jogador: restaura. Excluir como GM: suprime e não retorna por reload/edição/turno. Desativar/ativar reinicia o contexto. Trocar em combate: retira imediatamente e concede ao novo destinatário na rodada seguinte. Excluir fonte e Aliado: limpa somente concessões registradas.
+8. Como jogador, tentar editar o Journal e as flags dos Users GM; o servidor deve rejeitar. Remover a flag da concessão: uso continua gerenciado pelo ID. Copiar/adulterar flag em Item comum: bloqueio, sem execução privilegiada. Tentar alterar recibo/card de GM ou copiá-lo para mensagem do jogador: não autoriza ação. Conferir que habilidades normais e rituais preservam comportamento, inclusive sem GM para habilidades normais.
+9. Durante preparação, gasto, rolagem e publicação, desconectar o executor/recarregar e deixar o segundo GM assumir. Preparações antigas cancelam; execução abandonada fica incerta e não repete cobrança/rolagem; resultados resolvidos recuperam só publicação. Reconectar o primeiro GM e conferir que nenhum contexto antigo volta a escrever. Sem GM conectado, concessões não executam.
+10. Testar `replace` e `keep`, público/whisper/blind; conferir autoria GM, speaker Mauro e visibilidade. Repetir confirmação histórica após compactação e após exclusão do card: nenhum novo gasto ou rolagem. Diagnósticos incertos exigem conferência manual; não clicar para tentar recuperar um gasto possivelmente iniciado.
+
+Somente aprovar a release após esse smoke. Persistência real, propagação das permissões e failover entre clientes continuam critérios pendentes, mesmo com toda a suíte automatizada aprovada.

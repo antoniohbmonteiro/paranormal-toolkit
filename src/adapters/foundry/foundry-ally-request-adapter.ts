@@ -17,7 +17,7 @@ export const ALLY_PRESENTATION_FLAG = "allySupport";
 
 type ChangedProperty = { found: false } | { found: true; value: unknown };
 
-function readChangedProperty(value: unknown, path: string[]): ChangedProperty {
+export function readChangedProperty(value: unknown, path: string[]): ChangedProperty {
   if (!value || typeof value !== "object" || Array.isArray(value)) return { found: false };
   const data = value as Record<string, unknown>;
   for (let length = 1; length <= path.length; length++) {

@@ -1,5 +1,8 @@
 import { AbilityUseApplication } from "../../applications/ability-use-application";
 import { MODULE_ID } from "../../constants";
+import { assertWorkflowExecutionControl, type WorkflowExecutionControl } from "../../core/workflow/workflow-execution-control";
+import type { AbilityUseOptions } from "./ability-use-options";
+import type { AbilityUseCardState } from "./ability-use-card-state";
 import type { ResourceAdapter } from "../../core/resources/actor-resource";
 import type { ResourceEngine } from "../../core/resources/resource-engine";
 import type { ItemUseContext } from "../item-use/item-use-context";
@@ -60,6 +63,15 @@ export class AbilityUseWorkflow {
 
     if (!options) return { status: "cancelled" };
 
+    return this.executePrepared(ability, options, context, currentResourceResult.value);
+  }
+
+  async executePrepared(ability: AbilityUseData, options: AbilityUseOptions, context: ItemUseContext,
+    initialResource: number, control?: WorkflowExecutionControl,
+    publish?: (state: AbilityUseCardState) => Promise<void>): Promise<AbilityUseResult> {
+    if (control) assertWorkflowExecutionControl(control);
+    const actor = ability.actor;
+
     const resolvedRolls = finalizeAbilityRolls(
       ability.rollPreparation,
       options.selectedNexThresholds,
@@ -71,11 +83,12 @@ export class AbilityUseWorkflow {
       );
     }
 
-    let resourceBefore = currentResourceResult.value;
+    let resourceBefore = initialResource;
     let resourceAfter = resourceBefore;
     let spentResource = false;
 
     if (options.spendResource && ability.cost > 0) {
+      await control?.before("resource:spend");
       const spendResult = await this.resources.spend(
         actor,
         ability.resource,
@@ -83,6 +96,8 @@ export class AbilityUseWorkflow {
       );
 
       if (!spendResult.ok) {
+        if (control && spendResult.error.reason === "update-failed") throw new Error(spendResult.error.message);
+        await control?.after("resource:spend", { failed: true, reason: spendResult.error.reason, resource: ability.resource });
         const reason =
           spendResult.error.reason === "insufficient-resource"
             ? "insufficient-resource"
@@ -93,12 +108,14 @@ export class AbilityUseWorkflow {
       resourceBefore = spendResult.value.before.value;
       resourceAfter = spendResult.value.after.value;
       spentResource = true;
+      await control?.after("resource:spend", { resource: ability.resource, before: resourceBefore, after: resourceAfter, amount: ability.cost });
     }
 
     let executedRolls;
     try {
-      executedRolls = await executeAbilityRolls(resolvedRolls, actor);
+      executedRolls = await executeAbilityRolls(resolvedRolls, actor, control);
     } catch (cause) {
+      if (control) throw cause;
       const restored = await this.restoreSpentResource(
         ability,
         spentResource,
@@ -128,8 +145,10 @@ export class AbilityUseWorkflow {
         resourceBefore,
         resourceAfter,
       });
-      await this.chatCards.publish(context, cardState);
+      if (publish) await publish(cardState);
+      else await this.chatCards.publish(context, cardState);
     } catch (cause) {
+      if (control) throw cause;
       const resourceRestored = await this.restoreSpentResource(
         ability,
         spentResource,

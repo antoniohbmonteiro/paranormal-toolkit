@@ -60,8 +60,9 @@ describe("protected store (native document operations doubled)", () => {
     await expect(new FoundryAllyStore().load(true)).rejects.toThrow("GM");
   });
   it("fails closed for unknown ledger versions and corrupted state", () => {
-    expect(readAllyLedger(createAllyLedger())).toEqual(createAllyLedger());
-    expect(() => readAllyLedger({ ...createAllyLedger(), version: 4 })).toThrow("corrompido");
+    const empty = createAllyLedger();
+    expect(readAllyLedger(empty)).toEqual(empty);
+    expect(() => readAllyLedger({ ...createAllyLedger(), version: 5 })).toThrow("corrompido");
     expect(() => readAllyLedger({ ...createAllyLedger(), links: [{ allyId: "a", state: { status: "active" } }] })).toThrow();
     const value = createAllyLedger();
     value.managed.push({ effectId: "effect", actorId: "joao", sourceKey: "s", allyId: "a", value: 5 });
@@ -79,7 +80,7 @@ describe("protected store (native document operations doubled)", () => {
     await store.save(migrated!);
     expect(record.setFlag).toHaveBeenCalledTimes(1);
     expect(record.setFlag).toHaveBeenCalledWith("paranormal-toolkit", "allyLedger",
-      { ...createAllyLedger(), validatedRuntime: expect.any(foundry.data.operators.ForcedDeletion) });
+      { ...migrated, validatedRuntime: expect.any(foundry.data.operators.ForcedDeletion) });
   });
 });
 describe("request and Ordem adapters", () => {
@@ -101,7 +102,7 @@ describe("request and Ordem adapters", () => {
     const ledger = createAllyLedger();
     ledger.revision = 7;
     ledger.links.push({ allyId: "iris", state: { beneficiaryId: "joao", status: "inactive", sequence: 0, wait: null },
-      suppressedSources: [], notice: null, diagnostic: null });
+      suppressedSources: [], suppressedGrants: [], notice: null, diagnostic: null });
     record.getFlag.mockReturnValue(ledger);
     vi.stubGlobal("game", { user: gm, users: [gm, user("player")],
       actors: { get: (id: string) => id === "iris" ? ally : joao },

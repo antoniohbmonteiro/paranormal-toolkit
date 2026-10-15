@@ -4,15 +4,23 @@ import { createAllySupportState, transitionAllySupport, type AllySupportState, t
 import { authorizeAllyRequest, electAllyExecutor, readAllyRequest, type AllyRequest, type AllyUser } from "./ally-operation-authority";
 import { AllyReconciliationService, type AllyManagedEffect } from "./ally-reconciliation-service";
 import { buildAllySupportChange, type AllyNoticeSnapshot, type AllySupportChange } from "./ally-support-notifications";
+import type { AllyGrant } from "../../core/allies/ally-grant";
+import { allyGrantKey } from "../../core/allies/ally-grant";
+import type { AllyExecutionReceipt } from "./ally-execution-receipts";
+import type { AllyGrantedAbilityService } from "./ally-granted-ability-service";
+import { AllyOperationQueue } from "./ally-operation-queue";
 
 export type AllyLink = {
   allyId: string; state: AllySupportState;
   suppressedSources: string[];
+  suppressedGrants?: string[];
   notice: AllyNoticeSnapshot | null;
   diagnostic: string | null;
 };
 export type AllyLedger = {
-  version: 3; revision: number; nextSequence: number; links: AllyLink[];
+  version: 4; revision: number; nextSequence: number; links: AllyLink[];
+  ledgerInstanceId: string; managedGrants: AllyGrant[]; receipts: AllyExecutionReceipt[];
+  nextExecutionSequence: number; retiredExecutionThrough: number; executionGeneration: string;
   orders: { sourceKey: string; activationSequence: number; sequence: number }[];
   managed: AllyManagedEffect[]; diagnostic: string | null;
 };
@@ -35,24 +43,60 @@ export interface AllySupportEnvironment {
   notify(change: AllySupportChange): Promise<void>;
 }
 export function createAllyLedger(): AllyLedger {
-  return { version: 3, revision: 0, nextSequence: 1, links: [], managed: [], orders: [], diagnostic: null };
+  return { version: 4, revision: 0, nextSequence: 1, links: [], managed: [], orders: [], diagnostic: null,
+    ledgerInstanceId: crypto.randomUUID(), managedGrants: [], receipts: [], nextExecutionSequence: 1,
+    retiredExecutionThrough: 0, executionGeneration: "" };
 }
 
 export class AllySupportService {
-  private queue: Promise<void> = Promise.resolve();
   private persistedSnapshot: string | null = null;
   constructor(
     private readonly store: AllyStore, private readonly environment: AllySupportEnvironment,
     private readonly reconciliation: AllyReconciliationService,
+    private readonly grants?: AllyGrantedAbilityService,
+    private readonly queue = new AllyOperationQueue(),
   ) {}
   isExecutor(): boolean {
     return this.environment.currentUserId() === electAllyExecutor(this.environment.users())
       && this.environment.currentUserId() !== null;
   }
   private enqueue(work: () => Promise<void>): Promise<void> {
-    const next = this.queue.then(async () => { if (this.isExecutor()) await work(); });
-    this.queue = next.catch(() => {});
-    return next;
+    return this.queue.run(async () => { if (this.isExecutor()) await work(); });
+  }
+  runAuthorized<T>(work: (ledger: AllyLedger, persist: () => Promise<void>) => Promise<T>): Promise<T> {
+    return this.queue.run(async () => {
+      if (!this.isExecutor()) throw new Error("Nenhum GM executor disponível.");
+      const ledger = await this.store.load();
+      if (!ledger) throw new Error("Registro operacional indisponível.");
+      this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
+      let generation = ledger.executionGeneration;
+      // Receipts use their own sequence. They must not invalidate the support revision shown to owners.
+      return work(ledger, async () => {
+        await this.assertExecutionGeneration(generation);
+        await this.persist(ledger, false, false);
+        generation = ledger.executionGeneration;
+      });
+    });
+  }
+  async assertExecutionGeneration(generation: string): Promise<void> {
+    if (!this.isExecutor()) throw new Error("O GM executor mudou.");
+    const current = await this.store.load();
+    if (!this.isExecutor() || !current || current.executionGeneration !== generation) throw new Error("A geração operacional mudou; a execução anterior foi interrompida.");
+  }
+  suppressGrant(actorId: string, itemId: string, userId: string): Promise<void> {
+    return this.enqueue(async () => {
+      const ledger = await this.store.load(); if (!ledger) return;
+      this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
+      const grant = ledger.managedGrants.find(entry => entry.actorId === actorId && entry.itemId === itemId);
+      const user = this.environment.users().find(entry => entry.id === userId);
+      const link = grant && ledger.links.find(entry => entry.allyId === grant.allyId);
+      if (grant && link && user?.isGM && user.active) {
+        const key = allyGrantKey(grant.allyId, grant.sourceItemId);
+        if (!(link.suppressedGrants ??= []).includes(key)) link.suppressedGrants.push(key);
+        await this.persist(ledger);
+      }
+      await this.reconcileLedger(ledger);
+    });
   }
   process(allyId: string, request: AllyRequest, userId: string): Promise<void> {
     return this.enqueue(async () => {
@@ -69,7 +113,7 @@ export class AllySupportService {
       if (request.revision !== ledger.revision) throw new Error("O suporte mudou. Atualize a ficha e solicite novamente.");
       let link = ledger.links.find(entry => entry.allyId === allyId);
       if (!link) {
-        link = { allyId, state: createAllySupportState(), suppressedSources: [], diagnostic: null,
+        link = { allyId, state: createAllySupportState(), suppressedSources: [], suppressedGrants: [], diagnostic: null,
           notice: { beneficiaryId: null, status: "inactive", benefits: [] } };
         ledger.links.push(link);
       }
@@ -128,13 +172,14 @@ export class AllySupportService {
     if (link.state.sequence !== previous.sequence) {
       ledger.nextSequence++;
       link.suppressedSources = [];
+      link.suppressedGrants = [];
     }
   }
-  private async persist(ledger: AllyLedger, force = false): Promise<void> {
+  private async persist(ledger: AllyLedger, force = false, advanceSupportRevision = true): Promise<void> {
     const snapshot = JSON.stringify({ ...ledger, revision: 0 });
     if (!force && snapshot === this.persistedSnapshot) return;
     if (!this.isExecutor()) throw new Error("O GM executor mudou. Reconcilie antes de continuar.");
-    ledger.revision++;
+    if (advanceSupportRevision) ledger.revision++;
     await this.store.save(ledger);
     this.persistedSnapshot = snapshot;
   }
@@ -187,6 +232,11 @@ export class AllySupportService {
     try {
       await this.reconciliation.reconcile(resolveAllyBenefits(orderedSources), ledger.managed,
         async managed => { ledger.managed = managed; await this.persist(ledger); });
+      await this.grants?.reconcile(ledger, () => this.persist(ledger));
+      if (this.grants) for (const link of ledger.links) {
+        const diagnostics = ledger.managedGrants.filter(grant => grant.allyId === link.allyId && grant.diagnostic).map(grant => grant.diagnostic);
+        if (diagnostics.length) link.diagnostic = diagnostics.join(" ");
+      }
     } catch (error) {
       ledger.diagnostic = `Reconciliação interrompida: ${error instanceof Error ? error.message : "falha desconhecida"}`;
     }

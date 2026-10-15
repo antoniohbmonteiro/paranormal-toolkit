@@ -3,17 +3,18 @@ import { createAllyLedger, type AllyLedger, type AllyStore } from "../../feature
 import { readAllyRequest } from "../../features/allies/ally-operation-authority";
 import { isAllyNoticeSnapshot } from "../../features/allies/ally-support-notifications";
 import { readEffectTemplate } from "../../core/allies/ally-passive-effect";
+import { isAllyExecutionReceipt } from "../../features/allies/ally-execution-receipts";
 
 export const ALLY_STORE_FLAG = "allyStore";
 export const ALLY_LEDGER_FLAG = "allyLedger";
 
-export function readAllyLedger(value: unknown): AllyLedger {
+export function readAllyLedger(value: unknown, migrationId = "legacy"): AllyLedger {
   const fail = (): never => { throw new Error("Registro Allies corrompido ou incompatível; nenhuma normalização foi aplicada."); };
   if (!value || typeof value !== "object") return fail();
   const raw = value as Record<string, unknown>;
   const legacy = raw.version === 1;
   const ledger = value as AllyLedger;
-  if ((!legacy && raw.version !== 2 && raw.version !== 3) || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0
+  if ((!legacy && raw.version !== 2 && raw.version !== 3 && raw.version !== 4) || !Number.isSafeInteger(ledger.revision) || ledger.revision < 0
     || !Number.isSafeInteger(ledger.nextSequence) || ledger.nextSequence < 1
     || !Array.isArray(ledger.links) || !Array.isArray(ledger.managed) || !Array.isArray(ledger.orders)
     || (legacy && !(raw.validatedRuntime === null || typeof raw.validatedRuntime === "string"))
@@ -71,11 +72,45 @@ export function readAllyLedger(value: unknown): AllyLedger {
     if (effects.has(key)) return fail();
     effects.add(key);
   }
+  if (raw.version === 4) {
+    if (typeof ledger.ledgerInstanceId !== "string" || !ledger.ledgerInstanceId
+      || typeof ledger.executionGeneration !== "string" || !Array.isArray(ledger.managedGrants)
+      || !Array.isArray(ledger.receipts) || ledger.receipts.length > 256 || !ledger.receipts.every(isAllyExecutionReceipt)
+      || !Number.isSafeInteger(ledger.nextExecutionSequence) || ledger.nextExecutionSequence < 1
+      || !Number.isSafeInteger(ledger.retiredExecutionThrough) || ledger.retiredExecutionThrough < 0
+      || ledger.retiredExecutionThrough >= ledger.nextExecutionSequence) return fail();
+    const ids = new Set<string>(); const grantIds = new Set<string>(); const sources = new Set<string>();
+    for (const grant of ledger.managedGrants) {
+      if (!grant || ![grant.grantId, grant.allyId, grant.sourceItemId, grant.actorId, grant.itemId, grant.fingerprint]
+        .every(id => typeof id === "string" && id.length > 0) || !Number.isSafeInteger(grant.activationSequence)
+        || grant.activationSequence < 0 || !Array.isArray(grant.effectIds) || !grant.effectIds.every(id => typeof id === "string" && id.length)
+        || new Set(grant.effectIds).size !== grant.effectIds.length
+        || typeof grant.provisioned !== "boolean"
+        || !(grant.diagnostic === null || typeof grant.diagnostic === "string") || ids.has(`${grant.actorId}/${grant.itemId}`)
+        || grantIds.has(grant.grantId) || sources.has(`${grant.allyId}/${grant.sourceItemId}`)) return fail();
+      ids.add(`${grant.actorId}/${grant.itemId}`);
+      grantIds.add(grant.grantId); sources.add(`${grant.allyId}/${grant.sourceItemId}`);
+    }
+    const sequences = new Set<number>(); const messages = new Set<string>();
+    for (const receipt of ledger.receipts) {
+      if (receipt.ledgerInstanceId !== ledger.ledgerInstanceId || receipt.sequence >= ledger.nextExecutionSequence
+        || sequences.has(receipt.sequence) || messages.has(receipt.messageId)) return fail();
+      sequences.add(receipt.sequence); messages.add(receipt.messageId);
+    }
+    for (const link of ledger.links) if (!Array.isArray(link.suppressedGrants)
+      || !link.suppressedGrants.every(id => typeof id === "string") || new Set(link.suppressedGrants).size !== link.suppressedGrants.length) return fail();
+  }
   const copy = structuredClone(ledger);
-  return { version: 3, revision: copy.revision, nextSequence: copy.nextSequence,
+  return { version: 4, revision: copy.revision, nextSequence: copy.nextSequence,
+    ledgerInstanceId: raw.version === 4 ? copy.ledgerInstanceId : migrationId,
+    managedGrants: raw.version === 4 ? copy.managedGrants : [], receipts: raw.version === 4 ? copy.receipts : [],
+    nextExecutionSequence: raw.version === 4 ? copy.nextExecutionSequence : 1,
+    retiredExecutionThrough: raw.version === 4 ? copy.retiredExecutionThrough : 0,
+    executionGeneration: raw.version === 4 ? copy.executionGeneration : "",
     managed: copy.managed, orders: copy.orders, diagnostic: legacy ? null : copy.diagnostic,
     links: copy.links.map(link => ({ allyId: link.allyId, state: link.state,
       diagnostic: legacy ? null : link.diagnostic, suppressedSources: legacy ? [] : link.suppressedSources,
+      suppressedGrants: raw.version === 4 ? link.suppressedGrants : [],
       notice: legacy ? null : link.notice })) };
 }
 
@@ -130,7 +165,7 @@ export class FoundryAllyStore implements AllyStore {
   }
   async load(create = false): Promise<AllyLedger | null> {
     this.journal = await this.resolve(create);
-    return this.journal ? readAllyLedger(this.journal.getFlag(MODULE_ID, ALLY_LEDGER_FLAG)) : null;
+    return this.journal ? readAllyLedger(this.journal.getFlag(MODULE_ID, ALLY_LEDGER_FLAG), this.journal.uuid) : null;
   }
   async save(ledger: AllyLedger): Promise<void> {
     this.assertGM();

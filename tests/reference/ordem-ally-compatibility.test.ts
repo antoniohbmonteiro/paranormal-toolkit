@@ -67,13 +67,22 @@ describe.skipIf(!referenceRoot)("ally compatibility with real Ordem sources (Fou
     const globals = {
       Actor: NativeActorDouble, structuredClone,
       game: { release: { generation: 14 }, settings: { get: () => false } },
-      foundry: { utils }, console,
+      foundry: { utils, dice: { terms: { Die: class {
+        number: number; faces: number; options = {};
+        modifiers = Object.assign([] as string[], { findSplice(predicate: (value: string) => boolean) {
+          const index = this.findIndex(predicate); if (index >= 0) this.splice(index, 1);
+        } });
+        constructor({ number, faces }: { number: number; faces: number }) { this.number = number; this.faces = faces; }
+      } } } }, console,
     };
     const helpers = loadReference("module/helpers/actor-calculations.mjs", globals);
     const unrelatedClass = { default: class {} };
+    const die = loadReference("module/dice/d20-die.mjs", globals);
+    const pool = loadReference("module/dice/d20-pool.mjs", globals, { "./d20-die.mjs": die });
     ({ OrdemActor } = loadReference("module/documents/actor.mjs", globals, {
       "../helpers/actor-calculations.mjs": helpers,
       "../dice/basic-roll.mjs": unrelatedClass,
+      "../dice/d20-pool.mjs": pool,
       "../applications/skill-tool-configuration-dialog.mjs": unrelatedClass,
       "../applications/attribute-configuration-dialog.mjs": unrelatedClass,
     }));

@@ -1,4 +1,5 @@
 import { animateRollWithDiceSoNice } from "../dice/dice-animation-service";
+import type { WorkflowExecutionControl } from "../../core/workflow/workflow-execution-control";
 import type {
   AbilityRollIntent,
   ResolvedAbilityRoll,
@@ -19,14 +20,18 @@ export type ExecutedAbilityRoll = {
 export async function executeAbilityRolls(
   rolls: readonly ResolvedAbilityRoll[],
   actor: Actor,
+  control?: WorkflowExecutionControl,
 ): Promise<ExecutedAbilityRoll[]> {
   const results: ExecutedAbilityRoll[] = [];
   const rollData = resolveActorRollData(actor);
 
   for (const input of rolls) {
+    await control?.before(`roll:${input.id}`);
     const evaluated = await evaluateAbilityRoll(input, rollData);
+    const result = createExecutedAbilityRoll(input, evaluated);
+    results.push(result);
+    await control?.after(`roll:${input.id}`, result);
     await animateRollWithDiceSoNice(evaluated);
-    results.push(createExecutedAbilityRoll(input, evaluated));
   }
 
   return results;
