@@ -17,6 +17,46 @@ export type AllyReceiptMessage = {
 export function allyMessage(id: string): AllyReceiptMessage | null {
   return game.messages.get?.(id) as unknown as AllyReceiptMessage | null ?? null;
 }
+export function diagnoseAllyMessageAdmission(message: AllyReceiptMessage | null, requesterId: string, now: number) {
+  const createdTime = message?._stats?.createdTime;
+  const createdTimeValid = Number.isFinite(createdTime);
+  const ageMs = createdTimeValid && Number.isFinite(now) ? now - createdTime! : null;
+  const checks = {
+    messageFound: Boolean(message),
+    authorMatchesRequester: message?.author?.id === requesterId,
+    createdTimeValid,
+    tooOld: Boolean(message && now - createdTime! > 120_000),
+    inFuture: Boolean(message && now < createdTime!),
+    hasReceipt: Boolean(message?.getFlag(MODULE_ID, ALLY_RECEIPT_FLAG)),
+    hasBinding: Boolean(message?.getFlag(MODULE_ID, "allyExecutionBinding")),
+  };
+  const failures: string[] = [];
+  if (!checks.messageFound) failures.push("message-not-found");
+  else {
+    if (!checks.authorMatchesRequester) failures.push("author-mismatch");
+    if (!checks.createdTimeValid) failures.push("invalid-created-time");
+    if (checks.tooOld) failures.push("message-too-old");
+    if (checks.inFuture) failures.push("future-created-time");
+    if (checks.hasReceipt) failures.push("existing-receipt");
+    if (checks.hasBinding) failures.push("existing-binding");
+  }
+  return { ...checks, clockValid: Number.isFinite(now), ageMs, failures };
+}
+export class AllyMessageAdmissionError extends Error {
+  constructor(readonly diagnosis: ReturnType<typeof diagnoseAllyMessageAdmission>) {
+    const labels: Record<string, string> = {
+      "message-not-found": "mensagem não encontrada",
+      "author-mismatch": "autor diferente do solicitante autenticado",
+      "invalid-created-time": "data de criação ausente ou inválida",
+      "message-too-old": "mensagem antiga, acima de 120 segundos",
+      "future-created-time": "data de criação posterior ao relógio do executor",
+      "existing-receipt": "recibo de execução preexistente",
+      "existing-binding": "vínculo de execução preexistente",
+    };
+    super(`Mensagem original inválida [${diagnosis.failures.join(", ")}]: ${diagnosis.failures.map(code => labels[code]).join("; ")}.`);
+    this.name = "AllyMessageAdmissionError";
+  }
+}
 export function isProtectedAllyMessage(message: AllyReceiptMessage): boolean {
   return Boolean(message.author?.isGM && !game.users.some(user => !user.isGM && message.canUserModify(user, "update")));
 }

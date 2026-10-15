@@ -615,7 +615,7 @@ Não há regra de pilotagem, terceiro motor, controle de economia de ações, po
 
 ### Recibos, falhas e retenção
 
-Admissão exige mensagem real do solicitante, criada há até dois minutos por `_stats.createdTime` e tempo do Foundry. O GM emite sequência monotônica; executar exige recibo já admitido. Uma execução nova intencional exige nova mensagem. Preparação expira em 15 minutos ou na troca de geração operacional.
+Admissão exige mensagem real do solicitante, criada há até dois minutos por `_stats.createdTime`, comparado com data Unix em milissegundos no executor. `game.time.serverTime` do v14 é uptime e não serve para essa comparação. O GM emite sequência monotônica; executar exige recibo já admitido. Uma execução nova intencional exige nova mensagem. Preparação expira em 15 minutos ou na troca de geração operacional.
 
 | Estado | Gravação e recuperação |
 |---|---|
@@ -670,3 +670,36 @@ Para incluir as referências nesta máquina, definir `PARANORMAL_TOOLKIT_ORDEM_R
 10. Testar `replace` e `keep`, público/whisper/blind; conferir autoria GM, speaker Mauro e visibilidade. Repetir confirmação histórica após compactação e após exclusão do card: nenhum novo gasto ou rolagem. Diagnósticos incertos exigem conferência manual; não clicar para tentar recuperar um gasto possivelmente iniciado.
 
 Somente aprovar a release após esse smoke. Persistência real, propagação das permissões e failover entre clientes continuam critérios pendentes, mesmo com toda a suíte automatizada aprovada.
+
+## Correção 0.44.0 — admissão da habilidade e base do relógio
+
+Base: `c6c36d9`, branch `feature/allies`, em `D:/dev/paranormal-toolkit`. Versão mantida em **0.44.0**, sem commit ou push desta correção.
+
+O probe executado pelo usuário no Foundry **14.369** / Ordem **8.0.2**, usando o GM como solicitante, identificou exclusivamente `inFuture: true`, com idade próxima de **−1,792 × 10¹² ms**. Mensagem encontrada, autoria correspondente ao solicitante, `_stats.createdTime` numérico, ownership/origem do hook consistentes e ausência de recibo/vínculo anterior foram confirmados. O predicado de idade acima de 120 segundos era falso. Não houve transferência antecipada de autoria.
+
+A fonte real do servidor (`dist/components/activity.mjs`) define `Activity.serverTime` como `Date.now() - inícioDaAtividade`. O `GameTime` do cliente sincroniza esse uptime. Já `ServerDocumentMixin._tagStats()` grava `_stats.createdTime` com `Date.now()`, em época Unix. O Toolkit comparava essas bases distintas em `allyServerTime()`. Os mocks anteriores igualavam uptime e data de criação, ocultando o defeito.
+
+A correção usa `allyUnixTime()` para admissão, `preparedAt` e expiração. A verificação de autoria e a janela exata de **0 a 120.000 ms** permanecem: mensagens realmente futuras, mesmo por 1 ms, continuam rejeitadas com diagnóstico próprio. Não há uso de `timestamp` editável ou flags de cliente como autoridade, ampliação de janela, repetição de `Item.roll()` ou mudança nos motores, passivos, combate e concessões. Autoria passa ao GM somente após admissão e persistência da preparação, como antes. Registros v4 existentes continuam legíveis; preparações de uma geração anterior são canceladas e execuções abandonadas ficam incertas pelo mecanismo já existente.
+
+`diagnoseAllyMessageAdmission()` informa separadamente `message-not-found`, `author-mismatch`, `invalid-created-time`, `message-too-old`, `future-created-time`, `existing-receipt` e `existing-binding`. A exceção inclui somente booleanos, diferença de tempo e esses códigos; não inclui nomes, conteúdo de mensagens, fórmulas, alvos ou saldos.
+
+### Arquivos da correção
+
+- `src/features/allies/ally-granted-ability-use-service.ts`: relógio Unix e diagnóstico na admissão.
+- `src/adapters/foundry/foundry-ally-receipt-adapter.ts`: diagnóstico dos predicados e erro específico, mantendo a proteção dos recibos.
+- `tests/helpers/ally-grant-world.ts`: uptime e `_stats.createdTime` distintos, como no runtime.
+- `tests/unit/features/allies/ally-grants.test.ts`: restauração de timestamp na mesma base Unix.
+- `tests/unit/features/allies/ally-message-admission.test.ts`: 17 regressões de autoria, predicados, limites, probe, diálogo no solicitante, deduplicação e confirmar/cancelar.
+- `tests/reference/foundry-ally-message-admission.test.ts`: duas regressões com o `Activity`, `GameTime`, `_tagStats` e `DocumentAuthorField` reais; rede, calendário e banco substituídos. O teste executa o método de stats extraído da fonte real, sem alterar o Foundry.
+- `scripts/diagnostics/ally-ability-admission-probe.mjs`: observação opcional e temporária de hooks, sem escrita em Documents; compara idade Unix atual e a idade incorreta pelo uptime.
+- Este relatório.
+
+### Validação e smoke da correção
+
+`npm run check`: **694 testes aprovados em 90 arquivos**, com as referências locais Foundry/Ordem habilitadas, typecheck e build aprovados. Build separado e `git diff --check` aprovados. Bundle regenerado em `dist` (ignorado pelo Git). A reprodução real do defeito foi fornecida pelo usuário; o uso após a correção e o diálogo no cliente de jogador ainda exigem smoke.
+
+1. Servir o módulo de `D:/dev/paranormal-toolkit` e recarregar o Foundry após o build. A versão continua 0.44.0; uma nova mensagem de uso é necessária.
+2. Como GM, usar a habilidade concedida na ficha de Mauro. O diálogo existente deve abrir. Antes de confirmar, conferir que PE/PD e rolagens permanecem intactos. Cancelar deve preservar os recursos.
+3. Usar novamente e confirmar: uma cobrança e uma rolagem, dados de Mauro e um resultado persistido. Repetir clique não deve duplicar o fluxo.
+4. Repetir com jogador proprietário de Mauro e GM conectado: o diálogo deve abrir no jogador; a execução permanece no executor GM.
+5. Se necessário, instalar o probe nos consoles envolvidos com `globalThis.allyAdmissionProbe = (await import('/modules/paranormal-toolkit/scripts/diagnostics/ally-ability-admission-probe.mjs?probe=2')).installAllyAbilityAdmissionProbe()`, após `allyAdmissionProbe?.stop()` de uma instalação anterior. Usar `globalThis.allyAdmissionProbe?.stop()` ao terminar. `report()` retorna somente os diagnósticos; `ageMs` usa Unix e `legacyUptimeAgeMs` demonstra a comparação antiga. Autoria pode mudar legitimamente após a preparação; o probe preserva a identidade do solicitante para distinguir essa mudança.

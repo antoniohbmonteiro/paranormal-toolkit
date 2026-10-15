@@ -18,7 +18,7 @@ import { readAutomationFlagValue } from "../automation/automation-flag-reader";
 import type { ResourceAdapter } from "../../core/resources/actor-resource";
 import { getActorItems } from "../automation/actor-item-resolver";
 import { FoundryAllyItemAdapter, grantItem, grantSourceData } from "../../adapters/foundry/foundry-ally-item-adapter";
-import { allyMessage, FoundryAllyReceiptAdapter, readProtectedAllyReceipt } from "../../adapters/foundry/foundry-ally-receipt-adapter";
+import { allyMessage, AllyMessageAdmissionError, diagnoseAllyMessageAdmission, FoundryAllyReceiptAdapter, readProtectedAllyReceipt } from "../../adapters/foundry/foundry-ally-receipt-adapter";
 import { ALLY_RECEIPT_FLAG, MAX_ALLY_RECEIPTS, recoverAllyReceipts, retireAllyReceipt, type AllyExecutionReceipt } from "./ally-execution-receipts";
 import type { AllyLedger, AllySupportService } from "./ally-support-service";
 
@@ -27,7 +27,8 @@ export type AllyUseRequest = {
   itemId?: string; messageId: string; sequence?: number; targets?: WorkflowTargetReference[];
   options?: AbilityUseOptions; actionId?: string;
 };
-export function allyServerTime(): number { return game.time?.serverTime ?? Date.now(); }
+// Foundry v14 serverTime is activity uptime; document stats and persisted deadlines use Unix milliseconds.
+export function allyUnixTime(): number { return Date.now(); }
 export class AllyGrantedAbilityUseService {
   private generation = crypto.randomUUID();
   private wasExecutor = false;
@@ -55,7 +56,7 @@ export class AllyGrantedAbilityUseService {
   private async recover(ledger: AllyLedger, persist: () => Promise<void>): Promise<void> {
     this.assertExecutor();
     const changedExecutor = ledger.executionGeneration !== this.generation;
-    if (recoverAllyReceipts(ledger, this.generation, allyServerTime())) await persist();
+    if (recoverAllyReceipts(ledger, this.generation, allyUnixTime())) await persist();
     if (changedExecutor) for (const candidate of game.messages.contents ?? []) {
       const message = candidate as unknown as import("../../adapters/foundry/foundry-ally-receipt-adapter").AllyReceiptMessage;
       const receipt = readProtectedAllyReceipt(message, ledger.ledgerInstanceId);
@@ -124,10 +125,10 @@ export class AllyGrantedAbilityUseService {
           return this.reply(prior);
         }
         if (getItemUseSettings().executionMode === "disabled") throw new Error("Execução de habilidades desativada nas configurações do Toolkit.");
-        const message = allyMessage(request.messageId); const now = allyServerTime();
-        if (!message || message.author?.id !== userId || !Number.isFinite(message._stats?.createdTime)
-          || now - message._stats!.createdTime! > 120_000 || now < message._stats!.createdTime!
-          || message.getFlag(MODULE_ID, ALLY_RECEIPT_FLAG) || message.getFlag(MODULE_ID, "allyExecutionBinding")) throw new Error("Mensagem original inválida, antiga ou já gerenciada.");
+        const message = allyMessage(request.messageId); const now = allyUnixTime();
+        const admission = diagnoseAllyMessageAdmission(message, userId, now);
+        if (admission.failures.length) throw new AllyMessageAdmissionError(admission);
+        if (!message) throw new Error("Mensagem original não encontrada.");
         if (ledger.receipts.length >= MAX_ALLY_RECEIPTS) throw new Error("Há 256 recibos aguardando recuperação. O GM deve conferir os casos pendentes.");
         if (ledger.nextExecutionSequence >= Number.MAX_SAFE_INTEGER) throw new Error("Contador de execuções esgotado; dados preservados.");
         const grant = ledger.managedGrants.find(entry => entry.actorId === actorId && entry.itemId === request.itemId);

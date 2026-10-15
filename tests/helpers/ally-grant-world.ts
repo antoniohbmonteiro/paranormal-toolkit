@@ -67,7 +67,7 @@ export async function grantWorld() {
   const allyPlayer = { id: "ally-player", isGM: false, active: true };
   const settings: Record<string, unknown> = { "itemUse.executionMode": "automatic", "itemUse.systemCardMode": "replace", globalPlayingWithoutSanity: false };
   const messages: any[] = [], actors: any[] = [];
-  vi.stubGlobal("game", { user: gm, users: [gm, player, allyPlayer], time: { serverTime: Date.now() }, actors: collection(actors), messages: collection(messages),
+  vi.stubGlobal("game", { user: gm, users: [gm, player, allyPlayer], time: { serverTime: 60_000 }, actors: collection(actors), messages: collection(messages),
     modules: new Map(), settings: { get: (_s: string, k: string) => settings[k] }, system: { id: "ordemparanormal", version: "8.0.2" } });
   vi.stubGlobal("ui", { notifications: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } });
   vi.stubGlobal("document", { querySelector: () => null });
@@ -93,7 +93,7 @@ export async function grantWorld() {
   const iris = actor("iris", `${scope}.ally`), mauro = actor("mauro", "agent"), rafa = actor("rafa", "agent");
   function message(id: string, author: any = player): any {
     const source: any = { content: "<p>Mensagem nativa</p>", author: author.id, flags: {}, whisper: [], blind: false };
-    const m: any = { id, _stats: { createdTime: game.time!.serverTime }, get author() { return game.users.find(user => user.id === source.author); },
+    const m: any = { id, _stats: { createdTime: Date.now() }, get author() { return game.users.find(user => user.id === source.author); },
       get content() { return source.content; }, get whisper() { return source.whisper; }, get blind() { return source.blind; },
       getFlag: (s: string, k: string) => source.flags[s]?.[k], canUserModify: (user: any) => user.isGM || source.author === user.id,
       update: vi.fn(async data => { applyGrantUpdate(source, data); return m; }), setFlag: vi.fn(async (s, k, v) => { (source.flags[s] ??= {})[k] = structuredClone(v); }) };
