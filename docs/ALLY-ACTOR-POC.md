@@ -2,7 +2,7 @@
 
 ## Resultado e limites
 
-A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. Os passivos usam Active Effects nativos em Items ability. A candidata **0.44.0** acrescenta P1/P2 (concessões e execução autorizada), P3 (destino opcional no piloto) e a ficha final de três abas. A implementação está em `D:/dev/paranormal-toolkit`, branch `feature/allies`, sem worktree adicional, tag, release, commit ou push nesta etapa. A seção final de UI/UX substitui os controles e roteiros de botões das etapas anteriores.
+A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. Os passivos usam Active Effects nativos em Items ability. A versão **0.44.0** acrescenta P1/P2 (concessões e execução autorizada), P3 (destino opcional no piloto), a ficha final de três abas e os presets de benefícios passivos. A seção final de UI/UX substitui os controles e roteiros de botões das etapas anteriores.
 
 **Decisão funcional vigente:** suporte passivo automático pelo proprietário, sem aprovação de vínculo/benefícios nem registro de validação manual do ambiente. O GM executor continua automático e recebe avisos privados. As seções anteriores à seção final “Suporte automático sem aprovação” registram evidências históricas; seus gates e roteiros de aprovação foram substituídos pelo roteiro final.
 
@@ -14,7 +14,7 @@ A ficha oferece atalho de uso exclusivamente para uma concessão autorizada e si
 
 Na execução original da PoC, o agente não executou testes no servidor Foundry. Posteriormente, o usuário informou aprovação do smoke citado acima. A preparação e migração verificadas abaixo utilizam fontes reais do sistema com substitutos das dependências Foundry; isso **não comprova** o ciclo real de preparação, arraste, formulário, persistência, ownership no servidor ou migração global do mundo.
 
-**Recomendação atual: concluir o smoke final de ficha/P3 multiplayer no Foundry real antes de publicar release.** O usuário informou aprovação do fluxo principal P1/P2. Não houve herança de AgentData ou alteração global de OrdemActor. Os registros abaixo de etapas anteriores são históricos; suas recomendações de escopo e versões não substituem a seção final vigente.
+**Status: publicado na 0.44.0.** O usuário informou aprovação, no Foundry real, do smoke final de P1/P2, P3, ficha, presets de benefícios e ajustes de UX, incluindo o roteiro multiplayer. As seções abaixo são o registro técnico das etapas; menções a "candidata", "pendente" ou "aguardando smoke" descrevem o estado de cada etapa quando foi registrada. Não houve herança de AgentData ou alteração global de OrdemActor. Os registros abaixo de etapas anteriores são históricos; suas recomendações de escopo e versões não substituem a seção final vigente.
 
 ## Contratos e isolamento
 
@@ -840,9 +840,9 @@ Essa prévia usa dados fictícios e não é um servidor Foundry. **Nenhum Actor 
 
 Recomendação: manter a candidata sem release até concluir o smoke final no Foundry.
 
-## Presets de benefícios passivos — candidata 0.44.0 (vigente)
+## Presets de benefícios passivos — 0.44.0 (vigente)
 
-Implementação sobre `f540cd0`, branch `feature/allies`. Sem bump, commit ou push. Substitui a interface do editor descrita em "Efeitos passivos nativos — 0.43.0"; serviço, marcação `allyPassive: {version: 1}`, `transfer: false`, projeção, ledger, supressão e migração permanecem iguais.
+Implementação sobre `f540cd0` (commit `466ea9c`). Substitui a interface do editor descrita em "Efeitos passivos nativos — 0.43.0"; serviço, marcação `allyPassive: {version: 1}`, `transfer: false`, projeção, ledger, supressão e migração permanecem iguais.
 
 ### Interface
 
@@ -869,9 +869,15 @@ Os testes cobrem cada preset pela ação real (marcação e `transfer: false`), 
 
 ### Smoke desta etapa
 
+Aprovado pelo usuário no Foundry antes da release.
+
 1. Abrir a janela pela ficha do Aliado (menu da habilidade) e pelo header da ficha nativa da habilidade. Conferir largura, barra escura, ausência de contorno/brilho claro e campos empilhados.
 2. Criar cada preset com valor 3 (Perícia: Ocultismo). No editor nativo, conferir mudança única `add`, fase inicial, prioridade 20 e o path esperado.
 3. Com suporte ativo para um Agente com Classe: Defesa e Esquiva +3, Deslocamento +3, rolagem de Ocultismo +3, PV/PE máx. +3 (PD com a regra Sem Sanidade). Repetir PV máx. em Agente sem Classe e confirmar ausência de efeito.
 4. Selecionar Bônus de Dados: aviso visível, botão desabilitado e nenhum efeito criado. Valores `0`, `1.5` e vazio devem avisar sem criar.
 5. Criar personalizado: abre o editor nativo; editar mudanças e conferir resumo "Personalizado · N mudanças".
 6. Desabilitar/reabilitar pelo editor nativo e excluir pela janela (cancelar e depois confirmar): a projeção deve acompanhar. Trocar beneficiário e selecionar Nenhum: projeções removidas.
+
+## Ajustes finais de UX da ficha — 0.44.0 (vigente)
+
+Commit `50776f0`. **Criar habilidade** cria o Item exatamente como antes e abre `AllyAbilityConfigApplication` para ele, em vez da ficha nativa; o lápis continua abrindo a ficha nativa. Os menus de três pontos de cada habilidade (`details.ally-item-menu`, compartilhados pelas abas Suporte e Habilidades) fecham ao clicar fora, antes de executar uma ação, ao abrir outro menu, ao clicar novamente nos três pontos e com Escape, que devolve o foco aos três pontos e não chega ao atalho global do Foundry. `src/applications/ally-sheet-menus.ts` liga esse comportamento uma vez por elemento da ficha; o listener no documento existe somente enquanto há menu aberto e tudo é descartado em `close()`. Cobertura: `tests/unit/features/allies/ally-sheet-menus.test.ts`, `ally-actor.test.ts` e a fixture real `tests/browser/ally-sheet-menus.fixture.ts` (15 verificações aprovadas em navegador). Smoke aprovado pelo usuário no Foundry.

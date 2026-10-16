@@ -1,4 +1,43 @@
-## 0.42.0
+# Changelog
+
+## 0.44.0
+
+Primeira versão pública desde a 0.41.0. Inclui as mudanças dos marcos internos 0.42.0 e 0.43.0, que não foram publicados separadamente.
+
+### Adicionado — Aliados
+
+- Novo tipo de Actor **Aliado**, com ficha própria nas abas **Suporte**, **Habilidades** e **Detalhes**. Nome e retrato são editados no cabeçalho; Detalhes reúne a marcação **É um Drone** e a descrição em rich text nativo. Alterações são salvas por campo, preservando rascunhos e pedindo escolha quando o mesmo campo muda em outro cliente.
+- **Suporte:** selecionar um Agente em **Beneficiário** ativa o suporte; selecionar **Nenhum** encerra e remove os benefícios e habilidades concedidos. Durante combate, a troca retira o suporte anterior imediatamente e aplica o novo na rodada seguinte.
+- **Habilidades:** Items nativos do tipo habilidade, criados pela ficha ou arrastados do diretório ou de compêndios. **Criar habilidade** abre diretamente os Benefícios passivos; o lápis abre a ficha nativa; o menu de cada linha oferece Benefícios passivos e remoção com confirmação.
+- **Habilidades concedidas:** com o suporte ativo, as habilidades do Aliado aparecem na ficha do destinatário. O uso passa pelo diálogo e card de habilidades existentes ou pela automação configurada, com dados e custo de PE/PD do destinatário. O ícone da linha na ficha do Aliado é um atalho para esse uso.
+- **Benefícios passivos** com Active Effects nativos na habilidade, projetados no beneficiário com origem no Aliado. Editar atualiza o mesmo efeito sem acumular valores, desabilitar suspende o benefício e excluir remove a projeção.
+- Nova janela **Benefícios passivos — Toolkit**, aberta pela ficha do Aliado ou pelo cabeçalho da ficha nativa da habilidade, com presets de **Defesa**, **Perícia**, **Deslocamento**, **PV máximo**, **PE máximo** e **PD máximo**, além de **Personalizado**, que abre o editor nativo de Active Effects. **Bônus de Dados (+Xd20)** aparece no seletor, mas fica indisponível até a mecânica existir no sistema Ordem.
+- **Drones e piloto:** a opção de mundo **Homebrew: piloto utiliza habilidades do drone**, desligada por padrão, faz Aliados marcados como drone concederem suas habilidades somente ao piloto escolhido, que usa seus próprios dados, NEX e PE/PD. Os benefícios passivos continuam no beneficiário.
+- **Controle do Mestre:** avisos privados das mudanças efetivas; remover um benefício ou habilidade concedida suprime aquela fonte até uma nova ativação ou troca real de beneficiário; **Reconciliar suporte** no menu da ficha do Aliado.
+
+### Segurança e consistência
+
+- Escritas de suporte e usos concedidos são executados por um único Mestre conectado, depois de validar revisão, ownership e origem da solicitação.
+- Registros persistentes evitam execuções duplicadas. Operações interrompidas com resultado incerto não são repetidas automaticamente e ficam para conferência do Mestre.
+- Reconciliações sem mudanças não escrevem nos efeitos nem trocam seus IDs.
+
+### Limitações conhecidas
+
+- Suporte, concessões e uso de habilidades concedidas exigem um Mestre conectado.
+- Todos os clientes devem carregar a mesma versão do módulo.
+- PV, PE e PD máximo somam aos campos de bônus do sistema Ordem e só têm efeito em Agentes com item de Classe e cálculos automáticos ligados. PD depende da regra Sem Sanidade.
+- O bônus de Perícia entra nas rolagens e no total da perícia, mas não na iniciativa do combate quando a perícia é treinada, nem na Esquiva.
+- Benefícios concorrentes não se somam quando alteram o mesmo campo do mesmo beneficiário: vale o suporte mais recente, e retirá-lo restaura o anterior. Mudanças em campos diferentes continuam independentes.
+- Efeitos personalizados aceitam caminhos genéricos, mas uma chave desconhecida pelo sistema pode não produzir resultado mecânico.
+- Configurar um piloto não concede permissão sobre a ficha dele.
+
+## 0.43.0 — marco interno, não publicado
+
+Primeira etapa de Aliados, distribuída publicamente na 0.44.0: tipo de Actor Aliado, suporte passivo automático pelo proprietário e benefícios passivos como Active Effects nativos.
+
+## 0.42.0 — marco interno, não publicado
+
+Distribuído publicamente na 0.44.0.
 
 ### Adicionado
 
@@ -26,8 +65,6 @@
 - O executor reutiliza Dice So Nice e protege rollback de PE/PD contra alterações concorrentes.
 - Descrição expansível e grupo de pills agora possuem componentes compartilhados entre rituais e habilidades.
 - Não há aplicação automática de dano/cura nem detecção mecânica de sucesso/falha.
-
-# Changelog
 
 ## 0.40.2
 

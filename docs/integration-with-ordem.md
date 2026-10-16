@@ -137,6 +137,8 @@ Decisão:
 - revisar Active Effects após correções do sistema para v14;
 - tratar Active Effects como etapa própria, não base da automação inicial.
 
+Situação na 0.44.0: o ResourceEngine continua alterando PV/SAN/PE/PD por `actor.update` via adapter. Active Effects nativos passaram a ser usados nas condições informativas e nos benefícios passivos de Aliados, com fases `initial`/`final` do v14 conferidas no código do Foundry 14.369 (ver [campos de bônus](#campos-de-bônus-usados-pelos-presets-de-active-effect)).
+
 ## Comunicação com a comunidade
 
 Pontos combinados/assumidos:

@@ -2,13 +2,13 @@
 
 Automações e melhorias de qualidade de vida para mesas de Ordem Paranormal no Foundry VTT.
 
-O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, custos, rolagens, cards assistidos, dano, cura, condições e seleção de alvos na cena.
+O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, custos, rolagens, cards assistidos, dano, cura, condições, seleção de alvos na cena e Aliados que dão suporte aos Agentes.
 
 > Projeto não-oficial e independente. Compatível com o sistema não-oficial de Ordem Paranormal para Foundry VTT.
 
 ## Status
 
-Versão candidata: `0.44.0` — P1/P2 de Aliados aguardam smoke multiplayer.
+Versão atual: `0.44.0`, com a nova ficha de Aliados, benefícios passivos e habilidades concedidas. Veja o [`CHANGELOG.md`](CHANGELOG.md).
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 
@@ -16,9 +16,13 @@ Até a versão `1.0.0`, APIs internas, flags e presets ainda podem mudar sem com
 
 ## Instalação
 
-Em construção.
+No Foundry VTT, abra **Módulos complementares → Instalar módulo** e cole a Manifest URL:
 
-A instalação pública será disponibilizada por release no GitHub. Quando a primeira release estiver pronta, o módulo poderá ser instalado pelo Foundry usando uma Manifest URL.
+```text
+https://github.com/antoniohbmonteiro/paranormal-toolkit/releases/latest/download/module.json
+```
+
+Ela sempre aponta para a release mais recente publicada no GitHub. Depois, ative o módulo no mundo que usa o sistema Ordem Paranormal. Mantenha todos os clientes na mesma versão.
 
 ## Compatibilidade
 
@@ -41,30 +45,33 @@ A instalação pública será disponibilizada por release no GitHub. Quando a pr
 | Condições | Pode aplicar condições informativas como Active Effects. |
 | Alvos por área | Permite selecionar alvos na cena para rituais com área. |
 | Presets de rituais | Alguns rituais conhecidos já possuem automações configuradas. |
+| Aliados | Actor próprio que concede benefícios passivos e habilidades a um Agente beneficiário, com suporte opcional a drones e piloto. |
 
 ## Como usar
 
-### Suporte e habilidades de Aliados (`feature/allies`)
+### Aliados
 
-Crie um Item normal do tipo habilidade no diretório de Itens. No menu da ficha nativa (três pontos), abra **Benefícios passivos — Toolkit**. Em **Adicionar efeito**, informe nome e valor para criar um **Bônus de Defesa**, ou use **Personalizado** para abrir o editor nativo de Active Effects. Ambos já participam automaticamente do suporte, sem seleção adicional; sua transferência para o próprio Aliado permanece desativada. Efeitos antigos não identificados como suporte continuam intactos na ficha nativa e não são incluídos automaticamente.
+Aliados são Actors do tipo **Aliado** que dão suporte a um Agente: concedem benefícios passivos e disponibilizam suas habilidades enquanto o suporte estiver ativo.
 
-Arraste a habilidade para o Aliado. A ficha possui header permanente e abas **Suporte**, **Habilidades** e **Detalhes**. Na aba Suporte, selecionar um Agente persistente em **Beneficiário** atribui e ativa automaticamente; selecionar **Nenhum** limpa o beneficiário e retira os efeitos e habilidades concedidas. Trocar durante combate retira as projeções anteriores e aguarda a próxima rodada. Limpar e selecionar novamente não contorna essa espera. Abrir a ficha não ativa suporte nem salva campos.
+**Criar e configurar habilidades.** Na aba **Habilidades** da ficha do Aliado, **Criar habilidade** cria um Item nativo do tipo habilidade e abre a janela **Benefícios passivos — Toolkit**. Também é possível arrastar habilidades do diretório ou de compêndios. Em cada linha, o nome expande a descrição, o lápis abre a ficha nativa da habilidade e o menu de três pontos oferece **Benefícios passivos** e **Remover habilidade**. A mesma janela de benefícios também fica no cabeçalho da ficha nativa de qualquer habilidade.
 
-Suporte e Habilidades usam a mesma linha compacta de habilidade. Clicar no nome/área principal expande a descrição formatada para leitura; o lápis abre a ficha nativa do Item original. O ícone/d20 é um atalho para usar sua concessão no beneficiário ou piloto, pelo mesmo gateway e executor GM. O atalho exige concessão sincronizada e ownership do destinatário; não executa a fonte no Aliado. O menu de cada habilidade oferece **Benefícios passivos** e remoção confirmada.
+**Benefícios passivos.** Escolha o tipo de benefício, informe o valor e clique em **Adicionar benefício**. Presets disponíveis:
 
-Editar o efeito da cópia atualiza a projeção existente: Defesa +5 pode virar +7 ou +10 sem acumular valores. Desabilitar no editor nativo suspende o benefício; reabilitar restaura sua elegibilidade. **Excluir efeito** pede confirmação, exclui o efeito original do Item e retira sua projeção. Turnos e reconciliações sem mudanças preservam o ID e não escrevem no efeito. Benefícios antigos migram automaticamente para efeitos nativos; flags desconhecidas são preservadas. Efeitos personalizados admitem múltiplas mudanças, mas a interpretação mecânica de uma chave depende do sistema. Regras de conflitos, migração e limitações estão no relatório abaixo.
+| Preset | Efeito no beneficiário |
+|---|---|
+| Bônus de Defesa | Soma à Defesa (e à Esquiva). |
+| Bônus de Perícia | Soma à perícia escolhida nas rolagens e no total da ficha. |
+| Bônus de Deslocamento | Soma ao Deslocamento. |
+| Bônus de PV, PE ou PD máximo | Soma ao máximo calculado pelo sistema (exige item de Classe e cálculos automáticos; PD usa a regra Sem Sanidade). |
+| Bônus de Dados (+Xd20) | Visível, mas indisponível até a mecânica existir no sistema Ordem. |
 
-O proprietário opera o suporte sem aprovação administrativa. Um GM conectado executa as escritas protegidas automaticamente e os GMs recebem avisos privados das mudanças efetivas. Remover um efeito gerenciado como GM suprime aquela fonte até encerrar o suporte e selecionar um Agente novamente, ou trocar realmente o beneficiário. A reconciliação manual continua no menu da janela, somente para o GM.
+**Criar personalizado** cria um Active Effect vazio e abre o editor nativo, para mudanças livres. Todos os benefícios são Active Effects nativos da habilidade: editar atualiza o benefício projetado, desabilitar no editor nativo o suspende e excluir pela janela o remove do beneficiário.
 
-Enquanto o suporte estiver ativo, todas as habilidades do Aliado também aparecem na ficha do beneficiário, incluindo as passivas e as sem ativação preenchida. Edite a habilidade no Aliado para atualizar a concessão. O beneficiário executa e paga: usa o diálogo e o card de habilidades existentes ou a automação configurada, que tem precedência. A automação cobra somente seus próprios steps; a habilidade genérica mantém a regra global de PE/PD e a opção de gasto manual. Remover uma concessão como GM a suprime até uma nova ativação ou troca real; as habilidades normais permanecem intactas.
+**Beneficiário e suporte.** Na aba **Suporte**, escolha um Agente em **Beneficiário** para ativar o suporte; **Nenhum** encerra e remove benefícios e habilidades concedidas. Durante combate, a troca retira o suporte anterior imediatamente e aplica o novo na rodada seguinte. Com o suporte ativo, as habilidades do Aliado aparecem na ficha do beneficiário, que as usa pelo diálogo e card de habilidades existentes ou pela automação configurada, pagando seus próprios PE/PD. O ícone de cada habilidade na ficha do Aliado é um atalho para esse uso.
 
-A opção de mundo **Homebrew: piloto utiliza habilidades do drone** vem desligada. Ao ligá-la, Aliados marcados como drone mostram o seletor **Piloto**, com salvamento imediato; **Sem piloto** limpa a referência. Escolha um Agente persistente: os passivos continuam no beneficiário, mas somente o piloto recebe as habilidades, usa seus próprios dados/NEX e paga seus PE/PD. Configurar o piloto não concede permissão sobre sua ficha. Sem piloto válido, os passivos continuam e nenhuma habilidade é concedida; a ficha informa o motivo.
+**Drones e piloto.** Com a opção de mundo **Homebrew: piloto utiliza habilidades do drone** (desligada por padrão), Aliados marcados como **É um Drone** em Detalhes mostram o seletor **Piloto**. As habilidades passam a ser concedidas somente ao piloto, que usa seus próprios dados, NEX e PE/PD; os benefícios passivos continuam no beneficiário. Escolher um piloto não concede permissão sobre a ficha dele.
 
-Trocar o piloto é imediato, inclusive em combate. Uma espera já existente por troca de beneficiário permanece e suspende também as habilidades do piloto. Desligar a opção ou desmarcar drone devolve as habilidades ao beneficiário, conservando a configuração do piloto e as supressões do GM. Com o mesmo destinatário, os IDs existentes são preservados. Recarregue todos os clientes com o mesmo build antes de usar essa opção. A ficha do diretório e os tokens representam o mesmo vínculo do Actor original.
-
-Nome e retrato são editáveis no header permanente: clique no nome e confirme/saia do campo; clique no retrato para escolher uma imagem no seletor nativo. Cancelar o seletor conserva a imagem. Detalhes contém **É um Drone** e **Descrição**, exibida formatada e editável pelo rich text nativo (lápis ou clique no conteúdo). Conclua pelo controle de salvar do próprio editor; não há botão Salvar geral nem gravação por tecla. Atualizações preservam aba, foco e rascunhos; conflito no mesmo campo oferece escolha explícita e falhas conservam a edição. Solicitações de suporte aguardam confirmação do GM e não são repetidas automaticamente quando há incerteza.
-
-Efeitos `allyPassive` continuam exclusivamente no suporte passivo. Outros efeitos nativos reconhecidos preservam transferência, desabilitação e duração configuradas; efeitos desconhecidos bloqueiam o uso com diagnóstico, preservando a origem. O uso concedido exige GM executor conectado. Operações interrompidas com resultado incerto não são repetidas automaticamente; o GM deve conferir recursos e resultados. Evidências, recuperação e roteiro multiplayer estão em [ALLY-ACTOR-POC.md](docs/ALLY-ACTOR-POC.md).
+**Mestre e limites.** Um Mestre conectado executa automaticamente as alterações protegidas e recebe avisos privados das mudanças. Remover como Mestre um benefício ou habilidade concedida suprime aquela fonte até uma nova ativação ou troca de beneficiário; **Reconciliar suporte** fica no menu da ficha do Aliado. Sem Mestre conectado, o suporte não é atualizado e as habilidades concedidas não podem ser usadas. Benefícios que alteram o mesmo campo do mesmo beneficiário não se somam: vale o suporte mais recente. Operações interrompidas com resultado incerto não são repetidas automaticamente. Detalhes técnicos e testes estão em [`docs/ALLY-ACTOR-POC.md`](docs/ALLY-ACTOR-POC.md).
 
 ### Usando uma habilidade com rolagens
 
@@ -133,8 +140,9 @@ Atualmente:
 
 ## Roadmap e changelog
 
-O histórico detalhado de versões, decisões e próximas etapas fica em:
+O histórico de versões, decisões e próximas etapas fica em:
 
+- [`CHANGELOG.md`](CHANGELOG.md)
 - [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
 ## Licença

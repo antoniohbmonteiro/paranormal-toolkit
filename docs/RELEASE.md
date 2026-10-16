@@ -18,12 +18,14 @@ npm run check
 npm run build
 ```
 
-3. Commit the changes, including `dist/main.js` when runtime code changed.
-4. Create and push a matching tag:
+3. Commit the changes. `dist/` is ignored by Git; the workflow rebuilds it from source.
+4. Merge the release branch into `main`, then create and push a matching tag on the updated `main`:
 
 ```powershell
-git tag v0.34.5
-git push origin v0.34.5
+git switch main
+git pull --ff-only origin main
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 The GitHub Actions workflow will:
