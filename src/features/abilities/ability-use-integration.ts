@@ -1,3 +1,5 @@
+import { isAllySourceItem } from "../allies/config/ally-ability-config";
+import type { ManagedItemUseInterceptor } from "../item-use/item-use-route";
 import { OrdemItemUsedHookStrategy } from "../../adapters/ordem/item-use/ordem-item-used-hook-strategy";
 import { ModuleLogger } from "../../core/module-logger";
 import type { ResourceAdapter } from "../../core/resources/actor-resource";
@@ -27,6 +29,7 @@ export class AbilityUseIntegration {
     resources: ResourceEngine,
     resourceAdapter: ResourceAdapter,
     damage: DamageEngine,
+    private readonly managedUses?: ManagedItemUseInterceptor,
   ) {
     this.workflow = new AbilityUseWorkflow(resources, resourceAdapter);
     this.assistedActions = new AbilityAssistedActionService(damage, resources);
@@ -45,11 +48,13 @@ export class AbilityUseIntegration {
     };
     Hooks.on("renderChatMessageHTML", rehydrate);
     Hooks.on("renderChatMessage", rehydrate);
-    registerAbilityAssistedActionController(this.assistedActions);
+    registerAbilityAssistedActionController(this.assistedActions, this.managedUses);
     ModuleLogger.info("Workflow genérico de habilidades registrado.");
   }
 
   private async handleItemUsed(context: ItemUseContext): Promise<void> {
+    if (isAllySourceItem(context.item)) return;
+    if (await this.managedUses?.intercept(context)) return;
     if (getItemUseSettings().executionMode === "disabled") return;
     if (!isGenericAbility(context.item)) return;
 
@@ -97,8 +102,9 @@ export function registerAbilityUseIntegration(
   resources: ResourceEngine,
   resourceAdapter: ResourceAdapter,
   damage: DamageEngine,
+  managedUses?: ManagedItemUseInterceptor,
 ): AbilityUseIntegration {
-  const integration = new AbilityUseIntegration(resources, resourceAdapter, damage);
+  const integration = new AbilityUseIntegration(resources, resourceAdapter, damage, managedUses);
   integration.register();
   return integration;
 }

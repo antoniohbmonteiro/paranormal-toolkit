@@ -1,4 +1,5 @@
 import { failure, type Result, success } from "../result";
+import { assertWorkflowExecutionControl } from "../workflow/workflow-execution-control";
 import { resolveAutomationAmount } from "./automation-amount-resolver";
 import { createAutomationRollRequest, executeAutomationRollFormula } from "./automation-roll-executor";
 import { executeAutomationResourceOperation } from "./automation-resource-executor";
@@ -69,6 +70,7 @@ export class AutomationRunner {
   ) {}
 
   async run(definition: AutomationDefinition, context: WorkflowContext): Promise<AutomationRunResult> {
+    if (context.executionControl) assertWorkflowExecutionControl(context.executionControl);
     if (definition.steps.length === 0) {
       return failure({
         reason: "empty-automation",
@@ -78,7 +80,14 @@ export class AutomationRunner {
     }
 
     for (const [index, step] of definition.steps.entries()) {
+      await context.executionControl?.before(`step:${index}:${step.type}`);
       const result = await this.runStep(step, context, index);
+
+      await context.executionControl?.after(`step:${index}:${step.type}`, {
+        ok: result.ok,
+        rolls: Object.values(context.rolls).map(({ roll: _roll, ...data }) => data),
+        resources: context.resourceTransactions.map(({ actor: _actor, ...data }) => data),
+      });
 
       if (!result.ok) {
         return result;
@@ -229,7 +238,11 @@ export class AutomationRunner {
     }
 
     for (const actor of actors) {
+      await context.executionControl?.before(`resource:${stepIndex}:${actor.uuid ?? actor.id}`);
       const result = await executeAutomationResourceOperation(this.resources, actor, step.resource, step.operation, amount.value);
+      await context.executionControl?.after(`resource:${stepIndex}:${actor.uuid ?? actor.id}`, result.ok
+        ? { actorId: actor.id, resource: step.resource, before: result.value.before, after: result.value.after }
+        : { ok: false, reason: result.error.reason });
       const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
 
       if (!handled.ok) {
@@ -280,7 +293,11 @@ export class AutomationRunner {
     }
 
     for (const actor of actors) {
+      await context.executionControl?.before(`resource:${stepIndex}:${actor.uuid ?? actor.id}`);
       const result = await executeAutomationResourceOperation(this.resources, actor, step.resource, step.operation, amount.value);
+      await context.executionControl?.after(`resource:${stepIndex}:${actor.uuid ?? actor.id}`, result.ok
+        ? { actorId: actor.id, resource: step.resource, before: result.value.before, after: result.value.after }
+        : { ok: false, reason: result.error.reason });
       const handled = this.handleResourceOperationResult(result, context, stepIndex, step);
 
       if (!handled.ok) {

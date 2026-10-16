@@ -100,6 +100,7 @@ type TokenTargetOptionsLike = {
 };
 
 type TokenLike = {
+  baseActor?: Actor | null;
   id?: string | null;
   uuid?: string | null;
   name?: string;
@@ -154,6 +155,8 @@ type GameSettingRegistrationData = BooleanGameSettingRegistrationData | StringGa
 
 type FoundryUserLike = {
   id?: string;
+  getFlag?: (scope: string, key: string) => unknown;
+  setFlag?: (scope: string, key: string, value: unknown) => Promise<unknown>;
   color?: string | null;
   isGM?: boolean;
   active?: boolean;
@@ -178,12 +181,17 @@ type FoundryModuleLike = {
 };
 
 declare const game: {
+  time?: { serverTime: number };
   system: {
     id: string;
+    version?: string;
   };
+  release?: { version?: string };
+  combats?: FoundryCollectionLike<AllyCombatLike>;
   user?: FoundryUserLike | null;
   users: FoundryUserLike[];
   actors: FoundryCollectionLike<Actor>;
+  items: FoundryCollectionLike<Item>;
   messages: FoundryCollectionLike<ChatMessageDocumentLike>;
   modules: Map<string, FoundryModuleLike>;
   settings: {
@@ -224,10 +232,12 @@ declare const ui: {
 declare const Hooks: {
   once(hook: string, callback: (...args: any[]) => void): void;
   on(hook: string, callback: (...args: any[]) => void): void;
+  off(hook: string, callback: (...args: any[]) => void): void;
   callAll(hook: string, ...args: unknown[]): void;
 };
 
 declare const CONFIG: {
+  Actor: { documentClass: typeof Actor; dataModels: Record<string, typeof TypeDataModel> };
   Item?: {
     documentClass?: {
       prototype?: unknown;
@@ -246,23 +256,60 @@ type ChatMessageDocumentLike = {
 };
 
 declare const ChatMessage: {
-  create(data: ChatMessageCreateData): Promise<unknown>;
+  create(data: ChatMessageCreateData, options?: Record<string, unknown>): Promise<unknown>;
   getSpeaker(options: { actor?: Actor | null }): ChatSpeakerData;
 };
 
 declare class ApplicationV2 {
   static DEFAULT_OPTIONS: Record<string, unknown>;
+  static instances(): IterableIterator<ApplicationV2>;
+  static TABS: Record<string, unknown>;
+  id: string;
+  element: HTMLElement;
+  tabGroups: Record<string, string>;
   constructor(options?: Record<string, unknown>);
   render(options?: Record<string, unknown>): Promise<this> | this;
   close(options?: Record<string, unknown>): Promise<this> | this;
+  changeTab(tab: string, group: string, options?: Record<string, unknown>): void;
+  _onRender(context: object, options: Record<string, unknown>): Promise<void>;
+  _getHeaderControls(): Record<string, unknown>[];
+}
+
+declare class TypeDataModel {
+  static defineSchema(): Record<string, FoundryDataField>;
+}
+
+declare class FoundryDataField {
+  constructor(options?: Record<string, unknown>);
+}
+
+declare class ActorSheetV2 extends ApplicationV2 {
+  get actor(): Actor;
+  isEditable: boolean;
+  _prepareContext(options: Record<string, unknown>): Promise<object>;
+  _onDropItem(event: DragEvent, item: Item): Promise<Item | null | undefined>;
 }
 
 declare const foundry: {
+  documents: { JournalEntry: { create(data: Record<string, unknown>): Promise<AllyJournalLike | null> } };
   applications: {
+    sheets: { ActorSheetV2: typeof ActorSheetV2 };
+    ux: { TextEditor: { implementation: { enrichHTML(content: string, options?: Record<string, unknown>): Promise<string> } } };
+    apps: { FilePicker: { implementation: new (options: Record<string, unknown>) => { browse(): Promise<unknown> } }; DocumentSheetConfig: {
+      registerSheet(documentClass: typeof Actor, scope: string, sheetClass: typeof ActorSheetV2, options: Record<string, unknown>): void;
+    } };
     api: {
       ApplicationV2: typeof ApplicationV2;
+      DialogV2: { confirm(options: Record<string, unknown>): Promise<boolean | null>;
+        wait(options: Record<string, unknown>): Promise<unknown>; prompt(options: Record<string, unknown>): Promise<unknown> };
     };
   };
+  abstract: { TypeDataModel: typeof TypeDataModel };
+  data: { operators: { ForcedDeletion: new () => object; ForcedReplacement: new (value: unknown) => object }; fields: {
+    NumberField: typeof FoundryDataField;
+    HTMLField: typeof FoundryDataField;
+    BooleanField: typeof FoundryDataField;
+  } };
   utils: {
     getProperty(object: unknown, path: string): unknown;
     randomID(): string;
@@ -279,19 +326,36 @@ declare class Roll {
 }
 
 declare class Actor {
+  getRollData?(): Record<string, unknown>;
+  documentName: "Actor";
+  _stats?: { lastModifiedBy?: string | null };
   id: string | null;
   uuid?: string | null;
   name: string;
+  img: string;
   type: string;
   system: Record<string, unknown>;
   items: ItemCollectionLike;
+  isToken?: boolean;
+  effects?: { get(id: string): AllyEffectLike | undefined };
+  getFlag(scope: string, key: string): unknown;
+  setFlag(scope: string, key: string, value: unknown): Promise<this>;
   token?: TokenLike | null;
   getActiveTokens?(): TokenLike[];
+  canUserModify(user: FoundryUserLike, action: string): boolean;
+  deleteEmbeddedDocuments(embeddedName: "Item", ids: string[], options?: Record<string, unknown>): Promise<Item[]>;
+  deleteEmbeddedDocuments(embeddedName: "ActiveEffect", ids: string[], options?: Record<string, unknown>): Promise<unknown>;
+  createEmbeddedDocuments(embeddedName: "Item", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<Item[]>;
   update(data: Record<string, unknown>): Promise<this>;
-  createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[]): Promise<Array<{ id?: string | null }>>;
+  createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<Array<{ id?: string | null }>>;
+  updateEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown>;
 }
 
 declare class Item {
+  getRollData?(): Record<string, unknown>;
+  img?: string;
+  documentName: "Item";
+  sheet: { render(options: Record<string, unknown>): Promise<unknown> | unknown };
   id: string | null;
   name: string;
   type: string;
@@ -299,11 +363,40 @@ declare class Item {
   system: Record<string, unknown>;
   parent: Actor | null;
   actor?: Actor | null;
+  effects?: { contents: AllyEffectLike[]; get(id: string): AllyEffectLike | undefined };
+  canUserModify(user: FoundryUserLike, action: string): boolean;
+  createEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<AllyEffectLike[]>;
+  deleteEmbeddedDocuments(embeddedName: "ActiveEffect", ids: string[], options?: Record<string, unknown>): Promise<unknown>;
+  updateEmbeddedDocuments(embeddedName: "ActiveEffect", data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<unknown>;
+  toObject(source?: boolean): Record<string, unknown>;
+  updateSource(data: Record<string, unknown>): unknown;
   getFlag(scope: string, key: string): unknown;
   setFlag(scope: string, key: string, value: unknown): Promise<this>;
   unsetFlag(scope: string, key: string): Promise<this>;
-  update(data: Record<string, unknown>): Promise<this>;
+  update(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<this>;
 }
+
+type AllyEffectLike = {
+  id: string; name: string; uuid?: string; parent?: Actor | Item;
+  disabled: boolean; transfer: boolean;
+  system?: Record<string, unknown>;
+  toObject(source?: boolean): Record<string, unknown>;
+  update(data: Record<string, unknown>): Promise<unknown>;
+  updateSource(data: Record<string, unknown>): unknown;
+  unsetFlag(scope: string, key: string): Promise<unknown>;
+  sheet: { render(options: Record<string, unknown>): unknown };
+  getFlag(scope: string, key: string): unknown;
+};
+type AllyCombatLike = {
+  id: string; started: boolean; round: number | null; name?: string;
+  combatants: { contents?: { actorId?: string; actor?: Actor | null }[] };
+};
+type AllyJournalLike = {
+  documentName: string; uuid: string;
+  testUserPermission(user: FoundryUserLike, level: string): boolean;
+  getFlag(scope: string, key: string): unknown;
+  setFlag(scope: string, key: string, value: unknown): Promise<unknown>;
+};
 
 declare global {
   // eslint-disable-next-line no-var

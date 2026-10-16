@@ -1,0 +1,10 @@
+{
+  "TYPES": {
+    "Actor": {
+      "ally": "Aliado",
+      "paranormal-toolkit": {
+        "ally": "Aliado"
+      }
+    }
+  }
+}

@@ -17,7 +17,7 @@ export type AutomationRollResult = Result<WorkflowRollResult, AutomationRollFail
 export async function executeAutomationRollFormula(
   step: RollFormulaStep,
   stepIndex: number,
-  context: Pick<WorkflowContext, "rollRequests" | "rolls">
+  context: Pick<WorkflowContext, "rollRequests" | "rolls" | "rollData">
 ): Promise<AutomationRollResult> {
   if (!isNonEmptyString(step.id) || !isNonEmptyString(step.formula)) {
     return failure({
@@ -27,7 +27,7 @@ export async function executeAutomationRollFormula(
   }
 
   try {
-    const roll = new Roll(step.formula);
+    const roll = context.rollData ? new Roll(step.formula, context.rollData) : new Roll(step.formula);
     const evaluatedRoll = await Promise.resolve(roll.evaluate());
     const total = evaluatedRoll.total;
 

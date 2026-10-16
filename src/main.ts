@@ -3,6 +3,11 @@ import { registerGlobalApi } from "./core/global-api";
 import { ModuleLogger } from "./core/module-logger";
 import { SystemGuard } from "./core/system-guard";
 import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
+import { registerAllyLifecycleHooks } from "./features/allies/ally-lifecycle-hooks";
+import { registerAllySettings } from "./features/allies/ally-settings";
+import { AllySheet, refreshAllySheets } from "./applications/ally-sheet";
+import { registerAllyActor } from "./features/allies/ally-registration";
+import { registerAllyEffectSheetIntegration } from "./features/allies/ally-effect-sheet-integration";
 import { registerAbilityUseIntegration } from "./features/abilities/ability-use-integration";
 import { registerConditionLifecycleHooks } from "./features/conditions/condition-lifecycle-hooks";
 import { registerDiceAnimationSettings } from "./features/dice/dice-animation-settings";
@@ -18,6 +23,9 @@ import { registerItemSheetRitualRollConfigBlock } from "./ui/item-sheet-actions/
 let services: ToolkitServices | null = null;
 
 Hooks.once("init", () => {
+  registerAllyActor();
+  registerAllySettings();
+  registerAllyEffectSheetIntegration();
   registerDebugOutputSettings();
   registerItemUseSettings();
   registerDiceAnimationSettings();
@@ -34,13 +42,19 @@ Hooks.once("ready", () => {
   }
 
   services = createToolkitServices();
+  services.allySupportRequests.register();
+  services.allySupportRequests.onPendingChange = actorId => { void refreshAllySheets(actorId); };
+  services.allyShortcuts.onPendingChange = allyId => { void refreshAllySheets(allyId); };
+  AllySheet.configureServices({ support: services.allySupportRequests, shortcuts: services.allyShortcuts });
   services.itemUseIntegration.registerStrategies();
   registerAbilityUseIntegration(
     services.resources,
     services.resourceAdapter,
     services.damage,
+    services.allyUses.gateway,
   );
   registerConditionLifecycleHooks(services.conditions);
+  registerAllyLifecycleHooks(services, refreshAllySheets);
   registerGlobalApi(services);
   registerRitualLogActionCleanup();
   registerActorSheetRitualPresetAction(services);

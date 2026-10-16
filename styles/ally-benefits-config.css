@@ -1,0 +1,99 @@
+.paranormal-toolkit-ally-benefits {
+  --benefits-background: #f8f4ee;
+  --benefits-surface: #fcfaf7;
+  --benefits-border: #cfc7be;
+  --benefits-ink: #211d1b;
+  --benefits-muted: #68625e;
+  --benefits-accent: #802a30;
+  --benefits-accent-hover: #6b2329;
+  --benefits-focus: #9a3941;
+  --benefits-tile: #e2d7c9;
+  --input-box-shadow: none;
+  color-scheme: light;
+  color: var(--benefits-ink);
+  font-family: var(--font-body, sans-serif);
+  background: #252221;
+  border: 1px solid #252221;
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 360px;
+  max-height: 88vh;
+  box-shadow: none;
+}
+.paranormal-toolkit-ally-benefits .window-header { background: #252221; color: #eee8e1; border: 0; border-radius: 0; }
+.paranormal-toolkit-ally-benefits .window-header :is(.window-title, button) { color: inherit; }
+.paranormal-toolkit-ally-benefits .window-content {
+  min-height: 0; padding: 14px 16px 16px; overflow-y: auto;
+  background: var(--benefits-background); color: var(--benefits-ink);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+
+.paranormal-toolkit-ally-benefits .ally-benefits { display: flex; flex-direction: column; }
+.paranormal-toolkit-ally-benefits .ally-benefits-section { display: flex; flex-direction: column; gap: 10px; padding: 14px 0; }
+.paranormal-toolkit-ally-benefits .ally-benefits-section:first-child { padding-top: 0; }
+.paranormal-toolkit-ally-benefits .ally-benefits-section:last-child { padding-bottom: 0; }
+.paranormal-toolkit-ally-benefits .ally-benefits-section + .ally-benefits-section { border-top: 1px solid var(--benefits-border); }
+.paranormal-toolkit-ally-benefits .ally-benefits-heading {
+  margin: 0; padding: 0; border: 0; color: var(--benefits-accent);
+  font-family: inherit; font-size: .9rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+}
+.paranormal-toolkit-ally-benefits .ally-benefits-intro { margin: 0; color: var(--benefits-muted); font-size: .88rem; line-height: 1.45; }
+
+.paranormal-toolkit-ally-benefits .ally-benefits-field { display: flex; flex-direction: column; gap: 5px; margin: 0; color: var(--benefits-ink); font-size: .85rem; font-weight: 700; }
+.paranormal-toolkit-ally-benefits .ally-benefits-field :is(select, input) {
+  box-sizing: border-box; width: 100%; height: 34px; margin: 0; padding: 0 10px;
+  border: 1px solid var(--benefits-border); border-radius: 4px;
+  background: var(--benefits-surface); color: var(--benefits-ink);
+  font-size: .9rem; font-weight: 400; box-shadow: none;
+}
+.paranormal-toolkit-ally-benefits .ally-benefits-field option { background: var(--benefits-surface); color: var(--benefits-ink); }
+.paranormal-toolkit-ally-benefits .ally-benefits-field :is(select, input):focus-visible { outline: 2px solid var(--benefits-focus); outline-offset: 1px; box-shadow: none; }
+.paranormal-toolkit-ally-benefits .ally-benefits-field :is(select, input):disabled { opacity: .6; }
+
+.paranormal-toolkit-ally-benefits .ally-benefits-unavailable {
+  display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 10px;
+  border: 1px solid #d9b9b2; border-radius: 4px; background: #f6e9e4;
+  color: var(--benefits-accent); font-size: .8rem; font-weight: 700; letter-spacing: .03em;
+}
+
+.paranormal-toolkit-ally-benefits .ally-benefits-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.paranormal-toolkit-ally-benefits .ally-benefits-buttons button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  flex: 0 0 auto; width: auto; height: 34px; min-height: 0; margin: 0; padding: 0 14px;
+  border-radius: 4px; font-size: .88rem; box-shadow: none; text-shadow: none; cursor: pointer;
+}
+.paranormal-toolkit-ally-benefits .ally-benefits-primary { border: 1px solid var(--benefits-accent); background: var(--benefits-accent); color: #fff; }
+.paranormal-toolkit-ally-benefits .ally-benefits-primary:hover:not(:disabled) { border-color: var(--benefits-accent-hover); background: var(--benefits-accent-hover); }
+.paranormal-toolkit-ally-benefits .ally-benefits-secondary { border: 1px solid var(--benefits-border); background: #eee9e3; color: var(--benefits-ink); }
+.paranormal-toolkit-ally-benefits .ally-benefits-secondary:hover:not(:disabled) { background: #e6e0d8; }
+.paranormal-toolkit-ally-benefits .ally-benefits-buttons button:disabled { opacity: .5; cursor: not-allowed; }
+
+.paranormal-toolkit-ally-benefits .ally-benefits-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.paranormal-toolkit-ally-benefits .ally-benefit {
+  display: flex; align-items: center; gap: 12px; margin: 0; padding: 7px 8px 7px 7px;
+  border: 1px solid var(--benefits-border); border-radius: 5px; background: var(--benefits-surface);
+}
+.paranormal-toolkit-ally-benefits .ally-benefit.is-disabled .ally-benefit-icon,
+.paranormal-toolkit-ally-benefits .ally-benefit.is-disabled .ally-benefit-name { opacity: .55; }
+.paranormal-toolkit-ally-benefits .ally-benefit-icon {
+  display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px;
+  border-radius: 4px; background: var(--benefits-tile); color: #fff; font-size: 1.15rem;
+}
+.paranormal-toolkit-ally-benefits .ally-benefit-text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.paranormal-toolkit-ally-benefits .ally-benefit-name { color: var(--benefits-ink); font-size: .92rem; }
+.paranormal-toolkit-ally-benefits .ally-benefit-summary { color: var(--benefits-muted); font-size: .85rem; }
+.paranormal-toolkit-ally-benefits .ally-benefit-badge {
+  display: inline-block; margin-left: 4px; padding: 0 6px; border: 1px solid var(--benefits-border); border-radius: 3px;
+  background: #eee9e3; color: var(--benefits-muted); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+}
+.paranormal-toolkit-ally-benefits .ally-benefit-diagnostic { margin: 2px 0 0; color: var(--benefits-accent); font-size: .8rem; }
+.paranormal-toolkit-ally-benefits .ally-benefit-actions { display: flex; flex: 0 0 auto; gap: 2px; }
+.paranormal-toolkit-ally-benefits .ally-benefit-actions button {
+  display: grid; place-items: center; width: 30px; height: 30px; min-height: 0; margin: 0; padding: 0;
+  border: 0; border-radius: 4px; background: transparent; color: var(--benefits-muted);
+  font-size: .95rem; box-shadow: none; cursor: pointer;
+}
+.paranormal-toolkit-ally-benefits .ally-benefit-actions button:hover:not(:disabled) { background: #eee9e3; color: var(--benefits-ink); }
+.paranormal-toolkit-ally-benefits .ally-benefit-actions button:disabled { opacity: .4; cursor: not-allowed; }
+.paranormal-toolkit-ally-benefits :is(.ally-benefits-buttons, .ally-benefit-actions) button:focus-visible { outline: 2px solid var(--benefits-focus); outline-offset: 1px; box-shadow: none; }
+.paranormal-toolkit-ally-benefits .ally-benefits-empty { margin: 0; color: var(--benefits-muted); font-size: .85rem; font-style: italic; }

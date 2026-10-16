@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual documentada: `v0.42.0`.
+Versão atual: `v0.44.0`, primeira versão pública desde a `v0.41.0`. Os marcos `0.42.0` e `0.43.0` foram internos e chegam ao público nesta versão.
 
 O Toolkit já tem:
 
@@ -46,7 +46,21 @@ O Toolkit já tem:
 
 
 
-### Concluído em 0.42.0 — Targets e ações assistidas de habilidade
+### Concluído em 0.44.0 — Aliados
+
+Tipo de Actor Aliado com ficha própria (Suporte, Habilidades e Detalhes), suporte automático ao beneficiário, benefícios passivos como Active Effects nativos com presets de Defesa, Perícia, Deslocamento e PV/PE/PD máximo, habilidades concedidas com execução autorizada pelo Mestre e opção homebrew de drones com piloto. O smoke manual no Foundry, incluindo multiplayer, foi aprovado pelo usuário antes da release. Bônus de Dados (+Xd20) aguarda a mecânica no sistema Ordem. Usuário: [README](../README.md#aliados) e [CHANGELOG](../CHANGELOG.md); arquitetura e testes: [ALLY-ACTOR-POC.md](ALLY-ACTOR-POC.md).
+
+Registro histórico das etapas de desenvolvimento:
+
+A PoC de Actor e o suporte passivo existentes foram preservados. O suporte é automático pelo proprietário, sem aprovação ou gate administrativo. P1/P2 concedem todas as habilidades ao Agente persistente, mantendo IDs, transições de combate e supressão pelo GM. A execução passa exclusivamente pelo GM eleito e reutiliza os motores genérico e de automação, com dados e custo do beneficiário, índice protegido e recibos recuperáveis sem repetição automática de operações incertas.
+
+O smoke principal de P1/P2 foi informado como aprovado pelo usuário. P3 acrescenta a opção de mundo, desligada por padrão, para destinar as habilidades de drones ao piloto persistente: passivos permanecem no beneficiário; dados, NEX e custos usam o piloto. A referência fica no vínculo protegido v4, compatível com registros anteriores. Trocas respeitam a espera existente, preservam supressões e não redirecionam execuções históricas.
+
+A ficha final acrescenta header permanente, três abas compactas integradas ao painel e edição automática. Selecionar beneficiário ativa; Nenhum encerra e limpa as projeções, preservando a espera em combate. Suporte e Habilidades compartilham as mesmas linhas: nome expande descrição, lápis abre o Item original e ícone usa a concessão pelo gateway existente. Nome e retrato são editados no header; Detalhes usa rich text nativo com preservação de rascunho/conflito. O título nativo foi localizado e a barra da janela é escura. O índice protegido publica a origem necessária ao atalho e o suporte confirma cada solicitação ao cliente. Vínculos antigos inativos de desenvolvimento serão encerrados e reconfigurados, sem migração especial. O smoke de toolbar, arquivos, permissões e multiplayer no Foundry real foi aprovado pelo usuário antes da release.
+
+P1/P2/P3 e a ficha foram publicados na 0.44.0, depois do smoke final aprovado pelo usuário; os testes de referência automatizados usam código nativo com banco e dependências substituídos. Pilotagem, economia de ações e FX continuam fora do escopo. Roteiro, política de efeitos nativos, limites dos recibos e recuperação em [ALLY-ACTOR-POC.md](ALLY-ACTOR-POC.md).
+
+### Concluído em 0.42.0 (marco interno, publicado na 0.44.0) — Targets e ações assistidas de habilidade
 
 - targets de habilidades são capturados durante o uso e persistidos como referências serializáveis, sem armazenar Documents do Foundry;
 - rolagens de dano e cura geram uma ação manual independente para cada target válido, com suporte a zero, um ou múltiplos targets;
