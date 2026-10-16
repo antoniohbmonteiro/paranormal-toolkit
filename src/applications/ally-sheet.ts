@@ -10,6 +10,7 @@ import { resolveActivationLabel, resolveAbilityResource, isPassiveActivation } f
 import { MODULE_ID } from "../constants";
 import { escapeHtml } from "../ui/rendering/escape-html";
 import { updateAllySheetDOM } from "./ally-sheet-dom";
+import { bindAllyItemMenus, type AllyItemMenus } from "./ally-sheet-menus";
 import { bindAllyRichText, type AllyRichTextElement } from "./ally-sheet-rich-text";
 
 type SheetServices = { support: FoundryAllySupportRequests; shortcuts: AllyGrantedAbilityShortcut };
@@ -23,6 +24,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   private readonly saveAgain = new Set<AllyEditField>();
   private readonly using = new Set<string>();
   private readonly expandedAbilities = new Set<string>();
+  private menus: AllyItemMenus | null = null;
   private editingName = false;
   private supportBusy = false;
   private notice: string | null = null;
@@ -83,6 +85,8 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
     }
     if (this.boundElements.has(this.element)) return;
     this.boundElements.add(this.element);
+    this.menus?.dispose();
+    this.menus = bindAllyItemMenus(this.element);
     this.element.addEventListener("input", event => this.captureField(event));
     this.element.addEventListener("keydown", event => this.onKeyDown(event));
     this.element.addEventListener("focusin", event => {
@@ -98,6 +102,10 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
       if (!this.saving.has(field)) void this.commitField(field);
     });
   }
+  async close(options?: Record<string, unknown>): Promise<this> {
+    this.menus?.dispose(); this.menus = null;
+    return await super.close(options);
+  }
   _getHeaderControls(): Record<string, unknown>[] {
     const controls = super._getHeaderControls();
     return game.user?.isGM ? [...controls, { icon: "fa-solid fa-arrows-rotate", label: "Reconciliar suporte", action: "reconcileSupport" }] : controls;
@@ -111,10 +119,6 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   }
   private onKeyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement;
-    const menu = target.closest<HTMLDetailsElement>("details.ally-item-menu[open]");
-    if (menu && event.key === "Escape") {
-      event.preventDefault(); event.stopPropagation(); menu.open = false; menu.querySelector<HTMLElement>("summary")?.focus(); return;
-    }
     const button = target.closest<HTMLElement>('.ally-tabs [data-tab]');
     if (button && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
       const tabs = Array.from(this.element.querySelectorAll<HTMLElement>('.ally-tabs [data-tab]'));
@@ -269,13 +273,16 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
     event.stopPropagation();
     if (!this.canEdit()) return;
     const item = this.findAbility(target.dataset.itemId); if (!item) return;
+    await this.openPassiveBenefits(item);
+  }
+  private async openPassiveBenefits(item: Item): Promise<void> {
     const { AllyAbilityConfigApplication } = await import("./ally-ability-config-application");
     await new AllyAbilityConfigApplication(item).render({ force: true });
   }
   private static async onCreateAbility(this: AllySheet): Promise<void> {
     if (!this.canEdit() || !readFoundryAllyProfile(this.actor)) return;
     const [item] = await this.actor.createEmbeddedDocuments("Item", [{ name: "Nova habilidade", type: "ability", system: { abilityType: "ability" } }]);
-    await item?.sheet.render({ force: true });
+    if (item) await this.openPassiveBenefits(item);
   }
   private static async onOpenAbility(this: AllySheet, event: PointerEvent, target: HTMLElement): Promise<void> {
     event.preventDefault(); event.stopPropagation();

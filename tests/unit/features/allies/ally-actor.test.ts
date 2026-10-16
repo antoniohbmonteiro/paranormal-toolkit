@@ -13,6 +13,14 @@ const dialogPrompt = vi.fn();
 const enrichHTML = vi.fn(async (content: string) => content);
 const browse = vi.fn();
 const pickerOptions: Record<string, any>[] = [];
+const benefitWindows = vi.hoisted(() => [] as { item: unknown; render: any }[]);
+vi.mock("../../../../src/applications/ally-ability-config-application", async () => {
+  const { vi: mocks } = await import("vitest");
+  return { AllyAbilityConfigApplication: class {
+    render = mocks.fn(async () => this);
+    constructor(public item: unknown) { benefitWindows.push(this); }
+  } };
+});
 
 class Field {
   constructor(public options: Record<string, unknown>) {}
@@ -58,6 +66,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   openSheets.length = 0;
   pickerOptions.length = 0;
+  benefitWindows.length = 0;
   vi.stubGlobal("game", { system: { id: "ordemparanormal" }, user: { id: "u" }, settings: { get: vi.fn(() => false) } });
   vi.stubGlobal("ui", { notifications: { warn } });
   confirm.mockResolvedValue(true);
@@ -86,7 +95,7 @@ function fixture(editable = true) {
   sheet.isEditable = editable;
   return { actor, item, sheet };
 }
-function action(name: "createAbility" | "openAbility" | "removeAbility", sheet: InstanceType<typeof AllySheet>, id = "a") {
+function action(name: "createAbility" | "openAbility" | "removeAbility" | "configureBenefits", sheet: InstanceType<typeof AllySheet>, id = "a") {
   return AllySheet.DEFAULT_OPTIONS.actions[name].call(sheet, { stopPropagation: vi.fn(), preventDefault: vi.fn() } as unknown as PointerEvent, { dataset: { itemId: id } } as HTMLElement);
 }
 function change(sheet: InstanceType<typeof AllySheet>, field: string, value: string | boolean) {
@@ -265,13 +274,38 @@ describe("ally sheet handlers (Foundry doubles)", () => {
     expect(dialogPrompt).toHaveBeenCalledOnce();
     expect(supportSubmit).toHaveBeenLastCalledWith(actor, "setBeneficiary", { beneficiaryId: "mauro", combatId: "combat" });
   });
-  it("creates and opens a normal ability without executing it", async () => {
+  it("creates a normal ability and opens its passive benefits instead of the native sheet", async () => {
     const { actor, item, sheet } = fixture();
     await action("createAbility", sheet);
     expect(actor.createEmbeddedDocuments).toHaveBeenCalledExactlyOnceWith("Item", [
       { name: "Nova habilidade", type: "ability", system: { abilityType: "ability" } },
     ]);
-    expect(item.sheet.render).toHaveBeenCalledWith({ force: true });
+    expect(benefitWindows).toHaveLength(1);
+    expect(benefitWindows[0].item).toBe(item);
+    expect(benefitWindows[0].render).toHaveBeenCalledExactlyOnceWith({ force: true });
+    expect(item.sheet.render).not.toHaveBeenCalled();
+    await action("openAbility", sheet);
+    expect(item.sheet.render).toHaveBeenCalledExactlyOnceWith({ force: true });
+  });
+
+  it("opens no window when ability creation returns nothing or is not allowed", async () => {
+    const { actor, sheet } = fixture();
+    actor.createEmbeddedDocuments.mockResolvedValueOnce([]);
+    await action("createAbility", sheet);
+    expect(benefitWindows).toHaveLength(0);
+    const denied = fixture(false);
+    await action("createAbility", denied.sheet);
+    expect(denied.actor.createEmbeddedDocuments).not.toHaveBeenCalled();
+    expect(benefitWindows).toHaveLength(0);
+  });
+
+  it("opens the same passive benefits window from the ability menu", async () => {
+    const { item, sheet } = fixture();
+    await action("configureBenefits", sheet, "missing");
+    expect(benefitWindows).toHaveLength(0);
+    await action("configureBenefits", sheet);
+    expect(benefitWindows.map(window => window.item)).toEqual([item]);
+    expect(benefitWindows[0].render).toHaveBeenCalledWith({ force: true });
   });
 
   it("accepts abilities through the native drop API and rejects other document types", async () => {
