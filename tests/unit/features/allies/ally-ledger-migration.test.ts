@@ -12,12 +12,23 @@ function legacyLedger() {
     managed: [{ effectId: "existing-effect", actorId: "joao", allyId: "iris", value: 5, sourceKey }] };
 }
 describe("protected Allies ledger migration", () => {
+  it("normalizes a missing pilot in v4 and preserves an explicit pilot without changing operational identities", () => {
+    const current = readAllyLedger(legacyLedger());
+    delete current.links[0].pilotId;
+    expect(readAllyLedger(current).links[0].pilotId).toBeNull();
+    current.links[0].pilotId = "rafa";
+    current.links[0].suppressedGrants = [JSON.stringify(["iris", "ability"])];
+    const before = structuredClone(current);
+    const reread = readAllyLedger(current);
+    expect(reread).toEqual(before); expect(current).toEqual(before);
+    expect(reread.version).toBe(4); expect(reread.ledgerInstanceId).toBe(current.ledgerInstanceId);
+  });
   it("preserves effective links, waits, effect identities, precedence and revision without replaying old requests", () => {
     const old = legacyLedger(), before = structuredClone(old), next = readAllyLedger(old);
     expect(old).toEqual(before);
     expect(next).toMatchObject({ version: 4, revision: 4, nextSequence: 3,
       managed: old.managed, orders: old.orders, diagnostic: null });
-    expect(next.links[0]).toEqual({ allyId: "iris", state: old.links[0].state,
+    expect(next.links[0]).toEqual({ allyId: "iris", state: old.links[0].state, pilotId: null,
       notice: null, suppressedSources: [], suppressedGrants: [], diagnostic: null });
     expect(next).not.toHaveProperty("validatedRuntime");
     expect(readAllyLedger(next)).toEqual(next);

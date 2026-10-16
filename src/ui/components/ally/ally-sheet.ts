@@ -10,6 +10,7 @@ export type AllySheetViewModel = {
   support?: {
     revision: number; beneficiaryId: string | null; status: string; waitRound: number | null;
     diagnostic: string | null; isGM: boolean; available?: boolean;
+    pilotId?: string | null; abilityRecipientId?: string | null; pilotAbilitiesEnabled?: boolean;
     beneficiaries: { id: string; name: string }[]; combats: { id: string; name: string }[];
   };
 };
@@ -24,7 +25,7 @@ export function renderAllySheet(model: AllySheetViewModel): string {
       ${editable ? `<button type="button" data-action="configureBenefits" data-item-id="${escapeHtml(item.id)}">Benefícios</button><button type="button" data-action="removeAbility" data-item-id="${escapeHtml(item.id)}">Remover</button>` : ""}
     </li>`).join("");
   return `
-    <p class="ally-poc-notice">Suporte passivo de Aliados. Comandos ativos ainda não estão disponíveis.</p>
+    <p class="ally-poc-notice">Benefícios passivos e habilidades concedidas pelo suporte de Aliados.</p>
     ${model.profile === null ? '<p role="alert">Dados do Aliado inválidos ou de versão não suportada. A edição foi bloqueada para preservar os dados.</p>' : ""}
     <fieldset${disabled}>
       <legend>Identificação</legend>
@@ -48,10 +49,17 @@ function renderSupport(model: AllySheetViewModel): string {
   if (!support) return "";
   const enabled = model.editable && support.available !== false;
   const names: Record<string, string> = { inactive: "Inativo", active: "Ativo", pending: "Aguardando rodada" };
+  const pilotMode = support.pilotAbilitiesEnabled && model.profile?.isDrone;
+  const recipient = support.beneficiaries.find(actor => actor.id === support.abilityRecipientId);
   return `<section aria-label="Suporte">
     <h2>Suporte</h2>
     <p>Estado: ${escapeHtml(names[support.status] ?? "Desconhecido")}${support.waitRound !== null ? ` — rodada ${escapeHtml(String(support.waitRound))}` : ""}</p>
     ${support.diagnostic ? `<p role="status">${escapeHtml(support.diagnostic)}</p>` : ""}
+    <p>Destino das habilidades: ${recipient ? escapeHtml(recipient.name) : "Nenhum Agente válido"}${support.status !== "active" ? " (suporte não está ativo)" : ""}</p>
+    ${pilotMode && enabled ? `<label>Piloto <select data-ally-pilot><option value="">Sem piloto</option>
+      ${support.pilotId && !support.beneficiaries.some(actor => actor.id === support.pilotId) ? `<option value="${escapeHtml(support.pilotId)}" selected>Piloto ausente ou inválido</option>` : ""}
+      ${support.beneficiaries.map(actor => `<option value="${escapeHtml(actor.id)}"${actor.id === support.pilotId ? " selected" : ""}>${escapeHtml(actor.name)}</option>`).join("")}
+    </select></label><button type="button" data-action="savePilot">Salvar piloto</button>` : ""}
     ${enabled ? `<label>Beneficiário <select data-ally-beneficiary>
       <option value="">Selecione um Agente</option>
       ${support.beneficiaries.map(actor => `<option value="${escapeHtml(actor.id)}"${actor.id === support.beneficiaryId ? " selected" : ""}>${escapeHtml(actor.name)}</option>`).join("")}

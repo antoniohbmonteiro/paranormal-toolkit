@@ -8,6 +8,16 @@ function model(): AllySheetViewModel {
 }
 
 describe("ally sheet renderer", () => {
+  it.each([[false, false], [false, true], [true, false], [true, true]])("only offers the pilot controls for enabled=%s drone=%s", (enabled, drone) => {
+    const input = { ...model(), profile: { ...model().profile!, isDrone: drone }, support: { revision: 4, beneficiaryId: "b", status: "active", waitRound: null,
+      diagnostic: null, isGM: false, pilotAbilitiesEnabled: enabled, pilotId: "p", abilityRecipientId: "p", combats: [],
+      beneficiaries: [{ id: "b", name: "Beneficiário" }, { id: "p", name: '<script>Piloto</script>' }] } };
+    const before = structuredClone(input); const html = renderAllySheet(Object.freeze(input));
+    expect(html.includes('data-ally-pilot')).toBe(enabled && drone);
+    expect(html.includes('data-action="savePilot"')).toBe(enabled && drone);
+    expect(html).toContain("&lt;script&gt;Piloto&lt;/script&gt;"); expect(input).toEqual(before);
+    expect(renderAllySheet({ ...input, editable: false })).not.toContain('data-action="savePilot"');
+  });
   it("escapes user fields and offers item management without execution actions", () => {
     const input = model();
     const before = structuredClone(input);

@@ -4,6 +4,8 @@ import { ModuleLogger } from "./core/module-logger";
 import { SystemGuard } from "./core/system-guard";
 import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
 import { registerAllyLifecycleHooks } from "./features/allies/ally-lifecycle-hooks";
+import { registerAllySettings } from "./features/allies/ally-settings";
+import { refreshAllySheets } from "./applications/ally-sheet";
 import { registerAllyActor } from "./features/allies/ally-registration";
 import { registerAllyEffectSheetIntegration } from "./features/allies/ally-effect-sheet-integration";
 import { registerAbilityUseIntegration } from "./features/abilities/ability-use-integration";
@@ -22,6 +24,7 @@ let services: ToolkitServices | null = null;
 
 Hooks.once("init", () => {
   registerAllyActor();
+  registerAllySettings();
   registerAllyEffectSheetIntegration();
   registerDebugOutputSettings();
   registerItemUseSettings();
@@ -47,7 +50,7 @@ Hooks.once("ready", () => {
     services.allyUses.gateway,
   );
   registerConditionLifecycleHooks(services.conditions);
-  registerAllyLifecycleHooks(services);
+  registerAllyLifecycleHooks(services, refreshAllySheets);
   registerGlobalApi(services);
   registerRitualLogActionCleanup();
   registerActorSheetRitualPresetAction(services);

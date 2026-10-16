@@ -84,7 +84,7 @@ export class AllyGrantedAbilityUseService {
     const item = ally && getActorItems(ally).find(entry => entry.id === grant.sourceItemId && entry.type === "ability");
     const link = ledger.links.find(entry => entry.allyId === grant.allyId);
     if (!actor || actor.isToken || actor.type !== "agent" || !item || !link || link.state.status !== "active"
-      || link.state.beneficiaryId !== grant.actorId || link.state.sequence !== grant.activationSequence
+      || this.items.recipient(link).actorId !== grant.actorId || link.state.sequence !== grant.activationSequence
       || link.suppressedGrants?.includes(allyGrantKey(grant.allyId, grant.sourceItemId))) throw new Error("Concessão sem suporte ativo válido.");
     const source = grantSourceData(item);
     if (source.diagnostic) throw new Error(source.diagnostic);

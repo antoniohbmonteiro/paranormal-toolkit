@@ -12,15 +12,19 @@ class Field {
 }
 class Model {}
 class NativeSheet {
+  static instances() { return openSheets.values(); }
   document: any;
   get actor() { return this.document; }
   isEditable = true;
+  render = vi.fn();
   constructor(options: { document: any }) { this.document = options.document; }
   async _prepareContext() { return {}; }
   async _onDropItem(event: unknown, item: unknown) { return nativeDrop(event, item); }
 }
+const openSheets: NativeSheet[] = [];
 let AllyDataModel: typeof import("../../../../src/features/allies/ally-data-model").AllyDataModel;
 let AllySheet: typeof import("../../../../src/applications/ally-sheet").AllySheet;
+let refreshAllySheets: typeof import("../../../../src/applications/ally-sheet").refreshAllySheets;
 let registerAllyActor: typeof import("../../../../src/features/allies/ally-registration").registerAllyActor;
 
 beforeAll(async () => {
@@ -32,13 +36,14 @@ beforeAll(async () => {
       api: { DialogV2: { confirm } } },
   });
   ({ AllyDataModel } = await import("../../../../src/features/allies/ally-data-model"));
-  ({ AllySheet } = await import("../../../../src/applications/ally-sheet"));
+  ({ AllySheet, refreshAllySheets } = await import("../../../../src/applications/ally-sheet"));
   ({ registerAllyActor } = await import("../../../../src/features/allies/ally-registration"));
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.stubGlobal("game", { system: { id: "ordemparanormal" }, user: { id: "u" } });
+  openSheets.length = 0;
+  vi.stubGlobal("game", { system: { id: "ordemparanormal" }, user: { id: "u" }, settings: { get: vi.fn(() => false) } });
   vi.stubGlobal("ui", { notifications: { warn } });
   confirm.mockResolvedValue(true);
   nativeDrop.mockImplementation(async (_event, item) => item);
@@ -217,5 +222,44 @@ describe("ally sheet handlers (Foundry doubles)", () => {
       { id: "sheet-request-01", revision: 7, action: "assign", beneficiaryId: "joao" });
     expect(synthetic.setFlag).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
+  });
+  it.each(["directory", "linked", "unlinked"])("saves and clears the pilot from the %s sheet on the world Actor only", async origin => {
+    const { actor } = fixture();
+    const original = { ...actor, id: "iris", uuid: "Actor.iris", type: "paranormal-toolkit.ally", isToken: false,
+      getFlag: vi.fn(() => ({ revision: 7 })), setFlag: vi.fn(async () => {}) };
+    const synthetic = { ...original, isToken: true, token: { baseActor: original }, setFlag: vi.fn() };
+    const owner = { id: "owner", isGM: false, active: true };
+    vi.stubGlobal("game", { user: owner, users: [owner, { id: "gm", isGM: true, active: true }],
+      actors: { contents: [original], get: () => original } });
+    vi.stubGlobal("foundry", { ...(globalThis as any).foundry,
+      utils: { ...(globalThis as any).foundry.utils, randomID: () => "pilot-request-01" } });
+    const sheet = new AllySheet({ document: origin === "unlinked" ? synthetic : original });
+    for (const value of ["rafa", ""]) {
+      const button = { closest: () => ({ querySelector: (selector: string) => selector === '[data-ally-pilot]' ? { value } : null }) };
+      await AllySheet.DEFAULT_OPTIONS.actions.savePilot.call(sheet, {} as PointerEvent, button as any);
+      expect(original.setFlag).toHaveBeenLastCalledWith("paranormal-toolkit", "allyRequest",
+        { id: "pilot-request-01", revision: 7, action: "setPilot", pilotId: value || null });
+    }
+    sheet.isEditable = false;
+    await AllySheet.DEFAULT_OPTIONS.actions.savePilot.call(sheet, {} as PointerEvent,
+      { closest: () => ({ querySelector: () => ({ value: "rafa" }) }) } as any);
+    expect(original.setFlag).toHaveBeenCalledTimes(2);
+    expect(synthetic.setFlag).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+  });
+  it("refreshes existing directory and token instances through the native ApplicationV2 API", async () => {
+    const { actor } = fixture();
+    const original = { ...actor, id: "iris", type: "paranormal-toolkit.ally", isToken: false };
+    (game as any).actors = { get: (id: string) => id === "iris" ? original : undefined };
+    const world = new AllySheet({ document: original });
+    const token = new AllySheet({ document: { ...original, isToken: true, token: { baseActor: original } } });
+    const other = new AllySheet({ document: { ...original, id: "other" } });
+    openSheets.push(world, token, other);
+    await refreshAllySheets("iris");
+    expect(world.render).toHaveBeenCalledExactlyOnceWith({ force: false });
+    expect(token.render).toHaveBeenCalledExactlyOnceWith({ force: false });
+    expect(other.render).not.toHaveBeenCalled();
+    await refreshAllySheets();
+    expect(other.render).toHaveBeenCalledExactlyOnceWith({ force: false });
   });
 });

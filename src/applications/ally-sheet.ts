@@ -3,6 +3,7 @@ import type { AllyRequest } from "../features/allies/ally-operation-authority";
 import { readFoundryAllyProfile, resolveFoundryAllyActor } from "../adapters/foundry/foundry-ally-actor-resolver";
 import { getActorItems } from "../features/automation/actor-item-resolver";
 import { renderAllySheet, type AllySheetViewModel } from "../ui/components/ally/ally-sheet";
+import { getAllyPilotAbilitiesEnabled } from "../features/allies/ally-settings";
 
 export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   get actor(): Actor {
@@ -24,6 +25,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
       activateSupport: AllySheet.onActivateSupport,
       deactivateSupport: AllySheet.onDeactivateSupport,
       reconcileSupport: AllySheet.onReconcileSupport,
+      savePilot: AllySheet.onSavePilot,
     },
   };
 
@@ -36,6 +38,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
       editable: this.canEdit(),
       support: {
         ...await readAllySupportView(this.actor), isGM: Boolean(game.user?.isGM),
+        pilotAbilitiesEnabled: getAllyPilotAbilitiesEnabled(),
         beneficiaries: (game.actors?.contents ?? []).filter(actor => actor.type === "agent" && !actor.isToken)
           .map(actor => ({ id: actor.id!, name: actor.name })),
         combats: (game.combats?.contents ?? []).filter(combat => combat.started)
@@ -101,7 +104,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
     return getActorItems(this.actor).find((item) => item.id === id && item.type === "ability");
   }
 
-  private async requestSupport(action: AllyRequest["action"], fields: { beneficiaryId?: string; combatId?: string } = {}): Promise<void> {
+  private async requestSupport(action: AllyRequest["action"], fields: { beneficiaryId?: string; combatId?: string; pilotId?: string | null } = {}): Promise<void> {
     if (!this.canEdit()) return;
     try { await submitAllyRequest(this.actor, action, fields); }
     catch (error) { ui.notifications?.warn(error instanceof Error ? error.message : "Falha ao solicitar suporte."); }
@@ -121,6 +124,11 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
     await this.requestSupport("assign", { beneficiaryId, ...(combatId ? { combatId } : {}) });
   }
   private static async onActivateSupport(this: AllySheet): Promise<void> { await this.requestSupport("activate"); }
+  private static async onSavePilot(this: AllySheet, _event: PointerEvent, target: HTMLElement): Promise<void> {
+    const select = target.closest("form")?.querySelector<HTMLSelectElement>('[data-ally-pilot]');
+    if (!select) return;
+    await this.requestSupport("setPilot", { pilotId: select.value || null });
+  }
   private static async onDeactivateSupport(this: AllySheet): Promise<void> { await this.requestSupport("deactivate"); }
   private static async onReconcileSupport(this: AllySheet): Promise<void> { await this.requestSupport("reconcile"); }
 
@@ -148,4 +156,9 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
     if (!confirmed || !this.canEdit() || !this.findAbility(item.id)) return;
     await this.actor.deleteEmbeddedDocuments("Item", [item.id]);
   }
+}
+
+export async function refreshAllySheets(allyId?: string): Promise<void> {
+  await Promise.all(Array.from(AllySheet.instances()).filter((app): app is AllySheet => app instanceof AllySheet
+    && (!allyId || app.actor.id === allyId)).map(app => app.render({ force: false })));
 }

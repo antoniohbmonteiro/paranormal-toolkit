@@ -9,7 +9,7 @@ import { submitAllyRequest } from "../../../../src/adapters/foundry/foundry-ally
 const scope = "paranormal-toolkit";
 const path = `flags.${scope}.allyRequest`;
 const request = (id = "request-01") => ({ id, revision: 0, action: "assign", beneficiaryId: "joao" });
-function fixture(realService = false) {
+function fixture(realService = false, refresh = vi.fn()) {
   const hooks = new Map<string, Function[]>(), flags: Record<string, unknown> = { allyRequest: request() };
   const actor = { id: "iris", type: "paranormal-toolkit.ally", system: createAllyProfile(), items: [],
     getFlag: vi.fn((_scope: string, key: string) => flags[key]),
@@ -20,7 +20,7 @@ function fixture(realService = false) {
   vi.stubGlobal("Hooks", { on: (name: string, callback: Function) => hooks.set(name, [...hooks.get(name) ?? [], callback]) });
   vi.stubGlobal("game", { user: gm, users: [gm, player],
     actors: { get: (id: string) => id === "iris" ? actor : id === "joao" ? agent : undefined, contents: [actor, agent] },
-    system: { version: "8.0.2" }, release: { version: "14.369" } });
+    system: { version: "8.0.2" }, release: { version: "14.369" }, settings: { get: () => false } });
   const warn = vi.fn();
   vi.stubGlobal("ui", { notifications: { warn } });
   vi.stubGlobal("ChatMessage", { create: vi.fn(async () => {}) });
@@ -31,11 +31,55 @@ function fixture(realService = false) {
   const process = vi.spyOn(AllySupportService.prototype, "process");
   if (!realService) process.mockResolvedValue();
   const reconcile = vi.spyOn(AllySupportService.prototype, "reconcile").mockResolvedValue();
-  registerAllyLifecycleHooks();
+  registerAllyLifecycleHooks(undefined, refresh);
   const emit = (changes: Record<string, unknown>, userId = player.id) => hooks.get("updateActor")![0](actor, changes, {}, userId);
-  return { hooks, actor, agent, flags, process, reconcile, warn, emit, ledger: () => ledger };
+  return { hooks, actor, agent, flags, process, reconcile, refresh, warn, emit, ledger: () => ledger };
 }
 describe("ally request updates (Foundry hooks/documents doubled)", () => {
+  it.each(["createSetting", "updateSetting"])("reconciles the first and subsequent homebrew changes through %s only for the exact key", async event => {
+    const f = fixture(); const before = f.reconcile.mock.calls.length;
+    f.hooks.get(event)![0]({ key: `${scope}.unrelated` });
+    expect(f.reconcile).toHaveBeenCalledTimes(before);
+    f.hooks.get(event)![0]({ key: `${scope}.allies.dronePilotAbilities` });
+    expect(f.reconcile).toHaveBeenCalledTimes(before + 1);
+    await vi.waitFor(() => expect(f.refresh).toHaveBeenCalledWith(undefined));
+    expect(f.process).not.toHaveBeenCalled();
+  });
+  it.each([{ system: { isDrone: true } }, { "system.isDrone": false }])("observes a real drone update without replaying a stored request (%s)", async changes => {
+    const f = fixture(); const before = f.reconcile.mock.calls.length;
+    await f.emit(changes); expect(f.reconcile).toHaveBeenCalledTimes(before + 1);
+    await vi.waitFor(() => expect(f.refresh).toHaveBeenCalledWith("iris"));
+    expect(f.process).not.toHaveBeenCalled();
+    await f.emit({ name: "Presentation" }); expect(f.reconcile).toHaveBeenCalledTimes(before + 1);
+  });
+  it("refreshes mirrored pilot state without reconciling again, including on non-executor clients", async () => {
+    const f = fixture(); const before = f.reconcile.mock.calls.length;
+    (globalThis as any).game.user = (globalThis as any).game.users[1];
+    await f.emit({ [`flags.${scope}.allySupport.pilotId`]: "joao" });
+    await vi.waitFor(() => expect(f.refresh).toHaveBeenCalledWith("iris"));
+    expect(f.reconcile).toHaveBeenCalledTimes(before); expect(f.process).not.toHaveBeenCalled();
+  });
+  it("reconciles agent type changes and refreshes selectors even when an inactive mirror does not change", async () => {
+    const f = fixture(); const before = f.reconcile.mock.calls.length;
+    f.hooks.get("updateActor")![0]({ ...f.agent, type: "threat" }, { type: "threat" }, {}, "gm");
+    expect(f.reconcile).toHaveBeenCalledTimes(before + 1); expect(f.process).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(f.refresh).toHaveBeenCalledWith(undefined));
+  });
+  it("refreshes pilot selectors on Actor deletion independently of mechanical reconciliation", async () => {
+    const f = fixture(); const before = f.reconcile.mock.calls.length;
+    f.hooks.get("deleteActor")![0](f.agent, {}, "gm");
+    expect(f.reconcile).toHaveBeenCalledTimes(before + 1); expect(f.process).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(f.refresh).toHaveBeenCalledWith(undefined));
+  });
+  it("reads pilot updates from the full snapshot and validates differential identity and revision", async () => {
+    const f = fixture(); const incoming = { id: "pilot-request-01", action: "setPilot", revision: 0, pilotId: "joao", userId: "fake-gm" };
+    f.flags.allyRequest = incoming;
+    await f.emit({ [`${path}.id`]: incoming.id, [`${path}.pilotId`]: "joao" });
+    expect(f.process).toHaveBeenCalledExactlyOnceWith("iris", { id: incoming.id, action: "setPilot", revision: 0, pilotId: "joao" }, "actual-player");
+    f.flags.allyRequest = { ...incoming, id: "pilot-request-02" };
+    await f.emit({ [`${path}.id`]: "pilot-request-02", [`${path}.pilotId`]: "tampered" });
+    expect(f.process).toHaveBeenCalledTimes(1); expect(f.warn).toHaveBeenLastCalledWith("Solicitação de suporte inválida.");
+  });
   it("reads the updated Actor, ignoring the payload userId in favor of the native identity", async () => {
     const f = fixture(); f.flags.allyRequest = { ...request(), userId: "forged-gm" };
     await f.emit({ flags: { [scope]: { allyRequest: f.flags.allyRequest } } });

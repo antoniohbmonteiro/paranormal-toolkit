@@ -50,6 +50,26 @@ function fixture() {
 }
 
 describe("passive support service (Foundry ports doubled)", () => {
+  it("stores a pilot without activating support, and preserves passive suppression and precedence on pilot changes", async () => {
+    const f = fixture();
+    await f.service.process("iris", { id: "pilot-config-01", action: "setPilot", revision: 0, pilotId: "rafa" }, "player");
+    expect(f.ledger().links[0]).toMatchObject({ pilotId: "rafa", state: { status: "inactive", beneficiaryId: null, sequence: 0 } });
+    await f.activate(); const effect = [...f.effects.values()][0]; f.effects.delete(effect.effectId);
+    await f.service.suppressEffect(effect.actorId, effect.effectId, "gm-a");
+    const before = structuredClone(f.ledger());
+    await f.service.process("iris", { id: "pilot-config-02", action: "setPilot", revision: before.revision, pilotId: "joao" }, "player");
+    expect(f.ledger().links[0].state).toEqual(before.links[0].state);
+    expect(f.ledger().links[0].suppressedSources).toEqual(before.links[0].suppressedSources);
+    expect(f.ledger().orders).toEqual(before.orders); expect(f.effects.size).toBe(0);
+  });
+  it("checks revision, Ally ownership and the persistent agent before changing the pilot", async () => {
+    const f = fixture(); await f.activate(); const before = structuredClone(f.ledger());
+    const request = { id: "pilot-config-01", action: "setPilot" as const, revision: before.revision, pilotId: "rafa" };
+    await expect(f.service.process("iris", request, "intruder")).rejects.toThrow("autorizado");
+    await expect(f.service.process("iris", { ...request, revision: before.revision - 1 }, "player")).rejects.toThrow("suporte mudou");
+    await expect(f.service.process("iris", { ...request, pilotId: "unknown" }, "player")).rejects.toThrow("persistente");
+    expect(f.ledger()).toEqual(before);
+  });
   it("lazily creates the store and applies effects without an environment gate", async () => {
     const f = fixture();
     await f.service.reconcile();
@@ -352,6 +372,13 @@ describe("support notifications and manual GM suppression", () => {
 });
 
 describe("support request validation", () => {
+  it.each([undefined, "", "   ", false, 7, {}, []])("rejects malformed setPilot references (%s)", pilotId => {
+    expect(readAllyRequest({ id: "request-01", revision: 0, action: "setPilot", pilotId })).toBeNull();
+  });
+  it("accepts explicit clearing and strips irrelevant payload identities", () => {
+    expect(readAllyRequest({ id: "request-01", revision: 0, action: "setPilot", pilotId: null, userId: "gm", beneficiaryId: "rafa" }))
+      .toEqual({ id: "request-01", revision: 0, action: "setPilot", pilotId: null });
+  });
   it("elects deterministically and never elects players", () => {
     expect(electAllyExecutor([{ id: "b", isGM: true, active: true }, { id: "a", isGM: true, active: true }])).toBe("a");
     expect(electAllyExecutor([{ id: "a", isGM: false, active: true }])).toBeNull();

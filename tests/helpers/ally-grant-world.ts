@@ -11,6 +11,9 @@ import { WorkflowEngine } from "../../src/core/workflow/workflow-engine";
 import { WorkflowHookEmitter } from "../../src/core/workflow/workflow-hook-emitter";
 import { AutomationRunner } from "../../src/core/automation/automation-runner";
 import { AbilityAssistedActionService } from "../../src/features/abilities/ability-assisted-action-service";
+import { readAllyAbility } from "../../src/features/allies/config/ally-ability-config";
+import { describeAllyEffect } from "../../src/adapters/ordem/ordem-ally-benefit-adapter";
+import type { AllyManagedEffect } from "../../src/features/allies/ally-reconciliation-service";
 
 export const scope = "paranormal-toolkit";
 class Replacement { constructor(public value: unknown) {} }
@@ -65,9 +68,10 @@ export async function grantWorld() {
     setFlag: vi.fn(async (s, k, value) => { (gmFlags[s] ??= {})[k] = structuredClone(value); }) };
   const player = { id: "player", isGM: false, active: true };
   const allyPlayer = { id: "ally-player", isGM: false, active: true };
+  const pilotPlayer = { id: "pilot-player", isGM: false, active: true };
   const settings: Record<string, unknown> = { "itemUse.executionMode": "automatic", "itemUse.systemCardMode": "replace", globalPlayingWithoutSanity: false };
   const messages: any[] = [], actors: any[] = [];
-  vi.stubGlobal("game", { user: gm, users: [gm, player, allyPlayer], time: { serverTime: 60_000 }, actors: collection(actors), messages: collection(messages),
+  vi.stubGlobal("game", { user: gm, users: [gm, player, allyPlayer, pilotPlayer], time: { serverTime: 60_000 }, actors: collection(actors), messages: collection(messages),
     modules: new Map(), settings: { get: (_s: string, k: string) => settings[k] }, system: { id: "ordemparanormal", version: "8.0.2" } });
   vi.stubGlobal("ui", { notifications: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } });
   vi.stubGlobal("document", { querySelector: () => null });
@@ -78,7 +82,8 @@ export async function grantWorld() {
     async evaluate() { return this; }
   });
   function actor(id: string, type: string): any {
-    const data: any = { name: id, system: { NEX: { value: 50 }, PE: { value: 20, max: 20 }, PD: { value: 20, max: 20 }, PV: { value: 10, max: 30 } }, flags: {} };
+    const data: any = { name: id, system: { ...(type === `${scope}.ally` ? { schemaVersion: 1, description: "", isDrone: false } : {}),
+      NEX: { value: 50 }, PE: { value: 20, max: 20 }, PD: { value: 20, max: 20 }, PV: { value: 10, max: 30 } }, flags: {} };
     const items: any[] = [];
     const target: any = { id, uuid: `Actor.${id}`, documentName: "Actor", isToken: false, type,
       name: id, get system() { return data.system; }, items: collection(items),
@@ -107,13 +112,25 @@ export async function grantWorld() {
   ledger.links.push({ allyId: "iris", state: { beneficiaryId: "mauro", status: "active", sequence: 1, wait: null },
     suppressedSources: [], suppressedGrants: [], notice: null, diagnostic: null });
   const store = { load: vi.fn(async () => structuredClone(ledger)), save: vi.fn(async (next: AllyLedger) => { ledger = structuredClone(next); }) };
-  const environment: any = { currentUserId: () => game.user?.id ?? null, users: () => game.users, ownsAlly: () => true,
-    allyExists: (id: string) => Boolean(actors.find(actor => actor.id === id)), agentExists: (id: string) => actors.some(actor => actor.id === id && actor.type === "agent"),
-    abilities: () => [], describeEffect: vi.fn(), resolveCombat: () => null, combat: () => null, publish: vi.fn(async () => {}), notify: vi.fn(async () => {}) };
+  const environment: any = { currentUserId: () => game.user?.id ?? null, users: () => game.users,
+    ownsAlly: (id: string, userId: string) => { const user = game.users.find(user => user.id === userId); return Boolean(user && actors.find(actor => actor.id === id)?.canUserModify(user)); },
+    allyExists: (id: string) => Boolean(actors.find(actor => actor.id === id)), agentExists: (id: string) => actors.some(actor => actor.id === id && actor.type === "agent" && !actor.isToken),
+    abilities: (id: string) => {
+      const definitions = actors.find(actor => actor.id === id)?.items.contents.map((item: any) => ({ id: item.id, definition: readAllyAbility(item) })) ?? [];
+      return definitions.some((entry: any) => !entry.definition) ? null : definitions;
+    }, describeEffect: describeAllyEffect, resolveCombat: () => null, combat: () => null, publish: vi.fn(async () => {}), notify: vi.fn(async () => {}) };
   let support: AllySupportService;
   const assertExecutor = () => { if (!support.isExecutor()) throw new Error("Executor mudou"); };
   const adapter = new FoundryAllyItemAdapter(assertExecutor);
-  support = new AllySupportService(store, environment, new AllyReconciliationService({} as any), new AllyGrantedAbilityService(adapter));
+  const effects = new Map<string, AllyManagedEffect>();
+  const effectAdapter = {
+    newId: () => foundry.utils.randomID(), exists: (effect: AllyManagedEffect) => effects.has(effect.effectId),
+    matches: (effect: AllyManagedEffect) => JSON.stringify(effects.get(effect.effectId)) === JSON.stringify(effect),
+    create: vi.fn(async (effect: AllyManagedEffect) => { effects.set(effect.effectId, structuredClone(effect)); }),
+    update: vi.fn(async (effect: AllyManagedEffect) => { effects.set(effect.effectId, structuredClone(effect)); }),
+    remove: vi.fn(async (effect: AllyManagedEffect) => { effects.delete(effect.effectId); }),
+  };
+  support = new AllySupportService(store, environment, new AllyReconciliationService(effectAdapter), new AllyGrantedAbilityService(adapter));
   const resources = new ResourceEngine(new OrdemResourceAdapter());
   const workflow = new WorkflowEngine(new AutomationRunner(resources, {} as any, {} as any, new WorkflowHookEmitter()), new WorkflowHookEmitter());
   const { AbilityUseWorkflow } = await import("../../src/features/abilities/ability-use-workflow");
@@ -123,6 +140,6 @@ export async function grantWorld() {
   const makeUseService = () => new AllyGrantedAbilityUseService(support, adapter, receiptAdapter, generic, new OrdemResourceAdapter(), workflow, assisted);
   const use = makeUseService();
   function addAbility(data: any = {}) { const item = grantAbility({ _id: `source${iris.items.contents.length}`, ...data }, iris); iris.items.contents.push(item); return item; }
-  return { iris, mauro, rafa, gm, player, allyPlayer, settings, messages, rolls, message, addAbility, support, use, makeUseService,
+  return { iris, mauro, rafa, gm, player, allyPlayer, pilotPlayer, makeActor: actor, effects, effectAdapter, settings, messages, rolls, message, addAbility, support, use, makeUseService,
     store, adapter, receiptAdapter, environment, hooks, ledger: () => structuredClone(ledger), setLedger: (next: AllyLedger) => { ledger = structuredClone(next); } };
 }

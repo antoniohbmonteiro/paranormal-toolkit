@@ -11,6 +11,7 @@ import { publishAllySupportChange } from "./foundry-ally-notifications";
 import { migrateAllyAbilityEffects } from "../../features/allies/ally-effect-migration-service";
 import { describeAllyEffect } from "../ordem/ordem-ally-benefit-adapter";
 import type { AllyManagedEffect } from "../../features/allies/ally-reconciliation-service";
+import { FoundryAllyItemAdapter } from "./foundry-ally-item-adapter";
 
 export const ALLY_REQUEST_FLAG = "allyRequest";
 export const ALLY_PRESENTATION_FLAG = "allySupport";
@@ -44,7 +45,7 @@ export function readUpdatedAllyRequest(
   const request = readAllyRequest(value);
   if (!request || request.id !== nonce.value) return null;
   const snapshot = value as Record<string, unknown>;
-  for (const key of ["id", "revision", "action", "beneficiaryId", "combatId", "scope"]) {
+  for (const key of ["id", "revision", "action", "beneficiaryId", "combatId", "scope", "pilotId"]) {
     const change = readChangedProperty(changes, [...path, key]);
     if (change.found && !Object.is(change.value, snapshot[key])) return null;
   }
@@ -54,6 +55,7 @@ export function readUpdatedAllyRequest(
 export type AllySupportPresentation = {
   revision: number; beneficiaryId: string | null; status: string; waitRound: number | null;
   diagnostic: string | null; available?: boolean;
+  pilotId?: string | null; abilityRecipientId?: string | null;
 };
 export function allyUsers(): AllyUser[] {
   return Array.from(game.users ?? []).flatMap(user => user.id
@@ -67,14 +69,18 @@ export function readAllyPresentation(actor: Actor): AllySupportPresentation {
     status: typeof value?.status === "string" ? value.status : "inactive",
     waitRound: typeof value?.waitRound === "number" ? value.waitRound : null,
     diagnostic: typeof value?.diagnostic === "string" ? value.diagnostic : null,
+    pilotId: typeof value?.pilotId === "string" ? value.pilotId : null,
+    abilityRecipientId: typeof value?.abilityRecipientId === "string" ? value.abilityRecipientId : null,
   };
 }
 function presentationFromLedger(actor: Actor, ledger: AllyLedger): AllySupportPresentation {
   const link = ledger.links.find(entry => entry.allyId === actor.id);
+  const recipient = link ? new FoundryAllyItemAdapter(() => {}).recipient(link) : null;
   return {
     revision: ledger.revision, beneficiaryId: link?.state.beneficiaryId ?? null,
     status: link?.state.status ?? "inactive", waitRound: link?.state.wait?.round ?? null,
-    diagnostic: ledger.diagnostic ?? link?.diagnostic ?? null,
+    diagnostic: ledger.diagnostic ?? link?.diagnostic ?? recipient?.diagnostic ?? null,
+    pilotId: link?.pilotId ?? null, abilityRecipientId: recipient?.actorId ?? null,
   };
 }
 export async function readAllySupportView(actor: Actor): Promise<AllySupportPresentation> {
@@ -86,7 +92,7 @@ export async function readAllySupportView(actor: Actor): Promise<AllySupportPres
   try {
     const ledger = await new FoundryAllyStore().load();
     return ledger ? presentationFromLedger(actor, ledger)
-      : { revision: 0, beneficiaryId: null, status: "inactive", waitRound: null,
+      : { revision: 0, beneficiaryId: null, status: "inactive", waitRound: null, pilotId: null, abilityRecipientId: null,
         diagnostic: null };
   } catch (error) {
     return { revision: 0, beneficiaryId: null, status: "unknown", waitRound: null,
@@ -95,7 +101,7 @@ export async function readAllySupportView(actor: Actor): Promise<AllySupportPres
   }
 }
 export async function submitAllyRequest(
-  actor: Actor, action: AllyRequest["action"], fields: { beneficiaryId?: string; combatId?: string } = {},
+  actor: Actor, action: AllyRequest["action"], fields: { beneficiaryId?: string; combatId?: string; pilotId?: string | null } = {},
 ): Promise<void> {
   const resolved = resolveFoundryAllyActor(actor);
   if (!resolved) { reportAllyActorResolution(actor); throw new Error("Aliado inválido."); }

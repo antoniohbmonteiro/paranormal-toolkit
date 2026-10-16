@@ -46,11 +46,13 @@ O Toolkit já tem:
 
 
 
-### P1/P2 — Allies: concessões e execução autorizada em validação
+### P1/P2/P3 — Allies: concessões e homebrew de piloto em validação
 
 Na branch `feature/allies`, em `D:/dev/paranormal-toolkit`, a PoC de Actor e o suporte passivo existentes foram preservados. O suporte é automático pelo proprietário, sem aprovação ou gate administrativo. P1/P2 concedem todas as habilidades ao Agente persistente, mantendo IDs, transições de combate e supressão pelo GM. A execução passa exclusivamente pelo GM eleito e reutiliza os motores genérico e de automação, com dados e custo do beneficiário, índice protegido e recibos recuperáveis sem repetição automática de operações incertas.
 
-P1/P2 ficam juntos na candidata 0.44.0. O smoke real com dois jogadores e dois GMs permanece pendente; os testes de referência usam código nativo com banco e dependências substituídos. Pilotagem, economia de ações e reformulação visual continuam fora do escopo. Roteiro, política de efeitos nativos, limites dos recibos e recuperação em [ALLY-ACTOR-POC.md](ALLY-ACTOR-POC.md).
+O smoke principal de P1/P2 foi informado como aprovado pelo usuário. P3 acrescenta a opção de mundo, desligada por padrão, para destinar as habilidades de drones ao piloto persistente: passivos permanecem no beneficiário; dados, NEX e custos usam o piloto. A referência fica no vínculo protegido v4, compatível com registros anteriores. Trocas respeitam a espera existente, preservam supressões e não redirecionam execuções históricas.
+
+P1/P2/P3 ficam juntos na candidata 0.44.0, sem release nesta etapa. O smoke P3 com dois jogadores e dois GMs permanece pendente; os testes de referência usam código nativo com banco e dependências substituídos. Pilotagem, economia de ações e reformulação visual continuam fora do escopo. Roteiro, política de efeitos nativos, limites dos recibos e recuperação em [ALLY-ACTOR-POC.md](ALLY-ACTOR-POC.md).
 
 ### Concluído em 0.42.0 — Targets e ações assistidas de habilidade
 

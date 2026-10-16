@@ -1,9 +1,10 @@
 import { allyGrantKey, type AllyGrant, type AllyGrantData } from "../../core/allies/ally-grant";
 import type { AllyLedger } from "./ally-support-service";
 
+export type AllyGrantSource = { allyId: string; sourceItemId: string; actorId: string; activationSequence: number;
+  data: AllyGrantData; fingerprint: string; diagnostic: string | null };
 export interface AllyGrantedItemAdapter {
-  sources(ledger: AllyLedger): { allyId: string; sourceItemId: string; actorId: string; activationSequence: number;
-    data: AllyGrantData; fingerprint: string; diagnostic: string | null }[];
+  sources(ledger: AllyLedger): { sources: AllyGrantSource[]; diagnostics: Record<string, string> };
   newId(): string;
   publishIndex(ledger: AllyLedger): Promise<void>;
   exists(grant: AllyGrant): boolean;
@@ -15,8 +16,8 @@ export interface AllyGrantedItemAdapter {
 }
 export class AllyGrantedAbilityService {
   constructor(private readonly adapter: AllyGrantedItemAdapter) {}
-  async reconcile(ledger: AllyLedger, persist: () => Promise<void>): Promise<void> {
-    const desired = this.adapter.sources(ledger);
+  async reconcile(ledger: AllyLedger, persist: () => Promise<void>): Promise<Record<string, string>> {
+    const { sources: desired, diagnostics } = this.adapter.sources(ledger);
     for (const grant of [...ledger.managedGrants]) {
       if (desired.some(source => source.allyId === grant.allyId && source.sourceItemId === grant.sourceItemId
         && source.actorId === grant.actorId
@@ -58,5 +59,6 @@ export class AllyGrantedAbilityService {
       if (JSON.stringify(grant.effectIds) !== JSON.stringify(ids)) { grant.effectIds = ids; await persist(); }
     }
     await this.adapter.publishIndex(ledger);
+    return diagnostics;
   }
 }

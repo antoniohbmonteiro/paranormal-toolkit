@@ -1,5 +1,5 @@
 import { FoundryAllyStore } from "../../adapters/foundry/foundry-ally-store";
-import { FoundryAllyEnvironment, readUpdatedAllyRequest } from "../../adapters/foundry/foundry-ally-request-adapter";
+import { FoundryAllyEnvironment, readChangedProperty, readUpdatedAllyRequest, ALLY_PRESENTATION_FLAG } from "../../adapters/foundry/foundry-ally-request-adapter";
 import { OrdemAllyBenefitAdapter } from "../../adapters/ordem/ordem-ally-benefit-adapter";
 import { AllyReconciliationService } from "./ally-reconciliation-service";
 import { AllySupportService } from "./ally-support-service";
@@ -10,8 +10,10 @@ import { FoundryAllyReceiptAdapter } from "../../adapters/foundry/foundry-ally-r
 import { AllyGrantedAbilityService } from "./ally-granted-ability-service";
 import { AllyGrantedAbilityUseService } from "./ally-granted-ability-use-service";
 import { AbilityAssistedActionService } from "../abilities/ability-assisted-action-service";
+import { ALLY_PILOT_ABILITIES_SETTING_KEY } from "./ally-settings";
+import { MODULE_ID } from "../../constants";
 
-export function registerAllyLifecycleHooks(dependencies?: ToolkitServices): AllySupportService {
+export function registerAllyLifecycleHooks(dependencies?: ToolkitServices, refreshSheets: (allyId?: string) => void | Promise<void> = () => {}): AllySupportService {
   const environment = new FoundryAllyEnvironment();
   let service: AllySupportService;
   const assertExecutor = () => { if (!service.isExecutor()) throw new Error("O GM executor mudou."); };
@@ -30,8 +32,20 @@ export function registerAllyLifecycleHooks(dependencies?: ToolkitServices): Ally
     ui.notifications?.warn(error instanceof Error ? error.message : "Falha ao reconciliar Aliados.");
   };
   const reconcile = (): void => { void service.reconcile().catch(report); };
+  const refresh = (allyId?: string): void => { void Promise.resolve().then(() => refreshSheets(allyId)).catch(report); };
+  for (const event of ["createSetting", "updateSetting"]) Hooks.on(event, (setting: { key?: string }) => {
+    if (setting.key !== ALLY_PILOT_ABILITIES_SETTING_KEY) return;
+    reconcile(); refresh();
+  });
   const seenRequests = new WeakMap<Actor, Set<string>>();
   Hooks.on("updateActor", (actor: Actor, changes: Record<string, unknown>, _options: unknown, userId: string) => {
+    const droneChanged = readChangedProperty(changes, ["system", "isDrone"]).found;
+    if (readChangedProperty(changes, ["type"]).found) { reconcile(); refresh(); }
+    else if (actor.type === ALLY_TYPE && !actor.isToken && droneChanged) reconcile();
+    if (actor.type === ALLY_TYPE && (droneChanged || ["revision", "pilotId", "abilityRecipientId", "diagnostic", "beneficiaryId", "status"]
+      .some(key => readChangedProperty(changes, ["flags", MODULE_ID, ALLY_PRESENTATION_FLAG, key]).found))) {
+      refresh((actor.isToken ? actor.token?.baseActor?.id : actor.id) ?? undefined);
+    }
     // Synthetic flags cannot authorize writes to the original world Actor.
     if (actor.type !== ALLY_TYPE || actor.isToken || game.actors.get?.(actor.id!) !== actor || !service.isExecutor()) return;
     const request = readUpdatedAllyRequest(actor, changes, userId);
@@ -56,7 +70,7 @@ export function registerAllyLifecycleHooks(dependencies?: ToolkitServices): Ally
       reconcile();
     });
   }
-  Hooks.on("deleteActor", reconcile);
+  Hooks.on("deleteActor", () => { reconcile(); refresh(); });
   Hooks.on("updateCombat", reconcile);
   Hooks.on("deleteCombat", reconcile);
   Hooks.on("userConnected", reconcile);

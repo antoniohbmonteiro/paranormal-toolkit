@@ -2,7 +2,7 @@
 
 ## Resultado e limites
 
-A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. Os passivos usam Active Effects nativos em Items ability. A candidata **0.44.0** acrescenta P1/P2: concessões e execução autorizada pelos motores existentes. A implementação está em `D:/dev/paranormal-toolkit`, branch `feature/allies`, sem worktree adicional, tag, release, commit ou push nesta etapa. A seção final P1/P2 descreve o comportamento vigente e o smoke ainda pendente.
+A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. Os passivos usam Active Effects nativos em Items ability. A candidata **0.44.0** acrescenta P1/P2 (concessões e execução autorizada pelos motores existentes) e P3 (destino opcional das habilidades de drones no piloto). A implementação está em `D:/dev/paranormal-toolkit`, branch `feature/allies`, sem worktree adicional, tag, release, commit ou push nesta etapa. A seção final P3 descreve o comportamento vigente e o smoke ainda pendente.
 
 **Decisão funcional vigente:** suporte passivo automático pelo proprietário, sem aprovação de vínculo/benefícios nem registro de validação manual do ambiente. O GM executor continua automático e recebe avisos privados. As seções anteriores à seção final “Suporte automático sem aprovação” registram evidências históricas; seus gates e roteiros de aprovação foram substituídos pelo roteiro final.
 
@@ -14,7 +14,7 @@ A ficha não oferece botão de uso. A ficha nativa do Item continua disponível 
 
 Na execução original da PoC, o agente não executou testes no servidor Foundry. Posteriormente, o usuário informou aprovação do smoke citado acima. A preparação e migração verificadas abaixo utilizam fontes reais do sistema com substitutos das dependências Foundry; isso **não comprova** o ciclo real de preparação, arraste, formulário, persistência, ownership no servidor ou migração global do mundo.
 
-**Recomendação atual: validar a candidata P1/P2 no Foundry real antes de publicar release.** Não houve herança de AgentData ou alteração global de OrdemActor. Os registros abaixo de etapas anteriores são históricos; suas recomendações de escopo e versões não substituem a seção final vigente.
+**Recomendação atual: concluir o smoke P3 multiplayer no Foundry real antes de publicar release.** O usuário informou aprovação do fluxo principal P1/P2. Não houve herança de AgentData ou alteração global de OrdemActor. Os registros abaixo de etapas anteriores são históricos; suas recomendações de escopo e versões não substituem a seção final vigente.
 
 ## Contratos e isolamento
 
@@ -703,3 +703,63 @@ A correção usa `allyUnixTime()` para admissão, `preparedAt` e expiração. A 
 3. Usar novamente e confirmar: uma cobrança e uma rolagem, dados de Mauro e um resultado persistido. Repetir clique não deve duplicar o fluxo.
 4. Repetir com jogador proprietário de Mauro e GM conectado: o diálogo deve abrir no jogador; a execução permanece no executor GM.
 5. Se necessário, instalar o probe nos consoles envolvidos com `globalThis.allyAdmissionProbe = (await import('/modules/paranormal-toolkit/scripts/diagnostics/ally-ability-admission-probe.mjs?probe=2')).installAllyAbilityAdmissionProbe()`, após `allyAdmissionProbe?.stop()` de uma instalação anterior. Usar `globalThis.allyAdmissionProbe?.stop()` ao terminar. `report()` retorna somente os diagnósticos; `ageMs` usa Unix e `legacyUptimeAgeMs` demonstra a comparação antiga. Autoria pode mudar legitimamente após a preparação; o probe preserva a identidade do solicitante para distinguir essa mudança.
+
+## P3 — drones e homebrew de piloto (vigente, candidata 0.44.0)
+
+Base `c7d796f`, em `D:/dev/paranormal-toolkit`, branch `feature/allies`. P1/P2/P3 permanecem na mesma candidata, sem alterar versões, DataModel, motores, adapters de passivos ou repositórios irmãos. O fluxo principal P1/P2 foi informado como aprovado pelo usuário. O agente não realizou smoke P3 no servidor Foundry.
+
+### Política e persistência
+
+A setting de mundo `allies.dronePilotAbilities` usa as permissões nativas, é booleana e vem desligada. O nome exibido é **Homebrew: piloto utiliza habilidades do drone**. Desligada, ou com um Aliado comum, as habilidades continuam no beneficiário. Ligada e com drone, todas as habilidades são destinadas ao piloto; os passivos identificados por `allyPassive` continuam exclusivamente no beneficiário.
+
+`pilotId` é uma referência opcional a um Actor persistente `agent` no vínculo protegido do ledger v4. Registros anteriores normalizam ausência para `null`, preservando vínculos, esperas, supressões, IDs de efeitos/grants e recibos. Referência malformada bloqueia a leitura sem destruir o original. Referência a Actor removido, sintético ou de outro tipo não é um destinatário válido: concessões antigas são retiradas, não há fallback e o diagnóstico por Aliado não bloqueia passivos ou outros Aliados.
+
+`setPilot` usa o fluxo de solicitação existente: proprietário do Aliado ou GM, identidade nativa do hook, revisão atual, executor eleito e referência persistente validada. Não é uma autorização para operar a ficha do piloto. O solicitante do uso precisa possuir o Actor destinatário. A preparação e a execução leem o mesmo resolver usado pelas concessões, sem confiar na apresentação da ficha.
+
+Configurar ou limpar o piloto não ativa o suporte, não muda o beneficiário, não altera a sequência de ativação e não limpa supressões. A referência é conservada com suporte inativo, setting desligada ou drone desmarcado. Trocar piloto é imediato mesmo em combate, mas não remove uma espera existente por troca de beneficiário. Durante `pending`, não há concessões, mesmo com piloto inalterado.
+
+O destinatário executa e paga pelos motores já existentes. Homebrew ligada: dados/NEX, PE/PD e contexto de fórmulas vêm do piloto. Automação continua cobrando somente seus próprios steps. Sem piloto válido, a ficha mostra aviso discreto e os passivos seguem normalmente. Não há aprovação administrativa, novo popup/card, regra de pilotagem ou controle de ações.
+
+### Reconciliação, execução e interface
+
+A remoção do grant anterior é confirmada antes da retirada do índice e da criação no novo Actor. Falha bloqueia a substituição; o grant obsoleto também não pode ser usado. Mesmo destinatário preserva IDs de Items e efeitos, inclusive com piloto igual ao beneficiário. As regras de Active Effects nativos e supressão pelo GM de P1/P2 permanecem intactas. Trocar piloto, setting ou `isDrone` não reinicia a ativação nem a precedência dos passivos.
+
+A elegibilidade é revalidada antes da confirmação e nos checkpoints existentes. Troca de destinatário com diálogo aberto falha antes da cobrança. Se uma alteração externa ocorrer depois de uma mutação, o checkpoint seguinte pode encerrar o uso como incerto, sem redirecionar o pagador, repetir ou presumir estorno. Cards e ações históricas conservam Actor e targets originais.
+
+O lifecycle observa `createSetting`/`updateSetting` pela chave exata, `system.isDrone` em updates aninhados ou pontilhados e mudança de tipo/exclusão de Actor. Mantém recuperação no `ready` e troca de executor. A atualização visual percorre as instâncias nativas de ApplicationV2, inclusive fichas de tokens, sem abrir fichas fechadas. O piloto e o estado continuam pertencendo ao Actor original.
+
+A ficha recebe somente seletor **Piloto**, **Sem piloto**, **Salvar piloto**, destinatário e diagnóstico. O seletor aparece apenas para drone com homebrew ligada e permissão de operação. O renderer permanece puro. Reconciliar sem diferença não recria documentos nem repete notificações.
+
+### Arquivos P3
+
+| Área | Arquivos e responsabilidade |
+|---|---|
+| Política | `src/core/allies/ally-ability-recipient.ts`: resolver puro, sem Foundry ou namespace. |
+| Setting | `src/features/allies/ally-settings.ts` e `src/main.ts`: registro, leitura e composição. |
+| Referência protegida | `ally-operation-authority.ts`, `ally-support-service.ts`, `foundry-ally-store.ts`, `foundry-ally-request-adapter.ts`: validação, normalização compatível, transporte e apresentação. |
+| Concessão e uso | `foundry-ally-item-adapter.ts`, `ally-granted-ability-service.ts`, `ally-granted-ability-use-service.ts`: resolução compartilhada, diagnóstico local e revalidação. |
+| Eventos e ficha | `ally-lifecycle-hooks.ts`, `src/applications/ally-sheet.ts`, `src/ui/components/ally/ally-sheet.ts`, `foundry-shim.d.ts`: eventos relevantes, seletor e refresh nativo. |
+| Regressões | Novos testes de política, setting e fluxos P3; atualização dos testes de Actor/ficha, adapter, lifecycle, autoridade e migração. `tests/helpers/ally-grant-world.ts` simula ownership distinto, passivos reais e os motores existentes. |
+
+### Evidências automatizadas e limites
+
+Validação desta implementação: `npm run check` aprovado com **767 testes em 93 arquivos**, typecheck e build, com as referências locais habilitadas. `npm run build` separado e `git diff --check` aprovados. O bundle `dist` foi regenerado e permanece ignorado pelo Git. O Vite mantém o aviso já existente de importação simultaneamente estática/dinâmica de `AbilityUseApplication`; não impede o build.
+
+As regressões exercitam a matriz desligado/ligado, drone/comum, piloto ausente/igual/diferente, ambos os motores, PE/PD, NEX do piloto, cancelamento, dupla interceptação, revisão/ownership, fontes editadas, retirada antes de criação, falha de exclusão, estabilidade de IDs, supressão, espera de combate, política alterada em execução e ação histórica no target original. Cobrem também o transporte diferencial de `setPilot`, apresentação adulterada e fichas do diretório/tokens.
+
+Os testes de P3 usam Documents, transporte e banco substituídos; não comprovam permissões entre clientes nem persistência no servidor. As suites de referência existentes leem o Foundry **14.369** e o Ordem **8.0.2** locais, incluindo a regressão de relógio Unix/autoria. O novo refresh usa `ApplicationV2.instances()` e `render({force:false})` verificados na fonte instalada. Nenhum sibling foi alterado.
+
+Todos os clientes precisam carregar o mesmo bundle antes de habilitar P3: clientes antigos desconhecem `pilotId` e podem descartá-lo ao salvar. As referências são operacionais do mundo, sem cópia automática para Actors duplicados/compêndios. Não há transação atômica contra edições nativas ou outros módulos. A proteção permanece dentro do modelo de permissões do Foundry; flags editáveis não autorizam mecânicas.
+
+### Smoke P3 — dois jogadores e dois GMs
+
+1. Gerar o build em `D:/dev/paranormal-toolkit`, conferir a pasta servida pelo Foundry e recarregar os quatro clientes. Registrar build Foundry e versão Ordem. Preparar Íris (drone), Mauro (beneficiário) e Rafa (piloto), com proprietários distintos. Na Íris, configurar Defesa +5 passiva e duas habilidades, uma com rolagem/custo genéricos e outra com automação. Usar NEX distintos em Mauro e Rafa.
+2. Com homebrew desligada, ativar suporte: passivos e habilidades em Mauro. Conferir também um Aliado comum, sem mudança do fluxo P1/P2.
+3. Ligar a setting e salvar Rafa piloto: passivos somente em Mauro, habilidades somente em Rafa. Registrar IDs. Como proprietário de Rafa, usar cada motor: diálogo nesse cliente, NEX/fórmula e custo de Rafa. Testar PE/PD, cancelar sem gasto e cliques repetidos sem duplicação. O proprietário apenas da Íris/Mauro não ganha permissão para operar Rafa.
+4. Trocar piloto fora e durante combate: retirada imediata no anterior; passivos intactos. Escolher Mauro como piloto não duplica Items. Limpar/excluir o piloto ou alterar seu tipo: nenhuma concessão, diagnóstico discreto e passivos preservados. Salvar piloto novamente recupera o fluxo.
+5. Trocar beneficiário fora de combate mantém o grant quando o piloto continua igual. Durante combate, retira passivos e habilidades imediatamente; salvar outro piloto não apaga a espera. Somente na rodada prevista o suporte retorna. Testar encerramento de combate e reload.
+6. Alternar setting e `isDrone`: os grants mudam de destinatário, passivos preservam IDs. Com piloto igual a Mauro, o grant também mantém ID. Como GM, excluir um grant para suprimi-lo; trocar piloto/setting/drone, editar fonte, recarregar e avançar turnos não deve restaurá-lo. Desativar/ativar restaura pelo mecanismo existente. Items externos não são tocados.
+7. Editar e excluir fontes. Conferir sincronização no mesmo ID, retirada correspondente e reconciliações sem duplicação ou avisos repetidos. Repetir a configuração pela ficha do diretório e por tokens vinculados/não vinculados: todas mostram o mesmo piloto e vínculo original; fichas fechadas não são abertas.
+8. Abrir diálogo de uso e trocar destinatário antes de confirmar: recusa sem gasto. Depois de um uso concluído, trocar piloto e executar uma ação histórica: deve atingir o target original, sem nova rolagem. Trocar GM executor ou perder conexão durante uso não pode repetir cobrança nem retomar operação incerta automaticamente; conferir os recibos pelo fluxo P1/P2.
+
+Recomendação: manter a candidata em validação até concluir esse smoke. Os testes automatizados não substituem o teste real de rede, permissões e persistência.

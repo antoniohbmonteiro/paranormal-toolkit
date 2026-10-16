@@ -28,6 +28,7 @@ export function readAllyLedger(value: unknown, migrationId = "legacy"): AllyLedg
       || link.state.sequence >= ledger.nextSequence
       || !(link.diagnostic === null || typeof link.diagnostic === "string")) return fail();
     allyIds.add(link.allyId);
+    if (link.pilotId !== undefined && link.pilotId !== null && (typeof link.pilotId !== "string" || !link.pilotId.trim())) return fail();
     if (link.state.wait === undefined) return fail();
     if (link.state.status !== "inactive" && !link.state.beneficiaryId) return fail();
     if (link.state.status === "pending" && !link.state.wait) return fail();
@@ -108,7 +109,7 @@ export function readAllyLedger(value: unknown, migrationId = "legacy"): AllyLedg
     retiredExecutionThrough: raw.version === 4 ? copy.retiredExecutionThrough : 0,
     executionGeneration: raw.version === 4 ? copy.executionGeneration : "",
     managed: copy.managed, orders: copy.orders, diagnostic: legacy ? null : copy.diagnostic,
-    links: copy.links.map(link => ({ allyId: link.allyId, state: link.state,
+    links: copy.links.map(link => ({ allyId: link.allyId, state: link.state, pilotId: link.pilotId ?? null,
       diagnostic: legacy ? null : link.diagnostic, suppressedSources: legacy ? [] : link.suppressedSources,
       suppressedGrants: raw.version === 4 ? link.suppressedGrants : [],
       notice: legacy ? null : link.notice })) };

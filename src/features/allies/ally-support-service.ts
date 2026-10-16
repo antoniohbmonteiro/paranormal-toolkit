@@ -12,6 +12,7 @@ import { AllyOperationQueue } from "./ally-operation-queue";
 
 export type AllyLink = {
   allyId: string; state: AllySupportState;
+  pilotId?: string | null;
   suppressedSources: string[];
   suppressedGrants?: string[];
   notice: AllyNoticeSnapshot | null;
@@ -113,11 +114,15 @@ export class AllySupportService {
       if (request.revision !== ledger.revision) throw new Error("O suporte mudou. Atualize a ficha e solicite novamente.");
       let link = ledger.links.find(entry => entry.allyId === allyId);
       if (!link) {
-        link = { allyId, state: createAllySupportState(), suppressedSources: [], suppressedGrants: [], diagnostic: null,
+        link = { allyId, state: createAllySupportState(), pilotId: null, suppressedSources: [], suppressedGrants: [], diagnostic: null,
           notice: { beneficiaryId: null, status: "inactive", benefits: [] } };
         ledger.links.push(link);
       }
-      if (request.action !== "reconcile") {
+      if (request.action === "setPilot") {
+        if (request.pilotId !== null && !this.environment.agentExists(request.pilotId!)) throw new Error("Selecione um piloto Agente persistente do mundo.");
+        if ((link.pilotId ?? null) === request.pilotId) { await this.reconcileLedger(ledger); return; }
+        link.pilotId = request.pilotId;
+      } else if (request.action !== "reconcile") {
         if (request.action === "activate" && !link.state.beneficiaryId) {
           throw new Error("Atribua um beneficiário antes de ativar.");
         }
@@ -232,9 +237,10 @@ export class AllySupportService {
     try {
       await this.reconciliation.reconcile(resolveAllyBenefits(orderedSources), ledger.managed,
         async managed => { ledger.managed = managed; await this.persist(ledger); });
-      await this.grants?.reconcile(ledger, () => this.persist(ledger));
+      const recipientDiagnostics = await this.grants?.reconcile(ledger, () => this.persist(ledger));
       if (this.grants) for (const link of ledger.links) {
         const diagnostics = ledger.managedGrants.filter(grant => grant.allyId === link.allyId && grant.diagnostic).map(grant => grant.diagnostic);
+        if (recipientDiagnostics?.[link.allyId]) diagnostics.unshift(recipientDiagnostics[link.allyId]);
         if (diagnostics.length) link.diagnostic = diagnostics.join(" ");
       }
     } catch (error) {

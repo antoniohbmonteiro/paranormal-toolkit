@@ -262,6 +262,7 @@ declare const ChatMessage: {
 
 declare class ApplicationV2 {
   static DEFAULT_OPTIONS: Record<string, unknown>;
+  static instances(): IterableIterator<ApplicationV2>;
   constructor(options?: Record<string, unknown>);
   render(options?: Record<string, unknown>): Promise<this> | this;
   close(options?: Record<string, unknown>): Promise<this> | this;

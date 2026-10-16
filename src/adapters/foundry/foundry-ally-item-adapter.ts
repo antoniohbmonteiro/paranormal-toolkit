@@ -2,10 +2,13 @@ import { MODULE_ID } from "../../constants";
 import { allyGrantKey, type AllyGrant, type AllyGrantData } from "../../core/allies/ally-grant";
 import { stableEffectFingerprint, readEffectTemplate } from "../../core/allies/ally-passive-effect";
 import { getActorItems } from "../../features/automation/actor-item-resolver";
-import type { AllyLedger } from "../../features/allies/ally-support-service";
-import type { AllyGrantedItemAdapter } from "../../features/allies/ally-granted-ability-service";
+import type { AllyLedger, AllyLink } from "../../features/allies/ally-support-service";
+import type { AllyGrantedItemAdapter, AllyGrantSource } from "../../features/allies/ally-granted-ability-service";
 import { readGrantedItemEffects } from "./foundry-ally-item-effects";
 import { ALLY_TYPE } from "../../features/allies/config/ally-ability-config";
+import { readFoundryAllyProfile } from "./foundry-ally-actor-resolver";
+import { resolveAllyAbilityRecipient } from "../../core/allies/ally-ability-recipient";
+import { getAllyPilotAbilitiesEnabled } from "../../features/allies/ally-settings";
 
 export const ALLY_GRANT_FLAG = "allyGrantedAbility";
 export const ALLY_ROUTE_INDEX = "allyGrantRouteIndex";
@@ -48,16 +51,33 @@ function comparableEffect(effect: Record<string, unknown>) {
 }
 export class FoundryAllyItemAdapter implements AllyGrantedItemAdapter {
   constructor(private readonly assertExecutor: () => void) {}
+  recipient(link: AllyLink): { actorId: string | null; diagnostic: string | null } {
+    const source = game.actors.get?.(link.allyId);
+    const profile = source && !source.isToken && source.type === ALLY_TYPE && readFoundryAllyProfile(source);
+    if (!profile) return { actorId: null, diagnostic: "Aliado ausente ou perfil inválido." };
+    if (!link.state.beneficiaryId) return { actorId: null, diagnostic: null };
+    const beneficiary = game.actors.get?.(link.state.beneficiaryId);
+    if (!beneficiary || beneficiary.isToken || beneficiary.type !== "agent") return { actorId: null, diagnostic: "Beneficiário ausente ou inválido." };
+    const resolved = resolveAllyAbilityRecipient({ beneficiaryId: beneficiary.id!, pilotId: link.pilotId ?? null,
+      isDrone: profile.isDrone, pilotAbilitiesEnabled: getAllyPilotAbilitiesEnabled() });
+    if (resolved.reason === "pilot-required") return { actorId: null, diagnostic: "Selecione um piloto para conceder as habilidades do drone. Os benefícios passivos continuam no beneficiário." };
+    const target = resolved.actorId && game.actors.get?.(resolved.actorId);
+    if (!target || target.isToken || target.type !== "agent") return { actorId: null, diagnostic: "Piloto ausente ou inválido. As habilidades do drone não foram redirecionadas ao beneficiário." };
+    return { actorId: target.id!, diagnostic: null };
+  }
   sources(ledger: AllyLedger) {
-    return ledger.links.flatMap(link => {
+    const sources: AllyGrantSource[] = [];
+    const diagnostics: Record<string, string> = {};
+    for (const link of ledger.links) {
       const source = game.actors.get?.(link.allyId);
-      const target = link.state.beneficiaryId && game.actors.get?.(link.state.beneficiaryId);
-      if (!source || source.type !== ALLY_TYPE || source.isToken || link.state.status !== "active"
-        || !target || target.type !== "agent" || target.isToken) return [];
-      return getActorItems(source).filter(item => item.type === "ability" && item.id).map(item => ({
-        allyId: link.allyId, sourceItemId: item.id!, actorId: target.id!, activationSequence: link.state.sequence, ...grantSourceData(item),
-      }));
-    });
+      const recipient = this.recipient(link);
+      if (recipient.diagnostic) diagnostics[link.allyId] = recipient.diagnostic;
+      if (!source || link.state.status !== "active" || !recipient.actorId) continue;
+      for (const item of getActorItems(source).filter(item => item.type === "ability" && item.id)) sources.push({
+        allyId: link.allyId, sourceItemId: item.id!, actorId: recipient.actorId, activationSequence: link.state.sequence, ...grantSourceData(item),
+      });
+    }
+    return { sources, diagnostics };
   }
   newId(): string { return foundry.utils.randomID(); }
   async publishIndex(ledger: AllyLedger): Promise<void> {

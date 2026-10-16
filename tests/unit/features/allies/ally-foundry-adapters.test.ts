@@ -84,6 +84,24 @@ describe("protected store (native document operations doubled)", () => {
   });
 });
 describe("request and Ordem adapters", () => {
+  it("derives pilot presentation and revisions from the protected link, never the Actor mirror", async () => {
+    const gm = user("gm", true, "JournalEntry.ledger"), record = journal();
+    const ally = actor("iris", "paranormal-toolkit.ally"), beneficiary = actor("mauro"), pilot = actor("rafa");
+    ally.system = { ...createAllyProfile(), isDrone: true };
+    ally.getFlag.mockReturnValue({ revision: 99, pilotId: "forged", abilityRecipientId: "mauro", status: "inactive" } as any);
+    const ledger = createAllyLedger(); ledger.revision = 4;
+    ledger.links.push({ allyId: "iris", pilotId: "rafa", state: { beneficiaryId: "mauro", status: "active", sequence: 0, wait: null },
+      suppressedSources: [], suppressedGrants: [], diagnostic: null, notice: null });
+    record.getFlag.mockReturnValue(ledger);
+    vi.stubGlobal("game", { user: gm, users: [gm, user("player")], actors: { get: (id: string) => [ally, beneficiary, pilot].find(actor => actor.id === id) },
+      settings: { get: () => true } });
+    vi.stubGlobal("fromUuid", vi.fn(async () => record));
+    const { readAllySupportView } = await import("../../../../src/adapters/foundry/foundry-ally-request-adapter");
+    expect(await readAllySupportView(ally as any)).toMatchObject({ revision: 4, pilotId: "rafa", abilityRecipientId: "rafa", beneficiaryId: "mauro", status: "active" });
+    await submitAllyRequest(ally as any, "setPilot", { pilotId: null });
+    expect(ally.setFlag).toHaveBeenCalledWith("paranormal-toolkit", "allyRequest",
+      { id: "stable-id-000", revision: 4, action: "setPilot", pilotId: null });
+  });
   it("reads a GM view from the protected ledger instead of a forged actor presentation", async () => {
     const gm = user("gm", true, "JournalEntry.ledger");
     const record = journal(), ally = actor("iris", "paranormal-toolkit.ally");
@@ -106,6 +124,7 @@ describe("request and Ordem adapters", () => {
     record.getFlag.mockReturnValue(ledger);
     vi.stubGlobal("game", { user: gm, users: [gm, user("player")],
       actors: { get: (id: string) => id === "iris" ? ally : joao },
+      settings: { get: () => false },
       system: { version: "8.0.2" }, release: { version: "14.369" } });
     vi.stubGlobal("fromUuid", vi.fn(async () => record));
     template.system.changes[0].value = 99;
