@@ -2,7 +2,7 @@
 
 ## Resultado e limites
 
-A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. Os passivos usam Active Effects nativos em Items ability. A candidata **0.44.0** acrescenta P1/P2 (concessões e execução autorizada pelos motores existentes) e P3 (destino opcional das habilidades de drones no piloto). A implementação está em `D:/dev/paranormal-toolkit`, branch `feature/allies`, sem worktree adicional, tag, release, commit ou push nesta etapa. A seção final P3 descreve o comportamento vigente e o smoke ainda pendente.
+A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo e uma ficha baseada diretamente em ActorSheetV2. O smoke de criação, edição, habilidades, arraste e persistência foi aprovado pelo usuário no Foundry v14. Os passivos usam Active Effects nativos em Items ability. A candidata **0.44.0** acrescenta P1/P2 (concessões e execução autorizada), P3 (destino opcional no piloto) e a ficha final de três abas. A implementação está em `D:/dev/paranormal-toolkit`, branch `feature/allies`, sem worktree adicional, tag, release, commit ou push nesta etapa. A seção final de UI/UX substitui os controles e roteiros de botões das etapas anteriores.
 
 **Decisão funcional vigente:** suporte passivo automático pelo proprietário, sem aprovação de vínculo/benefícios nem registro de validação manual do ambiente. O GM executor continua automático e recebe avisos privados. As seções anteriores à seção final “Suporte automático sem aprovação” registram evidências históricas; seus gates e roteiros de aprovação foram substituídos pelo roteiro final.
 
@@ -10,11 +10,11 @@ A PoC original adicionou o subtipo `paranormal-toolkit.ally`, um perfil mínimo 
 
 A ficha permite editar nome, caminho de imagem, descrição e identificação de drone; criar, abrir, importar por arraste e remover Items nativos `ability`. A importação usa a API nativa de ActorSheetV2. Outros tipos de Item, Actors, folders e Active Effects não são aceitos pelo arraste desta ficha. Remover uma habilidade pede confirmação e revalida a permissão depois dela.
 
-A ficha não oferece botão de uso. A ficha nativa do Item continua disponível para edição; seus controles próprios pertencem ao sistema e não são desativados globalmente por esta PoC. Usar macros ou controles nativos de uso não constitui um cenário suportado desta PoC.
+A ficha oferece atalho de uso exclusivamente para uma concessão autorizada e sincronizada no destinatário. A fonte original continua sem execução pelo Toolkit; sua ficha nativa permanece disponível para edição. O comportamento vigente está na seção final de UI/UX.
 
 Na execução original da PoC, o agente não executou testes no servidor Foundry. Posteriormente, o usuário informou aprovação do smoke citado acima. A preparação e migração verificadas abaixo utilizam fontes reais do sistema com substitutos das dependências Foundry; isso **não comprova** o ciclo real de preparação, arraste, formulário, persistência, ownership no servidor ou migração global do mundo.
 
-**Recomendação atual: concluir o smoke P3 multiplayer no Foundry real antes de publicar release.** O usuário informou aprovação do fluxo principal P1/P2. Não houve herança de AgentData ou alteração global de OrdemActor. Os registros abaixo de etapas anteriores são históricos; suas recomendações de escopo e versões não substituem a seção final vigente.
+**Recomendação atual: concluir o smoke final de ficha/P3 multiplayer no Foundry real antes de publicar release.** O usuário informou aprovação do fluxo principal P1/P2. Não houve herança de AgentData ou alteração global de OrdemActor. Os registros abaixo de etapas anteriores são históricos; suas recomendações de escopo e versões não substituem a seção final vigente.
 
 ## Contratos e isolamento
 
@@ -763,3 +763,79 @@ Todos os clientes precisam carregar o mesmo bundle antes de habilitar P3: client
 8. Abrir diálogo de uso e trocar destinatário antes de confirmar: recusa sem gasto. Depois de um uso concluído, trocar piloto e executar uma ação histórica: deve atingir o target original, sem nova rolagem. Trocar GM executor ou perder conexão durante uso não pode repetir cobrança nem retomar operação incerta automaticamente; conferir os recibos pelo fluxo P1/P2.
 
 Recomendação: manter a candidata em validação até concluir esse smoke. Os testes automatizados não substituem o teste real de rede, permissões e persistência.
+
+## Ficha final de UI/UX — candidata 0.44.0 (vigente)
+
+Implementação sobre `5e0a92b`, branch `feature/allies`, em `D:/dev/paranormal-toolkit`. Sem bump, release, worktree, commit ou push. O polimento preserva o layout aprovado: retrato, nome e contexto no header permanente; abas Suporte, Habilidades e Detalhes menores e contíguas ao painel; conteúdo rolável em fundo claro, bordas discretas e vinho nos destaques. A barra nativa é escura, sem substituir seus controles. Não há faixa vertical colorida. A janela inicia em 760 × 650 e os seletores empilham em largura reduzida.
+
+### Fluxo vigente
+
+- Selecionar um Agente em Beneficiário envia uma única solicitação `setBeneficiary`, que atribui e ativa em uma transição. Selecionar Nenhum limpa o beneficiário e encerra o suporte. O fluxo normal não usa mais os botões de atribuição/ativação/desativação/salvamento. Abrir ou atualizar a ficha não envia essas operações.
+- A troca em combate mantém a retirada imediata e a próxima rodada. Limpar com suporte ativo em combate também estabelece esse limite; limpar durante espera mantém o limite anterior. Reselecionar não o contorna nem o adia. Em caso de múltiplos combates, a escolha contextual é validada pelo executor antes de aceitar a alteração.
+- Mesmo beneficiário ativo/pending não muda sequência, prioridade ou supressões. Nova ativação ou troca real conserva o reinício de supressões já aprovado. Piloto, setting e drone continuam sem reiniciá-las.
+- Piloto salva ao selecionar e Sem piloto limpa, somente com drone + homebrew. P3 permanece: passivos no beneficiário; habilidades, NEX e recursos no destinatário resolvido.
+- Suporte e Habilidades reutilizam `renderAllyAbilityList`: imagem/d20 utiliza a concessão, nome/área principal expande a descrição real enriquecida e o lápis separado abre o Item original. Botões independentes evitam ações duplas. O indicador d20 não muda de tamanho no hover. Criar, arrastar, configurar benefícios e remover com confirmação foram preservados. O menu nativo da janela mantém Reconciliar suporte para GM.
+- Nome e retrato são editados somente no header: nome confirma ao Enter/blur; retrato usa `foundry.applications.apps.FilePicker.implementation`, com escrita por campo apenas no callback. Cancelar não escreve. A imagem é revalidada contra o valor existente quando o seletor abriu, incluindo conflito e perda de ownership.
+- Detalhes contém identificação de drone e descrição. A descrição usa `<prose-mirror toggled>` nativo, HTML enriquecido fora do renderer e persistência no HTMLField existente, sanitizado pelo servidor conforme o manifest. Não há editor externo nem gravação por tecla. O renderer não escreve Documents nem resolve permissões.
+
+### Decisões do polimento
+
+`DocumentSheetV2.title` lê `CONFIG.Actor.typeLabels[type]` e localiza `TYPES.Actor.paranormal-toolkit.ally`. O arquivo de idioma tinha somente `TYPES.Actor.ally`; acrescentar a chave completa corrige o título para **Aliado: Íris**, mantendo o getter nativo e sua atualização ao renomear. Não houve mudança de subtipo nem override de título.
+
+O rich text mantém o elemento nativo inteiro enquanto estiver aberto, incluindo sua seleção e toolbar. A atualização por chave não percorre seus filhos. Quando fechado, só substitui o editor se valor ou HTML enriquecido mudarem. A baseline é capturada antes de abrir; conflito usa a escolha explícita existente. O evento público `save` confirma o campo, inclusive ao tentar salvar novamente o mesmo HTML após uma falha; `change` de controles internos não grava. Uma falha mantém o rascunho e reabre a edição. Não se usa `collaborate`: a gravação continua no fluxo por campo com detecção de conflito, sem persistência paralela pelo editor.
+
+Descrições de habilidades são enriquecidas por `TextEditor.implementation.enrichHTML`, com referência ao Item original, dados nativos e visibilidade de segredos conforme ownership. O renderer recebe apenas HTML já enriquecido; não executa rolagens nem resolve Documents. Efeitos, concessões, ledger, recibos, recursos e motores não receberam mudanças neste polimento.
+
+A rodada visual final altera `styles/ally-sheet.css`, o renderer da ficha, seus testes de estrutura, a fixture DOM existente e este relatório. A retirada da sombra externa (`0 1px 6px #0002`) não eliminou o contorno claro informado no smoke: os prints posteriores mostraram a borda e o fundo claros da raiz envolvendo a barra escura. A moldura agora usa fundo/borda da mesma cor da barra; o bege fica exclusivamente em `.window-content`, incluindo seu padding. O recorte arredondado pertence à moldura, sem um arredondamento separado na barra. A sombra externa continua desativada e as sombras dos controles permanecem intactas.
+
+O ícone permanece como imagem inteira em repouso. O mesmo d20 existente cobre 100% da imagem somente em hover/foco visível, com transição de opacidade e sem receber eventos de ponteiro. A conferência em navegador detectou a largura de 28 px herdada do Font Awesome; definir largura/altura de 100% garante cobertura dos 34 × 34 px, inclusive sob o CSS nativo. **Descrição** fica acima e fora do novo container `.ally-description-card`, que recebe borda, raio, padding e fundo claro. Somente o mesmo `<prose-mirror>` fica dentro desse card, tanto vazio quanto preenchido e durante edição. Handlers, persistência e fluxos mecânicos permanecem intactos.
+
+### Segurança, confirmação e estabilidade
+
+`setBeneficiary` aceita referência nullable explícita. Validação de Agente persistente, revisão, ownership, identidade nativa do hook, executor e reconciliação permanecem no caminho existente. O estado continua no ledger v4, sem novo campo ou migração. A espera já admitia vínculo inativo sem beneficiário.
+
+O cliente aguarda `allySupportResponse`, correlacionado por nonce, Actor e solicitante. Só aceita o evento nativo do GM executor esperado e atual, com verificação do último modificador. A resposta é feedback e nunca autorização mecânica. Há fila local, indicadores de andamento, erro de revisão e timeout/troca de executor sem reenvio automático. Reconciliação incompleta conserva a intenção e o rastreamento. Erros não simulam rollback de uma escrita já concluída.
+
+Como `setFlag` mescla objetos, uma escolha explícita de combate é limpa na próxima intenção que não a informar. Ela não pode vazar para outra troca por um campo remanescente do request anterior.
+
+O índice protegido recebe `allyId` e `sourceItemId` em suas entradas como extensão aditiva. Sua versão de roteamento e a leitura das entradas anteriores permanecem; o atalho só fica disponível com origem publicada e coerente entre os GMs. Não usa nome ou `allyGrantedAbility` editável como autoridade. Todos os clientes devem recarregar o mesmo bundle.
+
+O atalho chama `Item.roll()` apenas na concessão, no cliente solicitante. A mensagem nativa entra no mesmo gateway compartilhado e nos motores existentes. Não existe execução alternativa, chamada de roll pelo GM ou alteração dos recibos. A disponibilidade local é conservadora; a autorização final continua lendo o ledger e a origem canônica.
+
+Uma regressão dedicada reproduz a retirada da concessão durante a preparação nativa, inclusive com a flag removida: os dois listeners consomem o evento, sem encaminhá-lo ao workflow comum. Mensagens já assumidas permanecem consumidas mesmo após retirada do índice. Se a chamada nativa ultrapassar o prazo antes do hook, sua reserva conserva o bloqueio até a chamada encerrar e consome o evento tardio, sem iniciar execução silenciosa. Uma chamada já interceptada permanece bloqueada até a submissão terminar, não apenas até `Item.roll()` retornar.
+
+Abas usam as APIs nativas `TABS`, `tabGroups` e `changeTab`. Atualizações preservam o shell e fazem atualização por chave; campos, linhas e menus existentes não são recriados indiscriminadamente. O estado local guarda rascunho, baseline e erro por campo. Texto em edição não é sobrescrito por atualização remota. Conflito no mesmo campo pede escolha; cancelar mantém o rascunho e o aviso. Se o campo mudar novamente durante a escolha, nenhuma escrita é presumida. Foco, seleção de texto e rolagem são preservados, incluindo fichas de tokens do mesmo Actor original.
+
+### Arquivos desta etapa
+
+| Área | Arquivos |
+|---|---|
+| Seleção e confirmação | `src/core/allies/ally-support-state.ts`; `src/features/allies/ally-operation-authority.ts`, `ally-support-service.ts`, `ally-lifecycle-hooks.ts`; `src/adapters/foundry/foundry-ally-request-adapter.ts`. |
+| Atalho e composição | `src/features/allies/ally-granted-ability-shortcut.ts` (novo); `src/adapters/foundry/foundry-ally-item-adapter.ts`; `src/features/item-use/item-use-route.ts`; `src/main.ts`; `src/toolkit-services.ts`. |
+| Ficha e edição | `src/applications/ally-sheet.ts`; `src/applications/ally-sheet-dom.ts` (novo); `src/features/allies/ally-sheet-edit-state.ts` (novo); `src/ui/components/ally/ally-sheet.ts`; `styles/ally-sheet.css`; `src/types/foundry-shim.d.ts`. |
+| Polimento | `src/applications/ally-sheet-rich-text.ts` e `src/ui/components/ally/ally-ability-list.ts` (novos); `lang/pt-BR.json`; ajustes na ficha, renderer, atualização DOM e CSS acima. |
+| Regressões novas | `tests/unit/features/allies/ally-direct-support.test.ts`, `ally-support-requests.test.ts`, `ally-granted-ability-shortcut.test.ts`, `ally-sheet-edit-state.test.ts`; `tests/browser/ally-sheet-dom.fixture.ts`. |
+| Regressões atualizadas | Testes de estado, Actor, resolução de origem, grants, renderer e `tests/reference/ordem-ally-compatibility.test.ts`. Este último deixou de carregar `d20-pool.mjs`, ausente e não importado pelo OrdemActor do checkout local atual; nenhuma fonte do sistema foi alterada. |
+| Regressões do polimento | `tests/reference/foundry-ally-sheet-title.test.ts`, `tests/browser/ally-sheet-native-editor.fixture.ts` (novos); testes de Actor, renderer e fixture DOM atualizados. |
+| Documentação | `README.md`, `docs/ROADMAP.md` e este relatório. |
+
+### Validação e limites
+
+`npm run check`: **842 testes em 98 arquivos**, com referências locais habilitadas, typecheck e build aprovados. Build separado e `git diff --check` aprovados. Foundry **14.369** e Ordem **8.0.2**, checkout `8ee2c41`, usados como referências de código, com banco/rede/dependências substituídos. O teste de título executa o getter real de DocumentSheetV2 e a classe Localization real. Motores, DataModel, adapters passivos e repositórios irmãos não foram modificados. O Vite mantém somente o aviso já conhecido de importação estática/dinâmica de `AbilityUseApplication`.
+
+Uma prévia isolada em Chrome headless carregou os renderers/CSS e a fixture de DOM real: **27 verificações aprovadas**, incluindo rascunho focado, seleção, aba, rolagem, header, linhas compartilhadas por ID, expansão, menu aberto e perda de ownership. O ajuste final acrescenta ausência de sombra externa, moldura/barra da mesma cor, corpo bege separado, recorte dos cantos somente na moldura, imagem inteira em repouso, overlay nas mesmas dimensões, foco sem deslocamento, retorno à imagem, título fora/acima do card vazio delimitado e HTML formatado dentro dele. Outras **10 verificações** exercitaram o elemento `<prose-mirror>` real do v14, seus eventos e DOM: abertura sem escrita, edição durante refresh remoto, seleção, save único, conflito, repetição explícita de save com o mesmo HTML, retorno ao HTML formatado, estabilidade sem mudanças e perda de permissão. Nessa fixture, TextEditor/ProseMirror e lookup do Document foram substituídos; ela não comprova a toolbar completa nem persistência de servidor. Layout conferido em 760 px, 480 px, Habilidades expandida e Detalhes, com fontes/ícones locais do Foundry. As fixtures em `tests/browser/` não adicionam dependência de DOM aos testes Node.
+
+Essa prévia usa dados fictícios e não é um servidor Foundry. **Nenhum Actor ou vínculo do mundo real foi resetado pelo agente.** Persistência multiplayer, diálogos nativos, seletor de arquivo e permissões reais ainda exigem smoke. Não há promessa de transação atômica contra outros módulos ou edições externas.
+
+### Reset e smoke final — mundo descartável
+
+1. Servir o módulo de `D:/dev/paranormal-toolkit` após o build e recarregar os quatro clientes, com dois jogadores e dois GMs. Não apagar o Journal nem flags manualmente. A versão continua 0.44.0.
+2. Encerrar os Aliados de teste escolhendo **Nenhum**. Conferir que suas projeções e concessões registradas desapareceram, incluindo cópias com flags adulteradas. Se houver falha, manter os registros e usar Reconciliar suporte pelo GM; não considerar o reset concluído até limpar os inventários. Fontes excluídas seguem a limpeza existente. Recibos, cards, contadores e marcadores contra replay devem permanecer intactos.
+3. Reconfigurar os vínculos. Não há placeholder de retomada nem migração para antigos vínculos inativos com beneficiário salvo; esses registros de desenvolvimento são descartáveis. Selecionar Mauro deve ativar diretamente; trocar fora de combate deve remover/aplicar; Nenhum deve retirar tudo.
+4. Em combate, trocar e depois limpar/reselecionar na mesma rodada: não aplicar antes do limite estabelecido. Testar rodada seguinte, encerramento de combate e ambiguidade entre combates.
+5. Com Íris drone + homebrew, escolher Rafa como piloto. Conferir passivos somente em Mauro, habilidades/dados/NEX e PE/PD em Rafa. Trocar/limpar piloto e alternar política mantêm as regras P3 e supressões existentes.
+6. Em ambas as abas, clicar no nome expande/recolhe a descrição; o lápis abre somente o Item original. Em repouso, o ícone mostra somente a imagem; hover/foco revela d20 em toda a área, sem deslocamento. Usar pelo ícone com proprietário do destinatário: um diálogo nesse cliente, uma execução e uma cobrança. Cancelar não gasta. Testar os dois motores, clique repetido e ausência de ownership/GM. Menu permite benefícios e remoção confirmada; arraste e criação continuam funcionando.
+7. Alternar abas, diminuir janela e operar por teclado. Conferir **Aliado: Íris**, barra nativa escura sem contorno claro nos cantos/topo, corpo bege e abas contíguas ao painel. Editar o nome pelo header e conferir título atualizado; trocar/cancelar retrato no seletor nativo. Detalhes não duplica identidade: conferir **Descrição acima e fora do card**, com borda/padding/fundo somente no texto vazio ou preenchido; marcar drone e editar descrição pelo lápis/conteúdo, usar negrito, listas e links, concluir pelo save nativo e reabrir/recarregar. O editor e a toolbar permanecem no mesmo card. Manter texto/foco/seleção/rolagem enquanto o GM altera suporte e fontes. Editar o mesmo campo em dois clientes: escolha explícita, cancelamento conserva o texto e falha não envia o formulário inteiro. Após falha de gravação, tentar concluir novamente sem alterar o texto; deve persistir uma vez.
+8. Repetir pela ficha do diretório e tokens vinculados/não vinculados. Testar reload, revisão concorrente, perda de conexão e troca de executor. Conferir supressões, efeitos externos e ações históricas nos alvos originais. Nenhum recibo incerto pode ser repetido automaticamente.
+
+Recomendação: manter a candidata sem release até concluir o smoke final no Foundry.

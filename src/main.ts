@@ -5,7 +5,7 @@ import { SystemGuard } from "./core/system-guard";
 import { registerDebugOutputSettings } from "./debug/output/debug-output-settings";
 import { registerAllyLifecycleHooks } from "./features/allies/ally-lifecycle-hooks";
 import { registerAllySettings } from "./features/allies/ally-settings";
-import { refreshAllySheets } from "./applications/ally-sheet";
+import { AllySheet, refreshAllySheets } from "./applications/ally-sheet";
 import { registerAllyActor } from "./features/allies/ally-registration";
 import { registerAllyEffectSheetIntegration } from "./features/allies/ally-effect-sheet-integration";
 import { registerAbilityUseIntegration } from "./features/abilities/ability-use-integration";
@@ -42,6 +42,10 @@ Hooks.once("ready", () => {
   }
 
   services = createToolkitServices();
+  services.allySupportRequests.register();
+  services.allySupportRequests.onPendingChange = actorId => { void refreshAllySheets(actorId); };
+  services.allyShortcuts.onPendingChange = allyId => { void refreshAllySheets(allyId); };
+  AllySheet.configureServices({ support: services.allySupportRequests, shortcuts: services.allyShortcuts });
   services.itemUseIntegration.registerStrategies();
   registerAbilityUseIntegration(
     services.resources,

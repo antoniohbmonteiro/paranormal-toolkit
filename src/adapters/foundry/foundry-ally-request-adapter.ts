@@ -4,7 +4,7 @@ import { resolveFoundryAllyActor, reportAllyActorResolution } from "./foundry-al
 import type { AllyCombatSnapshot } from "../../core/allies/ally-support-state";
 import { getActorItems } from "../../features/automation/actor-item-resolver";
 import { ALLY_TYPE, readAllyAbility } from "../../features/allies/config/ally-ability-config";
-import { electAllyExecutor, readAllyRequest, type AllyRequest, type AllyUser } from "../../features/allies/ally-operation-authority";
+import { AllyCombatSelectionRequired, electAllyExecutor, readAllyRequest, type AllyRequest, type AllyUser } from "../../features/allies/ally-operation-authority";
 import type { AllyLedger, AllySupportEnvironment } from "../../features/allies/ally-support-service";
 import type { AllySupportChange } from "../../features/allies/ally-support-notifications";
 import { publishAllySupportChange } from "./foundry-ally-notifications";
@@ -15,6 +15,10 @@ import { FoundryAllyItemAdapter } from "./foundry-ally-item-adapter";
 
 export const ALLY_REQUEST_FLAG = "allyRequest";
 export const ALLY_PRESENTATION_FLAG = "allySupport";
+export const ALLY_RESPONSE_FLAG = "allySupportResponse";
+export type AllyRequestFields = { beneficiaryId?: string | null; combatId?: string; pilotId?: string | null };
+export type AllySupportReply = { id: string; userId: string; ok: boolean; view: AllySupportPresentation;
+  error?: string; combats?: { id: string; name: string }[] };
 
 type ChangedProperty = { found: false } | { found: true; value: unknown };
 
@@ -101,8 +105,12 @@ export async function readAllySupportView(actor: Actor): Promise<AllySupportPres
   }
 }
 export async function submitAllyRequest(
-  actor: Actor, action: AllyRequest["action"], fields: { beneficiaryId?: string; combatId?: string; pilotId?: string | null } = {},
+  actor: Actor, action: AllyRequest["action"], fields: AllyRequestFields = {},
 ): Promise<void> {
+  const submission = await prepareAllyRequest(actor, action, fields);
+  await submission.actor.setFlag(MODULE_ID, ALLY_REQUEST_FLAG, submission.request);
+}
+async function prepareAllyRequest(actor: Actor, action: AllyRequest["action"], fields: AllyRequestFields) {
   const resolved = resolveFoundryAllyActor(actor);
   if (!resolved) { reportAllyActorResolution(actor); throw new Error("Aliado inválido."); }
   if (!game.user || !actor.canUserModify(game.user, "update") || !resolved.canUserModify(game.user, "update")) {
@@ -115,9 +123,69 @@ export async function submitAllyRequest(
   if (!readAllyRequest({ id: "request-validation", revision: view.revision, action, ...fields })) {
     throw new Error("Solicitação de suporte inválida.");
   }
-  await actor.setFlag(MODULE_ID, ALLY_REQUEST_FLAG, {
+  const previous = actor.getFlag(MODULE_ID, ALLY_REQUEST_FLAG) as { combatId?: unknown } | undefined;
+  return { actor, request: {
     id: foundry.utils.randomID(), revision: view.revision, action, ...fields,
-  });
+    // setFlag merges objects; an explicit choice belongs only to this intent.
+    ...(fields.combatId === undefined && previous?.combatId !== undefined ? { combatId: "" } : {}),
+  } };
+}
+
+export class FoundryAllySupportRequests {
+  private registered = false;
+  private queue: Promise<unknown> = Promise.resolve();
+  private readonly pendingActors = new Map<string, number>();
+  onPendingChange?: (actorId: string) => void;
+  isPending(actorId: string): boolean { return this.pendingActors.has(actorId); }
+  private readonly waiting = new Map<string, { actorId: string; userId: string; executorId: string;
+    resolve(reply: AllySupportReply): void; reject(error: Error): void }>();
+  register(): void {
+    if (this.registered) return;
+    this.registered = true;
+    Hooks.on("updateActor", (actor: Actor, changes: Record<string, unknown>, _options: unknown, userId: string) => {
+      const changed = readChangedProperty(changes, ["flags", MODULE_ID, ALLY_RESPONSE_FLAG, "id"]);
+      if (!changed.found || typeof changed.value !== "string" || actor.isToken || game.actors.get?.(actor.id!) !== actor) return;
+      const pending = this.waiting.get(changed.value);
+      const reply = actor.getFlag(MODULE_ID, ALLY_RESPONSE_FLAG) as AllySupportReply | undefined;
+      if (!pending || actor.id !== pending.actorId || userId !== pending.executorId || userId !== electAllyExecutor(allyUsers())
+        || (actor._stats?.lastModifiedBy && actor._stats.lastModifiedBy !== userId)
+        || reply?.id !== changed.value || reply.userId !== pending.userId || typeof reply.ok !== "boolean" || !reply.view) return;
+      pending.resolve(reply);
+    });
+    const checkExecutor = () => {
+      const executorId = electAllyExecutor(allyUsers());
+      for (const pending of this.waiting.values()) if (pending.executorId !== executorId) {
+        pending.reject(new Error("O GM executor mudou. Confira o suporte atual antes de tentar novamente."));
+      }
+    };
+    Hooks.on("userConnected", checkExecutor); Hooks.on("updateUser", checkExecutor);
+  }
+  submit(actor: Actor, action: AllyRequest["action"], fields: AllyRequestFields = {}): Promise<AllySupportReply> {
+    this.register();
+    const actorId = actor.id!;
+    this.pendingActors.set(actorId, (this.pendingActors.get(actorId) ?? 0) + 1); this.onPendingChange?.(actorId);
+    const work = async () => {
+      const submission = await prepareAllyRequest(actor, action, fields);
+      const userId = game.user!.id!, executorId = electAllyExecutor(allyUsers())!;
+      return new Promise<AllySupportReply>((resolve, reject) => {
+        const id = submission.request.id;
+        const cleanup = () => { clearTimeout(timeout); this.waiting.delete(id); };
+        const timeout = setTimeout(() => {
+          cleanup(); reject(new Error("Sem confirmação do GM. Confira o suporte atual; a solicitação não será repetida automaticamente."));
+        }, 120_000);
+        this.waiting.set(id, { actorId: submission.actor.id!, userId, executorId,
+          resolve: reply => { cleanup(); resolve(reply); }, reject: error => { cleanup(); reject(error); } });
+        void submission.actor.setFlag(MODULE_ID, ALLY_REQUEST_FLAG, submission.request).catch(error => { cleanup(); reject(error); });
+      });
+    };
+    const pending = this.queue.then(work).finally(() => {
+      const remaining = (this.pendingActors.get(actorId) ?? 1) - 1;
+      if (remaining) this.pendingActors.set(actorId, remaining); else this.pendingActors.delete(actorId);
+      this.onPendingChange?.(actorId);
+    });
+    this.queue = pending.catch(() => undefined);
+    return pending;
+  }
 }
 function snapshot(combat: AllyCombatLike): AllyCombatSnapshot {
   return { id: combat.id, started: combat.started, round: combat.round ?? 0 };
@@ -172,7 +240,7 @@ export class FoundryAllyEnvironment implements AllySupportEnvironment {
       if (!selected) throw new Error("O combate escolhido não envolve o suporte.");
       return snapshot(selected);
     }
-    if (combats.length > 1) throw new Error("Há mais de um combate envolvido. Selecione o combate para a troca.");
+    if (combats.length > 1) throw new AllyCombatSelectionRequired(combats.map(combat => ({ id: combat.id, name: combat.name ?? combat.id })));
     return combats[0] ? snapshot(combats[0]) : null;
   }
   combat(id: string): AllyCombatSnapshot | null {

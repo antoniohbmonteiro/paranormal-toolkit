@@ -77,12 +77,9 @@ describe.skipIf(!referenceRoot)("ally compatibility with real Ordem sources (Fou
     };
     const helpers = loadReference("module/helpers/actor-calculations.mjs", globals);
     const unrelatedClass = { default: class {} };
-    const die = loadReference("module/dice/d20-die.mjs", globals);
-    const pool = loadReference("module/dice/d20-pool.mjs", globals, { "./d20-die.mjs": die });
     ({ OrdemActor } = loadReference("module/documents/actor.mjs", globals, {
       "../helpers/actor-calculations.mjs": helpers,
       "../dice/basic-roll.mjs": unrelatedClass,
-      "../dice/d20-pool.mjs": pool,
       "../applications/skill-tool-configuration-dialog.mjs": unrelatedClass,
       "../applications/attribute-configuration-dialog.mjs": unrelatedClass,
     }));

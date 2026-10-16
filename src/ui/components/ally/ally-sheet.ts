@@ -1,75 +1,98 @@
 import type { AllyProfile } from "../../../core/allies/ally-profile";
-import { escapeHtml } from "../../rendering/escape-html";
+import type { AllyEditField, AllyFieldDraft } from "../../../features/allies/ally-sheet-edit-state";
+import { escapeHtml as esc } from "../../rendering/escape-html";
+import { renderAllyAbilityList, type AllyAbilityRow } from "./ally-ability-list";
 
+export type AllyTab = "support" | "abilities" | "details";
 export type AllySheetViewModel = {
-  name: string;
-  image: string;
-  profile: AllyProfile | null;
-  editable: boolean;
-  abilities: { id: string; name: string }[];
+  name: string; image: string; profile: AllyProfile | null; editable: boolean;
+  idPrefix?: string;
+  activeTab?: AllyTab;
+  editingName?: boolean;
+  documentUUID?: string;
+  descriptionHTML?: string;
+  fields?: Partial<Record<AllyEditField, AllyFieldDraft>>;
+  notice?: string | null;
+  abilities: AllyAbilityRow[];
   support?: {
     revision: number; beneficiaryId: string | null; status: string; waitRound: number | null;
-    diagnostic: string | null; isGM: boolean; available?: boolean;
+    diagnostic: string | null; isGM: boolean; available?: boolean; busy?: boolean;
     pilotId?: string | null; abilityRecipientId?: string | null; pilotAbilitiesEnabled?: boolean;
-    beneficiaries: { id: string; name: string }[]; combats: { id: string; name: string }[];
+    beneficiaries: { id: string; name: string }[]; combats?: { id: string; name: string }[];
   };
 };
 
-export function renderAllySheet(model: AllySheetViewModel): string {
-  const editable = model.editable && model.profile !== null;
-  const disabled = editable ? "" : " disabled";
-  const abilities = model.abilities.map((item) => `
-    <li data-item-id="${escapeHtml(item.id)}">
-      <span>${escapeHtml(item.name)}</span>
-      <button type="button" data-action="openAbility" data-item-id="${escapeHtml(item.id)}">Abrir</button>
-      ${editable ? `<button type="button" data-action="configureBenefits" data-item-id="${escapeHtml(item.id)}">Benefícios</button><button type="button" data-action="removeAbility" data-item-id="${escapeHtml(item.id)}">Remover</button>` : ""}
-    </li>`).join("");
-  return `
-    <p class="ally-poc-notice">Benefícios passivos e habilidades concedidas pelo suporte de Aliados.</p>
-    ${model.profile === null ? '<p role="alert">Dados do Aliado inválidos ou de versão não suportada. A edição foi bloqueada para preservar os dados.</p>' : ""}
-    <fieldset${disabled}>
-      <legend>Identificação</legend>
-      <label>Nome <input name="name" value="${escapeHtml(model.name)}" required></label>
-      <label>Caminho da imagem <input name="img" value="${escapeHtml(model.image)}"></label>
-      <label><input type="checkbox" name="system.isDrone"${model.profile?.isDrone ? " checked" : ""}> É um Drone</label>
-      <label>Descrição <textarea name="system.description" rows="6">${escapeHtml(model.profile?.description ?? "")}</textarea></label>
-      <button type="submit">Salvar</button>
-    </fieldset>
-    ${renderSupport(model)}
-    <section aria-label="Habilidades">
-      <h2>Habilidades</h2>
-      ${editable ? '<button type="button" data-action="createAbility">Criar habilidade</button>' : ""}
-      <p>Arraste Items do tipo habilidade para esta ficha.</p>
-      ${abilities ? `<ul>${abilities}</ul>` : "<p>Nenhuma habilidade adicionada.</p>"}
-    </section>`;
+function supportLabel(model: AllySheetViewModel): string {
+  const support = model.support;
+  if (!support || !support.beneficiaryId || support.status === "inactive") return "Sem suporte";
+  const name = support.beneficiaries.find(actor => actor.id === support.beneficiaryId)?.name ?? "Agente indisponível";
+  if (support.diagnostic?.startsWith("Reconciliação interrompida")) return `Suporte com pendência — ${name}`;
+  return support.status === "pending" ? `Aguardando rodada ${support.waitRound ?? "—"} — ${name}` : `Ajudando ${name}`;
 }
-
+function image(path: string | undefined, name: string, className = ""): string {
+  return `<img class="${className}" src="${esc(path || "icons/svg/mystery-man.svg")}" alt="${esc(name)}" loading="lazy">`;
+}
+function abilities(model: AllySheetViewModel, tab: AllyTab): string {
+  return renderAllyAbilityList(model.abilities, { prefix: `${model.idPrefix ?? "ally"}-${tab}`, editable: model.editable && model.profile !== null });
+}
+function fieldFeedback(model: AllySheetViewModel, field: AllyEditField): string {
+  return `<small class="ally-field-feedback" data-field-feedback="${field}" role="status">${esc(model.fields?.[field]?.error ?? (model.fields?.[field]?.saving ? "Salvando…" : ""))}</small>`;
+}
+function agentOptions(model: AllySheetViewModel, selected: string | null | undefined, empty: string): string {
+  const agents = model.support?.beneficiaries ?? [];
+  return `<option value="">${empty}</option>${selected && !agents.some(actor => actor.id === selected)
+    ? `<option value="${esc(selected)}" selected>Agente ausente ou inválido</option>` : ""}${agents.map(actor =>
+    `<option value="${esc(actor.id)}"${actor.id === selected ? " selected" : ""}>${esc(actor.name)}</option>`).join("")}`;
+}
 function renderSupport(model: AllySheetViewModel): string {
   const support = model.support;
-  if (!support) return "";
-  const enabled = model.editable && support.available !== false;
-  const names: Record<string, string> = { inactive: "Inativo", active: "Ativo", pending: "Aguardando rodada" };
-  const pilotMode = support.pilotAbilitiesEnabled && model.profile?.isDrone;
-  const recipient = support.beneficiaries.find(actor => actor.id === support.abilityRecipientId);
-  return `<section aria-label="Suporte">
-    <h2>Suporte</h2>
-    <p>Estado: ${escapeHtml(names[support.status] ?? "Desconhecido")}${support.waitRound !== null ? ` — rodada ${escapeHtml(String(support.waitRound))}` : ""}</p>
-    ${support.diagnostic ? `<p role="status">${escapeHtml(support.diagnostic)}</p>` : ""}
-    <p>Destino das habilidades: ${recipient ? escapeHtml(recipient.name) : "Nenhum Agente válido"}${support.status !== "active" ? " (suporte não está ativo)" : ""}</p>
-    ${pilotMode && enabled ? `<label>Piloto <select data-ally-pilot><option value="">Sem piloto</option>
-      ${support.pilotId && !support.beneficiaries.some(actor => actor.id === support.pilotId) ? `<option value="${escapeHtml(support.pilotId)}" selected>Piloto ausente ou inválido</option>` : ""}
-      ${support.beneficiaries.map(actor => `<option value="${escapeHtml(actor.id)}"${actor.id === support.pilotId ? " selected" : ""}>${escapeHtml(actor.name)}</option>`).join("")}
-    </select></label><button type="button" data-action="savePilot">Salvar piloto</button>` : ""}
-    ${enabled ? `<label>Beneficiário <select data-ally-beneficiary>
-      <option value="">Selecione um Agente</option>
-      ${support.beneficiaries.map(actor => `<option value="${escapeHtml(actor.id)}"${actor.id === support.beneficiaryId ? " selected" : ""}>${escapeHtml(actor.name)}</option>`).join("")}
-    </select></label>
-    <label>Combate para troca <select data-ally-combat><option value="">Resolver automaticamente</option>
-      ${support.combats.map(combat => `<option value="${escapeHtml(combat.id)}">${escapeHtml(combat.name)}</option>`).join("")}
-    </select></label>
-    <button type="button" data-action="assignSupport">Atribuir / trocar</button>
-    <button type="button" data-action="activateSupport">Ativar</button>
-    <button type="button" data-action="deactivateSupport">Desativar</button>
-    ${support.isGM ? '<button type="button" data-action="reconcileSupport">Reconciliar</button>' : ""}` : ""}
+  const disabled = !model.editable || !model.profile || support?.available === false || support?.busy ? " disabled" : "";
+  return `<section class="ally-section" aria-label="Dados de suporte">
+    <h2>Dados de suporte</h2><div class="ally-support-fields" data-ally-region="support-fields">
+      <label>Beneficiário<select data-ally-beneficiary aria-label="Beneficiário"${disabled}>${agentOptions(model, support?.beneficiaryId, "Nenhum")}</select></label>
+      ${support?.pilotAbilitiesEnabled && model.profile?.isDrone ? `<label>Piloto<select data-ally-pilot aria-label="Piloto"${disabled}>${agentOptions(model, support.pilotId, "Sem piloto")}</select></label>` : ""}
+    </div>
+    <p class="ally-feedback" role="status" aria-live="polite" data-ally-region="feedback">${esc(support?.busy ? "Atualizando suporte…" : model.notice ?? support?.diagnostic ?? "")}</p>
+    <div class="ally-summary-section"><h2>Resumo das habilidades</h2>${abilities(model, "support")}</div>
   </section>`;
+}
+function renderAbilities(model: AllySheetViewModel): string {
+  const editable = model.editable && model.profile !== null;
+  return `<section class="ally-section" aria-label="Habilidades do Aliado">
+    <div class="ally-section-heading"><h2>Habilidades</h2>${editable ? '<button type="button" class="ally-add" data-action="createAbility"><i class="fa-solid fa-plus" aria-hidden="true"></i> Criar habilidade</button>' : ""}</div>
+    ${abilities(model, "abilities")}
+    ${editable ? '<p class="ally-hint">Arraste habilidades para esta ficha para adicioná-las.</p>' : ""}
+  </section>`;
+}
+function renderDetails(model: AllySheetViewModel): string {
+  const disabled = model.editable && model.profile !== null ? "" : " disabled";
+  const value = (field: AllyEditField, fallback: string | boolean) => model.fields?.[field]?.value ?? fallback;
+  return `<section class="ally-section ally-details" aria-label="Detalhes do Aliado">
+    <label class="ally-drone"><input type="checkbox" name="system.isDrone" data-ally-field="system.isDrone"${value("system.isDrone", model.profile?.isDrone ?? false) ? " checked" : ""}${disabled}> É um Drone${fieldFeedback(model, "system.isDrone")}</label>
+    <div class="ally-description" data-ally-region="description"><h2>Descrição</h2>
+      <div class="ally-description-card" data-ally-region="description-card">
+        <prose-mirror class="content-sized" name="system.description" data-ally-field="system.description" data-document-uuid="${esc(model.documentUUID ?? "")}" value="${esc(String(value("system.description", model.profile?.description ?? "")))}" aria-label="Descrição do Aliado" toggled${disabled}>${model.descriptionHTML ?? ""}</prose-mirror>
+      </div>
+      ${fieldFeedback(model, "system.description")}
+    </div>
+  </section>`;
+}
+export function renderAllySheet(model: AllySheetViewModel): string {
+  const active = model.activeTab ?? "support";
+  const prefix = esc(model.idPrefix ?? "ally");
+  const label = supportLabel(model);
+  const status = model.support?.status === "active" && !model.support.diagnostic ? "active" : model.support?.status === "pending" ? "pending" : "inactive";
+  const editable = model.editable && model.profile !== null;
+  const editingName = editable && model.editingName;
+  return `<div class="ally-sheet-shell">
+    <header class="ally-header" data-ally-region="header"><div class="ally-portrait-container"><button type="button" class="ally-portrait-button" data-action="editAllyImage" aria-label="Alterar retrato do Aliado" title="Alterar retrato"${editable ? "" : " disabled"}>${image(model.image, model.name, "ally-portrait")}</button>${fieldFeedback(model, "img")}</div>
+      <div><p class="ally-eyebrow">Aliado</p><h1><button type="button" class="ally-name-display" data-action="editAllyName" title="Editar nome"${editingName ? " hidden" : ""}${editable ? "" : " disabled"}>${esc(model.name)}</button><input class="ally-name-input" aria-label="Nome do Aliado" name="name" data-ally-field="name" value="${esc(String(model.fields?.name?.value ?? model.name))}" required${editingName ? "" : " hidden"}${editable ? "" : " disabled"}></h1>${fieldFeedback(model, "name")}<p class="ally-kind">Aliado${model.profile?.isDrone ? " • Drone" : ""}</p>
+        <p class="ally-support-context" data-status="${status}"><span aria-hidden="true"></span>${esc(label)}</p></div>
+    </header>
+    <nav class="tabs ally-tabs" role="tablist" aria-label="Ficha do Aliado">${([
+      ["support", "Suporte", "fa-shield-halved"], ["abilities", "Habilidades", "fa-bolt"], ["details", "Detalhes", "fa-file-lines"],
+    ] as const).map(([tab, text, icon]) => `<button type="button" class="${active === tab ? "active" : ""}" data-action="changeAllyTab" data-group="ally" data-tab="${tab}" role="tab" aria-selected="${active === tab}" tabindex="${active === tab ? "0" : "-1"}" aria-controls="${prefix}-${tab}"><i class="fa-solid ${icon}" aria-hidden="true"></i> ${text}</button>`).join("")}</nav>
+    ${model.profile === null ? '<p class="ally-invalid" role="alert" data-ally-region="invalid">Perfil inválido. A edição foi bloqueada para preservar os dados.</p>' : ""}
+    <div class="ally-content">${(["support", "abilities", "details"] as const).map(tab => `<div class="tab ally-tab ${active === tab ? "active" : ""}" data-tab="${tab}" data-group="ally" id="${prefix}-${tab}" role="tabpanel" aria-label="${tab === "support" ? "Suporte" : tab === "abilities" ? "Habilidades" : "Detalhes"}">${tab === "support" ? renderSupport(model) : tab === "abilities" ? renderAbilities(model) : renderDetails(model)}</div>`).join("")}</div>
+  </div>`;
 }

@@ -1,5 +1,7 @@
 import { OrdemDamageAdapter } from "./adapters/ordem/ordem-damage-adapter";
 import { FoundryAllyAbilityRequests } from "./adapters/foundry/foundry-ally-ability-request-adapter";
+import { FoundryAllySupportRequests } from "./adapters/foundry/foundry-ally-request-adapter";
+import { AllyGrantedAbilityShortcut } from "./features/allies/ally-granted-ability-shortcut";
 import { AbilityUseWorkflow } from "./features/abilities/ability-use-workflow";
 import { OrdemResourceAdapter } from "./adapters/ordem/ordem-resource-adapter";
 import { OrdemResistanceAdapter } from "./adapters/ordem/ordem-resistance-roll-adapter";
@@ -33,6 +35,8 @@ import { ChatMessageService } from "./ui/chat-message-service";
 
 export type ToolkitServices = {
   allyUses: FoundryAllyAbilityRequests;
+  allySupportRequests: FoundryAllySupportRequests;
+  allyShortcuts: AllyGrantedAbilityShortcut;
   abilityWorkflow: AbilityUseWorkflow;
   ordem: OrdemSystemAdapter;
   resourceAdapter: OrdemResourceAdapter;
@@ -60,6 +64,8 @@ export type ToolkitServices = {
 
 export function createToolkitServices(): ToolkitServices {
   const allyUses = new FoundryAllyAbilityRequests();
+  const allySupportRequests = new FoundryAllySupportRequests();
+  const allyShortcuts = new AllyGrantedAbilityShortcut(allyUses.gateway);
   const resourceAdapter = new OrdemResourceAdapter();
   const resources = new ResourceEngine(resourceAdapter);
   const damage = new DamageEngine(new OrdemDamageAdapter());
@@ -119,6 +125,8 @@ export function createToolkitServices(): ToolkitServices {
 
   return {
     allyUses,
+    allySupportRequests,
+    allyShortcuts,
     abilityWorkflow: new AbilityUseWorkflow(resources, resourceAdapter),
     ordem,
     resourceAdapter,

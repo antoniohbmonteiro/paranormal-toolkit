@@ -50,7 +50,7 @@ describe("canonical Allies support origin (documents doubled)", () => {
     const support = await readAllySupportView(token as any);
     const html = renderAllySheet({ name: "Íris", image: "", profile: null, editable: true, abilities: [],
       support: { ...support, isGM: false, beneficiaries: [{ id: "joao", name: "João" }], combats: [] } });
-    expect(html).toContain('data-action="assignSupport"');
+    expect(html).toContain('data-ally-beneficiary');
     await submitAllyRequest(token as any, "activate");
     expect(actor.setFlag).toHaveBeenCalledTimes(1); expect(token.setFlag).not.toHaveBeenCalled();
   });

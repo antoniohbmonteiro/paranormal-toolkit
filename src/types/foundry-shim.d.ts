@@ -263,9 +263,16 @@ declare const ChatMessage: {
 declare class ApplicationV2 {
   static DEFAULT_OPTIONS: Record<string, unknown>;
   static instances(): IterableIterator<ApplicationV2>;
+  static TABS: Record<string, unknown>;
+  id: string;
+  element: HTMLElement;
+  tabGroups: Record<string, string>;
   constructor(options?: Record<string, unknown>);
   render(options?: Record<string, unknown>): Promise<this> | this;
   close(options?: Record<string, unknown>): Promise<this> | this;
+  changeTab(tab: string, group: string, options?: Record<string, unknown>): void;
+  _onRender(context: object, options: Record<string, unknown>): Promise<void>;
+  _getHeaderControls(): Record<string, unknown>[];
 }
 
 declare class TypeDataModel {
@@ -287,12 +294,14 @@ declare const foundry: {
   documents: { JournalEntry: { create(data: Record<string, unknown>): Promise<AllyJournalLike | null> } };
   applications: {
     sheets: { ActorSheetV2: typeof ActorSheetV2 };
-    apps: { DocumentSheetConfig: {
+    ux: { TextEditor: { implementation: { enrichHTML(content: string, options?: Record<string, unknown>): Promise<string> } } };
+    apps: { FilePicker: { implementation: new (options: Record<string, unknown>) => { browse(): Promise<unknown> } }; DocumentSheetConfig: {
       registerSheet(documentClass: typeof Actor, scope: string, sheetClass: typeof ActorSheetV2, options: Record<string, unknown>): void;
     } };
     api: {
       ApplicationV2: typeof ApplicationV2;
-      DialogV2: { confirm(options: Record<string, unknown>): Promise<boolean | null> };
+      DialogV2: { confirm(options: Record<string, unknown>): Promise<boolean | null>;
+        wait(options: Record<string, unknown>): Promise<unknown>; prompt(options: Record<string, unknown>): Promise<unknown> };
     };
   };
   abstract: { TypeDataModel: typeof TypeDataModel };
@@ -317,6 +326,7 @@ declare class Roll {
 }
 
 declare class Actor {
+  getRollData?(): Record<string, unknown>;
   documentName: "Actor";
   _stats?: { lastModifiedBy?: string | null };
   id: string | null;
@@ -342,6 +352,8 @@ declare class Actor {
 }
 
 declare class Item {
+  getRollData?(): Record<string, unknown>;
+  img?: string;
   documentName: "Item";
   sheet: { render(options: Record<string, unknown>): Promise<unknown> | unknown };
   id: string | null;

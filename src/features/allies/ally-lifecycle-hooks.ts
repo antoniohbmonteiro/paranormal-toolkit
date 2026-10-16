@@ -1,5 +1,6 @@
 import { FoundryAllyStore } from "../../adapters/foundry/foundry-ally-store";
-import { FoundryAllyEnvironment, readChangedProperty, readUpdatedAllyRequest, ALLY_PRESENTATION_FLAG } from "../../adapters/foundry/foundry-ally-request-adapter";
+import { FoundryAllyEnvironment, readChangedProperty, readUpdatedAllyRequest, readAllySupportView, ALLY_PRESENTATION_FLAG, ALLY_RESPONSE_FLAG } from "../../adapters/foundry/foundry-ally-request-adapter";
+import { AllyCombatSelectionRequired } from "./ally-operation-authority";
 import { OrdemAllyBenefitAdapter } from "../../adapters/ordem/ordem-ally-benefit-adapter";
 import { AllyReconciliationService } from "./ally-reconciliation-service";
 import { AllySupportService } from "./ally-support-service";
@@ -42,7 +43,9 @@ export function registerAllyLifecycleHooks(dependencies?: ToolkitServices, refre
     const droneChanged = readChangedProperty(changes, ["system", "isDrone"]).found;
     if (readChangedProperty(changes, ["type"]).found) { reconcile(); refresh(); }
     else if (actor.type === ALLY_TYPE && !actor.isToken && droneChanged) reconcile();
-    if (actor.type === ALLY_TYPE && (droneChanged || ["revision", "pilotId", "abilityRecipientId", "diagnostic", "beneficiaryId", "status"]
+    if (actor.type === "agent" && readChangedProperty(changes, ["name"]).found) refresh();
+    if (actor.type === ALLY_TYPE && (droneChanged || ["name", "img", "system.description"].some(key => readChangedProperty(changes, key.split(".")).found)
+      || ["revision", "pilotId", "abilityRecipientId", "diagnostic", "beneficiaryId", "status"]
       .some(key => readChangedProperty(changes, ["flags", MODULE_ID, ALLY_PRESENTATION_FLAG, key]).found))) {
       refresh((actor.isToken ? actor.token?.baseActor?.id : actor.id) ?? undefined);
     }
@@ -55,13 +58,22 @@ export function registerAllyLifecycleHooks(dependencies?: ToolkitServices, refre
     if (seen.has(request.id)) return;
     seen.add(request.id);
     seenRequests.set(actor, seen);
-    return service.process(actor.id!, request, userId).catch(report);
+    return service.process(actor.id!, request, userId).then(async () => {
+      if (!service.isExecutor()) return;
+      await actor.setFlag(MODULE_ID, ALLY_RESPONSE_FLAG, { id: request.id, userId, ok: true, view: await readAllySupportView(actor) });
+    }).catch(async error => {
+      report(error);
+      if (!service.isExecutor()) return;
+      await actor.setFlag(MODULE_ID, ALLY_RESPONSE_FLAG, { id: request.id, userId, ok: false, view: await readAllySupportView(actor),
+        error: error instanceof Error ? error.message : "Solicitação recusada.",
+        combats: error instanceof AllyCombatSelectionRequired ? error.combats : [] });
+    }).catch(report);
   });
   for (const name of ["createItem", "updateItem", "deleteItem"]) {
     Hooks.on(name, (item: Item, changesOrOptions: Record<string, unknown>, optionsOrUser: unknown, nativeUserId?: string) => {
       const options = name === "updateItem" ? optionsOrUser : changesOrOptions;
       if ((options as { allyGrantReconciliation?: boolean })?.allyGrantReconciliation) return;
-      if (item.parent?.type === ALLY_TYPE) { reconcile(); return; }
+      if (item.parent?.type === ALLY_TYPE) { reconcile(); refresh(item.parent.id ?? undefined); return; }
       if (item.parent?.type !== "agent" || item.parent.isToken) return;
       if (name === "deleteItem" && item.id && item.parent.id) {
         const userId = typeof optionsOrUser === "string" ? optionsOrUser : nativeUserId;
@@ -73,8 +85,9 @@ export function registerAllyLifecycleHooks(dependencies?: ToolkitServices, refre
   Hooks.on("deleteActor", () => { reconcile(); refresh(); });
   Hooks.on("updateCombat", reconcile);
   Hooks.on("deleteCombat", reconcile);
-  Hooks.on("userConnected", reconcile);
-  Hooks.on("updateUser", reconcile);
+  Hooks.on("createActor", (actor: Actor) => { if (!actor.isToken && ["agent", ALLY_TYPE].includes(actor.type)) refresh(); });
+  Hooks.on("userConnected", () => { reconcile(); refresh(); });
+  Hooks.on("updateUser", () => { reconcile(); refresh(); });
   // Own projection writes carry this option; external edits still trigger recovery.
   for (const name of ["createActiveEffect", "updateActiveEffect"]) {
     Hooks.on(name, (_effect: unknown, _changesOrOptions: unknown, optionsOrUser: unknown) => {

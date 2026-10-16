@@ -7,6 +7,7 @@ export type AllySupportState = {
 };
 export type AllyCombatSnapshot = { id: string; round: number; started: boolean };
 export type AllySupportAction =
+  | { type: "setBeneficiary"; beneficiaryId: string | null; combat: AllyCombatSnapshot | null }
   | { type: "assign"; beneficiaryId: string; combat: AllyCombatSnapshot | null }
   | { type: "activate" }
   | { type: "deactivate" }
@@ -20,6 +21,14 @@ export function transitionAllySupport(
   state: AllySupportState, action: AllySupportAction, nextSequence: number,
 ): AllySupportState {
   switch (action.type) {
+    case "setBeneficiary": {
+      if (state.beneficiaryId === action.beneficiaryId && (action.beneficiaryId === null || state.status !== "inactive")) return state;
+      const wait = state.wait ?? (state.beneficiaryId && state.status !== "inactive" && action.combat?.started
+        ? { combatId: action.combat.id, round: action.combat.round + 1 } : null);
+      return { beneficiaryId: action.beneficiaryId, wait,
+        status: action.beneficiaryId === null ? "inactive" : wait ? "pending" : "active",
+        sequence: action.beneficiaryId === null ? state.sequence : nextSequence };
+    }
     case "assign": {
       if (state.beneficiaryId === action.beneficiaryId) return state;
       const wait = state.wait ?? (state.beneficiaryId && action.combat?.started

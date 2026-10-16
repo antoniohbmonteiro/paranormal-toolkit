@@ -1,9 +1,113 @@
-.paranormal-toolkit-ally-sheet .ally-sheet-content { overflow-y: auto; padding: 12px; }
-.paranormal-toolkit-ally-sheet fieldset { display: grid; gap: 12px; margin-block: 12px; }
-.paranormal-toolkit-ally-sheet label { display: grid; gap: 4px; }
-.paranormal-toolkit-ally-sheet label:has(input[type="checkbox"]) { display: flex; align-items: center; }
-.paranormal-toolkit-ally-sheet textarea { resize: vertical; }
-.paranormal-toolkit-ally-sheet ul { padding: 0; list-style: none; }
-.paranormal-toolkit-ally-sheet li { display: flex; align-items: center; gap: 8px; margin-block: 8px; }
-.paranormal-toolkit-ally-sheet li span { flex: 1; }
-.paranormal-toolkit-ally-sheet .ally-poc-notice { opacity: .8; }
+.paranormal-toolkit-ally-sheet {
+  --ally-background: #f8f4ee;
+  --ally-surface: #fcfaf7;
+  --ally-border: #cfc7be;
+  --ally-ink: #211d1b;
+  --ally-muted: #68625e;
+  --ally-accent: #802a30;
+  --ally-focus: #9a3941;
+  color-scheme: light;
+  color: var(--ally-ink);
+  font-family: var(--font-body, sans-serif);
+  background: #252221;
+  border: 1px solid #252221;
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 440px;
+  min-height: 440px;
+  box-shadow: none;
+}
+.paranormal-toolkit-ally-sheet :is(h1, h2) { font-family: inherit; }
+.paranormal-toolkit-ally-sheet .window-header { background: #252221; color: #eee8e1; border: 0; border-radius: 0; }
+.paranormal-toolkit-ally-sheet .window-header :is(.window-title, button) { color: inherit; }
+.paranormal-toolkit-ally-sheet .window-title { font-size: .8rem; }
+.paranormal-toolkit-ally-sheet .window-content { padding: 14px 18px 18px; overflow: hidden; background: var(--ally-background); color: var(--ally-ink); }
+.paranormal-toolkit-ally-sheet .ally-sheet-content { height: 100%; min-height: 0; container-type: inline-size; }
+.paranormal-toolkit-ally-sheet .ally-sheet-shell { height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 0; }
+.paranormal-toolkit-ally-sheet .ally-header { display: grid; grid-template-columns: 122px minmax(0, 1fr); gap: 18px; align-items: center; padding: 0 4px 16px; flex: 0 0 auto; }
+.paranormal-toolkit-ally-sheet .ally-portrait-button { display: block; width: auto; height: auto; padding: 0; border: 0; background: none; box-shadow: none; }
+.paranormal-toolkit-ally-sheet .ally-portrait-button:disabled { opacity: 1; cursor: default; }
+.paranormal-toolkit-ally-sheet .ally-portrait-button:enabled:hover .ally-portrait { border-color: var(--ally-accent); }
+.paranormal-toolkit-ally-sheet .ally-portrait { width: 122px; height: 122px; object-fit: cover; border: 1px solid #b6a594; border-radius: 8px; padding: 3px; background: #e5dbcd; }
+.paranormal-toolkit-ally-sheet .ally-header p { margin: 0; }
+.paranormal-toolkit-ally-sheet .ally-eyebrow { color: var(--ally-accent); font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.paranormal-toolkit-ally-sheet .ally-header h1 { margin: 2px 0 3px; padding: 0; border: 0; color: var(--ally-ink); font-size: 2.15rem; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
+.paranormal-toolkit-ally-sheet .ally-name-display { display: block; width: 100%; height: auto; min-height: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; box-shadow: none; white-space: normal; }
+.paranormal-toolkit-ally-sheet .ally-name-display:disabled { opacity: 1; cursor: default; }
+.paranormal-toolkit-ally-sheet .ally-header .ally-name-input { height: auto; padding: 0 4px; font: inherit; line-height: inherit; }
+.paranormal-toolkit-ally-sheet [hidden] { display: none !important; }
+.paranormal-toolkit-ally-sheet .ally-kind { color: var(--ally-muted); font-size: 1rem; }
+.paranormal-toolkit-ally-sheet .ally-header .ally-support-context { display: inline-flex; align-items: center; gap: 9px; margin-top: 10px; padding: 5px 12px; border: 1px solid var(--ally-border); border-radius: 20px; font-size: .85rem; line-height: 1.3; }
+.paranormal-toolkit-ally-sheet .ally-support-context > span { width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: #8a837a; }
+.paranormal-toolkit-ally-sheet .ally-support-context[data-status="active"] { background: #eff0e8; border-color: #b5bea5; }
+.paranormal-toolkit-ally-sheet .ally-support-context[data-status="active"] > span { background: #657a47; }
+.paranormal-toolkit-ally-sheet .ally-support-context[data-status="pending"] > span { background: #aa7b34; }
+.paranormal-toolkit-ally-sheet .ally-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0; border: 1px solid var(--ally-border); border-bottom: 0; border-radius: 6px 6px 0 0; overflow: hidden; flex: 0 0 auto; }
+.paranormal-toolkit-ally-sheet .ally-tabs button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 33px; height: auto; padding: 5px 8px; border: 0; border-bottom: 1px solid var(--ally-border); border-radius: 0; color: var(--ally-muted); background: #eee9e380; font-size: .85rem; box-shadow: none; }
+.paranormal-toolkit-ally-sheet .ally-tabs button + button { border-left: 1px solid #cfc7be80; }
+.paranormal-toolkit-ally-sheet .ally-tabs button i { font-size: .8rem; }
+.paranormal-toolkit-ally-sheet .ally-tabs button.active { background: #ffffff40; color: var(--ally-accent); border-bottom-color: transparent; font-weight: 700; text-shadow: none; }
+.paranormal-toolkit-ally-sheet .ally-content { flex: 1 1 auto; min-height: 0; border: 1px solid var(--ally-border); border-top: 0; border-radius: 0 0 6px 6px; background: #ffffff40; overflow: hidden; }
+.paranormal-toolkit-ally-sheet .ally-tab { display: none; height: 100%; overflow-y: auto; overflow-x: hidden; padding: 16px; scrollbar-gutter: stable; }
+.paranormal-toolkit-ally-sheet .ally-tab.active { display: block; }
+.paranormal-toolkit-ally-sheet .ally-section h2 { margin: 0 0 12px; padding: 0; border: 0; font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ally-accent); font-weight: 800; }
+.paranormal-toolkit-ally-sheet .ally-support-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.paranormal-toolkit-ally-sheet label { display: grid; gap: 6px; font-size: .9rem; font-weight: 700; min-width: 0; }
+.paranormal-toolkit-ally-sheet select,
+.paranormal-toolkit-ally-sheet input:not([type="checkbox"]),
+.paranormal-toolkit-ally-sheet textarea { width: 100%; min-width: 0; border: 1px solid var(--ally-border); border-radius: 5px; background: var(--ally-surface); color: var(--ally-ink); padding: 7px 9px; font-size: .9rem; }
+.paranormal-toolkit-ally-sheet select { height: 39px; font-weight: 400; }
+.paranormal-toolkit-ally-sheet .ally-feedback { margin: 10px 0; color: var(--ally-muted); font-size: .8rem; overflow-wrap: anywhere; }
+.paranormal-toolkit-ally-sheet .ally-feedback:empty { margin: 0; }
+.paranormal-toolkit-ally-sheet .ally-summary-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid #b8a69c; }
+.paranormal-toolkit-ally-sheet .ally-abilities { margin: 0; padding: 0; list-style: none; }
+.paranormal-toolkit-ally-sheet .ally-abilities li + li { margin-top: 6px; }
+.paranormal-toolkit-ally-sheet .ally-section-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.paranormal-toolkit-ally-sheet .ally-section-heading h2 { margin-bottom: 0; }
+.paranormal-toolkit-ally-sheet .ally-add { flex: 0 0 auto; width: auto; padding: 4px 9px; min-height: 30px; font-size: .8rem; border: 1px solid var(--ally-border); background: transparent; color: var(--ally-accent); }
+.paranormal-toolkit-ally-sheet .ally-ability { min-width: 0; border: 1px solid var(--ally-border); border-radius: 5px; background: #ffffff50; }
+.paranormal-toolkit-ally-sheet .ally-ability-row { display: flex; gap: 8px; align-items: center; min-width: 0; padding: 5px 6px; }
+.paranormal-toolkit-ally-sheet .ally-use { position: relative; flex: 0 0 34px; width: 34px; height: 34px; min-height: 0; padding: 0; border: 0; border-radius: 4px; background: #ded6cb; overflow: hidden; box-shadow: none; }
+.paranormal-toolkit-ally-sheet .ally-use img { display: block; width: 100%; height: 100%; object-fit: cover; border: 0; }
+.paranormal-toolkit-ally-sheet .ally-use i { position: absolute; inset: 0; display: grid; place-items: center; width: 100%; height: 100%; color: white; background: #4e2229bd; padding: 0; font-size: 1.4rem; opacity: 0; pointer-events: none; transition: opacity 140ms ease; }
+.paranormal-toolkit-ally-sheet .ally-use:enabled:is(:hover, :focus-visible) i { opacity: 1; }
+.paranormal-toolkit-ally-sheet .ally-use:disabled { opacity: .55; cursor: not-allowed; }
+.paranormal-toolkit-ally-sheet .ally-ability-name { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; height: auto; min-height: 34px; padding: 2px 0; border: 0; background: transparent; color: var(--ally-ink); text-align: left; box-shadow: none; overflow-wrap: anywhere; line-height: 1.3; }
+.paranormal-toolkit-ally-sheet .ally-ability-name strong { font-size: .88rem; }
+.paranormal-toolkit-ally-sheet .ally-ability-name span { color: var(--ally-muted); font-size: .75rem; }
+.paranormal-toolkit-ally-sheet .ally-edit-ability { flex: 0 0 28px; width: 28px; height: 28px; min-height: 0; padding: 0; background: none; border: 0; color: var(--ally-muted); box-shadow: none; font-size: .8rem; }
+.paranormal-toolkit-ally-sheet .ally-ability-description { padding: 8px 12px; border-top: 1px solid #cfc7be80; font-size: .85rem; overflow-wrap: anywhere; }
+.paranormal-toolkit-ally-sheet .ally-ability-description > :first-child { margin-top: 0; }
+.paranormal-toolkit-ally-sheet .ally-ability-description > :last-child { margin-bottom: 0; }
+.paranormal-toolkit-ally-sheet .ally-item-menu { position: relative; flex: 0 0 auto; }
+.paranormal-toolkit-ally-sheet .ally-item-menu summary { padding: 8px; cursor: pointer; list-style: none; color: var(--ally-muted); }
+.paranormal-toolkit-ally-sheet .ally-item-menu summary::marker { content: ""; }
+.paranormal-toolkit-ally-sheet .ally-item-menu > div { position: absolute; z-index: 2; right: 100%; bottom: 0; width: 180px; padding: 4px; background: var(--ally-background); border: 1px solid var(--ally-border); border-radius: 5px; }
+.paranormal-toolkit-ally-sheet .ally-item-menu button { width: 100%; padding: 6px; background: transparent; color: var(--ally-ink); border: 0; text-align: left; font-size: .8rem; }
+.paranormal-toolkit-ally-sheet .ally-details { display: grid; gap: 14px; }
+.paranormal-toolkit-ally-sheet .ally-details h2 { margin-bottom: 0; }
+.paranormal-toolkit-ally-sheet .ally-description-card { min-height: 180px; padding: 12px; border: 1px solid var(--ally-border); border-radius: 6px; background: var(--ally-surface); }
+.paranormal-toolkit-ally-sheet .ally-description h2 { margin-bottom: 10px; }
+.paranormal-toolkit-ally-sheet prose-mirror { display: flex; min-height: 160px; color: var(--ally-ink); font-size: .9rem; }
+.paranormal-toolkit-ally-sheet prose-mirror .editor-content { min-height: 150px; padding: 4px; overflow-wrap: anywhere; }
+.paranormal-toolkit-ally-sheet prose-mirror.inactive:not(:disabled) .editor-content { cursor: text; }
+.paranormal-toolkit-ally-sheet prose-mirror > button.toggle { opacity: 0; transition: opacity 140ms ease; }
+.paranormal-toolkit-ally-sheet prose-mirror.inactive:not(:disabled) > button.toggle:enabled { display: block; }
+.paranormal-toolkit-ally-sheet prose-mirror:is(:hover, :focus-within) > button.toggle { opacity: 1; }
+.paranormal-toolkit-ally-sheet prose-mirror:disabled > button.toggle { display: none; }
+.paranormal-toolkit-ally-sheet .ally-drone { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.paranormal-toolkit-ally-sheet .ally-drone input { accent-color: var(--ally-accent); }
+.paranormal-toolkit-ally-sheet textarea { resize: vertical; min-height: 140px; font-weight: 400; line-height: 1.5; }
+.paranormal-toolkit-ally-sheet .ally-field-feedback { font-size: .75rem; font-weight: 400; color: var(--ally-accent); }
+.paranormal-toolkit-ally-sheet .ally-field-feedback:empty { display: none; }
+.paranormal-toolkit-ally-sheet .ally-hint,
+.paranormal-toolkit-ally-sheet .ally-empty { color: var(--ally-muted); font-size: .8rem; }
+.paranormal-toolkit-ally-sheet .ally-invalid { margin: 0; color: var(--ally-accent); font-size: .8rem; }
+.paranormal-toolkit-ally-sheet .ally-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.paranormal-toolkit-ally-sheet :is(button, select, input, textarea, summary):focus-visible { outline: 2px solid var(--ally-focus); outline-offset: 2px; }
+.paranormal-toolkit-ally-sheet button:hover { text-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .paranormal-toolkit-ally-sheet * { transition: none; } }
+@container (max-width: 520px) {
+  .paranormal-toolkit-ally-sheet .ally-header { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .paranormal-toolkit-ally-sheet .ally-portrait { width: 96px; height: 96px; }
+}

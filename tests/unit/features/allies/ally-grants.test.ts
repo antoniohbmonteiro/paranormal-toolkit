@@ -146,7 +146,7 @@ describe("managed Item grants and protected routing", () => {
   it("claims the same native hook synchronously once for both integrations", async () => {
     const submit = vi.fn(async () => {}), report = vi.fn();
     const gateway = new AllyItemUseGateway(() => "managed", submit, report);
-    const context: any = { message: { id: "native" } };
+    const context: any = { actor: { id: "agent" }, item: { id: "grant" }, message: { id: "native" } };
     expect(await Promise.all([gateway.intercept(context), gateway.intercept(context)])).toEqual([true, true]);
     expect(submit).toHaveBeenCalledOnce();
   });

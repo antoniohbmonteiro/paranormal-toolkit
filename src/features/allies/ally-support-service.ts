@@ -129,7 +129,8 @@ export class AllySupportService {
         if (request.action === "activate" && !this.environment.agentExists(link.state.beneficiaryId!)) {
           throw new Error("Selecione um Agente persistente do mundo.");
         }
-        if (request.action !== "deactivate" && !this.environment.abilities(allyId)) {
+        if (request.action !== "deactivate" && !(request.action === "setBeneficiary" && request.beneficiaryId === null)
+          && !this.environment.abilities(allyId)) {
           throw new Error("Configuração de habilidade inválida. Os dados foram preservados.");
         }
         this.apply(ledger, link, request);
@@ -165,7 +166,14 @@ export class AllySupportService {
   }
   private apply(ledger: AllyLedger, link: AllyLink, request: AllyRequest): void {
     let action;
-    if (request.action === "assign") {
+    if (request.action === "setBeneficiary") {
+      const beneficiaryId = request.beneficiaryId ?? null;
+      if (beneficiaryId !== null && !this.environment.agentExists(beneficiaryId)) throw new Error("Selecione um Agente persistente do mundo.");
+      const previousId = link.state.beneficiaryId;
+      const combat = !previousId || link.state.wait || link.state.status === "inactive" || previousId === beneficiaryId ? null
+        : this.environment.resolveCombat(link.allyId, beneficiaryId ?? previousId, request.combatId, previousId);
+      action = { type: "setBeneficiary" as const, beneficiaryId, combat };
+    } else if (request.action === "assign") {
       if (!this.environment.agentExists(request.beneficiaryId!)) throw new Error("Selecione um Agente persistente do mundo.");
       const combat = !link.state.beneficiaryId || link.state.beneficiaryId === request.beneficiaryId ? null
         : this.environment.resolveCombat(link.allyId, request.beneficiaryId!, request.combatId, link.state.beneficiaryId ?? undefined);

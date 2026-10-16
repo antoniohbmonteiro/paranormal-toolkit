@@ -14,13 +14,43 @@ export const ALLY_GRANT_FLAG = "allyGrantedAbility";
 export const ALLY_ROUTE_INDEX = "allyGrantRouteIndex";
 export const ALLY_ROUTE_PROTOCOL = "allyGrantProtocol";
 export type AllyRouteIndex = { version: 1; ledgerInstanceId: string; anchor: string; revision: number;
-  entries: { actorId: string; itemId: string; grantId: string }[] };
+  entries: { actorId: string; itemId: string; grantId: string; allyId?: string; sourceItemId?: string }[] };
 export function readAllyRouteIndex(value: unknown): AllyRouteIndex | null {
   const v = value as AllyRouteIndex | null;
   if (!v || v.version !== 1 || typeof v.ledgerInstanceId !== "string" || !v.ledgerInstanceId
     || typeof v.anchor !== "string" || !Number.isSafeInteger(v.revision) || v.revision < 0 || !Array.isArray(v.entries)
-    || !v.entries.every(entry => entry && [entry.actorId, entry.itemId, entry.grantId].every(id => typeof id === "string" && id.length))) return null;
+    || !v.entries.every(entry => entry && [entry.actorId, entry.itemId, entry.grantId].every(id => typeof id === "string" && id.length)
+      && ((entry.allyId === undefined && entry.sourceItemId === undefined)
+        || [entry.allyId, entry.sourceItemId].every(id => typeof id === "string" && id.length)))) return null;
   return v;
+}
+export function findAllyShortcutGrant(allyId: string, sourceItemId: string): { actor: Actor; item: Item } {
+  const candidates = new Map<string, AllyRouteIndex["entries"][number]>();
+  const installations = new Set<string>();
+  for (const gm of game.users.filter(user => user.isGM)) {
+    const raw = gm.getFlag?.(MODULE_ID, ALLY_ROUTE_INDEX);
+    const protocol = gm.getFlag?.(MODULE_ID, ALLY_ROUTE_PROTOCOL) as { version?: number; anchor?: string; ledgerInstanceId?: string } | undefined;
+    if (raw === undefined && protocol === undefined) continue;
+    const index = readAllyRouteIndex(raw);
+    if (!index || protocol?.version !== 1 || protocol.anchor !== index.anchor || protocol.ledgerInstanceId !== index.ledgerInstanceId
+      || gm.getFlag?.(MODULE_ID, "allyStore") !== index.anchor || index.entries.some(entry => !entry.allyId || !entry.sourceItemId)) {
+      throw new Error("Índice de concessões aguardando sincronização do GM.");
+    }
+    installations.add(JSON.stringify([index.anchor, index.ledgerInstanceId]));
+    for (const entry of index.entries) if (entry.allyId === allyId && entry.sourceItemId === sourceItemId) {
+      candidates.set(JSON.stringify([entry.actorId, entry.itemId, entry.grantId]), entry);
+    }
+  }
+  if (installations.size !== 1 || candidates.size !== 1) throw new Error("Nenhuma concessão única e sincronizada disponível para esta habilidade.");
+  const grant = [...candidates.values()][0], target = actor(grant.actorId);
+  const item = getActorItems(target).find(entry => entry.id === grant.itemId && entry.type === "ability");
+  if (!item) throw new Error("A habilidade ainda não foi concedida ao destinatário.");
+  return { actor: target, item };
+}
+export async function rollAllyGrantedItem(item: Item): Promise<void> {
+  const native = item as Item & { roll?: () => Promise<unknown> };
+  if (typeof native.roll !== "function") throw new Error("Uso nativo da habilidade indisponível.");
+  await native.roll();
 }
 export function grantSourceData(item: Item): { data: AllyGrantData; fingerprint: string; diagnostic: string | null } {
   const raw = item.toObject(true);
@@ -101,7 +131,8 @@ export class FoundryAllyItemAdapter implements AllyGrantedItemAdapter {
         await user.setFlag(MODULE_ID, ALLY_ROUTE_PROTOCOL, protocol);
       }
       const index: AllyRouteIndex = { version: 1, ledgerInstanceId: ledger.ledgerInstanceId, anchor, revision: ledger.revision,
-        entries: ledger.managedGrants.map(grant => ({ actorId: grant.actorId, itemId: grant.itemId, grantId: grant.grantId })) };
+        entries: ledger.managedGrants.map(grant => ({ actorId: grant.actorId, itemId: grant.itemId, grantId: grant.grantId,
+          allyId: grant.allyId, sourceItemId: grant.sourceItemId })) };
       // Revision changes unrelated to grants must not cause writes on every turn.
       const old = readAllyRouteIndex(user.getFlag?.(MODULE_ID, ALLY_ROUTE_INDEX));
       if (old?.anchor === anchor && old.ledgerInstanceId === index.ledgerInstanceId

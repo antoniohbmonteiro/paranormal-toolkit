@@ -4,6 +4,24 @@ const combat = { id: "combat", round: 3, started: true };
 const initial = () => transitionAllySupport(createAllySupportState(), { type: "assign", beneficiaryId: "joao", combat }, 1);
 const active = () => transitionAllySupport(initial(), { type: "activate" }, 2);
 describe("ally support transitions", () => {
+  it("selects and activates in one transition without an intermediate inactive assignment", () => {
+    expect(transitionAllySupport(createAllySupportState(), { type: "setBeneficiary", beneficiaryId: "joao", combat }, 1))
+      .toEqual({ beneficiaryId: "joao", status: "active", sequence: 1, wait: null });
+  });
+  it("clears the beneficiary and preserves the next-round limit through repeated clearing/reselection", () => {
+    const selected = transitionAllySupport(createAllySupportState(), { type: "setBeneficiary", beneficiaryId: "joao", combat }, 1);
+    const cleared = transitionAllySupport(selected, { type: "setBeneficiary", beneficiaryId: null, combat }, 2);
+    expect(cleared).toEqual({ beneficiaryId: null, status: "inactive", sequence: 1, wait: { combatId: "combat", round: 4 } });
+    expect(transitionAllySupport(cleared, { type: "setBeneficiary", beneficiaryId: null, combat: { ...combat, round: 8 } }, 9)).toBe(cleared);
+    const next = transitionAllySupport(cleared, { type: "setBeneficiary", beneficiaryId: "rafa", combat: null }, 2);
+    expect(next).toMatchObject({ status: "pending", wait: cleared.wait, sequence: 2 });
+    expect(transitionAllySupport(next, { type: "setBeneficiary", beneficiaryId: "rafa", combat }, 3)).toBe(next);
+    expect(transitionAllySupport(next, { type: "combat", combat: { ...combat, round: 4 } }, 3)).toMatchObject({ status: "active", wait: null });
+  });
+  it("clears outside combat without discarding the source sequence or inventing a wait", () => {
+    expect(transitionAllySupport(active(), { type: "setBeneficiary", beneficiaryId: null, combat: null }, 8))
+      .toMatchObject({ beneficiaryId: null, status: "inactive", wait: null, sequence: active().sequence });
+  });
   it("assigns and activates immediately even when the first beneficiary is in combat", () => {
     expect(initial()).toMatchObject({ beneficiaryId: "joao", status: "inactive", wait: null });
     expect(active()).toMatchObject({ status: "active", wait: null });
