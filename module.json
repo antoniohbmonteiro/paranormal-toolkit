@@ -27,6 +27,7 @@
   "styles": [
     "styles/paranormal-toolkit.css",
     "styles/ally-sheet.css",
+    "styles/ally-benefits-config.css",
     "styles/item-use-workflow-dice-toggle.css",
     "styles/ritual-cast-dialog.css",
     "styles/ability-use-dialog.css",

@@ -839,3 +839,39 @@ Essa prévia usa dados fictícios e não é um servidor Foundry. **Nenhum Actor 
 8. Repetir pela ficha do diretório e tokens vinculados/não vinculados. Testar reload, revisão concorrente, perda de conexão e troca de executor. Conferir supressões, efeitos externos e ações históricas nos alvos originais. Nenhum recibo incerto pode ser repetido automaticamente.
 
 Recomendação: manter a candidata sem release até concluir o smoke final no Foundry.
+
+## Presets de benefícios passivos — candidata 0.44.0 (vigente)
+
+Implementação sobre `f540cd0`, branch `feature/allies`. Sem bump, commit ou push. Substitui a interface do editor descrita em "Efeitos passivos nativos — 0.43.0"; serviço, marcação `allyPassive: {version: 1}`, `transfer: false`, projeção, ledger, supressão e migração permanecem iguais.
+
+### Interface
+
+A janela **Benefícios passivos — Toolkit** (480 px, altura automática, barra nativa escura, sem sombra externa) mostra três seções: introdução, **Adicionar benefício** e **Benefícios configurados**. Tipo de benefício, Perícia (somente no preset de Perícia) e Valor ficam empilhados; campos que o preset não usa não são renderizados. **Bônus de Dados (+Xd20)** pode ser selecionado, exibe "AINDA NÃO IMPLEMENTADO NO SISTEMA" e desabilita **Adicionar benefício**; o controller também recusa o preset. **Criar personalizado** cria um efeito vazio e abre o editor nativo. Cada linha da lista mostra ícone, nome, resumo reconhecido pelas mudanças (por exemplo "+5 Defesa" ou "Ocultismo +5"; caso contrário "Personalizado · N mudanças"), selo **Desativado** e diagnóstico de estrutura incompatível, com ações discretas para editar no editor nativo e excluir com confirmação. Desabilitar/reabilitar continua pelo editor nativo. O rascunho (preset, valor, perícia) é estado da aplicação e sobrevive aos re-renders dos hooks; trocar o preset re-renderiza e devolve o foco ao seletor.
+
+### Presets e responsabilidades
+
+`src/adapters/ordem/ordem-effect-presets.ts` contém catálogo, validação (inteiro seguro diferente de zero; perícia de lista fechada), builders e reconhecimento. Ele devolve somente `{ presetId, name, changes }`, sem flags, `transfer` ou dados de Aliado, para permitir reuso futuro em habilidades de Agentes. `buildAllyPresetTemplate` (em `ordem-ally-effect-presets.ts`) compõe o template nativo; `AllyEffectConfigService.create` continua sendo o único ponto que marca o efeito como benefício passivo. `buildDefenseTemplate` mantém saída idêntica, protegida por snapshot, porque a migração legada compara fingerprints. Paths, fases e limites de cada preset estão em [integration-with-ordem.md](integration-with-ordem.md#campos-de-bônus-usados-pelos-presets-de-active-effect).
+
+Nomes criados: "Bônus de Defesa", "Bônus de Perícia (Ocultismo)", "Bônus de Deslocamento", "Bônus de PV máximo", "Bônus de PE máximo" e "Bônus de PD máximo"; podem ser renomeados no editor nativo.
+
+### Limites
+
+- PV/PE/PD máximo usam `system.<recurso>.bonus`, sem efeito para Agente sem item de Classe ou com cálculos desligados.
+- O bônus de Perícia não afeta a iniciativa do combate com perícia treinada nem a Esquiva.
+- A política existente do resolver não empilha a mesma chave/fase/tipo no mesmo beneficiário: duas Defesas, mesmo do mesmo Aliado, projetam somente a mais recente.
+- Notificações de suporte mantêm o rótulo genérico para presets diferentes de Defesa.
+
+### Arquivos e validação
+
+Novos: `src/adapters/ordem/ordem-effect-presets.ts`, `ordem-agent-skills.ts`; `src/features/allies/ally-benefit-config-view.ts`; `styles/ally-benefits-config.css`; testes `tests/adapters/ordem/ordem-effect-presets.test.ts`, `tests/unit/features/allies/ally-benefit-config-view.test.ts`, `tests/reference/ordem-effect-preset-paths.test.ts`. Alterados: `ordem-paths.ts`, `ordem-ally-effect-presets.ts`, `ally-ability-config-application.ts`, renderer `ally-ability-config.ts`, `module.json` (folha de estilo), testes do renderer e `ally-native-effects.test.ts`, este relatório e `integration-with-ordem.md`.
+
+Os testes cobrem cada preset pela ação real (marcação e `transfer: false`), recusa de Dados, perícias e valores inválidos, rascunho entre renders, projeção de Perícia, Deslocamento e PV máximo no beneficiário, atualização no mesmo ID, cinco passagens sem escrita, desabilitar/remover e limpeza final. A referência executa `_calculateMaxHP` e `prepareDerivedData` reais do Ordem com doubles do Foundry; não comprova a aplicação real do Active Effect pelo v14 em um mundo.
+
+### Smoke desta etapa
+
+1. Abrir a janela pela ficha do Aliado (menu da habilidade) e pelo header da ficha nativa da habilidade. Conferir largura, barra escura, ausência de contorno/brilho claro e campos empilhados.
+2. Criar cada preset com valor 3 (Perícia: Ocultismo). No editor nativo, conferir mudança única `add`, fase inicial, prioridade 20 e o path esperado.
+3. Com suporte ativo para um Agente com Classe: Defesa e Esquiva +3, Deslocamento +3, rolagem de Ocultismo +3, PV/PE máx. +3 (PD com a regra Sem Sanidade). Repetir PV máx. em Agente sem Classe e confirmar ausência de efeito.
+4. Selecionar Bônus de Dados: aviso visível, botão desabilitado e nenhum efeito criado. Valores `0`, `1.5` e vazio devem avisar sem criar.
+5. Criar personalizado: abre o editor nativo; editar mudanças e conferir resumo "Personalizado · N mudanças".
+6. Desabilitar/reabilitar pelo editor nativo e excluir pela janela (cancelar e depois confirmar): a projeção deve acompanhar. Trocar beneficiário e selecionar Nenhum: projeções removidas.

@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AllyEffectConfigService } from "../../../../src/features/allies/ally-effect-config-service";
 import { migrateAllyAbilityEffects } from "../../../../src/features/allies/ally-effect-migration-service";
 import { readAllyAbility } from "../../../../src/features/allies/config/ally-ability-config";
-import { buildCustomTemplate, buildDefenseTemplate } from "../../../../src/adapters/ordem/ordem-ally-effect-presets";
+import { buildAllyPresetTemplate, buildCustomTemplate, buildDefenseTemplate } from "../../../../src/adapters/ordem/ordem-ally-effect-presets";
+import { buildOrdemEffectPreset } from "../../../../src/adapters/ordem/ordem-effect-presets";
 import { resolveAllyBenefits } from "../../../../src/core/allies/ally-benefit-resolver";
 import { readEffectTemplate } from "../../../../src/core/allies/ally-passive-effect";
 import { AllyReconciliationService } from "../../../../src/features/allies/ally-reconciliation-service";
@@ -50,6 +51,33 @@ export function itemFixture(data: any = {}, parent: any = null): any {
   for (const entry of source.effects ?? []) effects.push(effect(entry, item));
   return item;
 }
+function formFields(values: Record<string, string>) {
+  return { querySelector: (selector: string) => {
+    const name = /\[name="(\w+)"\]/.exec(selector)?.[1];
+    return name !== undefined && name in values ? { value: values[name], focus: vi.fn() } : null;
+  } };
+}
+function formTarget(values: Record<string, string>): any {
+  return { closest: () => formFields(values) };
+}
+function presetTemplate(input: { presetId: string; value: string; skillId?: string }) {
+  const result = buildOrdemEffectPreset(input);
+  if (!result.ok) throw new Error(result.error);
+  return buildAllyPresetTemplate(result.value);
+}
+async function loadEditor(renders: unknown[] = []) {
+  vi.resetModules();
+  const confirm = vi.fn().mockResolvedValue(false);
+  const warn = vi.fn();
+  vi.stubGlobal("foundry", { applications: { api: { ApplicationV2: class {
+    async render() { renders.push(this); return this; }
+  }, DialogV2: { confirm } } } });
+  vi.stubGlobal("Hooks", { on: vi.fn(), off: vi.fn() });
+  vi.stubGlobal("ui", { notifications: { warn } });
+  vi.stubGlobal("document", { createElement: () => ({ innerHTML: "" }) });
+  const { AllyAbilityConfigApplication } = await import("../../../../src/applications/ally-ability-config-application");
+  return { AllyAbilityConfigApplication, actions: AllyAbilityConfigApplication.DEFAULT_OPTIONS.actions, confirm, warn };
+}
 beforeEach(() => {
   vi.stubGlobal("game", { user: { id: "gm", isGM: true }, actors: { get: () => undefined } });
 });
@@ -68,9 +96,8 @@ describe("native passive effect editing on ordinary ability Items", () => {
     const app = new AllyAbilityConfigApplication(item);
     const actions = AllyAbilityConfigApplication.DEFAULT_OPTIONS.actions;
     expect(actions).not.toHaveProperty("selectEffect");
-    const createTarget = { closest: () => ({ querySelector: (key: string) => ({ value: key === "[data-effect-name]" ? "Benefício" : "5" }) }) } as any;
-    await actions.createDefense.call(app, {} as PointerEvent, createTarget);
-    await actions.createCustom.call(app, {} as PointerEvent, createTarget);
+    await actions.addBenefit.call(app, {} as PointerEvent, formTarget({ presetId: "defense", value: "5" }));
+    await actions.createCustom.call(app);
     expect(readAllyAbility(item)!.benefits).toHaveLength(2);
     for (const call of item.createEmbeddedDocuments.mock.calls) {
       expect(call[1][0]).toMatchObject({ transfer: false, flags: { [scope]: { allyPassive: { version: 1 } } } });
@@ -91,6 +118,64 @@ describe("native passive effect editing on ordinary ability Items", () => {
     expect(item.deleteEmbeddedDocuments).toHaveBeenCalledWith("ActiveEffect", [id]);
     expect(item.effects.get(id)).toBeUndefined();
     expect(item.effects.get("old").toObject()).toEqual(oldSource);
+  });
+  it.each([false, true])("creates every functional preset through the add action and refuses unavailable or invalid input (embedded=%s)", async embedded => {
+    const { AllyAbilityConfigApplication, actions, warn } = await loadEditor();
+    const item = itemFixture({}, embedded ? { id: "iris", type: `${scope}.ally` } : null);
+    const app = new AllyAbilityConfigApplication(item);
+    const expected = [
+      ["defense", undefined, "Bônus de Defesa", "system.defense.value"],
+      ["skill", "occultism", "Bônus de Perícia (Ocultismo)", "system.skills.occultism.value"],
+      ["movement", undefined, "Bônus de Deslocamento", "system.desloc.value"],
+      ["maxPV", undefined, "Bônus de PV máximo", "system.PV.bonus"],
+      ["maxPE", undefined, "Bônus de PE máximo", "system.PE.bonus"],
+      ["maxPD", undefined, "Bônus de PD máximo", "system.PD.bonus"],
+    ] as const;
+    for (const [presetId, skillId] of expected) {
+      await actions.addBenefit.call(app, {} as PointerEvent, formTarget({ presetId, value: "3", ...(skillId ? { skillId } : {}) }));
+    }
+    expect(warn).not.toHaveBeenCalled();
+    expect(item.createEmbeddedDocuments).toHaveBeenCalledTimes(expected.length);
+    item.createEmbeddedDocuments.mock.calls.forEach((call: any[], index: number) => {
+      expect(call[1][0]).toMatchObject({ name: expected[index][2], type: "base", transfer: false, disabled: false,
+        flags: { [scope]: { allyPassive: { version: 1 } } },
+        system: { changes: [{ key: expected[index][3], type: "add", value: 3, phase: "initial", priority: 20 }] } });
+    });
+    expect(readAllyAbility(item)!.benefits).toHaveLength(expected.length);
+    for (const [values, message] of [
+      [{ presetId: "diceBonus", value: "3" }, "AINDA NÃO IMPLEMENTADO NO SISTEMA"],
+      [{ presetId: "skill", value: "3", skillId: "freeSkill" }, "Selecione uma perícia válida."],
+      [{ presetId: "defense", value: "1.5" }, "Informe um valor inteiro diferente de zero."],
+      [{ presetId: "defense", value: "" }, "Informe um valor inteiro diferente de zero."],
+    ] as const) {
+      await actions.addBenefit.call(app, {} as PointerEvent, formTarget(values));
+      expect(warn).toHaveBeenLastCalledWith(message);
+    }
+    expect(item.createEmbeddedDocuments).toHaveBeenCalledTimes(expected.length);
+  });
+  it("keeps the draft across renders and re-renders only when the preset changes", async () => {
+    const renders: unknown[] = [];
+    const { AllyAbilityConfigApplication, actions } = await loadEditor(renders);
+    const item = itemFixture();
+    const app: any = new AllyAbilityConfigApplication(item);
+    const values: Record<string, string> = { presetId: "defense", value: "7" };
+    app.element = formFields(values);
+    app._onChangeForm({}, { target: { getAttribute: () => "value" } });
+    expect(renders).toHaveLength(0);
+    values.presetId = "skill";
+    app._onChangeForm({}, { target: { getAttribute: () => "presetId" } });
+    await vi.waitFor(() => expect(renders).toHaveLength(1));
+    const html = (await app._renderHTML()).innerHTML as string;
+    expect(html).toContain('<option value="skill" selected>');
+    expect(html).toContain('name="skillId"');
+    expect(html).toContain('value="7"');
+    values.skillId = "occultism";
+    app._onChangeForm({}, { target: { getAttribute: () => "skillId" } });
+    expect(renders).toHaveLength(1);
+    await actions.addBenefit.call(app, {} as PointerEvent, { closest: () => app.element } as any);
+    expect(item.createEmbeddedDocuments.mock.calls[0][1][0]).toMatchObject({ name: "Bônus de Perícia (Ocultismo)",
+      system: { changes: [{ key: "system.skills.occultism.value", value: 7 }] } });
+    expect((await app._renderHTML()).innerHTML).toContain("Ocultismo +7");
   });
   it.each([5, 7, 10])("creates an editable native defense preset with bonus %s in the directory", async value => {
     const item = itemFixture({ system: { description: "Preserved", abilityType: "ability" } });
@@ -231,6 +316,51 @@ describe("native projection writes and identity", () => {
     expect(copy.effects.get(religion.id)).toBeUndefined(); expect(existing.size).toBe(1);
     expect(existing.has(defenseProjectionId)).toBe(true);
     expect(copy.effects.get("unmarked").toObject()).toEqual(unmarked);
+  });
+  it("projects skill, movement and resource maximum presets, updates in place and cleans up on disable and removal", async () => {
+    const item = itemFixture({}, { id: "iris", type: `${scope}.ally` }); const editor = new AllyEffectConfigService(item);
+    const skill = await editor.create(presetTemplate({ presetId: "skill", value: "4", skillId: "occultism" }));
+    const pv = await editor.create(presetTemplate({ presetId: "maxPV", value: "5" }));
+    const movement = await editor.create(presetTemplate({ presetId: "movement", value: "3" }));
+    const existing = new Map<string, any>();
+    const actor = { type: "agent", isToken: false, effects: { get: (id: string) => existing.get(id) },
+      createEmbeddedDocuments: vi.fn(async (_type, entries) => { for (const data of entries) existing.set(data._id, effect(data)); }),
+      updateEmbeddedDocuments: vi.fn(async (_type, entries) => {
+        for (const entry of entries) existing.get(entry._id).replace({ ...entry, system: entry.system.value });
+      }),
+      deleteEmbeddedDocuments: vi.fn(async (_type, ids) => { for (const id of ids) existing.delete(id); }),
+    };
+    vi.stubGlobal("game", { user: { id: "gm", isGM: true }, actors: { get: (id: string) => id === "iris" ? { uuid: "Actor.iris" } : actor } });
+    let nextId = 0;
+    vi.stubGlobal("foundry", { utils: { randomID: () => `projection-${++nextId}` }, data: { operators: {
+      ForcedReplacement: class { constructor(public value: unknown) {} },
+    } } });
+    const reconciler = new AllyReconciliationService(new OrdemAllyBenefitAdapter(() => {}));
+    let registry: any[] = [];
+    const reconcile = async () => reconciler.reconcile(resolveAllyBenefits([{ allyId: "iris",
+      state: { status: "active", beneficiaryId: "mauro", sequence: 1, wait: null },
+      abilities: [{ id: item.id, definition: readAllyAbility(item)! }] }]), registry,
+      async value => { registry = structuredClone(value); });
+    const projected = () => Object.fromEntries([...existing.values()].map(entry => {
+      const [change] = entry.toObject().system.changes; return [change.key, change.value];
+    }));
+    await reconcile();
+    expect(projected()).toEqual({ "system.skills.occultism.value": 4, "system.PV.bonus": 5, "system.desloc.value": 3 });
+    expect([...existing.values()].every(entry => entry.toObject().origin === "Actor.iris" && entry.toObject().transfer === false)).toBe(true);
+    const pvProjectionId = registry.find(entry => entry.sourceEffectId === pv.id).effectId;
+    await item.effects.get(pv.id).update({ "system.changes": presetTemplate({ presetId: "maxPV", value: "8" }).system.changes });
+    await reconcile();
+    expect(existing.get(pvProjectionId).toObject().system.changes[0].value).toBe(8);
+    const writes = () => [actor.createEmbeddedDocuments.mock.calls.length, actor.updateEmbeddedDocuments.mock.calls.length, actor.deleteEmbeddedDocuments.mock.calls.length];
+    const before = writes();
+    for (let turn = 0; turn < 5; turn++) await reconcile();
+    expect(writes()).toEqual(before);
+    await item.effects.get(skill.id).update({ disabled: true }); await reconcile();
+    expect(projected()).toEqual({ "system.PV.bonus": 8, "system.desloc.value": 3 });
+    await new AllyEffectConfigService(item).remove(movement.id); await reconcile();
+    expect(projected()).toEqual({ "system.PV.bonus": 8 });
+    await reconciler.reconcile([], registry, async value => { registry = structuredClone(value); });
+    expect(existing.size).toBe(0);
   });
   it("updates +5 to +10 in place and performs zero writes across five unchanged turns", async () => {
     const item = itemFixture();

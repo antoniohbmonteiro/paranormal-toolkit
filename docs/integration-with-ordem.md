@@ -44,6 +44,20 @@ system.attributes.hp.max
 
 Esses paths são considerados detalhes de implementação atuais, não contrato permanente.
 
+### Campos de bônus usados pelos presets de Active Effect
+
+Os presets de benefícios passivos (`src/adapters/ordem/ordem-effect-presets.ts`, paths em `ORDEM_AGENT_BONUS_PATHS`) criam uma única mudança `add`, fase `initial`, prioridade 20. No Foundry v14, `initial` é aplicada antes de `prepareDerivedData` e `final` depois de `prepareData`. Verificado no Ordem 8.0.2 (fork local) e no Foundry 14.369:
+
+| Preset | Path | No schema | Efeito real na preparação do Agente |
+|---|---|---|---|
+| Defesa | `system.defense.value` | sim | base de `calculateDefense` (+proteções, +AGI); entra também na Esquiva. `defense.bonus` existe, mas não é lido. |
+| Deslocamento | `system.desloc.value` | sim | o derivado só subtrai 3 por sobrecarga. `desloc.bonus` existe, mas não é lido. |
+| Perícia | `system.skills.<id>.value` | sim | soma na rolagem de perícia (`extraBonus`) e no total da ficha, sem travar o modificador editável `mod`. Não entra na iniciativa do combate com perícia treinada nem na Esquiva. |
+| PV/PE/PD máximo | `system.PV.bonus`, `system.PE.bonus`, `system.PD.bonus` | não (aplicação unguided do v14) | somado por `_calculateMaxHP` somente com item de Classe e `disableCalculations` desligado; caso contrário, sem efeito. PD depende da regra Sem Sanidade. |
+| Dados (+Xd20) | — | apenas na branch `feat/native-dice-bonus` do fork | preset bloqueado até a mecânica existir no sistema. |
+
+Os ids de perícia aceitos são os 27 do `AgentData`, exceto `freeSkill`. `tests/reference/ordem-effect-preset-paths.test.ts` confere esses consumos com as fontes reais quando `PARANORMAL_TOOLKIT_ORDEM_REFERENCE` está definida.
+
 ## Refatoração do sistema
 
 O mantenedor do sistema informou que pretende refatorar bastante os dados para melhorar compatibilidade, intuição e integração com módulos.

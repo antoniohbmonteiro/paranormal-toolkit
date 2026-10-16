@@ -1,21 +1,32 @@
 import { MODULE_ID } from "../constants";
 import { readEffectTemplate } from "../core/allies/ally-passive-effect";
-import { buildCustomTemplate, buildDefenseTemplate } from "../adapters/ordem/ordem-ally-effect-presets";
+import { buildAllyPresetTemplate, buildCustomTemplate } from "../adapters/ordem/ordem-ally-effect-presets";
+import { buildOrdemEffectPreset } from "../adapters/ordem/ordem-effect-presets";
+import { buildAllyBenefitConfigView, defaultAllyBenefitDraft, type AllyBenefitDraft } from "../features/allies/ally-benefit-config-view";
 import { AllyEffectConfigService } from "../features/allies/ally-effect-config-service";
 import { migrateAllyAbilityEffects } from "../features/allies/ally-effect-migration-service";
 import { ALLY_PASSIVE_EFFECT_FLAG, canConfigureAllyEffects } from "../features/allies/config/ally-ability-config";
 import { renderAllyAbilityConfig } from "../ui/components/ally/ally-ability-config";
 
+// Fields that the selected preset does not render keep their previous draft value.
+function readDraft(form: ParentNode | null | undefined, fallback: AllyBenefitDraft): AllyBenefitDraft {
+  const field = (name: keyof AllyBenefitDraft) => form?.querySelector<HTMLInputElement>(`[name="${name}"]`)?.value ?? fallback[name];
+  return { presetId: field("presetId"), value: field("value"), skillId: field("skillId") };
+}
+
 export class AllyAbilityConfigApplication extends foundry.applications.api.ApplicationV2 {
   static DEFAULT_OPTIONS = {
-    tag: "form", window: { title: "Benefícios passivos — Toolkit", resizable: true },
-    position: { width: 560, height: 460 },
-    actions: { createDefense: AllyAbilityConfigApplication.createDefense, createCustom: AllyAbilityConfigApplication.createCustom,
+    tag: "form", classes: ["paranormal-toolkit-ally-benefits"],
+    window: { title: "Benefícios passivos — Toolkit", resizable: true },
+    position: { width: 480, height: "auto" },
+    actions: { addBenefit: AllyAbilityConfigApplication.addBenefit, createCustom: AllyAbilityConfigApplication.createCustom,
       editEffect: AllyAbilityConfigApplication.edit,
       removeEffect: AllyAbilityConfigApplication.remove },
   };
   private readonly service: AllyEffectConfigService;
   private loading = false;
+  private working = false;
+  private draft: AllyBenefitDraft = defaultAllyBenefitDraft();
   private readonly subscriptions: { name: string; callback: (...args: any[]) => void }[] = [];
   constructor(private readonly item: Item) {
     super({}); this.service = new AllyEffectConfigService(item);
@@ -33,35 +44,43 @@ export class AllyAbilityConfigApplication extends foundry.applications.api.Appli
   }
   async _renderHTML(): Promise<HTMLElement> {
     const root = document.createElement("div");
-    root.innerHTML = renderAllyAbilityConfig({ name: this.item.name, editable: canConfigureAllyEffects(this.item),
+    root.innerHTML = renderAllyAbilityConfig(buildAllyBenefitConfigView({
+      editable: canConfigureAllyEffects(this.item), draft: this.draft,
       effects: (this.item.effects?.contents ?? []).filter(effect => effect.getFlag(MODULE_ID, ALLY_PASSIVE_EFFECT_FLAG))
         .map(effect => ({ id: effect.id, name: effect.name, disabled: effect.disabled,
-        diagnostic: readEffectTemplate(effect.toObject(true)) ? null : "Estrutura incompatível: revise as mudanças no editor nativo.",
-      })) });
+          template: readEffectTemplate(effect.toObject(true)) })),
+    }));
     return root;
   }
   _replaceHTML(result: HTMLElement, content: HTMLElement): void { content.replaceChildren(result); }
+  _onChangeForm(_config: unknown, event: Event): void {
+    const previous = this.draft.presetId;
+    this.draft = readDraft(this.element, this.draft);
+    if ((event.target as HTMLElement | null)?.getAttribute("name") !== "presetId" || this.draft.presetId === previous) return;
+    void this.render({ force: false }).then(() => this.element?.querySelector<HTMLSelectElement>('[name="presetId"]')?.focus());
+  }
   async close(options?: Record<string, unknown>): Promise<this> {
     for (const { name, callback } of this.subscriptions) Hooks.off(name, callback);
     return await super.close(options);
   }
   private async run(work: () => Promise<unknown>): Promise<void> {
+    if (this.working) return;
+    this.working = true;
     try { await work(); await this.render({ force: true }); }
     catch (error) { ui.notifications?.warn(error instanceof Error ? error.message : "Falha ao configurar efeito."); }
+    finally { this.working = false; }
   }
-  private static async createDefense(this: AllyAbilityConfigApplication, _event: PointerEvent, target: HTMLElement): Promise<void> {
-    const form = target.closest("form");
-    const name = form?.querySelector<HTMLInputElement>("[data-effect-name]")?.value.trim() ?? "";
-    const value = form?.querySelector<HTMLInputElement>("[data-effect-value]")?.value ?? "";
+  private static async addBenefit(this: AllyAbilityConfigApplication, _event: PointerEvent, target: HTMLElement): Promise<void> {
+    this.draft = readDraft(target.closest("form"), this.draft);
+    const preset = buildOrdemEffectPreset(this.draft);
     await this.run(async () => {
-      if (!value.trim()) throw new Error("Informe um bônus numérico.");
-      return this.service.create(buildDefenseTemplate(name, Number(value)));
+      if (!preset.ok) throw new Error(preset.error);
+      return this.service.create(buildAllyPresetTemplate(preset.value));
     });
   }
-  private static async createCustom(this: AllyAbilityConfigApplication, _event: PointerEvent, target: HTMLElement): Promise<void> {
-    const name = target.closest("form")?.querySelector<HTMLInputElement>("[data-effect-name]")?.value.trim();
+  private static async createCustom(this: AllyAbilityConfigApplication): Promise<void> {
     await this.run(async () => {
-      const effect = await this.service.create(buildCustomTemplate(name || undefined));
+      const effect = await this.service.create(buildCustomTemplate());
       await effect.sheet.render({ force: true });
     });
   }
