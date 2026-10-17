@@ -14,7 +14,7 @@
 ### Validação
 
 - Referências automatizadas usam campos, fases e filtragem de Active Effects reais do Foundry 14.369 e preparação/aplicação de dano do Ordem 8.0.2. Banco, ciclo base dos documentos e dependências não exercitadas são substituídos; isso não equivale a um mundo em execução.
-- Fixture de navegador cobre montagem, rerender, permissões, listas nativas preservadas, edição e janela única. O funcionamento do editor e dos efeitos foi confirmado pelo usuário no Foundry após os ajustes de UX. O roteiro completo em mundo descartável, com GM e jogador, ainda exige validação específica antes da publicação; roteiro em `docs/ALLY-ACTOR-POC.md`.
+- Fixture de navegador cobre montagem, rerender, permissões, listas nativas preservadas, edição e janela única. Implementação revisada e smoke test manual no Foundry VTT aprovados pelo usuário para o lançamento da 0.45.0; roteiro registrado em `docs/ALLY-ACTOR-POC.md`.
 
 ## 0.44.0
 
