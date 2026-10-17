@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual: `v0.45.0`, Efeitos da Habilidade. Implementação e testes automatizados concluídos; smoke test manual no Foundry VTT aprovado pelo usuário para o lançamento. A versão pública anterior é `v0.44.0`.
+Versão atual: `v0.45.1`, com suporte a fórmulas aritméticas nos presets de Efeitos da Habilidade. A base `v0.45.0` já foi publicada e teve smoke test manual aprovado pelo usuário. Consulte o README para a sintaxe aceita e os limites de RD.
 
 O Toolkit já tem:
 

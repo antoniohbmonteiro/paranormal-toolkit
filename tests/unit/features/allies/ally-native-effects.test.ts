@@ -108,8 +108,8 @@ describe("native passive effect editing on ordinary ability Items", () => {
     for (const [values, message] of [
       [{ presetId: "diceBonus", value: "3" }, "AINDA NÃO IMPLEMENTADO NO SISTEMA"],
       [{ presetId: "skill", value: "3", skillId: "freeSkill" }, "Selecione uma perícia válida."],
-      [{ presetId: "defense", value: "1.5" }, "Informe um valor inteiro diferente de zero."],
-      [{ presetId: "defense", value: "" }, "Informe um valor inteiro diferente de zero."],
+      [{ presetId: "defense", value: "1.5" }, "Informe um valor inteiro diferente de zero ou uma fórmula com referências como @NEX.value."],
+      [{ presetId: "defense", value: "" }, "Informe um valor inteiro diferente de zero ou uma fórmula com referências como @NEX.value."],
     ] as const) {
       await actions.addBenefit.call(app, {} as PointerEvent, formTarget(values));
       expect(warn).toHaveBeenLastCalledWith(message);

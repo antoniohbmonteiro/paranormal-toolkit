@@ -10,7 +10,7 @@ function option(id: string, label: string, selected: boolean): string {
 }
 function field(view: ItemEffectFieldView, disabled: string, editing = false): string {
   const name = (value: string) => editing ? `edit${value[0].toUpperCase()}${value.slice(1)}` : value;
-  if (view.kind === "value") return `<label class="ally-benefits-field"><span>Valor</span><input type="number" name="${name("value")}" step="1" inputmode="numeric" value="${escapeHtml(view.value)}"${disabled}></label>`;
+  if (view.kind === "value") return `<label class="ally-benefits-field"><span>Valor ou fórmula</span><input type="text" name="${name("value")}" placeholder="5 ou (@NEX.value / 5) * 1" value="${escapeHtml(view.value)}"${disabled}><small>Inteiro ou fórmula com referências do Actor, como @NEX.value. Sem dados aleatórios. RD aceita somente inteiro positivo. Fórmulas usam a edição avançada após salvar.</small></label>`;
   return `<label class="ally-benefits-field"><span>${LABELS[view.kind]}</span><select name="${name(`${view.kind}Id`)}"${disabled}>${view.options.map(entry => option(entry.id, entry.label, entry.selected)).join("")}</select></label>`;
 }
 function row(view: ItemEffectRowView, config: ItemEffectConfigView): string {

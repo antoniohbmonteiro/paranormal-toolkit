@@ -53,7 +53,7 @@ export function findOrdemEffectPreset(id: string): OrdemEffectPresetDefinition |
 }
 
 /** Additive bonus applied before the system derives Defense, skills and resource maxima. */
-export function ordemBonusChange(key: string, value: number): EffectChange {
+export function ordemBonusChange(key: string, value: number | string): EffectChange {
   return { key, type: "add", value, phase: "initial", priority: 20 };
 }
 
@@ -62,6 +62,20 @@ export function parseOrdemBonusValue(raw: string | undefined): number | null {
   if (!/^[+-]?\d+$/.test(text)) return null;
   const value = Number(text);
   return Number.isSafeInteger(value) && value !== 0 ? value : null;
+}
+
+/** Ordem evaluates string changes containing data references before native AE application. */
+export function isOrdemBonusFormula(raw: string): boolean {
+  if (raw.length > 500 || !raw.includes("@") || /\b(?:constructor|prototype|__proto__)\b/.test(raw)) return false;
+  const arithmetic = raw.replace(/@[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)+/gi, "1")
+    .replace(/\b(?:floor|ceil|round|abs|min|max)(?=\s*\()/g, "");
+  return /^[\d\s.+\-*/%(),]+$/.test(arithmetic);
+}
+
+export function validateOrdemPresetFormula(preset: OrdemEffectPreset): void {
+  const value = preset.changes[0]?.value;
+  if (typeof value !== "string") return;
+  if (!Roll.validate(value)) throw new Error("Fórmula inválida. Confira os parênteses, operadores e referências do Actor.");
 }
 
 export function buildOrdemEffectPreset(input: OrdemEffectPresetInput): Result<OrdemEffectPreset, string> {
@@ -73,8 +87,9 @@ export function buildOrdemEffectPreset(input: OrdemEffectPresetInput): Result<Or
   }
   const skillId = input.skillId;
   if (id === "skill" && !isOrdemAgentSkillId(skillId)) return failure("Selecione uma perícia válida.");
-  const value = parseOrdemBonusValue(input.value);
-  if (value === null) return failure("Informe um valor inteiro diferente de zero.");
+  const raw = input.value?.trim() ?? "";
+  const value = parseOrdemBonusValue(raw) ?? (isOrdemBonusFormula(raw) ? raw : null);
+  if (value === null) return failure(raw.includes("@") ? "Use uma fórmula aritmética com referências como @NEX.value, sem dados aleatórios." : "Informe um valor inteiro diferente de zero ou uma fórmula com referências como @NEX.value.");
   if (id === "skill" && isOrdemAgentSkillId(skillId)) {
     return success({ presetId: id, name: `${preset.label} (${ordemAgentSkillLabel(skillId)})`,
       changes: [ordemBonusChange(ORDEM_AGENT_BONUS_PATHS.skill(skillId), value)] });
@@ -92,6 +107,7 @@ export function buildOrdemEffectPreset(input: OrdemEffectPresetInput): Result<Or
   if (id === "damageResistance") {
     const damageType = input.damageTypeId ?? "ballisticDamage";
     if (!isOrdemDamageType(damageType)) return failure("Selecione um tipo de dano válido.");
+    if (typeof value !== "number") return failure("Fórmulas de RD exigem revisão no editor nativo; o preset aceita um inteiro positivo.");
     if (value <= 0) return failure("Informe uma resistência inteira maior que zero.");
     return success({ presetId: id, name: `Resistência a Dano (${getOrdemDamageTypeLabel(damageType)})`,
       changes: [ordemBonusChange(ORDEM_AGENT_BONUS_PATHS.resistance(damageType), value)] });

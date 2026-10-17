@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.45.0`, com o editor de efeitos da habilidade, edição rápida e Resistência a Dano por tipo. Veja o [`CHANGELOG.md`](CHANGELOG.md).
+Versão atual: `0.45.1`, com o editor de efeitos da habilidade, edição rápida e Resistência a Dano por tipo. Veja o [`CHANGELOG.md`](CHANGELOG.md).
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 
@@ -54,7 +54,7 @@ Ela sempre aponta para a release mais recente publicada no GitHub. Depois, ative
 
 Na aba **Efeitos** da ficha nativa de uma habilidade, abaixo das listas do sistema, use **Paranormal Toolkit — Efeitos da habilidade → Configurar efeitos da habilidade**. As listas e ações nativas continuam disponíveis. A janela permite criar por preset, criar personalizado, visualizar efeitos existentes de qualquer autoria, editar rapidamente efeitos simples, abrir a edição avançada nativa e excluir mediante confirmação. Efeitos complexos, com fórmulas, condições ou comportamento externo usam o editor nativo.
 
-Fórmulas em mudanças aditivas de campos conhecidos, como `system.PV.bonus`, recebem um resumo como **Bônus de PV máximo · fórmula personalizada**, mesmo sem valor fixo. Esse reconhecimento visual identifica o campo afetado; não valida a expressão nem calcula seu resultado. A fórmula permanece intacta e sua edição usa o editor nativo.
+Fórmulas em mudanças aditivas de campos conhecidos, como `system.PV.bonus`, recebem um resumo como **Bônus de PV máximo · fórmula personalizada**, mesmo sem valor fixo. Esse reconhecimento visual identifica o campo afetado; não valida a expressão nem calcula seu resultado. O campo **Valor ou fórmula** permite criar expressões como `(@NEX.value / 5) * 1`, preservadas no Active Effect e avaliadas nativamente pelo Ordem. Aceita aritmética e `floor`, `ceil`, `round`, `abs`, `min` e `max`, sem dados aleatórios. Use referências do Actor (`@NEX.value`, `@attributes.str.value`): o Ordem só avalia diretamente a expressão quando há `@`, condição necessária nos campos sem schema. Após salvar, fórmulas continuam usando a edição avançada nativa. As referências são resolvidas no Actor que recebe o efeito; em benefícios de Aliados, é o beneficiário. RD continua aceitando inteiro positivo no preset: uma fórmula negativa pode aumentar o dano e exige revisão no editor nativo.
 
 Em Agentes e Items independentes, são efeitos próprios. Em **Aplicação do novo efeito**, escolha **Aplicar automaticamente ao Agente** ou **Manter somente na habilidade**. Uma habilidade ativa pode ter efeitos passivos permanentes: o padrão é **Aplicar automaticamente ao Agente**, independentemente da Execução, e a escolha vale para cada efeito criado por preset ou personalizado. Items independentes explicam que a aplicação ocorrerá quando incorporados a um Actor. **Usar a habilidade não aplica automaticamente seus efeitos.** O estado desativado e a transferência continuam sendo propriedades nativas editáveis no Foundry; para mudar a transferência de um efeito existente, use a edição avançada. Abrir, reconhecer, cancelar e fechar não altera efeitos, flags ou defaults anteriores.
 

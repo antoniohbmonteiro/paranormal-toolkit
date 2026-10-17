@@ -9,6 +9,17 @@ import { readEffectTemplate, stableEffectFingerprint } from "../../../src/core/a
 const bonus = (key: string, value: number) => ({ key, type: "add", value, phase: "initial", priority: 20 });
 
 describe("Ordem effect presets", () => {
+  it.each(["(@NEX.value / 5) * 1", "floor(@NEX.value / 5) + @attributes.str.value", "max(1, @attributes.vit.value)"])("preserves a deterministic formula %s", value => {
+    const result = buildOrdemEffectPreset({ presetId: "maxPV", value });
+    expect(result.ok && result.value.changes[0].value).toBe(value);
+    if (result.ok) expect(readEffectTemplate(buildAllyPresetTemplate(result.value))?.system.changes[0].value).toBe(value);
+  });
+  it.each(["@NEX.value + 1d6", "random() + @NEX.value", "@NEX.value;alert(1)", "@NEX.value.constructor()", "@NEX.value || 1", "@NEX.value + window.foo", "2 + 3"])("rejects unsupported formula syntax %s", value => {
+    expect(buildOrdemEffectPreset({ presetId: "maxPV", value }).ok).toBe(false);
+  });
+  it("keeps RD positive and fixed rather than promising a positive future formula result", () => {
+    expect(buildOrdemEffectPreset({ presetId: "damageResistance", value: "@NEX.value / 5" }).ok).toBe(false);
+  });
   it.each([
     ["defense", undefined, "Bônus de Defesa", "system.defense.value", "+5 Defesa"],
     ["movement", undefined, "Bônus de Deslocamento", "system.desloc.value", "+5 Deslocamento"],
@@ -31,7 +42,7 @@ describe("Ordem effect presets", () => {
 
   it.each(["", "  ", "abc", "1.5", "0", "-0", "1e3", "5px", "99999999999999999999"])("rejects the value %j", value => {
     expect(parseOrdemBonusValue(value)).toBeNull();
-    expect(buildOrdemEffectPreset({ presetId: "defense", value })).toEqual({ ok: false, error: "Informe um valor inteiro diferente de zero." });
+    expect(buildOrdemEffectPreset({ presetId: "defense", value })).toEqual({ ok: false, error: "Informe um valor inteiro diferente de zero ou uma fórmula com referências como @NEX.value." });
   });
 
   it.each([["+5", 5], ["-2", -2], [" 10 ", 10]])("accepts the integer %j", (value, expected) => {

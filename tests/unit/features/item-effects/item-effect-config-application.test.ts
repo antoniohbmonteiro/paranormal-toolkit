@@ -84,7 +84,7 @@ describe("shared specialized editor actions", () => {
     await actions.editEffect.call(app, {} as any, target("0"));
     (app as any).element = form({ editValue: "99" });
     await actions.editEffect.call(app, {} as any, target("1"));
-    expect((await app._renderHTML()).innerHTML).toContain('name="editValue" step="1" inputmode="numeric" value="3"');
+    expect((await app._renderHTML()).innerHTML).toContain('name="editValue" placeholder="5 ou (@NEX.value / 5) * 1" value="3"');
     expect(item.effects.get("0").update).not.toHaveBeenCalled();
   });
   it("confirms deletion once, preserves cancellation, and rechecks permissions after approval", async () => {

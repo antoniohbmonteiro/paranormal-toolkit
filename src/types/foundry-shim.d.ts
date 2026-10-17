@@ -321,6 +321,7 @@ declare const foundry: {
 declare function fromUuid(uuid: string): Promise<unknown>;
 
 declare class Roll {
+  static validate(formula: string): boolean;
   constructor(formula: string, data?: Record<string, unknown>);
   formula: string;
   total: number | null;

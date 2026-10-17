@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.45.1
+
+- O campo de valor dos presets de efeitos aceita fórmulas aritméticas com referências do Actor, como `(@NEX.value / 5) * 1`, validadas pela API nativa e preservadas na origem. Aplica-se a efeitos próprios e benefícios projetados dos Aliados.
+- A edição rápida de um valor fixo também permite substituí-lo por fórmula; a edição posterior da expressão permanece no editor nativo. Abrir ou reconhecer efeitos não altera fontes.
+- Sem dados aleatórios ou cálculo próprio no Toolkit. Expressões sem referências `@` não são oferecidas devido à avaliação do Ordem em campos sem schema. RD continua exigindo inteiro positivo no preset.
+
+- Validação: 1.048 testes locais aprovados, referências reais de Foundry/Ordem, criação pela interface no Paranormal-dev e 30 verificações no mundo, incluindo recarregamento e projeção de Aliados.
+
 ## 0.45.0
 
 ### Efeitos da Habilidade

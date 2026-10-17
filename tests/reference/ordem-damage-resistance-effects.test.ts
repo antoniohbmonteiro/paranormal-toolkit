@@ -17,6 +17,8 @@ function runtime() {
     globalThis.CONST={ACTIVE_EFFECT_CHANGE_TYPES:{add:20,override:50},ACTIVE_EFFECT_CHANGE_PHASES:['initial','final']};
     globalThis.ui={notifications:{warn:()=>{}}}; globalThis.canvas={scene:null}; foundry.utils.IterableWeakMap=Map;`);
   const Empty = class { static metadata = native.nativeObject({}); };
+  const NativeRoll = native.load("client/dice/roll.mjs", {}).default;
+  native.evaluate("globalThis.Roll=nativeExports.default;");
   const BaseEffect = native.load("common/documents/active-effect.mjs", {
     "../abstract/document.mjs": { default: Empty }, "../data/fields.mjs": native.fields,
     "../utils/helpers.mjs": native.helpers,
@@ -24,7 +26,7 @@ function runtime() {
   const AE = native.load("client/documents/active-effect.mjs", {
     "@common/documents/active-effect.mjs": { default: BaseEffect }, "./abstract/client-document.mjs": { default: (base: any) => base },
     "./actor.mjs": { default: Empty }, "./item.mjs": { default: Empty }, "../helpers/hooks.mjs": { default: {} },
-    "@client/helpers/active-effect-registry.mjs": { default: Empty }, "@client/dice/roll.mjs": { default: Empty },
+    "@client/helpers/active-effect-registry.mjs": { default: Empty }, "@client/dice/roll.mjs": { default: NativeRoll },
     "@common/constants.mjs": { ACTIVE_EFFECT_EXPIRY_EVENTS: [] }, "@client/utils/_module.mjs": { iterateEntries: Object.entries },
   }).default;
   native.evaluate("globalThis.EffectImplementation=nativeExports.default; foundry.documents={ActiveEffect:EffectImplementation}; Object.defineProperty(EffectImplementation,'implementation',{value:EffectImplementation});");
@@ -39,7 +41,7 @@ function runtime() {
       static defineSchema(){return {type:new foundry.data.fields.StringField({initial:'agent'}),system:new foundry.data.fields.TypeDataField(this)};}
       get documentName(){return 'Actor';}
       prepareData(){this.reset();this.system.prepareBaseData();this.prepareBaseData();this.prepareEmbeddedDocuments();this.system.prepareDerivedData();this.prepareDerivedData();}
-      prepareEmbeddedDocuments(){} prepareDerivedData(){}
+      prepareEmbeddedDocuments(){for(const effect of [...(this.effects??[]),...(this.items??[]).flatMap(item=>item.effects??[])])effect.system.reset();} prepareDerivedData(){}
     };`);
   const Shape = native.evaluate("ActorShape");
   native.load("client/documents/actor.mjs", {
@@ -85,6 +87,26 @@ function preset(presetId: string, value: string, extra: Record<string, string> =
 describe.skipIf(!root || !ordem)("v14 native transferred/projection RD and Ordem consumers", () => {
   let reference: ReturnType<typeof runtime>;
   beforeAll(() => { reference = runtime(); });
+  it.each(["maxPV", "maxPE", "maxPD", "maxSAN", "capacity", "defense", "movement", "attribute", "ritualDT", "perRound", "skill"])("evaluates a %s formula natively without rewriting its source", async id => {
+    const n = reference;
+    const formula = "(@NEX.value / 5) * 1";
+    const source = preset(id, formula);
+    const effect = n.effect(source);
+    const actor = n.actor([effect], { NEX: { value: 10 } });
+    const key = source.system.changes[0].key.slice("system.".length);
+    const get = (object: any) => key.split(".").reduce((value: any, part: string) => value?.[part], object);
+    const baseline = get(n.actor([], { NEX: { value: 10 } }).system) ?? 0;
+    expect(get(actor.system)).toBe(baseline + 2);
+    expect(effect.system.toObject(true).changes[0].value).toBe(formula);
+    actor.prepareData(); expect(get(actor.system)).toBe(baseline + 2);
+    await actor.update({ "system.NEX.value": 20 });
+    const updatedBaseline = get(n.actor([], { NEX: { value: 20 } }).system) ?? 0;
+    expect(get(actor.system)).toBe(updatedBaseline + 4);
+    effect.disabled = true; actor.prepareData(); expect(get(actor.system) ?? 0).toBe(updatedBaseline);
+    effect.disabled = false; actor.prepareData(); expect(get(actor.system)).toBe(updatedBaseline + 4);
+    expect(n.actor([n.effect(source)], actor.toObject(true).system).system).toEqual(actor.system);
+    expect(source.system.changes[0].value).toBe(formula);
+  });
   it("matches the real Ordem damage catalog exactly", () => {
     const config = reference.load(`${ordem}/module/helpers/config.mjs`, {}).op;
     expect([...ORDEM_DAMAGE_TYPE_IDS].sort()).toEqual(Object.keys(config.dropdownDamageType).sort());

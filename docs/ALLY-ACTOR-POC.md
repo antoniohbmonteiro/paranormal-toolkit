@@ -931,3 +931,14 @@ O roteiro abaixo fica preservado como referência de validação e regressão. A
 7. Repetir suporte, concessão, remoção pelo GM/supressão, troca em combate, precedência, drone/piloto e multiplayer. Mudança da ativação da habilidade não altera efeitos existentes; diálogo Usar habilidade não liga/desliga efeitos.
 
 Falha em preset existente bloqueia publicação. Falha em candidato novo exige restringir somente o tipo/contexto concretamente afetado, sem workaround de cálculo no Toolkit.
+
+
+## 0.45.1 — Fórmulas nos presets de efeitos
+
+O campo Valor ou fórmula aceita expressões determinísticas com referências do Actor. Não há formula builder, migração de fontes ou avaliação própria do Toolkit. A edição posterior da expressão usa o editor nativo. Sintaxe e limites constam no README e em integration-with-ordem.md.
+
+Validação executada pelo agente em 17/10/2026, no mundo descartável Paranormal-dev, Foundry 14.369 e Ordem 8.0.2: criado Agente QA com Classe, habilidade e efeito de PV máximo pela interface do Toolkit, usando `(@NEX.value / 5) * 1`. Macro temporária de teste confirmou 23 verificações: NEX 10 → +2; NEX 20 → +4; desativação, reativação, transferência, soma com inteiro, rejeição de expressão inválida, criação não transferível da fonte do Aliado, projeção usando o NEX do beneficiário, reconciliação sem acumulação, retirada/restauração do suporte e preservação das expressões nas origens. Solicitações explícitas de reconciliação disputaram a revisão com a reconciliação automática e exibiram o diagnóstico existente de suporte alterado; os resultados preparados foram conferidos e permaneceram corretos.
+
+Após F5, outras 7 verificações passaram: bônus próprio + projeção = 8, uma projeção, fórmulas próprias/projetadas/fontes preservadas e ausência de PV.bonus artificialmente persistido no Actor. Foram mantidos no mundo os documentos identificados por QA Toolkit 0.45.1 e a macro Toolkit 0.45.1 Formula QA, cujo roteiro final apenas consulta os resultados após reload. Nenhum personagem anterior foi usado.
+
+`npm run check`: 106 suites / 1.048 testes aprovados, incluindo referências locais do Foundry e do Ordem, typecheck e build. O harness existente passou a carregar Roll real e a resetar os dados preparados dos efeitos incorporados, reproduzindo o ciclo base antes de testar fórmulas nos 11 presets habilitados. A ressalva de RD (inteiro positivo no preset) permanece.

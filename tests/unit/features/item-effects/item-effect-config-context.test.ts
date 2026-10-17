@@ -76,6 +76,32 @@ describe("effect configuration contexts and permissions", () => {
 });
 
 describe("safe source editing", () => {
+  it.each([null, { type: "agent" }, ally])("validates formula creation natively and preserves it in source (owner=%j)", async owner => {
+    const validate = vi.fn(() => true);
+    vi.stubGlobal("Roll", { validate });
+    const item = itemFixture({}, owner), service = new ItemEffectConfigService(item);
+    const formula = "(@NEX.value / 5) * 1";
+    const effect = await service.create({ presetId: "maxPV", value: formula });
+    expect(validate).toHaveBeenCalledExactlyOnceWith(formula);
+    expect(effect.toObject(true).system.changes[0].value).toBe(formula);
+    expect(effect.transfer).toBe(owner !== ally);
+    expect(service.sources()[0].quick).toBeNull();
+    const before = item.toObject();
+    validate.mockReturnValue(false);
+    await expect(service.create({ presetId: "maxPV", value: "(@NEX.value /" })).rejects.toThrow("Fórmula inválida");
+    expect(item.toObject()).toEqual(before);
+  });
+  it("can replace a numeric quick-edit value with a formula without losing metadata", async () => {
+    vi.stubGlobal("Roll", { validate: vi.fn(() => true) });
+    const item = itemFixture({ effects: [{ ...buildDefenseTemplate("Nome preservado", 5), _id: "effect", transfer: false }] });
+    const service = new ItemEffectConfigService(item);
+    const original = item.effects.get("effect").toObject(true);
+    const formula = "@attributes.str.value + 1";
+    await service.save("effect", service.sources()[0].quick!, { presetId: "defense", value: formula });
+    original.system.changes[0].value = formula;
+    expect(item.effects.get("effect").toObject(true)).toEqual(original);
+    expect(service.sources()[0].quick).toBeNull();
+  });
   it.each([null, ally])("displays a PV maximum formula with its native editor and no source writes (owner=%j)", async owner => {
     const template = buildCustomTemplate("Efeito Ativo");
     const formula = "\n(@NEX.value / 5) * 1";

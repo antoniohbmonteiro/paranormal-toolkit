@@ -46,6 +46,9 @@ Esses paths são considerados detalhes de implementação atuais, não contrato 
 
 ### Campos de bônus usados pelos presets de Active Effect
 
+Na 0.45.1, o campo de valor também aceita fórmulas aritméticas com referências `@` do roll data do Actor (ex.: `(@NEX.value / 5) * 1`). O Toolkit restringe a sintaxe determinística e usa `Roll.validate()` antes de gravar a expressão original; o próprio `OrdemActor.applyActiveEffects()` chama `Roll.replaceFormulaData()` e `Roll.safeEval()`. Sem hooks ou avaliação própria. Expressões sem `@` não são oferecidas: a avaliação do Ordem depende desse marcador, inclusive em campos ausentes do schema. Os dados são do Actor que recebe o efeito, inclusive nas projeções. RD mantém o requisito de inteiro positivo no preset. Fórmulas já existentes permanecem intactas e editáveis nativamente.
+
+
 Os presets compartilhados de efeitos próprios e benefícios passivos (`src/adapters/ordem/ordem-effect-presets.ts`, paths em `ORDEM_AGENT_BONUS_PATHS`) criam uma única mudança em `system.changes`, `add`, fase `initial`, prioridade 20. No Foundry v14, `initial` é aplicada antes de `prepareDerivedData` e `final` depois de `prepareData`. Referência: Ordem 8.0.2 (`0e9fcc4`) e Foundry 14.369. A comprovação abaixo usa fontes reais em harness com banco e ciclo base dos Documents substituídos; não substitui smoke em mundo real.
 
 | Preset | Path | No schema | Efeito real na preparação do Agente |

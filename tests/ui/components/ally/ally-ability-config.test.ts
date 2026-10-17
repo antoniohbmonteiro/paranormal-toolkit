@@ -27,7 +27,7 @@ describe("passive benefits window renderer", () => {
     expect(html).toContain('<select name="presetId">');
     expect(html).toContain('<option value="defense" selected>Bônus de Defesa</option>');
     expect(html).toContain('<option value="diceBonus">Bônus de Dados (+Xd20)</option>');
-    expect(html).toContain('type="number" name="value"');
+    expect(html).toContain('type="text" name="value"');
     expect(html).not.toContain('name="skillId"');
     expect(html.indexOf('name="presetId"')).toBeLessThan(html.indexOf('name="value"'));
     expect(html).toContain('data-action="addBenefit">');

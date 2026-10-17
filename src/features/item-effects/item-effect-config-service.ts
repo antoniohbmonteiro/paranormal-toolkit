@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../constants";
 import { buildAllyPresetTemplate, buildCustomTemplate } from "../../adapters/ordem/ordem-ally-effect-presets";
-import { buildOrdemEffectPreset, readOrdemEffectPreset, type OrdemEffectPresetInput } from "../../adapters/ordem/ordem-effect-presets";
+import { buildOrdemEffectPreset, readOrdemEffectPreset, validateOrdemPresetFormula, type OrdemEffectPresetInput } from "../../adapters/ordem/ordem-effect-presets";
 import { stableEffectFingerprint, type EffectChange } from "../../core/allies/ally-passive-effect";
 import { AllyEffectConfigService } from "../allies/ally-effect-config-service";
 import { migrateAllyAbilityEffects } from "../allies/ally-effect-migration-service";
@@ -85,6 +85,7 @@ export class ItemEffectConfigService {
     if (this.legacy().pending) throw new Error("Importe explicitamente os benefícios legados antes de criar novos efeitos.");
     const preset = input ? buildOrdemEffectPreset(input) : null;
     if (preset && !preset.ok) throw new Error(preset.error);
+    if (preset?.ok) validateOrdemPresetFormula(preset.value);
     const template = preset?.ok ? buildAllyPresetTemplate(preset.value) : buildCustomTemplate(this.context === "ally" ? "Benefício passivo personalizado" : "Efeito personalizado");
     if (this.context === "ally") return new AllyEffectConfigService(this.item).create(template);
     const [effect] = await this.item.createEmbeddedDocuments("ActiveEffect", [{ ...template, disabled: false,
@@ -112,6 +113,7 @@ export class ItemEffectConfigService {
     if (!current || current.fingerprint !== edit.fingerprint) throw new Error("O efeito mudou. Cancele e reabra a edição para atualizar os dados.");
     const result = buildOrdemEffectPreset({ ...input, presetId: current.draft.presetId });
     if (!result.ok) throw new Error(result.error);
+    validateOrdemPresetFormula(result.value);
     const changes = structuredClone(itemEffectChanges(source)!);
     changes[0].key = result.value.changes[0].key;
     changes[0].value = result.value.changes[0].value;
