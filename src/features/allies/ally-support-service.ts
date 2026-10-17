@@ -36,7 +36,6 @@ export interface AllySupportEnvironment {
   allyExists(allyId: string): boolean;
   agentExists(actorId: string): boolean;
   abilities(allyId: string): { id: string; definition: AllyAbilityDefinition }[] | null;
-  prepareSources?(): Promise<void>;
   describeEffect(effect: AllyManagedEffect): AllyNoticeSnapshot["benefits"][number];
   resolveCombat(allyId: string, beneficiaryId: string, chosenId?: string, previousId?: string): AllyCombatSnapshot | null;
   combat(id: string): AllyCombatSnapshot | null;
@@ -107,7 +106,6 @@ export class AllySupportService {
       const user = this.environment.users().find(entry => entry.id === userId);
       authorizeAllyRequest(request, user, this.environment.ownsAlly(allyId, userId));
       if (!this.environment.allyExists(allyId)) throw new Error("Aliado ausente ou inválido.");
-      await this.environment.prepareSources?.();
       const ledger = await this.store.load(true);
       if (!ledger) throw new Error("Registro operacional indisponível.");
       this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });
@@ -158,7 +156,6 @@ export class AllySupportService {
     });
   }
   private async reconcileLoaded(): Promise<void> {
-    await this.environment.prepareSources?.();
     const ledger = await this.store.load();
     if (!ledger) return;
     this.persistedSnapshot = JSON.stringify({ ...ledger, revision: 0 });

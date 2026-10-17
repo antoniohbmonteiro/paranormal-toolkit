@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Toolkit 0.45.0 — verificação do editor</title>
+<link rel="stylesheet" href="/styles/ally-benefits-config.css">
+<style>
+body { margin:24px; background:#ddd6cc; color:#211d1b; font:14px system-ui,sans-serif; }
+#preview { display:flex; align-items:flex-start; gap:24px; flex-wrap:wrap; }
+.test-native-sheet { width:500px; background:#f8f4ee; padding:16px; border-radius:8px; }
+.effects-section { border:1px solid #cfc7be; padding:10px; margin-bottom:12px; border-radius:5px; }
+.effects-section h3 { margin:0 0 8px; } .test-native-sheet nav { padding:12px 0; }
+.application { width:520px; padding:0; } .window-header { padding:12px; } .window-content { padding:16px; }
+button { cursor:pointer; } #result { white-space:pre-wrap; } #notice { color:#802a30; }
+</style></head><body>
+<h1>Paranormal Toolkit 0.45.0</h1><p>Fixture isolada de DOM; ApplicationV2 e persistência substituídos.</p>
+<button id="run" type="button">Executar verificação visual</button><p id="notice"></p><pre id="result"></pre><div id="preview"></div>
+<script type="module">
+import { checkItemEffectConfigBlock } from './item-sheet-ability-effect-config-block.fixture.ts';
+document.querySelector('#run').onclick = async event => {
+  event.target.disabled = true;
+  try { const checks = await checkItemEffectConfigBlock(); document.querySelector('#result').textContent = `${checks.length} verificações aprovadas\n${checks.join('\n')}`; }
+  catch (error) { document.querySelector('#result').textContent = `FALHA: ${error.stack ?? error}`; }
+};
+</script></body></html>

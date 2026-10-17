@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.45.0
+
+### Efeitos da Habilidade
+
+- Novo acesso na aba **Efeitos**, após as listas nativas, para habilidades de Agentes e Items independentes. Em habilidades pertencentes a Aliados, a seção abre **Benefícios passivos**. O acesso antigo do cabeçalho foi removido; atalhos dos Aliados e ficha reutilizam uma janela por Item.
+- Editor compartilhado com reconhecimento de efeitos existentes, detalhes reais, edição rápida conservadora, editor avançado nativo e exclusão confirmada. Salvar rapidamente altera somente o parâmetro e o valor da mudança, preservando identidade e metadados; cancelamento e consulta não escrevem.
+- Mudanças aditivas em campos de bônus conhecidos, inclusive PV/PE/PD/SAN máximo, são identificadas visualmente mesmo com fórmula. O resumo indica **fórmula personalizada**, preserva a expressão e mantém a edição no editor nativo; não avalia nem converte a fórmula durante a consulta.
+- Transferência nativa escolhida por efeito na criação, permitindo efeitos passivos em habilidades ativas. O padrão para efeitos próprios é **Aplicar automaticamente ao Agente**, independentemente da Execução. A escolha vale para presets e criação personalizada; benefícios dos Aliados permanecem não transferíveis. Efeitos existentes são preservados, com alteração de transferência pelo editor nativo. Nenhuma ativação pelo diálogo de uso. Compêndios bloqueados e concessões gerenciadas ficam em consulta.
+- Novos presets de SAN máximo, carga, FOR/AGI/INT/VIG, DT de rituais, PE/PD por rodada e **RD por tipo**, além dos presets existentes. RD reutiliza os 15 identificadores do Ordem, inclusive `eletricDamage` e `damageDamage`, sem cálculos próprios ou campos persistidos no Actor. PRE e Esquiva permanecem adiados; +Xd20 indisponível.
+- Benefícios legados válidos passam a ser lidos transitoriamente, sem migração na abertura ou reconciliação. Importação pelo Mestre exige prévia e confirmação por habilidade, com identidade determinística, criação somente dos faltantes e marcador final. Projeções, precedência e supressões são preservadas. Guards de transferência recusam operações incompatíveis sem corrigir silenciosamente os documentos.
+
+### Validação
+
+- Referências automatizadas usam campos, fases e filtragem de Active Effects reais do Foundry 14.369 e preparação/aplicação de dano do Ordem 8.0.2. Banco, ciclo base dos documentos e dependências não exercitadas são substituídos; isso não equivale a um mundo em execução.
+- Fixture de navegador cobre montagem, rerender, permissões, listas nativas preservadas, edição e janela única. O funcionamento do editor e dos efeitos foi confirmado pelo usuário no Foundry após os ajustes de UX. O roteiro completo em mundo descartável, com GM e jogador, ainda exige validação específica antes da publicação; roteiro em `docs/ALLY-ACTOR-POC.md`.
+
 ## 0.44.0
 
 Primeira versão pública desde a 0.41.0. Inclui as mudanças dos marcos internos 0.42.0 e 0.43.0, que não foram publicados separadamente.

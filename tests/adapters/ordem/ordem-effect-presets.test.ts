@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildAllyPresetTemplate, buildCustomTemplate, buildDefenseTemplate } from "../../../src/adapters/ordem/ordem-ally-effect-presets";
 import { isOrdemAgentSkillId, ORDEM_AGENT_SKILLS } from "../../../src/adapters/ordem/ordem-agent-skills";
 import {
-  buildOrdemEffectPreset, ORDEM_EFFECT_PRESETS, parseOrdemBonusValue, recognizeOrdemEffectPreset,
+  buildOrdemEffectPreset, ORDEM_EFFECT_PRESETS, parseOrdemBonusValue, recognizeOrdemEffectPreset, readOrdemEffectPreset,
 } from "../../../src/adapters/ordem/ordem-effect-presets";
 import { readEffectTemplate, stableEffectFingerprint } from "../../../src/core/allies/ally-passive-effect";
 
@@ -57,15 +57,27 @@ describe("Ordem effect presets", () => {
     expect(buildOrdemEffectPreset({ presetId: "unknown", value: "1" })).toEqual({ ok: false, error: "Tipo de benefício desconhecido." });
   });
 
-  it("does not recognize multi-change, other phases, other types, other keys or formulas", () => {
+  it("does not recognize multi-change, other phases, other types or other keys", () => {
     expect(recognizeOrdemEffectPreset([])).toBeNull();
     expect(recognizeOrdemEffectPreset([bonus("system.defense.value", 1), bonus("system.desloc.value", 1)])).toBeNull();
     expect(recognizeOrdemEffectPreset([{ ...bonus("system.defense.value", 1), phase: "final" }])).toBeNull();
     expect(recognizeOrdemEffectPreset([{ ...bonus("system.defense.value", 1), type: "override" }])).toBeNull();
     expect(recognizeOrdemEffectPreset([bonus("system.skills.occultism.mod", 1)])).toBeNull();
     expect(recognizeOrdemEffectPreset([bonus("system.skills.freeSkill.value", 1)])).toBeNull();
-    expect(recognizeOrdemEffectPreset([{ ...bonus("system.defense.value", 0), value: "@NEX.value" }])).toBeNull();
+    expect(readOrdemEffectPreset([{ ...bonus("system.defense.value", 0), value: "@NEX.value" }])).toBeNull();
     expect(recognizeOrdemEffectPreset([bonus("system.defense.value", -3)])).toEqual({ presetId: "defense", summary: "-3 Defesa" });
+  });
+
+  it.each(["PV", "PE", "PD", "SAN"])("identifies %s maximum formulas for display without treating them as editable presets", resource => {
+    const changes = [{ ...bonus(`system.${resource}.bonus`, 0), value: "\n(@NEX.value / 5) * 1", priority: null }];
+    const before = structuredClone(changes);
+    expect(recognizeOrdemEffectPreset(changes)).toEqual({ presetId: `max${resource}`, summary: `Bônus de ${resource} máximo · fórmula personalizada` });
+    expect(readOrdemEffectPreset(changes)).toBeNull();
+    expect(changes).toEqual(before);
+    expect(recognizeOrdemEffectPreset([{ ...changes[0], key: `system.${resource}.max` }])).toBeNull();
+    expect(recognizeOrdemEffectPreset([{ ...changes[0], value: " \n " }])).toBeNull();
+    expect(recognizeOrdemEffectPreset([{ ...changes[0], type: "override" }])).toBeNull();
+    expect(recognizeOrdemEffectPreset([{ ...changes[0], phase: "final" }])).toBeNull();
   });
 });
 

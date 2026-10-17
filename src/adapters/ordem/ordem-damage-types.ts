@@ -17,7 +17,8 @@ export type OrdemDamageType =
   | "coldDamage"
   | "eletricDamage"
   | "chemicalDamage"
-  | "mentalDamage";
+  | "mentalDamage"
+  | "damageDamage";
 
 export const ORDEM_DAMAGE_TYPE_BY_TOOLKIT_TYPE: Record<
   ToolkitDamageType,
@@ -39,9 +40,11 @@ export const ORDEM_DAMAGE_TYPE_BY_TOOLKIT_TYPE: Record<
   mental: "mentalDamage",
 };
 
-const ORDEM_DAMAGE_TYPES = new Set<OrdemDamageType>(
-  Object.values(ORDEM_DAMAGE_TYPE_BY_TOOLKIT_TYPE),
-);
+export const ORDEM_DAMAGE_TYPE_IDS: readonly OrdemDamageType[] = [...Object.values(ORDEM_DAMAGE_TYPE_BY_TOOLKIT_TYPE), "damageDamage"];
+const ORDEM_DAMAGE_TYPES = new Set<OrdemDamageType>(ORDEM_DAMAGE_TYPE_IDS);
+export function isOrdemDamageType(value: unknown): value is OrdemDamageType {
+  return typeof value === "string" && ORDEM_DAMAGE_TYPES.has(value as OrdemDamageType);
+}
 
 const DAMAGE_TYPE_ALIASES: Record<string, OrdemDamageType | null> = {
   generic: null,
@@ -179,6 +182,8 @@ export function getOrdemDamageTypeLabel(
       return "Químico";
     case "mentalDamage":
       return "Mental";
+    case "damageDamage":
+      return "Dano";
     case null:
       return "Sem tipo";
   }

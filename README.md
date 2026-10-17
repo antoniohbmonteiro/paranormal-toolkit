@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.44.0`, com a nova ficha de Aliados, benefícios passivos e habilidades concedidas. Veja o [`CHANGELOG.md`](CHANGELOG.md).
+Versão atual: `0.45.0`, com o editor de efeitos da habilidade, edição rápida e Resistência a Dano por tipo. Veja o [`CHANGELOG.md`](CHANGELOG.md).
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 
@@ -46,14 +46,29 @@ Ela sempre aponta para a release mais recente publicada no GitHub. Depois, ative
 | Alvos por área | Permite selecionar alvos na cena para rituais com área. |
 | Presets de rituais | Alguns rituais conhecidos já possuem automações configuradas. |
 | Aliados | Actor próprio que concede benefícios passivos e habilidades a um Agente beneficiário, com suporte opcional a drones e piloto. |
+| Efeitos da habilidade | Presets, edição rápida e editor nativo para efeitos próprios de habilidades e benefícios dos Aliados. |
 
 ## Como usar
+
+### Efeitos da habilidade
+
+Na aba **Efeitos** da ficha nativa de uma habilidade, abaixo das listas do sistema, use **Paranormal Toolkit — Efeitos da habilidade → Configurar efeitos da habilidade**. As listas e ações nativas continuam disponíveis. A janela permite criar por preset, criar personalizado, visualizar efeitos existentes de qualquer autoria, editar rapidamente efeitos simples, abrir a edição avançada nativa e excluir mediante confirmação. Efeitos complexos, com fórmulas, condições ou comportamento externo usam o editor nativo.
+
+Fórmulas em mudanças aditivas de campos conhecidos, como `system.PV.bonus`, recebem um resumo como **Bônus de PV máximo · fórmula personalizada**, mesmo sem valor fixo. Esse reconhecimento visual identifica o campo afetado; não valida a expressão nem calcula seu resultado. A fórmula permanece intacta e sua edição usa o editor nativo.
+
+Em Agentes e Items independentes, são efeitos próprios. Em **Aplicação do novo efeito**, escolha **Aplicar automaticamente ao Agente** ou **Manter somente na habilidade**. Uma habilidade ativa pode ter efeitos passivos permanentes: o padrão é **Aplicar automaticamente ao Agente**, independentemente da Execução, e a escolha vale para cada efeito criado por preset ou personalizado. Items independentes explicam que a aplicação ocorrerá quando incorporados a um Actor. **Usar a habilidade não aplica automaticamente seus efeitos.** O estado desativado e a transferência continuam sendo propriedades nativas editáveis no Foundry; para mudar a transferência de um efeito existente, use a edição avançada. Abrir, reconhecer, cancelar e fechar não altera efeitos, flags ou defaults anteriores.
+
+Items independentes e de compêndios não são classificados como Aliados por nome, pasta ou flags: novos efeitos são próprios. Em compêndios bloqueados, cópias gerenciadas de concessões ou sem permissão de edição, a janela é somente leitura. Uma ficha alternativa sem a parte Efeitos e seu contêiner rolável declarado conserva somente a interface nativa, com diagnóstico no console.
+
+Os presets incluem Defesa, as 27 perícias, Deslocamento, PV/PE/PD/SAN máximo, capacidade de carga, FOR/AGI/INT/VIG, DT de rituais, PE/PD por rodada e **Resistência a Dano**. Máximos exigem Classe e cálculos automáticos; os recursos seguem a regra de Sanidade do sistema. Limites por rodada não automatizam gastos. PRE e Esquiva aguardam correções do sistema; +Xd20 continua indisponível.
+
+**Resistência a Dano:** selecione um dos 15 tipos e um inteiro positivo (padrão: Balístico, 5). Tipos disponíveis: Corte, Impacto, Perfurante, Balístico, Sangue, Morte, Conhecimento, Energia, Medo, Fogo, Frio, Eletricidade, Químico, Mental e Dano. **Dano é um tipo explícito**, sem resistência universal ou a dano sem tipo. Dois efeitos próprios aditivos somam nativamente; entre suportes concorrentes permanece a precedência dos Aliados. `ignoreRD` ignora a resistência por tipo, mas não o `extraRD` separado do sistema. Não são criadas imunidades, vulnerabilidades ou campos persistidos no Actor.
 
 ### Aliados
 
 Aliados são Actors do tipo **Aliado** que dão suporte a um Agente: concedem benefícios passivos e disponibilizam suas habilidades enquanto o suporte estiver ativo.
 
-**Criar e configurar habilidades.** Na aba **Habilidades** da ficha do Aliado, **Criar habilidade** cria um Item nativo do tipo habilidade e abre a janela **Benefícios passivos — Toolkit**. Também é possível arrastar habilidades do diretório ou de compêndios. Em cada linha, o nome expande a descrição, o lápis abre a ficha nativa da habilidade e o menu de três pontos oferece **Benefícios passivos** e **Remover habilidade**. A mesma janela de benefícios também fica no cabeçalho da ficha nativa de qualquer habilidade.
+**Criar e configurar habilidades.** Na aba **Habilidades** da ficha do Aliado, **Criar habilidade** cria um Item nativo do tipo habilidade e abre a janela **Benefícios passivos — Toolkit**. Também é possível arrastar habilidades do diretório ou de compêndios. Em cada linha, o nome expande a descrição, o lápis abre a ficha nativa da habilidade e o menu de três pontos oferece **Benefícios passivos** e **Remover habilidade**. Na ficha nativa da habilidade pertencente ao Aliado, a aba **Efeitos** oferece **Paranormal Toolkit — Benefícios passivos → Configurar benefícios passivos**, abaixo das listas nativas. Todos os acessos reutilizam uma janela por habilidade; o antigo botão do cabeçalho foi retirado.
 
 **Benefícios passivos.** Escolha o tipo de benefício, informe o valor e clique em **Adicionar benefício**. Presets disponíveis:
 
@@ -63,9 +78,13 @@ Aliados são Actors do tipo **Aliado** que dão suporte a um Agente: concedem be
 | Bônus de Perícia | Soma à perícia escolhida nas rolagens e no total da ficha. |
 | Bônus de Deslocamento | Soma ao Deslocamento. |
 | Bônus de PV, PE ou PD máximo | Soma ao máximo calculado pelo sistema (exige item de Classe e cálculos automáticos; PD usa a regra Sem Sanidade). |
+| SAN máximo, carga, FOR/AGI/INT/VIG, DT e PE/PD por rodada | Usa os mesmos presets de efeitos próprios, respeitando os cálculos nativos. |
+| Resistência a Dano | Reduz dano do tipo selecionado pela API nativa do Ordem. |
 | Bônus de Dados (+Xd20) | Visível, mas indisponível até a mecânica existir no sistema Ordem. |
 
 **Criar personalizado** cria um Active Effect vazio e abre o editor nativo, para mudanças livres. Todos os benefícios são Active Effects nativos da habilidade: editar atualiza o benefício projetado, desabilitar no editor nativo o suspende e excluir pela janela o remove do beneficiário.
+
+**Legado e importação explícita.** Benefícios antigos válidos continuam projetados por leitura em memória, sem conversão da origem. Quando aplicável, **Importar benefícios legados** mostra a prévia para confirmação pelo Mestre: cria somente as fontes faltantes e grava o marcador ao concluir. Cancelar não escreve; uma falha parcial exige nova tentativa expressa, com as mesmas identidades. Fontes existentes e flags desconhecidas são preservadas. Benefícios exclusivamente legados precisam dessa importação para edição. Arrastar uma habilidade para um Aliado não transforma efeitos próprios em benefícios; só fontes marcadas participam da projeção. A reconciliação continua atualizando legitimamente as projeções gerenciadas.
 
 **Beneficiário e suporte.** Na aba **Suporte**, escolha um Agente em **Beneficiário** para ativar o suporte; **Nenhum** encerra e remove benefícios e habilidades concedidas. Durante combate, a troca retira o suporte anterior imediatamente e aplica o novo na rodada seguinte. Com o suporte ativo, as habilidades do Aliado aparecem na ficha do beneficiário, que as usa pelo diálogo e card de habilidades existentes ou pela automação configurada, pagando seus próprios PE/PD. O ícone de cada habilidade na ficha do Aliado é um atalho para esse uso.
 

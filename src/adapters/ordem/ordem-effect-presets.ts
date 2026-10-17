@@ -2,18 +2,23 @@ import type { EffectChange } from "../../core/allies/ally-passive-effect";
 import { failure, success, type Result } from "../../core/result";
 import { isOrdemAgentSkillId, ORDEM_AGENT_SKILLS, ordemAgentSkillLabel } from "./ordem-agent-skills";
 import { ORDEM_AGENT_BONUS_PATHS } from "./ordem-paths";
+import { getOrdemDamageTypeLabel, isOrdemDamageType, ORDEM_DAMAGE_TYPE_IDS } from "./ordem-damage-types";
 
-export type OrdemEffectPresetId = "defense" | "skill" | "movement" | "maxPV" | "maxPE" | "maxPD" | "diceBonus";
-export type OrdemEffectPresetField = "skill" | "value";
+export type OrdemEffectPresetId = "defense" | "skill" | "movement" | "maxPV" | "maxPE" | "maxPD" | "maxSAN" | "capacity" | "attribute" | "ritualDT" | "perRound" | "damageResistance" | "diceBonus";
+export type OrdemEffectPresetField = "skill" | "value" | "attribute" | "resource" | "damageType";
 export type OrdemEffectPresetDefinition = {
   id: OrdemEffectPresetId;
   label: string;
   fields: readonly OrdemEffectPresetField[];
   unavailableMessage?: string;
 };
-export type OrdemEffectPresetInput = { presetId: string; value?: string; skillId?: string };
+export type OrdemEffectPresetInput = { presetId: string; value?: string; skillId?: string; attributeId?: string; resourceId?: string; damageTypeId?: string };
 export type OrdemEffectPreset = { presetId: OrdemEffectPresetId; name: string; changes: EffectChange[] };
 export type RecognizedOrdemEffectPreset = { presetId: OrdemEffectPresetId; summary: string };
+export const ORDEM_EFFECT_ATTRIBUTES = [
+  { id: "str", label: "FOR" }, { id: "dex", label: "AGI" }, { id: "int", label: "INT" }, { id: "vit", label: "VIG" },
+] as const;
+export type EditableOrdemEffectPreset = RecognizedOrdemEffectPreset & OrdemEffectPresetInput;
 
 export const ORDEM_EFFECT_PRESETS: readonly OrdemEffectPresetDefinition[] = [
   { id: "defense", label: "Bônus de Defesa", fields: ["value"] },
@@ -22,16 +27,25 @@ export const ORDEM_EFFECT_PRESETS: readonly OrdemEffectPresetDefinition[] = [
   { id: "maxPV", label: "Bônus de PV máximo", fields: ["value"] },
   { id: "maxPE", label: "Bônus de PE máximo", fields: ["value"] },
   { id: "maxPD", label: "Bônus de PD máximo", fields: ["value"] },
+  { id: "maxSAN", label: "Bônus de SAN máximo", fields: ["value"] },
+  { id: "capacity", label: "Capacidade de carga", fields: ["value"] },
+  { id: "attribute", label: "Bônus de Atributo", fields: ["attribute", "value"] },
+  { id: "ritualDT", label: "Bônus de DT de rituais", fields: ["value"] },
+  { id: "perRound", label: "PE/PD por rodada", fields: ["resource", "value"] },
+  { id: "damageResistance", label: "Resistência a Dano", fields: ["damageType", "value"] },
   { id: "diceBonus", label: "Bônus de Dados (+Xd20)", fields: [], unavailableMessage: "AINDA NÃO IMPLEMENTADO NO SISTEMA" },
 ];
 
-type ValuePresetId = Exclude<OrdemEffectPresetId, "skill" | "diceBonus">;
+type ValuePresetId = Exclude<OrdemEffectPresetId, "skill" | "diceBonus" | "attribute" | "perRound" | "damageResistance">;
 const VALUE_TARGETS: readonly { presetId: ValuePresetId; key: string; noun: string }[] = [
   { presetId: "defense", key: ORDEM_AGENT_BONUS_PATHS.defense, noun: "Defesa" },
   { presetId: "movement", key: ORDEM_AGENT_BONUS_PATHS.movement, noun: "Deslocamento" },
   { presetId: "maxPV", key: ORDEM_AGENT_BONUS_PATHS.resourceMax.PV, noun: "PV máximo" },
   { presetId: "maxPE", key: ORDEM_AGENT_BONUS_PATHS.resourceMax.PE, noun: "PE máximo" },
   { presetId: "maxPD", key: ORDEM_AGENT_BONUS_PATHS.resourceMax.PD, noun: "PD máximo" },
+  { presetId: "maxSAN", key: ORDEM_AGENT_BONUS_PATHS.resourceMax.SAN, noun: "SAN máximo" },
+  { presetId: "capacity", key: ORDEM_AGENT_BONUS_PATHS.capacity, noun: "capacidade de carga" },
+  { presetId: "ritualDT", key: ORDEM_AGENT_BONUS_PATHS.ritualDT, noun: "DT de rituais" },
 ];
 
 export function findOrdemEffectPreset(id: string): OrdemEffectPresetDefinition | undefined {
@@ -65,17 +79,51 @@ export function buildOrdemEffectPreset(input: OrdemEffectPresetInput): Result<Or
     return success({ presetId: id, name: `${preset.label} (${ordemAgentSkillLabel(skillId)})`,
       changes: [ordemBonusChange(ORDEM_AGENT_BONUS_PATHS.skill(skillId), value)] });
   }
+  if (id === "attribute") {
+    const attribute = ORDEM_EFFECT_ATTRIBUTES.find(entry => entry.id === (input.attributeId ?? "str"));
+    if (!attribute) return failure("Selecione um atributo válido. PRE aguarda correção no sistema.");
+    return success({ presetId: id, name: `${preset.label} (${attribute.label})`, changes: [ordemBonusChange(ORDEM_AGENT_BONUS_PATHS.attribute(attribute.id), value)] });
+  }
+  if (id === "perRound") {
+    const resource = input.resourceId ?? "PE";
+    if (resource !== "PE" && resource !== "PD") return failure("Selecione PE ou PD.");
+    return success({ presetId: id, name: `Bônus de ${resource} por rodada`, changes: [ordemBonusChange(ORDEM_AGENT_BONUS_PATHS.perRound(resource), value)] });
+  }
+  if (id === "damageResistance") {
+    const damageType = input.damageTypeId ?? "ballisticDamage";
+    if (!isOrdemDamageType(damageType)) return failure("Selecione um tipo de dano válido.");
+    if (value <= 0) return failure("Informe uma resistência inteira maior que zero.");
+    return success({ presetId: id, name: `Resistência a Dano (${getOrdemDamageTypeLabel(damageType)})`,
+      changes: [ordemBonusChange(ORDEM_AGENT_BONUS_PATHS.resistance(damageType), value)] });
+  }
   const target = VALUE_TARGETS.find(entry => entry.presetId === id)!;
   return success({ presetId: id, name: preset.label, changes: [ordemBonusChange(target.key, value)] });
 }
 
 export function recognizeOrdemEffectPreset(changes: readonly EffectChange[]): RecognizedOrdemEffectPreset | null {
+  const recognized = readOrdemEffectPreset(changes);
+  if (recognized) return { presetId: recognized.presetId, summary: recognized.summary };
+  if (changes.length !== 1) return null;
+  const [change] = changes;
+  if (change.type !== "add" || change.phase !== "initial" || typeof change.value !== "string" || !change.value.trim()) return null;
+  const target = VALUE_TARGETS.find(entry => entry.key === change.key);
+  return target ? { presetId: target.presetId, summary: `${findOrdemEffectPreset(target.presetId)!.label} · fórmula personalizada` } : null;
+}
+
+export function readOrdemEffectPreset(changes: readonly EffectChange[]): EditableOrdemEffectPreset | null {
   if (changes.length !== 1) return null;
   const [change] = changes;
   if (change.type !== "add" || change.phase !== "initial" || typeof change.value !== "number" || !Number.isFinite(change.value)) return null;
   const amount = `${change.value > 0 ? "+" : ""}${change.value}`;
   const target = VALUE_TARGETS.find(entry => entry.key === change.key);
-  if (target) return { presetId: target.presetId, summary: `${amount} ${target.noun}` };
+  const value = String(change.value);
+  if (target) return { presetId: target.presetId, summary: `${amount} ${target.noun}`, value };
+  const attribute = ORDEM_EFFECT_ATTRIBUTES.find(entry => ORDEM_AGENT_BONUS_PATHS.attribute(entry.id) === change.key);
+  if (attribute) return { presetId: "attribute", attributeId: attribute.id, value, summary: `${attribute.label} ${amount}` };
+  const resource = (["PE", "PD"] as const).find(id => ORDEM_AGENT_BONUS_PATHS.perRound(id) === change.key);
+  if (resource) return { presetId: "perRound", resourceId: resource, value, summary: `${amount} ${resource} por rodada` };
+  const damageType = ORDEM_DAMAGE_TYPE_IDS.find(id => ORDEM_AGENT_BONUS_PATHS.resistance(id) === change.key);
+  if (damageType) return { presetId: "damageResistance", damageTypeId: damageType, value, summary: `RD ${getOrdemDamageTypeLabel(damageType)} ${amount}` };
   const skill = ORDEM_AGENT_SKILLS.find(entry => ORDEM_AGENT_BONUS_PATHS.skill(entry.id) === change.key);
-  return skill ? { presetId: "skill", summary: `${skill.label} ${amount}` } : null;
+  return skill ? { presetId: "skill", skillId: skill.id, value, summary: `${skill.label} ${amount}` } : null;
 }

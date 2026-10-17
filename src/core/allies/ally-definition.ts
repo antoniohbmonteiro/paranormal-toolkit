@@ -4,6 +4,12 @@ export type LegacyAllyAbilityDefinition = { version: 1; benefits: LegacyAllyBene
 export type AllyBenefit = { id: string; effectId: string; template: AllyEffectTemplate };
 export type AllyAbilityDefinition = { version: 2; benefits: AllyBenefit[] };
 
+export function legacyAllyEffectId(itemUuid: string, id: string): string {
+  let hash = 14695981039346656037n;
+  for (const character of `${itemUuid}/${id}`) hash = BigInt.asUintN(64, (hash ^ BigInt(character.charCodeAt(0))) * 1099511628211n);
+  return hash.toString(16).padStart(16, "0");
+}
+
 export function readAllyAbilityDefinition(value: unknown): LegacyAllyAbilityDefinition | null {
   if (!value || typeof value !== "object") return null;
   const data = value as Record<string, unknown>;

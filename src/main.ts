@@ -17,6 +17,7 @@ import { registerRitualLogActionCleanup } from "./features/item-use/chat-card/ri
 import { createToolkitServices, type ToolkitServices } from "./toolkit-services";
 import { registerActorSheetRitualPresetAction } from "./ui/actor-sheet-actions/actor-sheet-ritual-preset-action";
 import { registerItemSheetAbilityRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ability-roll-config-block";
+import { registerItemSheetAbilityEffectConfigBlock } from "./ui/item-sheet-actions/item-sheet-ability-effect-config-block";
 import { registerItemSheetRitualResistanceOutcomeBlock } from "./ui/item-sheet-actions/item-sheet-ritual-resistance-outcome-block";
 import { registerItemSheetRitualRollConfigBlock } from "./ui/item-sheet-actions/item-sheet-ritual-roll-config-block";
 
@@ -61,6 +62,7 @@ Hooks.once("ready", () => {
   registerItemSheetRitualRollConfigBlock();
   registerItemSheetRitualResistanceOutcomeBlock();
   registerItemSheetAbilityRollConfigBlock();
+  registerItemSheetAbilityEffectConfigBlock();
 
   ModuleLogger.info("Inicializado para o sistema Ordem Paranormal.");
   ModuleLogger.info(

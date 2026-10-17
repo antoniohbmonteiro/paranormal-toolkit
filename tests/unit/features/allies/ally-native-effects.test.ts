@@ -10,47 +10,7 @@ import { AllyReconciliationService } from "../../../../src/features/allies/ally-
 import { OrdemAllyBenefitAdapter } from "../../../../src/adapters/ordem/ordem-ally-benefit-adapter";
 
 const scope = "paranormal-toolkit";
-function apply(data: any, changes: any) {
-  for (const [key, value] of Object.entries(changes)) {
-    const parts = key.split("."); let target = data;
-    for (const part of parts.slice(0, -1)) target = target[part] ??= {};
-    target[parts.at(-1)!] = structuredClone(value);
-  }
-}
-function effect(data: any, parent?: any): any {
-  let source = structuredClone(data);
-  return { id: source._id, get name() { return source.name; }, get disabled() { return source.disabled ?? false; },
-    get transfer() { return source.transfer ?? false; }, parent, get system() { return structuredClone(source.system); },
-    toObject: () => structuredClone(source), getFlag: (_scope: string, key: string) => source.flags?.[_scope]?.[key],
-    update: vi.fn(async changes => { apply(source, changes); }),
-    updateSource: vi.fn(changes => apply(source, changes)),
-    unsetFlag: vi.fn(async (_scope: string, key: string) => { delete source.flags?.[_scope]?.[key]; }),
-    sheet: { render: vi.fn(async () => {}) },
-    replace: (data: any) => { source = structuredClone(data); },
-  };
-}
-export function itemFixture(data: any = {}, parent: any = null): any {
-  let count = 0;
-  const source = { _id: "ability", name: "Habilidade", type: "ability", ...structuredClone(data) };
-  const effects: any[] = [];
-  const item: any = { id: source._id, name: source.name, type: source.type, parent,
-    uuid: parent ? `Actor.${parent.id}.Item.${source._id}` : `Item.${source._id}`,
-    effects: { contents: effects, get: (id: string) => effects.find(entry => entry.id === id) },
-    canUserModify: vi.fn(() => true),
-    getFlag: (_scope: string, key: string) => source.flags?.[_scope]?.[key],
-    setFlag: vi.fn(async (_scope: string, key: string, value: any) => { ((source.flags ??= {})[_scope] ??= {})[key] = structuredClone(value); }),
-    toObject: () => ({ ...structuredClone(source), effects: effects.map(entry => entry.toObject(true)) }),
-    createEmbeddedDocuments: vi.fn(async (_type: string, entries: any[]) => {
-      const created = entries.map(entry => effect({ ...entry, _id: entry._id ?? `native-effect-${++count}` }, item));
-      effects.push(...created); return created;
-    }),
-    deleteEmbeddedDocuments: vi.fn(async (_type: string, ids: string[]) => {
-      for (const id of ids) { const index = effects.findIndex(entry => entry.id === id); if (index >= 0) effects.splice(index, 1); }
-    }),
-  };
-  for (const entry of source.effects ?? []) effects.push(effect(entry, item));
-  return item;
-}
+import { effect, itemFixture } from "../../../helpers/item-effects";
 function formFields(values: Record<string, string>) {
   return { querySelector: (selector: string) => {
     const name = /\[name="(\w+)"\]/.exec(selector)?.[1];
@@ -98,15 +58,18 @@ describe("native passive effect editing on ordinary ability Items", () => {
     expect(actions).not.toHaveProperty("selectEffect");
     await actions.addBenefit.call(app, {} as PointerEvent, formTarget({ presetId: "defense", value: "5" }));
     await actions.createCustom.call(app);
-    expect(readAllyAbility(item)!.benefits).toHaveLength(2);
+    expect(readAllyAbility(item)!.benefits).toHaveLength(embedded ? 2 : 0);
     for (const call of item.createEmbeddedDocuments.mock.calls) {
-      expect(call[1][0]).toMatchObject({ transfer: false, flags: { [scope]: { allyPassive: { version: 1 } } } });
+      expect(call[1][0].transfer).toBe(!embedded);
+      if (embedded) expect(call[1][0].flags[scope].allyPassive).toEqual({ version: 1 });
+      else expect(call[1][0]).not.toHaveProperty("flags");
     }
     expect(item.effects.contents[1].sheet.render).toHaveBeenCalledWith({ force: true });
     await item.createEmbeddedDocuments("ActiveEffect", [{ ...buildDefenseTemplate("Efeito antigo não selecionado", 99), _id: "old", transfer: true }]);
     const oldSource = item.effects.get("old").toObject();
     const html = (await app._renderHTML()).innerHTML;
-    expect(html).not.toContain("Efeito antigo não selecionado");
+    if (embedded) expect(html).not.toContain("Efeito antigo não selecionado");
+    else expect(html).toContain("Efeito antigo não selecionado");
     expect(html).not.toContain('data-action="selectEffect"');
     const id = item.effects.contents[0].id;
     const removeTarget = { dataset: { effectId: id } } as any;
@@ -137,11 +100,11 @@ describe("native passive effect editing on ordinary ability Items", () => {
     expect(warn).not.toHaveBeenCalled();
     expect(item.createEmbeddedDocuments).toHaveBeenCalledTimes(expected.length);
     item.createEmbeddedDocuments.mock.calls.forEach((call: any[], index: number) => {
-      expect(call[1][0]).toMatchObject({ name: expected[index][2], type: "base", transfer: false, disabled: false,
-        flags: { [scope]: { allyPassive: { version: 1 } } },
+      expect(call[1][0]).toMatchObject({ name: expected[index][2], type: "base", transfer: !embedded, disabled: false,
+        ...(embedded ? { flags: { [scope]: { allyPassive: { version: 1 } } } } : {}),
         system: { changes: [{ key: expected[index][3], type: "add", value: 3, phase: "initial", priority: 20 }] } });
     });
-    expect(readAllyAbility(item)!.benefits).toHaveLength(expected.length);
+    expect(readAllyAbility(item)!.benefits).toHaveLength(embedded ? expected.length : 0);
     for (const [values, message] of [
       [{ presetId: "diceBonus", value: "3" }, "AINDA NÃO IMPLEMENTADO NO SISTEMA"],
       [{ presetId: "skill", value: "3", skillId: "freeSkill" }, "Selecione uma perícia válida."],
@@ -240,26 +203,26 @@ describe("idempotent legacy ability migration", () => {
     const item = itemFixture({ flags: { other: { keep: 1 }, [scope]: { allyAbility: {
       version: 1, customUnknown: "preserved", benefits: [{ id: "old-defense", kind: "defense", value: 7 }],
     } } } });
-    await migrateAllyAbilityEffects(item); await migrateAllyAbilityEffects(item);
+    await migrateAllyAbilityEffects(item, { confirmed: true }); await migrateAllyAbilityEffects(item, { confirmed: true });
     expect(item.effects.contents).toHaveLength(1);
     expect(readAllyAbility(item)!.benefits[0]).toMatchObject({ id: "old-defense", template: { system: { changes: [{ value: 7 }] } } });
     expect(item.toObject().flags[scope].allyAbility.customUnknown).toBe("preserved");
     expect(item.toObject().flags.other.keep).toBe(1);
     const copy = itemFixture(item.toObject(), { id: "iris", type: `${scope}.ally` });
-    await migrateAllyAbilityEffects(copy); expect(copy.effects.contents).toHaveLength(1);
+    await migrateAllyAbilityEffects(copy, { confirmed: true }); expect(copy.effects.contents).toHaveLength(1);
   });
   it("recovers an interrupted marker write without duplicate effects", async () => {
     const item = itemFixture({ flags: { [scope]: { allyAbility: { version: 1, benefits: [{ id: "legacy", kind: "defense", value: 5 }] } } } });
     item.setFlag.mockRejectedValueOnce(new Error("lost response"));
-    await expect(migrateAllyAbilityEffects(item)).rejects.toThrow("lost response");
+    await expect(migrateAllyAbilityEffects(item, { confirmed: true })).rejects.toThrow("lost response");
     const id = item.effects.contents[0].id;
-    await migrateAllyAbilityEffects(item);
+    await migrateAllyAbilityEffects(item, { confirmed: true });
     expect(item.effects.contents).toHaveLength(1); expect(item.effects.contents[0].id).toBe(id);
   });
   it("does not alter unknown legacy definitions", async () => {
     const item = itemFixture({ flags: { [scope]: { allyAbility: { version: 99, custom: "unknown" } } } });
     const before = item.toObject();
-    await expect(migrateAllyAbilityEffects(item)).rejects.toThrow("inválidos");
+    await expect(migrateAllyAbilityEffects(item, { confirmed: true })).rejects.toThrow("inválidos");
     expect(item.toObject()).toEqual(before);
     expect(item.setFlag).not.toHaveBeenCalled();
   });

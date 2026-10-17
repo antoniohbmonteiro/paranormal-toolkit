@@ -194,6 +194,7 @@ declare const game: {
   items: FoundryCollectionLike<Item>;
   messages: FoundryCollectionLike<ChatMessageDocumentLike>;
   modules: Map<string, FoundryModuleLike>;
+  packs?: { get(id: string): { locked: boolean } | undefined };
   settings: {
     register(namespace: string, key: string, data: GameSettingRegistrationData): void;
     get(namespace: string, key: string): unknown;
@@ -270,6 +271,7 @@ declare class ApplicationV2 {
   constructor(options?: Record<string, unknown>);
   render(options?: Record<string, unknown>): Promise<this> | this;
   close(options?: Record<string, unknown>): Promise<this> | this;
+  bringToFront(): void;
   changeTab(tab: string, group: string, options?: Record<string, unknown>): void;
   _onRender(context: object, options: Record<string, unknown>): Promise<void>;
   _getHeaderControls(): Record<string, unknown>[];
@@ -326,6 +328,7 @@ declare class Roll {
 }
 
 declare class Actor {
+  pack?: string | null;
   getRollData?(): Record<string, unknown>;
   documentName: "Actor";
   _stats?: { lastModifiedBy?: string | null };
@@ -352,6 +355,9 @@ declare class Actor {
 }
 
 declare class Item {
+  pack?: string | null;
+  limited?: boolean;
+  testUserPermission?(user: FoundryUserLike, level: string): boolean;
   getRollData?(): Record<string, unknown>;
   img?: string;
   documentName: "Item";
@@ -377,6 +383,7 @@ declare class Item {
 }
 
 type AllyEffectLike = {
+  canUserModify?: (user: FoundryUserLike, action: string) => boolean;
   id: string; name: string; uuid?: string; parent?: Actor | Item;
   disabled: boolean; transfer: boolean;
   system?: Record<string, unknown>;

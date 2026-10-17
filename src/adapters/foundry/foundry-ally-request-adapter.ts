@@ -8,7 +8,6 @@ import { AllyCombatSelectionRequired, electAllyExecutor, readAllyRequest, type A
 import type { AllyLedger, AllySupportEnvironment } from "../../features/allies/ally-support-service";
 import type { AllySupportChange } from "../../features/allies/ally-support-notifications";
 import { publishAllySupportChange } from "./foundry-ally-notifications";
-import { migrateAllyAbilityEffects } from "../../features/allies/ally-effect-migration-service";
 import { describeAllyEffect } from "../ordem/ordem-ally-benefit-adapter";
 import type { AllyManagedEffect } from "../../features/allies/ally-reconciliation-service";
 import { FoundryAllyItemAdapter } from "./foundry-ally-item-adapter";
@@ -191,21 +190,7 @@ function snapshot(combat: AllyCombatLike): AllyCombatSnapshot {
   return { id: combat.id, started: combat.started, round: combat.round ?? 0 };
 }
 export class FoundryAllyEnvironment implements AllySupportEnvironment {
-  private migrationFailures = new Set<string>();
   describeEffect(effect: AllyManagedEffect) { return describeAllyEffect(effect); }
-  async prepareSources(): Promise<void> {
-    const items = [...game.items?.contents ?? [], ...(game.actors.contents ?? []).filter(actor => actor.type === ALLY_TYPE)
-      .flatMap(actor => getActorItems(actor))];
-    for (const item of items) {
-      try { await migrateAllyAbilityEffects(item); }
-      catch (error) {
-        if (!this.migrationFailures.has(item.uuid)) {
-          this.migrationFailures.add(item.uuid); console.error("Paranormal Toolkit | Allies: migração interrompida.", error);
-          ui.notifications?.warn(error instanceof Error ? error.message : "Falha ao migrar benefícios antigos.");
-        }
-      }
-    }
-  }
   currentUserId(): string | null { return game.user?.id ?? null; }
   users(): AllyUser[] { return allyUsers(); }
   ownsAlly(allyId: string, userId: string): boolean {

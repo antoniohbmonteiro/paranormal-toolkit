@@ -1,4 +1,5 @@
 import type { ActorResource } from "../../core/resources/actor-resource";
+import type { OrdemDamageType } from "./ordem-damage-types";
 
 export const ORDEM_AGENT_RESOURCE_PATHS: Record<ActorResource, string> = {
   PV: "system.PV",
@@ -24,10 +25,16 @@ export const ORDEM_AGENT_BONUS_PATHS = {
   defense: "system.defense.value",
   movement: "system.desloc.value",
   skill: (skillId: string) => `system.skills.${skillId}.value`,
+  attribute: (attributeId: "str" | "dex" | "int" | "vit") => `system.attributes.${attributeId}.value`,
+  capacity: "system.spaces.bonus.max",
+  ritualDT: "system.ritual.DT",
+  perRound: (resource: "PE" | "PD") => `system.${resource}.perRound`,
+  resistance: (damageType: OrdemDamageType) => `system.resistances.${damageType}.value`,
   resourceMax: {
     PV: "system.PV.bonus",
     PE: "system.PE.bonus",
-    PD: "system.PD.bonus"
+    PD: "system.PD.bonus",
+    SAN: "system.SAN.bonus"
   }
 } as const;
 

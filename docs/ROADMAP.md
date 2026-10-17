@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual: `v0.44.0`, primeira versão pública desde a `v0.41.0`. Os marcos `0.42.0` e `0.43.0` foram internos e chegam ao público nesta versão.
+Versão no repositório: `v0.45.0`, Efeitos da Habilidade. Implementação e testes automatizados concluídos; smoke final em mundo Foundry com GM e jogador pendente antes da publicação. A versão pública anterior é `v0.44.0`.
 
 O Toolkit já tem:
 
@@ -45,6 +45,12 @@ O Toolkit já tem:
 
 
 
+
+### Implementado em 0.45.0 — Efeitos da Habilidade
+
+Entrada abaixo das listas nativas na aba Efeitos, sem controle no cabeçalho; janela compartilhada para efeitos próprios e benefícios de Aliados, com reconhecimento, edição rápida, editor nativo e exclusão confirmada. Permissões e packs bloqueados respeitados; uma janela por Item. Presets incluem RD nos 15 tipos canônicos, SAN, carga, FOR/AGI/INT/VIG, DT e limites de PE/PD por rodada. PRE e Esquiva aguardam correção no sistema; ataque, dano, dados adicionais, crítico e propriedades de armas continuam investigação futura, sem dependência de PR externo.
+
+Legado é lido sem conversão; importação explícita preserva identidade e flags. Sincronização das projeções e precedência continuam na infraestrutura existente. Referências nativas e fixture DOM passaram; persistência, permissões reais e multiplayer ainda exigem o smoke registrado em [ALLY-ACTOR-POC.md](ALLY-ACTOR-POC.md#efeitos-da-habilidade--0450). Nenhuma alteração no sistema Ordem.
 
 ### Concluído em 0.44.0 — Aliados
 

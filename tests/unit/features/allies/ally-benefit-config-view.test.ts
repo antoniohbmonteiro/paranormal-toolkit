@@ -7,7 +7,7 @@ const draft = (presetId: string) => ({ ...defaultAllyBenefitDraft(), presetId })
 describe("passive benefits window view model", () => {
   it("starts on the defense preset with only the value field", () => {
     const view = buildAllyBenefitConfigView({ editable: true, draft: defaultAllyBenefitDraft(), effects: [] });
-    expect(view.presets.map(preset => preset.id)).toEqual(["defense", "skill", "movement", "maxPV", "maxPE", "maxPD", "diceBonus"]);
+    expect(view.presets.map(preset => preset.id)).toEqual(["defense", "skill", "movement", "maxPV", "maxPE", "maxPD", "maxSAN", "capacity", "attribute", "ritualDT", "perRound", "damageResistance", "diceBonus"]);
     expect(view.presets.find(preset => preset.selected)?.id).toBe("defense");
     expect(view.fields).toEqual([{ kind: "value", value: "5" }]);
     expect(view).toMatchObject({ canAdd: true, unavailableMessage: null, effects: [] });
@@ -50,7 +50,7 @@ describe("passive benefits window view model", () => {
       { id: "empty", name: "Novo", disabled: false, template: buildCustomTemplate("Novo") },
       { id: "broken", name: "Quebrado", disabled: false, template: null },
     ] });
-    expect(view.effects).toEqual([
+    expect(view.effects.map(({ id, name, kind, summary, disabled, diagnostic }) => ({ id, name, kind, summary, disabled, diagnostic }))).toEqual([
       { id: "legacy", name: "Bônus de Defesa +7", kind: "defense", summary: "+7 Defesa", disabled: false, diagnostic: null },
       { id: "skill", name: "Bônus de Perícia (Luta)", kind: "skill", summary: "Luta +2", disabled: true, diagnostic: null },
       { id: "custom", name: "Proteção", kind: "custom", summary: "Personalizado · 2 mudanças, 1 condição", disabled: false, diagnostic: null },

@@ -277,7 +277,7 @@ export class AllySheet extends foundry.applications.sheets.ActorSheetV2 {
   }
   private async openPassiveBenefits(item: Item): Promise<void> {
     const { AllyAbilityConfigApplication } = await import("./ally-ability-config-application");
-    await new AllyAbilityConfigApplication(item).render({ force: true });
+    await AllyAbilityConfigApplication.open(item);
   }
   private static async onCreateAbility(this: AllySheet): Promise<void> {
     if (!this.canEdit() || !readFoundryAllyProfile(this.actor)) return;

@@ -17,6 +17,7 @@ const benefitWindows = vi.hoisted(() => [] as { item: unknown; render: any }[]);
 vi.mock("../../../../src/applications/ally-ability-config-application", async () => {
   const { vi: mocks } = await import("vitest");
   return { AllyAbilityConfigApplication: class {
+    static async open(item: unknown) { const app = new this(item); await app.render({ force: true }); return app; }
     render = mocks.fn(async () => this);
     constructor(public item: unknown) { benefitWindows.push(this); }
   } };
