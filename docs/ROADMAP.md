@@ -13,7 +13,7 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual: `v0.45.1`, com suporte a fórmulas aritméticas nos presets de Efeitos da Habilidade. A base `v0.45.0` já foi publicada e teve smoke test manual aprovado pelo usuário. Consulte o README para a sintaxe aceita e os limites de RD.
+Versão atual: `v0.45.2`, com admissão de habilidades concedidas pelos Aliados independente da idade da mensagem e dos relógios dos clientes. Mantém as fórmulas aritméticas nos presets de Efeitos da Habilidade da `v0.45.1`. A base `v0.45.0` já foi publicada e teve smoke test manual aprovado pelo usuário. Consulte o README para a sintaxe aceita e os limites de RD.
 
 O Toolkit já tem:
 

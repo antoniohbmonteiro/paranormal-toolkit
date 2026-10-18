@@ -14,7 +14,7 @@ async function ready() {
   return { ...f, projected, message, prepare };
 }
 
-describe("native message admission with Unix stats and a separate uptime clock", () => {
+describe("native message admission independent of creation time and client clocks", () => {
   it("keeps the optional probe read-only and reports the corrected and legacy clock ages", async () => {
     const f = await ready();
     const { installAllyAbilityAdmissionProbe } = await import("../../../../scripts/diagnostics/ally-ability-admission-probe.mjs");
@@ -44,10 +44,6 @@ describe("native message admission with Unix stats and a separate uptime clock",
   it.each([
     ["message-not-found", (f: any) => f.messages.splice(0, 1)],
     ["author-mismatch", async (f: any) => f.message.update({ author: "ally-player" })],
-    ["invalid-created-time", (f: any) => { delete f.message._stats.createdTime; }],
-    ["invalid-created-time", (f: any) => { f.message._stats.createdTime = NaN; }],
-    ["message-too-old", (f: any) => { f.message._stats.createdTime = Date.now() - 120_001; }],
-    ["future-created-time", (f: any) => { f.message._stats.createdTime = Date.now() + 60_000; }],
     ["existing-receipt", async (f: any) => f.message.setFlag(scope, "allyExecutionReceipt", { forged: true })],
     ["existing-binding", async (f: any) => f.message.setFlag(scope, "allyExecutionBinding", { forged: true })],
   ])("diagnoses %s without transferring author or starting mechanics", async (code, mutate) => {
@@ -61,15 +57,57 @@ describe("native message admission with Unix stats and a separate uptime clock",
     expect(f.ledger().receipts).toHaveLength(0);
     expect(f.mauro.system.PE.value).toBe(20); expect(f.rolls).toHaveLength(0);
   });
-  it.each([[-1, ["future-created-time"]], [0, []], [1, []], [120_000, []], [120_001, ["message-too-old"]]])(
-    "preserves the exact age boundary at %s ms", async (age, failures) => {
-      const f = await ready(); const now = Date.now(); f.message._stats.createdTime = now - (age as number);
-      const diagnosis = diagnoseAllyMessageAdmission(f.message, "player", now);
-      expect(diagnosis.failures).toEqual(failures);
-      expect(diagnosis.ageMs).toBe(age);
-      expect(Object.values(diagnosis).every(value => typeof value === "boolean" || typeof value === "number" || value === null || Array.isArray(value))).toBe(true);
+  it.each([-86_400_000, -120_001, -1, 0, 120_000, 120_001, 86_400_000])(
+    "admits a message when the executor clock differs by %s ms and timestamps the receipt locally", async offset => {
+      const f = await ready(); const now = Date.now() + offset;
+      vi.spyOn(Date, "now").mockReturnValue(now);
+      expect(diagnoseAllyMessageAdmission(f.message, "player").failures).toEqual([]);
+      expect((await f.prepare()).status).toBe("prepared");
+      expect(f.ledger().receipts[0].preparedAt).toBe(now);
+      expect(f.message.author.id).toBe("gm");
+      expect(f.mauro.system.PE.value).toBe(20); expect(f.rolls).toHaveLength(0);
     },
   );
+  it.each([undefined, {}, { createdTime: undefined }, { createdTime: NaN }, { createdTime: Infinity }, { createdTime: "invalid" }])(
+    "admits an authentic message without usable creation stats (%j)", async stats => {
+      const f = await ready(); f.message._stats = stats;
+      expect((await f.prepare()).status).toBe("prepared");
+      expect(f.ledger().receipts).toHaveLength(1);
+      expect(f.mauro.system.PE.value).toBe(20); expect(f.rolls).toHaveLength(0);
+    },
+  );
+  it.each(["replace", "keep"])("never readmits or reexecutes a claimed or consumed future message (%s)", async mode => {
+    const f = await ready(); f.settings["itemUse.systemCardMode"] = mode;
+    f.message._stats.createdTime = Date.now() + 86_400_000;
+    const [first, duplicate] = await Promise.all([f.prepare(), f.prepare()]);
+    expect(duplicate.sequence).toBe(first.sequence);
+    expect(f.ledger().receipts).toHaveLength(1);
+    expect(f.message.author.id).toBe("gm");
+    const request = { id: "execute-001", action: "execute" as const, messageId: f.message.id, sequence: first.sequence,
+      options: { spendResource: true, selectedNexThresholds: {} } };
+    await Promise.all([f.use.handle("mauro", request, "player"), f.use.handle("mauro", request, "player")]);
+    expect(f.ledger().receipts).toHaveLength(0);
+    const nextSequence = f.ledger().nextExecutionSequence;
+    vi.spyOn(Date, "now").mockReturnValue(f.message._stats.createdTime + 86_400_000);
+    await f.prepare(); await f.use.handle("mauro", request, "player");
+    expect(f.ledger().nextExecutionSequence).toBe(nextSequence);
+    expect(f.ledger().receipts).toHaveLength(0);
+    expect(f.rolls).toHaveLength(1); expect(f.mauro.system.PE.value).toBe(18);
+    expect(f.messages).toHaveLength(mode === "keep" ? 2 : 1);
+    expect(f.message.canUserModify(f.player, "update")).toBe(false);
+  });
+  it("still expires a preparation after fifteen minutes without readmitting its old original message", async () => {
+    const f = await ready(); f.message._stats.createdTime = Date.now() - 86_400_000;
+    const prepared = await f.prepare(); const preparedAt = f.ledger().receipts[0].preparedAt;
+    vi.spyOn(Date, "now").mockReturnValue(preparedAt + 900_001);
+    await f.use.handle("mauro", { id: "execute-expired", action: "execute", messageId: f.message.id, sequence: prepared.sequence,
+      options: { spendResource: true, selectedNexThresholds: {} } }, "player");
+    expect(f.message.getFlag(scope, "allyExecutionReceipt").status).toBe("cancelled");
+    await f.prepare();
+    expect(f.ledger().nextExecutionSequence).toBe(prepared.sequence + 1);
+    expect(f.ledger().receipts).toHaveLength(0);
+    expect(f.mauro.system.PE.value).toBe(20); expect(f.rolls).toHaveLength(0);
+  });
   it.each([false, true])("opens the existing dialog on the clicking player once for two listeners (confirm=%s)", async confirm => {
     const f = await ready();
     const { AbilityUseApplication } = await import("../../../../src/applications/ability-use-application");

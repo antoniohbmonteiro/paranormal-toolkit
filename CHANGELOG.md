@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.45.2
+
+- Corrigido o bloqueio de habilidades concedidas pelos Aliados no Forge quando a criação da mensagem aparece no futuro em relação ao relógio do GM executor. A admissão deixa de validar a idade, o horário ou a presença de `_stats.createdTime`.
+- Preservadas as verificações de existência, autoria, permissões, concessão válida, recibos e vínculos anteriores, além da proteção contra repetição. Mensagens já reivindicadas ou consumidas não geram outra execução.
+- Timestamps de recibos, recuperação, expiração de preparações e demais deadlines operacionais permanecem inalterados. Sem mudança de schema ou migração de cards existentes.
+- Validação: 1.055 testes aprovados em 106 arquivos, com referências reais de Foundry/Ordem habilitadas, typecheck e build. Regressões cobrem relógios divergentes, mensagens sem timestamp, requisições concorrentes em `replace`/`keep`, replay após compactação e expiração de 15 minutos. O teste manual no Forge com máquinas distintas permanece a conferir.
+
 ## 0.45.1
 
 - O campo de valor dos presets de efeitos aceita fórmulas aritméticas com referências do Actor, como `(@NEX.value / 5) * 1`, validadas pela API nativa e preservadas na origem. Aplica-se a efeitos próprios e benefícios projetados dos Aliados.

@@ -615,7 +615,7 @@ Não há regra de pilotagem, terceiro motor, controle de economia de ações, po
 
 ### Recibos, falhas e retenção
 
-Admissão exige mensagem real do solicitante, criada há até dois minutos por `_stats.createdTime`, comparado com data Unix em milissegundos no executor. `game.time.serverTime` do v14 é uptime e não serve para essa comparação. O GM emite sequência monotônica; executar exige recibo já admitido. Uma execução nova intencional exige nova mensagem. Preparação expira em 15 minutos ou na troca de geração operacional.
+Admissão exige mensagem real do solicitante, sem recibo ou vínculo anterior. Desde a 0.45.2, não exige `_stats.createdTime` nem compara a criação com qualquer relógio: mensagens antigas e futuras podem iniciar um uso legítimo. Permissões e concessão válida continuam obrigatórias. O GM emite sequência monotônica; executar exige recibo já admitido. Uma execução nova intencional exige nova mensagem. Preparação expira em 15 minutos ou na troca de geração operacional, usando o timestamp local do recibo.
 
 | Estado | Gravação e recuperação |
 |---|---|
@@ -672,6 +672,8 @@ Para incluir as referências nesta máquina, definir `PARANORMAL_TOOLKIT_ORDEM_R
 Somente aprovar a release após esse smoke. Persistência real, propagação das permissões e failover entre clientes continuam critérios pendentes, mesmo com toda a suíte automatizada aprovada.
 
 ## Correção 0.44.0 — admissão da habilidade e base do relógio
+
+Registro histórico: a janela temporal e os diagnósticos de criação descritos nesta seção foram removidos na 0.45.2. O probe continua opcional e somente de leitura; suas comparações de relógio não representam critérios de autorização.
 
 Base: `c6c36d9`, branch `feature/allies`, em `D:/dev/paranormal-toolkit`. Versão mantida em **0.44.0**, sem commit ou push desta correção.
 

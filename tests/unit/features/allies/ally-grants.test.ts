@@ -326,10 +326,8 @@ describe("authorized use, checkpoints and bounded durable receipts", () => {
     expect(f.originalMessage.getFlag(scope, ALLY_RECEIPT_FLAG).status).toBe("cancelled");
     expect(f.rolls).toHaveLength(0); expect(f.mauro.system.PE.value).toBe(20);
   });
-  it("rejects messages older than admission window and refuses to discard 256 unpublished receipts", async () => {
-    const f = await ready(); f.originalMessage._stats.createdTime -= 120_001;
-    await expect(f.prepare()).rejects.toThrow("antiga");
-    f.originalMessage._stats.createdTime = Date.now();
+  it("refuses to discard 256 unpublished receipts", async () => {
+    const f = await ready();
     await f.prepare(); const ledger = f.ledger(); const base = ledger.receipts[0];
     ledger.receipts = Array.from({ length: 256 }, (_, i) => ({ ...structuredClone(base), sequence: i + 1, messageId: `missing-${i}`, status: "uncertain" as const }));
     ledger.nextExecutionSequence = 257; f.setLedger(ledger);

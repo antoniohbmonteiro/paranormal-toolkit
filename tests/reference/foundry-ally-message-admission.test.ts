@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { foundryDataModel } from "./helpers/foundry-data-model";
 import { diagnoseAllyMessageAdmission } from "../../src/adapters/foundry/foundry-ally-receipt-adapter";
 
 const root = process.env.PARANORMAL_TOOLKIT_FOUNDRY_REFERENCE;
 describe.skipIf(!root)("native v14.369 admission clocks and author (socket/database doubled)", () => {
-  it("reproduces the rejected message using real server uptime, GameTime and server stats tagging", async () => {
+  it("admits native server stats regardless of uptime and executor clock skew", async () => {
     const native = foundryDataModel(root!);
     native.evaluate(`
       globalThis.epoch = 1792104000000;
@@ -42,11 +42,12 @@ describe.skipIf(!root)("native v14.369 admission clocks and author (socket/datab
     tagStats.call({ schema: { has: () => true } }, data, { creation: true, user: { id: "clicking-user" } });
     expect(data._stats.createdTime).toBe(1792104060000);
     const message: any = { author: { id: "clicking-user" }, _stats: data._stats, getFlag: () => undefined };
-    const old = diagnoseAllyMessageAdmission(message, "clicking-user", clock.serverTime);
-    expect(old.failures).toEqual(["future-created-time"]);
-    expect(old.ageMs).toBe(-1792104000000);
-    const corrected = diagnoseAllyMessageAdmission(message, "clicking-user", native.evaluate("Date.now()"));
-    expect(corrected.failures).toEqual([]);
+    const executorClock = vi.spyOn(Date, "now");
+    for (const now of [clock.serverTime, data._stats.createdTime - 60_000, data._stats.createdTime, data._stats.createdTime + 86_400_000]) {
+      executorClock.mockReturnValue(now);
+      expect(diagnoseAllyMessageAdmission(message, "clicking-user").failures).toEqual([]);
+      expect(diagnoseAllyMessageAdmission(message, "another-user").failures).toEqual(["author-mismatch"]);
+    }
   });
   it("defaults DocumentAuthorField to the creating client and resolves the native User", () => {
     const native = foundryDataModel(root!);

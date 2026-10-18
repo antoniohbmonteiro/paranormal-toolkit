@@ -27,7 +27,7 @@ export type AllyUseRequest = {
   itemId?: string; messageId: string; sequence?: number; targets?: WorkflowTargetReference[];
   options?: AbilityUseOptions; actionId?: string;
 };
-// Foundry v14 serverTime is activity uptime; document stats and persisted deadlines use Unix milliseconds.
+// Foundry v14 serverTime is activity uptime; receipts and persisted deadlines use Unix milliseconds.
 export function allyUnixTime(): number { return Date.now(); }
 export class AllyGrantedAbilityUseService {
   private generation = crypto.randomUUID();
@@ -126,7 +126,7 @@ export class AllyGrantedAbilityUseService {
         }
         if (getItemUseSettings().executionMode === "disabled") throw new Error("Execução de habilidades desativada nas configurações do Toolkit.");
         const message = allyMessage(request.messageId); const now = allyUnixTime();
-        const admission = diagnoseAllyMessageAdmission(message, userId, now);
+        const admission = diagnoseAllyMessageAdmission(message, userId);
         if (admission.failures.length) throw new AllyMessageAdmissionError(admission);
         if (!message) throw new Error("Mensagem original não encontrada.");
         if (ledger.receipts.length >= MAX_ALLY_RECEIPTS) throw new Error("Há 256 recibos aguardando recuperação. O GM deve conferir os casos pendentes.");
