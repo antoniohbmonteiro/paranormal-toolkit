@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.45.2`, com correção do uso de habilidades concedidas pelos Aliados quando os relógios do servidor e dos clientes diferem. Veja o [`CHANGELOG.md`](CHANGELOG.md).
+Versão atual: `0.46.0`, com o preset Tiro Intuitivo, modificadores por ataque e o gerenciador compartilhado de presets de rituais e habilidades. Veja o [`CHANGELOG.md`](CHANGELOG.md).
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 

@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.46.0
+
+### Gerenciar presets
+
+- A tela existente **Gerenciar presets de rituais** passa a se chamar **Gerenciar presets**, reunindo presets específicos de rituais e habilidades, começando por Tiro Intuitivo. Preserva a interface, as automações e as configurações dos rituais existentes, incluindo `itemPatch`.
+- O acesso fica disponível ao Mestre e ao proprietário do personagem mesmo sem itens reconhecidos, com estado vazio quando necessário. O gerenciador identifica presets disponíveis, aplicados e desatualizados e permite aplicar ou atualizar conforme as permissões.
+- O nome do item apenas sugere um preset: a aplicação exige confirmação. Depois de aplicado, o vínculo por ID prevalece mesmo após renomear o item. Automações manuais e configurações personalizadas continuam protegidas. Sem associação arbitrária de presets, seletor individual na habilidade ou gerenciamento dos usos genéricos.
+
+### Tiro Intuitivo e modificadores de ataque
+
+- Novo preset **Tiro Intuitivo**, aplicado à habilidade pelo gerenciador. O Toolkit verifica o vínculo e a compatibilidade da arma à distância durante o uso, sem exigir classe, Pontaria veterana, NEX ou outros pré-requisitos de aquisição.
+- Antes de cada ataque efetivo, um diálogo oferece opções inicialmente desmarcadas. **Usar Tiro Intuitivo — sem Mirar** declara a ausência de Mirar e acrescenta +2 à margem de ameaça. O gasto opcional de **2 PE/PD** acrescenta +1 ao multiplicador de crítico e permite ignorar até 10 RD ao acertar, inclusive sem crítico. O recurso acompanha a regra Sem Sanidade do sistema.
+- Cada ataque registra escolhas, custo, crítico, penetração de RD e alvo próprios. Ataques individuais e multiataques preservam `rollAttack()` e `rollVolleyDamage()` nativos, sem gerenciador de sequências ou alteração permanente da arma.
+- O dano usa a execução correspondente do card e respeita erros e reações. Ataques sucessivos, inclusive sem alvo, não recuperam modificadores de um uso anterior. Fechar ou cancelar o diálogo não rola nem gasta naquele ataque; as mensagens preservam as referências após reabrir o chat.
+- Cards de ataque e dano exibem os modificadores aplicados. O Mestre executor conectado pode aplicar manualmente o resultado já rolado ao alvo original, com RD e bloqueio tratados pela integração de dano. Cliques repetidos não rerrolam nem reaplicam um resultado concluído.
+- Corrigida a identificação do Mestre executor com a coleção real de usuários do Foundry, permitindo exibir a ação assistida de dano dos ataques com preset.
+
+### Compatibilidade, limites e validação
+
+- Compatível com Foundry VTT v14 e sistema `ordemparanormal`. Presets de rituais já aplicados continuam reconhecidos; os motores de rituais e ataques permanecem independentes.
+- Sem rastreamento automático de Mirar, validação de aquisição de poderes ou controle de gasto por rodada. Danos sem alvo ou com tipos mistos exigem aplicação manual; operações com resultado incerto ficam bloqueadas para conferência, sem repetição automática.
+- A correção dos botões no popup temporário do chat pertence ao sistema Ordem e é distribuída separadamente; ela não está incluída no pacote do Toolkit.
+- Validação: 1.155 testes aprovados em 115 arquivos, com referências reais de Foundry 14.369 e Ordem 8.0.2 habilitadas, além de typecheck e build. Cobertura inclui multiataque, custos de PE/PD, críticos, RD, reações, cancelamento, correlação persistente, permissões e regressões dos rituais. O usuário testou o fluxo de Tiro Intuitivo e confirmou o desconto de RD no Foundry; os testes de referência usam dependências substituídas onde necessário e não equivalem a uma sessão multiplayer completa.
+
 ## 0.45.2
 
 - Corrigido o bloqueio de habilidades concedidas pelos Aliados no Forge quando a criação da mensagem aparece no futuro em relação ao relógio do GM executor. A admissão deixa de validar a idade, o horário ou a presença de `_stats.createdTime`.
