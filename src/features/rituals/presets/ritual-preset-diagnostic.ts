@@ -58,9 +58,19 @@ export class RitualPresetDiagnosticService {
     return [...diagnostic.available, ...diagnostic.outdated];
   }
 
-  private analyzeRitual(ritual: Item): RitualPresetDiagnosticEntry {
-    const match = this.automationRegistry.findForItem(ritual)[0] ?? null;
-    const flag = readAutomationFlag(ritual);
+  analyzeRitual(ritual: Item): RitualPresetDiagnosticEntry {
+    const raw = ritual.getFlag(MODULE_ID, "automation");
+    const flag = isAutomationFlagValue(raw) ? raw : null;
+    const boundPreset = flag?.source.type === "preset" ? this.automationRegistry.get(flag.source.presetId) : null;
+    const match = flag?.source.type === "preset"
+      ? boundPreset && isSpecificRitualPreset(boundPreset) && boundPreset.itemTypes.includes(ritual.type)
+        ? { preset: boundPreset, score: 0, reasons: ["persistedPresetId"] } : null
+      : this.automationRegistry.findForItem(ritual).find(entry => isSpecificRitualPreset(entry.preset)) ?? null;
+
+    if (raw != null && !flag) {
+      return createEntry({ ritual, status: "unsupported", match, flag,
+        reason: "Configuração de automação inválida; dados preservados." });
+    }
 
     if (!match) {
       return createEntry({
@@ -68,7 +78,7 @@ export class RitualPresetDiagnosticService {
         status: "unsupported",
         match,
         flag,
-        reason: flag ? "Ritual automatizado, mas nenhum preset atual foi identificado pelo nome." : "Nenhum preset conhecido para este ritual."
+        reason: flag ? "Vínculo preservado; nenhum preset específico disponível para este ritual." : "Nenhum preset conhecido para este ritual."
       });
     }
 
@@ -134,9 +144,9 @@ function createEntry(options: {
   };
 }
 
-function readAutomationFlag(item: Item): AutomationFlagValue | null {
-  const value = item.getFlag(MODULE_ID, "automation");
-  return isAutomationFlagValue(value) ? value : null;
+function isSpecificRitualPreset(preset: AutomationPreset): boolean {
+  return preset.category === "ritual"
+    && preset.matchers.some(matcher => matcher.type === "normalizedName" && matcher.names.length > 0);
 }
 
 function createOutdatedReason(flag: AutomationFlagValue, preset: AutomationPreset): string {

@@ -43,6 +43,8 @@ Hooks.once("ready", () => {
   }
 
   services = createToolkitServices();
+  try { services.attackModifiers.register(); }
+  catch (cause) { ModuleLogger.warn("Modificadores de ataque não foram ativados; confira a compatibilidade do sistema.", cause); }
   services.allySupportRequests.register();
   services.allySupportRequests.onPendingChange = actorId => { void refreshAllySheets(actorId); };
   services.allyShortcuts.onPendingChange = allyId => { void refreshAllySheets(allyId); };

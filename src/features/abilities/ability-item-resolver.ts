@@ -1,5 +1,6 @@
 import type { AbilityResource, AbilityUseData } from "./ability-use-options";
 import { prepareAbilityRolls } from "./config/ability-roll-config";
+import { resolveOrdemEffortResource } from "../../adapters/ordem/ordem-effort-resource-resolver";
 
 type AbilitySystemData = {
   activation?: unknown;
@@ -47,10 +48,7 @@ export function resolveAbilityChatDescription(
 }
 
 export function resolveAbilityResource(): AbilityResource {
-  const usesDeterminationPoints =
-    game.settings.get("ordemparanormal", "globalPlayingWithoutSanity") === true;
-
-  return usesDeterminationPoints ? "PD" : "PE";
+  return resolveOrdemEffortResource();
 }
 
 export function resolveActivationLabel(activation: string): string {

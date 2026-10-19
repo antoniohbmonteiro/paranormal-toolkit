@@ -189,7 +189,7 @@ declare const game: {
   release?: { version?: string };
   combats?: FoundryCollectionLike<AllyCombatLike>;
   user?: FoundryUserLike | null;
-  users: FoundryUserLike[];
+  users: Iterable<FoundryUserLike> & Pick<FoundryUserLike[], "filter" | "find" | "map" | "some">;
   actors: FoundryCollectionLike<Actor>;
   items: FoundryCollectionLike<Item>;
   messages: FoundryCollectionLike<ChatMessageDocumentLike>;
@@ -329,6 +329,7 @@ declare class Roll {
 }
 
 declare class Actor {
+  testUserPermission(user: FoundryUserLike, level: string): boolean;
   pack?: string | null;
   getRollData?(): Record<string, unknown>;
   documentName: "Actor";

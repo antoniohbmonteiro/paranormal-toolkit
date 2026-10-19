@@ -33,7 +33,8 @@ O Toolkit já tem:
 - ritual genérico respeitando Discente/Verdadeiro marcados no item e custo extra por forma;
 - card assistido persistente, com opção de substituir visualmente o card original do sistema;
 - card simples persistente para rituais sem preset conhecido;
-- ação de GM no menu da ficha para diagnosticar e aplicar presets de rituais;
+- ação **Gerenciar presets** no menu da ficha, disponível ao GM e OWNER mesmo sem itens reconhecidos, para diagnosticar e aplicar presets específicos de rituais e habilidades;
+- Tiro Intuitivo vinculado pelo gerenciador, com modificadores opcionais por ataque e sem validação de pré-requisitos de aquisição;
 - decisão documentada para uma futura camada opcional de Macro/Script Step, sem substituir o core estruturado;
 - teste de Ocultismo na conjuração de rituais usando `actor.system.ritual.DT` e `actor.rollSkill`;
 - falha no teste de Ocultismo não cancela o ritual e gera ação assistida para aplicar dano de SAN no conjurador;

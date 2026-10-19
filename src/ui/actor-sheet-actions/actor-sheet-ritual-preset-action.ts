@@ -1,7 +1,7 @@
 import { MODULE_ID } from "../../constants";
 import { ModuleLogger } from "../../core/module-logger";
 import { RitualPresetManagerApplication } from "../../applications/ritual-preset-manager-app";
-import { getActorRituals } from "../../features/rituals/ritual-item-resolver";
+import { canManageActorPresets } from "../../features/presets/preset-manager-service";
 import type { ToolkitServices } from "../../toolkit-services";
 
 const ACTION_ID = `${MODULE_ID}.manageRitualPresets`;
@@ -46,7 +46,7 @@ export function registerActorSheetRitualPresetAction(services: ToolkitServices):
   }
 
   globalObject[REGISTERED_FLAG] = true;
-  ModuleLogger.info("Ação de presets de rituais registrada no menu da ficha de ator.");
+  ModuleLogger.info("Ação de gerenciamento de presets registrada no menu da ficha de ator.");
 }
 
 function addPresetManagerControl(sheet: ActorSheetLike, controls: HeaderControlEntry[], services: ToolkitServices): void {
@@ -60,7 +60,7 @@ function addPresetManagerControl(sheet: ActorSheetLike, controls: HeaderControlE
   controls.push({
     action: ACTION_ID,
     icon: "fa-solid fa-wand-magic-sparkles",
-    label: "Gerenciar presets de rituais",
+    label: "Gerenciar presets",
     visible: true,
     onClick: (event) => {
       event.preventDefault();
@@ -85,12 +85,8 @@ function installActionHandler(sheet: ActorSheetLike, services: ToolkitServices):
 }
 
 function canShowPresetAction(sheet: ActorSheetLike): boolean {
-  if (!game.user?.isGM) return false;
-
   const actor = getSheetActor(sheet);
-  if (!actor) return false;
-
-  return actor.type === "agent" && getActorRituals(actor).length > 0;
+  return !!actor && canManageActorPresets(actor);
 }
 
 function openPresetManager(sheet: ActorSheetLike, services: ToolkitServices): void {
@@ -101,8 +97,8 @@ function openPresetManager(sheet: ActorSheetLike, services: ToolkitServices): vo
     return;
   }
 
-  if (!game.user?.isGM) {
-    ui.notifications?.warn("Paranormal Toolkit: apenas o mestre pode gerenciar presets de rituais.");
+  if (!canManageActorPresets(actor)) {
+    ui.notifications?.warn("Paranormal Toolkit: somente o mestre ou o dono do personagem pode gerenciar seus presets.");
     return;
   }
 

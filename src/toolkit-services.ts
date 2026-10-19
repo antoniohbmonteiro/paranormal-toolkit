@@ -32,8 +32,21 @@ import { createBuiltInAutomationPresets } from "./features/rituals/ritual-automa
 import { RitualPresetApplicationService } from "./features/rituals/presets/ritual-preset-application-service";
 import { RitualPresetDiagnosticService } from "./features/rituals/presets/ritual-preset-diagnostic";
 import { ChatMessageService } from "./ui/chat-message-service";
+import { FoundryAttackRollMessageBridge } from "./adapters/foundry/foundry-attack-roll-message-bridge";
+import { OrdemAttackAdapter } from "./adapters/ordem/attacks/ordem-attack-adapter";
+import { OrdemAttackIntegration } from "./adapters/ordem/attacks/ordem-attack-integration";
+import { AttackModifierRegistry } from "./features/attack-modifiers/attack-modifier-registry";
+import { PresetManagerService } from "./features/presets/preset-manager-service";
+import { AttackChatCardService } from "./features/attack-modifiers/attack-chat-card-service";
+import { AttackResourceService } from "./features/attack-modifiers/attack-resource-service";
+import { AttackModifierWorkflow } from "./features/attack-modifiers/attack-modifier-workflow";
+import { AttackDamageResolver } from "./features/attack-modifiers/attack-damage-resolver";
+import { AttackDamageWorkflow } from "./features/attack-modifiers/attack-damage-workflow";
+import { AttackAssistedDamageService } from "./features/attack-modifiers/attack-assisted-damage-service";
 
 export type ToolkitServices = {
+  presetManager: PresetManagerService;
+  attackModifiers: OrdemAttackIntegration;
   allyUses: FoundryAllyAbilityRequests;
   allySupportRequests: FoundryAllySupportRequests;
   allyShortcuts: AllyGrantedAbilityShortcut;
@@ -69,6 +82,17 @@ export function createToolkitServices(): ToolkitServices {
   const resourceAdapter = new OrdemResourceAdapter();
   const resources = new ResourceEngine(resourceAdapter);
   const damage = new DamageEngine(new OrdemDamageAdapter());
+  const attackBridge = new FoundryAttackRollMessageBridge();
+  const attackAdapter = new OrdemAttackAdapter();
+  const attackCards = new AttackChatCardService();
+  const attackRegistry = new AttackModifierRegistry();
+  const attackWorkflow = new AttackModifierWorkflow(attackRegistry, attackAdapter, attackCards,
+    new AttackResourceService(resources, resourceAdapter), attackBridge,
+    async input => (await import("./applications/attack-modifier-application")).AttackModifierApplication.request(input));
+  const attackResolver = new AttackDamageResolver(attackCards, attackAdapter);
+  const attackDamage = new AttackDamageWorkflow(attackCards, attackResolver, attackAdapter, attackBridge);
+  const attackModifiers = new OrdemAttackIntegration(attackWorkflow, attackDamage,
+    new AttackAssistedDamageService(damage, attackCards, attackResolver), attackAdapter, attackBridge);
   const resistance = new ResistanceEngine(new OrdemResistanceAdapter());
   const ritualCasting = new RitualCastingEngine(new OrdemRitualCastingAdapter());
   const ritualAdapter = new OrdemRitualAdapter();
@@ -95,6 +119,7 @@ export function createToolkitServices(): ToolkitServices {
     automationBinder,
     itemPatches,
   );
+  const presetManager = new PresetManagerService(ritualPresetDiagnostic, ritualPresetApplications, attackRegistry);
   const debugOutput = new DebugOutputService();
   const chatMessages = new ChatMessageService(debugOutput);
   const workflowHooks = new WorkflowHookEmitter();
@@ -124,6 +149,8 @@ export function createToolkitServices(): ToolkitServices {
   );
 
   return {
+    presetManager,
+    attackModifiers,
     allyUses,
     allySupportRequests,
     allyShortcuts,

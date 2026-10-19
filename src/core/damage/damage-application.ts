@@ -7,6 +7,8 @@ export type DamageApplicationInstanceInput = {
   label?: string;
   sourceRollId?: string | null;
   ignoreResistance?: boolean;
+  resistancePenetration?: number;
+  extraResistance?: number;
   nonLethal?: boolean;
 };
 
@@ -27,6 +29,7 @@ export type DamageApplicationInstanceResult = {
   damageType: string | null;
   systemDamageType: string | null;
   ignoreResistance: boolean;
+  resistancePenetration?: number;
   nonLethal: boolean;
 };
 

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Toolkit — modificadores de ataque</title>
+<link rel="stylesheet" href="/styles/paranormal-toolkit.css">
+<link rel="stylesheet" href="/styles/ability-use-dialog.css">
+<link rel="stylesheet" href="/styles/attack-modifiers.css">
+<style>
+body { margin:24px; background:#292725; color:#f4eee5; font:14px Georgia,serif; }
+.application { width:540px; border:1px solid #aaa095; border-radius:8px; overflow:hidden; box-shadow:0 12px 36px #0008; }
+.window-header { display:flex; justify-content:space-between; padding:10px; background:#111; color:#f4eee5; font-weight:bold; }
+.window-content { padding:0; }
+button,input,select { font:inherit; }
+button { padding:7px 10px; border:1px solid #a6988b; border-radius:4px; cursor:pointer; }
+button:disabled { opacity:.6; cursor:not-allowed; }
+.paranormal-toolkit-ritual-cast__footer button:first-child { background:#82756c; color:#f4eee5; }
+#result { margin:16px 0; white-space:pre-wrap; }
+#controls { display:flex; gap:8px; margin-bottom:16px; }
+</style></head><body>
+<div id="controls"><button id="open">Abrir diálogo</button><button id="check">Verificar interações</button></div>
+<div id="preview"></div><pre id="result"></pre>
+<script type="module" src="./attack-modifiers.fixture.ts"></script>
+</body></html>

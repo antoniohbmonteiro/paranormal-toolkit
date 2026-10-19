@@ -1,7 +1,5 @@
 export type AllyUser = { id: string; isGM: boolean; active: boolean };
-export function electAllyExecutor(users: AllyUser[]): string | null {
-  return users.filter(user => user.isGM && user.active).map(user => user.id).sort()[0] ?? null;
-}
+export { electWorkflowExecutor as electAllyExecutor } from "../../core/workflow/workflow-executor";
 export type AllyRequest = {
   id: string; revision: number; action: "assign" | "activate" | "deactivate" | "reconcile" | "setPilot" | "setBeneficiary";
   beneficiaryId?: string | null; combatId?: string; pilotId?: string | null;

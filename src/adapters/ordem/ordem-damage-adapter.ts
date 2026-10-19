@@ -17,6 +17,7 @@ type OrdemApplyDamageOptions = {
   damageType?: OrdemDamageType;
   ignoreRD?: boolean;
   nonLethal?: boolean;
+  extraRD?: number;
 };
 
 type OrdemApplyDamageResult = {
@@ -52,6 +53,12 @@ export class OrdemDamageAdapter implements DamageApplicationAdapter {
     }
 
     const applyDamage = (actor as ActorWithApplyDamage).applyDamage;
+
+    if (input.instances.some(instance => [instance.resistancePenetration, instance.extraResistance]
+      .some(value => value !== undefined && (!Number.isSafeInteger(value) || value < 0)))) {
+      return failure({ actor, actorId, actorName, reason: "invalid-amount",
+        message: "A penetração e a RD adicional devem ser inteiros não negativos." });
+    }
 
     if (typeof applyDamage !== "function") {
       return failure({
@@ -105,10 +112,11 @@ export class OrdemDamageAdapter implements DamageApplicationAdapter {
       }
 
       try {
+        const resistanceOptions = resolveOrdemDamageResistance(actor, damageType.value, instance);
         const result = await Promise.resolve(
           applyDamage.call(actor, normalized.amount, {
             damageType: damageType.value ?? undefined,
-            ignoreRD: instance.ignoreResistance === true,
+            ...resistanceOptions,
             nonLethal: instance.nonLethal === true,
           }),
         );
@@ -130,6 +138,7 @@ export class OrdemDamageAdapter implements DamageApplicationAdapter {
           damageType: instance.damageType ? String(instance.damageType) : null,
           systemDamageType: damageType.value,
           ignoreResistance: instance.ignoreResistance === true,
+          ...((instance.resistancePenetration ?? 0) > 0 ? { resistancePenetration: instance.resistancePenetration } : {}),
           nonLethal: instance.nonLethal === true,
         });
       } catch (cause) {
@@ -168,6 +177,17 @@ export class OrdemDamageAdapter implements DamageApplicationAdapter {
       originUuid: input.originUuid ?? null,
     });
   }
+}
+
+export function resolveOrdemDamageResistance(actor: Actor, type: OrdemDamageType | null,
+  instance: Pick<DamageApplicationInstanceInput, "ignoreResistance" | "resistancePenetration" | "extraResistance">): Pick<OrdemApplyDamageOptions, "ignoreRD" | "extraRD"> {
+  const penetration = instance.resistancePenetration ?? 0;
+  const extra = instance.extraResistance ?? 0;
+  if (penetration <= 0) return { ignoreRD: instance.ignoreResistance === true, ...(extra > 0 ? { extraRD: extra } : {}) };
+  const value = type && !instance.ignoreResistance ? foundry.utils.getProperty(actor, "system.resistances." + type + ".value") : 0;
+  const resistance = value ?? 0;
+  if (typeof resistance !== "number" || !Number.isFinite(resistance) || resistance < 0) throw new Error("RD do alvo inválida.");
+  return { ignoreRD: true, extraRD: Math.max(0, resistance + extra - penetration) };
 }
 
 function normalizeInstance(

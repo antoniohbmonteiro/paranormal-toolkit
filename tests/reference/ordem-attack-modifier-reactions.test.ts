@@ -1,0 +1,62 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createAttackReference } from "./helpers/attack-reference";
+
+const root = process.env.PARANORMAL_TOOLKIT_ORDEM_REFERENCE;
+const paid = { "attack.tiroIntuitivo": ["use", "empower"] };
+afterEach(() => vi.unstubAllGlobals());
+describe.skipIf(!root)("real native reactions with persisted attack modifiers", () => {
+  it("blocks damage while pending and after a real Dodge turns the hit into a miss", async () => {
+    const h = await createAttackReference(root!, { rolls: [12] });
+    const target = h.targets[0].actor;
+    target.type = "agent"; target.system.PV = { value: 100, max: 100 };
+    target.system.attributes = { dex: { value: 2 } };
+    target.system.skills = { reflexes: { degree: { value: 15 }, value: 0, mod: 0 } };
+    await h.invoke("attack");
+    const attack = h.attackMessages()[0];
+    expect(attack.getFlag("ordemparanormal", "hitResult").revealed).toBe(false);
+    await expect(h.damage.execute(h.weapon, { attackMessageId: attack.id })).rejects.toThrow("reação");
+    h.game.user = h.users[0];
+    await h.reactions.handleReaction({ sender: h.users[0], payload: { type: "dodge", messageId: attack.id, defenderUuid: target.uuid } });
+    expect(attack.getFlag("ordemparanormal", "hitResult").hit).toBe(false);
+    await expect(h.damage.execute(h.weapon, { attackMessageId: attack.id })).rejects.toThrow("errou");
+    expect(h.damageMessages()).toHaveLength(0);
+    expect(h.actor.system.PE.value).toBe(18);
+  });
+  it("revalidates a late real Dodge before application of an already-published damage", async () => {
+    const h = await createAttackReference(root!, { rolls: [12] });
+    await h.invoke("attack"); await h.invoke("damage");
+    const target = h.targets[0].actor, attack = h.attackMessages()[0];
+    target.type = "agent"; target.system.PV = { value: 100, max: 100 };
+    target.system.attributes = { dex: { value: 2 } };
+    target.system.skills = { reflexes: { degree: { value: 15 }, value: 0, mod: 0 } };
+    await attack.setFlag("ordemparanormal", "reactionPending", { defenderUuid: target.uuid, round: 0, itemUuid: h.weapon.uuid });
+    await attack.setFlag("ordemparanormal", "hitResult", { ...attack.getFlag("ordemparanormal", "hitResult"), revealed: false });
+    h.game.user = h.users[0];
+    await h.reactions.handleReaction({ sender: h.users[0], payload: { type: "dodge", messageId: attack.id, defenderUuid: target.uuid } });
+    await expect(h.assisted.apply(h.damageMessages()[0])).rejects.toThrow("acerto válido");
+    expect(target.system.PV.value).toBe(100);
+  });
+  it("does not let an old native reaction overwrite a new use of the same card", async () => {
+    const h = await createAttackReference(root!, { choices: [paid, {}], rolls: [12, 20] });
+    await h.invoke("attack");
+    const old = h.attackMessages()[0], firstUse = h.cards.readBinding(h.source)!.activeUseId;
+    await h.invoke("attack");
+    const secondUse = h.cards.readBinding(h.source)!.activeUseId;
+    const latestNative = structuredClone(h.source.getFlag("ordemparanormal", "hitResult"));
+    const target = h.targets[0].actor;
+    target.type = "agent"; target.system.PV = { value: 100, max: 100 };
+    target.system.attributes = { dex: { value: 2 } };
+    target.system.skills = { reflexes: { degree: { value: 15 }, value: 0, mod: 0 } };
+    await old.setFlag("ordemparanormal", "reactionPending", { defenderUuid: target.uuid, round: 0, itemUuid: h.weapon.uuid });
+    await old.setFlag("ordemparanormal", "hitResult", { ...old.getFlag("ordemparanormal", "hitResult"), revealed: false });
+    h.game.user = h.users[0];
+    await h.reactions.handleReaction({ sender: h.users[0], payload: { type: "dodge", messageId: old.id, defenderUuid: target.uuid } });
+    expect(old.getFlag("ordemparanormal", "hitResult").hit).toBe(false);
+    expect(h.cards.readBinding(h.source)!.activeUseId).toBe(secondUse);
+    expect(secondUse).not.toBe(firstUse);
+    expect(h.source.getFlag("ordemparanormal", "hitResult")).toEqual(latestNative);
+    await h.invoke("damage");
+    expect(h.damageMessages()).toHaveLength(1);
+    expect(h.cards.readDamage(h.damageMessages()[0])!.useId).toBe(secondUse);
+  });
+});

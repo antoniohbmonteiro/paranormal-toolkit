@@ -45,10 +45,29 @@ Ela sempre aponta para a release mais recente publicada no GitHub. Depois, ative
 | Condições | Pode aplicar condições informativas como Active Effects. |
 | Alvos por área | Permite selecionar alvos na cena para rituais com área. |
 | Presets de rituais | Alguns rituais conhecidos já possuem automações configuradas. |
+| Modificadores de ataque | Opções por ataque, como Tiro Intuitivo, com crítico, custo e RD registrados separadamente no chat. |
 | Aliados | Actor próprio que concede benefícios passivos e habilidades a um Agente beneficiário, com suporte opcional a drones e piloto. |
 | Efeitos da habilidade | Presets, edição rápida e editor nativo para efeitos próprios de habilidades e benefícios dos Aliados. |
 
 ## Como usar
+
+### Gerenciar presets
+
+No menu da ficha do personagem, abra **Gerenciar presets**. O Mestre e usuários com permissão **OWNER** podem identificar e aplicar presets específicos, como Eletrocussão, Definhar, Cicatrização e Tiro Intuitivo. A ação permanece disponível mesmo sem itens reconhecidos; nesse caso, a janela apresenta um estado vazio.
+
+O nome sugere um preset, mas somente **Aplicar** grava seu vínculo. Depois disso, o ID persistido tem prioridade e o reconhecimento continua após renomear o item. A tela também identifica versões desatualizadas. Automações manuais são preservadas; fórmulas e usos genéricos de rituais e habilidades continuam sendo configurados pelos recursos existentes, fora deste gerenciamento. Não há associação manual de presets a itens.
+
+### Modificadores de ataque — Tiro Intuitivo
+
+Com uma habilidade chamada **Tiro Intuitivo** no personagem, abra **Gerenciar presets** e clique em **Aplicar**. O vínculo fica na habilidade: renomeá-la não altera o reconhecimento e nenhuma arma específica é exigida. O Toolkit não valida pré-requisitos de aquisição, como classe, Pontaria veterana ou NEX. Durante o ataque, exige a habilidade vinculada e uma arma compatível à distância.
+
+Ao clicar em **Ataque** no card da arma, o Toolkit oferece as opções, inicialmente desmarcadas. **Usar Tiro Intuitivo — sem Mirar** declara que este ataque não usa a ação Mirar e acrescenta +2 à margem de ameaça. A subopção **Gastar 2 PE/PD** acrescenta +1 ao multiplicador e permite ignorar até 10 RD se acertar, mesmo sem crítico. Os valores são relativos à arma: **19/x3** passa a **17/x3**, ou **17/x4** com o gasto. O recurso segue a configuração Sem Sanidade do sistema.
+
+**Atacar** sem selecionar opções mantém o ataque normal. **Cancelar** ou fechar não rola nem gasta. Cada ataque efetivo produzido pelo fluxo nativo tem escolhas, custo, crítico e alvo próprios; o Toolkit não gerencia sequências. A arma mantém seus dados originais.
+
+O botão **Dano** usa os ataques do acionamento atual daquele card, respeitando erros e reações. Resultados já publicados são reutilizados; clicar novamente não rerrola o dano. O resumo da mensagem individual também permite acessar o dano daquele ataque. Após reabrir o chat, as referências e escolhas continuam persistidas. Um novo acionamento, inclusive cancelado ou sem alvo, não herda o anterior.
+
+O Mestre executor conectado aplica o resultado ao alvo original, manualmente pelo card. Ataques sem alvo e danos de tipos diferentes continuam exigindo aplicação manual. Uma execução ou publicação incerta fica bloqueada para conferência: confira recursos, mensagens e alvo antes de iniciar outro uso. Não há rastreamento de Mirar, controle de gasto por rodada ou compensação automática de dano após alterações posteriores.
 
 ### Efeitos da habilidade
 

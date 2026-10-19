@@ -1,13 +1,13 @@
 import { MODULE_ID, MODULE_TITLE } from "../constants";
-import type { RitualPresetApplicationResult } from "../features/rituals/presets/ritual-preset-application-service";
-import type { RitualPresetDiagnostic, RitualPresetDiagnosticEntry } from "../features/rituals/presets/ritual-preset-diagnostic";
+import { canManageActorPresets, type PresetManagerApplicationResult, type PresetManagerDiagnostic, type PresetManagerEntry } from "../features/presets/preset-manager-service";
 import type { ToolkitServices } from "../toolkit-services";
+import { escapeHtml } from "../ui/rendering/escape-html";
 
 const { ApplicationV2 } = foundry.applications.api;
 
 export class RitualPresetManagerApplication extends ApplicationV2 {
   private isApplying = false;
-  private lastApplicationResult: RitualPresetApplicationResult | null = null;
+  private lastApplicationResult: PresetManagerApplicationResult | null = null;
 
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}-ritual-preset-manager`,
@@ -18,7 +18,7 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
       height: "auto"
     },
     window: {
-      title: "Gerenciar presets de rituais",
+      title: "Gerenciar presets",
       icon: "fa-solid fa-wand-magic-sparkles",
       resizable: true
     },
@@ -35,13 +35,13 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
     super({
       id: `${MODULE_ID}-ritual-preset-manager-${actor.id ?? foundry.utils.randomID()}`,
       window: {
-        title: `Presets de rituais: ${actor.name ?? "Ator"}`
+        title: `Gerenciar presets: ${actor.name ?? "Ator"}`
       }
     });
   }
 
   async _renderHTML(_context: object, _options: object): Promise<HTMLElement> {
-    const diagnostic = this.services.ritualPresetDiagnostic.analyzeActor(this.actor);
+    const diagnostic = this.services.presetManager.analyzeActor(this.actor);
     const root = document.createElement("div");
     root.className = "paranormal-toolkit-preset-manager";
     root.innerHTML = this.renderContent(diagnostic);
@@ -52,12 +52,12 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
     content.replaceChildren(result);
   }
 
-  private renderContent(diagnostic: RitualPresetDiagnostic): string {
+  private renderContent(diagnostic: PresetManagerDiagnostic): string {
     return `
       <header class="paranormal-toolkit-preset-manager__header">
         <div>
           <p class="paranormal-toolkit-preset-manager__eyebrow">${escapeHtml(MODULE_TITLE)}</p>
-          <h2>Gerenciar presets de rituais</h2>
+          <h2>Gerenciar presets</h2>
           <p>Ator: <strong>${escapeHtml(diagnostic.actorName)}</strong></p>
         </div>
         ${this.renderSummary(diagnostic)}
@@ -66,9 +66,12 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
       ${this.renderLastResult()}
 
       <div class="paranormal-toolkit-preset-manager__sections">
+        ${diagnostic.total === 0 ? '<p class="paranormal-toolkit-preset-manager__empty">Nenhum preset disponível para este personagem.</p>' : `
         ${renderSection("Prontos para aplicar", "available", diagnostic.available, "fa-solid fa-plus")}
         ${renderSection("Desatualizados", "outdated", diagnostic.outdated, "fa-solid fa-rotate")}
         ${renderSection("Automatizados", "upToDate", diagnostic.upToDate, "fa-solid fa-check")}
+        ${diagnostic.unsupported.map(entry => `<p class="paranormal-toolkit-preset-manager__empty"><strong>${escapeHtml(entry.itemName)}</strong>: ${escapeHtml(entry.reason)}</p>`).join("")}
+        `}
       </div>
 
       <footer class="paranormal-toolkit-preset-manager__footer">
@@ -80,7 +83,7 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
     `;
   }
 
-  private renderSummary(diagnostic: RitualPresetDiagnostic): string {
+  private renderSummary(diagnostic: PresetManagerDiagnostic): string {
     return `
       <div class="paranormal-toolkit-preset-manager__summary" aria-label="Resumo dos presets">
         <span><strong>${diagnostic.available.length}</strong> prontos</span>
@@ -108,26 +111,29 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
   private static async onApply(this: RitualPresetManagerApplication, event: PointerEvent): Promise<void> {
     event.preventDefault();
 
-    if (!game.user?.isGM) {
-      ui.notifications?.warn("Paranormal Toolkit: apenas o mestre pode aplicar presets de rituais.");
+    if (!canManageActorPresets(this.actor)) {
+      ui.notifications?.warn("Paranormal Toolkit: somente o mestre ou o dono do personagem pode aplicar seus presets.");
       return;
     }
 
-    const diagnostic = this.services.ritualPresetDiagnostic.analyzeActor(this.actor);
+    const diagnostic = this.services.presetManager.analyzeActor(this.actor);
     if (!diagnostic.canApply || this.isApplying) {
       return;
     }
 
     this.isApplying = true;
-    await this.render({ force: true });
-
     try {
-      this.lastApplicationResult = await this.services.ritualPresetApplications.applyPending(this.actor);
+      await this.render({ force: true });
+      this.lastApplicationResult = null;
+      this.lastApplicationResult = await this.services.presetManager.applyPending(this.actor);
       const applied = this.lastApplicationResult.applied.length;
       ui.notifications?.info(`Paranormal Toolkit: ${applied} preset(s) aplicado(s) em ${this.actor.name ?? "ator"}.`);
+    } catch (cause) {
+      ui.notifications?.warn(cause instanceof Error ? cause.message : "Paranormal Toolkit: falha ao aplicar presets. Confira os itens antes de tentar novamente.");
     } finally {
       this.isApplying = false;
-      await this.render({ force: true });
+      if (canManageActorPresets(this.actor)) await this.render({ force: true });
+      else await this.close();
     }
   }
 
@@ -139,8 +145,8 @@ export class RitualPresetManagerApplication extends ApplicationV2 {
 
 function renderSection(
   title: string,
-  status: RitualPresetDiagnosticEntry["status"],
-  entries: RitualPresetDiagnosticEntry[],
+  status: PresetManagerEntry["status"],
+  entries: PresetManagerEntry[],
   icon: string
 ): string {
   return `
@@ -155,12 +161,12 @@ function renderSection(
   `;
 }
 
-function renderEntryList(entries: RitualPresetDiagnosticEntry[]): string {
+function renderEntryList(entries: PresetManagerEntry[]): string {
   const rows = entries.map(renderEntry).join("");
   return `<ol class="paranormal-toolkit-preset-manager__list">${rows}</ol>`;
 }
 
-function renderEntry(entry: RitualPresetDiagnosticEntry): string {
+function renderEntry(entry: PresetManagerEntry): string {
   const preset = entry.preset;
   const presetLabel = preset ? `${preset.label} v${preset.version}` : "Sem preset";
   const appliedVersion = entry.appliedPresetId
@@ -179,19 +185,13 @@ function renderEntry(entry: RitualPresetDiagnosticEntry): string {
   `;
 }
 
-function renderEmptyState(status: RitualPresetDiagnosticEntry["status"]): string {
-  const messageByStatus: Record<RitualPresetDiagnosticEntry["status"], string> = {
-    available: "Nenhum ritual pendente com preset conhecido.",
-    outdated: "Nenhum ritual desatualizado encontrado.",
-    upToDate: "Nenhum ritual automatizado ainda.",
-    unsupported: "Nenhum ritual sem preset conhecido."
+function renderEmptyState(status: PresetManagerEntry["status"]): string {
+  const messageByStatus: Record<PresetManagerEntry["status"], string> = {
+    available: "Nenhum preset pendente.",
+    outdated: "Nenhum preset desatualizado encontrado.",
+    upToDate: "Nenhum preset aplicado ainda.",
+    unsupported: "Nenhum preset indisponível."
   };
 
   return `<p class="paranormal-toolkit-preset-manager__empty">${escapeHtml(messageByStatus[status])}</p>`;
-}
-
-function escapeHtml(value: string): string {
-  const div = document.createElement("div");
-  div.textContent = value;
-  return div.innerHTML;
 }
