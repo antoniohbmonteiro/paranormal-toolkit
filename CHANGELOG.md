@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.47.0
+
+### Configurar ataque
+
+- O botão **Ataque** do card de uma arma suportada abre o configurador mesmo sem presets vinculados. Chamadas diretas de `rollAttack()`, como macros e contra-ataques, continuam abrindo o popup somente quando existe preset elegível; o modo de automação **Desativado** continua respeitado.
+- Redesign com **ações gerais**, exibidas conforme as propriedades da arma, separadas da lista compacta de **habilidades**, cuja configuração aparece somente quando selecionadas. O resumo reúne crítico original/resultante, mostra RD somente quando positiva e custo/saldo somente quando há gasto.
+- Os modificadores de dados se somam em um único card **Dados de ataque** (ex.: `−1d20 + 2d20 = +1d20`) e os dados adicionais da arma em um único card **Dano adicional** (ex.: `+1d10 + 2d10 = +3d10`). Escolhas que se anulam preservam o pool nativo. A janela limita sua altura e mantém os botões acessíveis com rolagem interna.
+
+### Ações gerais
+
+- **Mirar** aparece para armas à distância e declara que o personagem já realizou essa ação, sem consumir movimento, gastar recursos ou conceder bônus. Mirar e Tiro Intuitivo são exclusivos: selecionar um desmarca o outro, e a exclusão é revalidada na execução.
+- **Rajada** aparece somente para armas de fogo à distância com a propriedade **Automática**. Aplica −1 dado ao teste de ataque (`3d20kh → 2d20kh`, `1d20kh → 2d20kl`) e +1 dado do mesmo tamanho do dano-base, fora do crítico: `2d6` com crítico x3 causa `6d6 + 1d6`. Exige dano-base no formato `NdM`; fórmulas compostas deixam somente Rajada indisponível. Não consome munição e pode combinar com Mirar ou Tiro Intuitivo.
+- As ações gerais usam o mesmo compositor dos presets e o fluxo nativo de ataque e dano. As escolhas ficam registradas no ataque persistido e são recuperadas após reload; mudanças incompatíveis nas faces do dado-base ou no tipo principal da arma bloqueiam a resolução para conferência.
+
+### Novos presets de habilidades
+
+- **Ataque Especial**: distribui blocos de +5 entre ataque e dano. Limites por progressão de NEX (1 bloco em 5%, 2 em 25%, 3 em 55%, 4 em 85%) ou por nível (1, 5, 11 e 17), conforme a regra de progressão do mundo. Custa 2 PE/PD pelo primeiro bloco e +1 por bloco adicional. Exige distribuir ao menos um bloco ou desmarcar antes de atacar. O bônus fixo de dano não multiplica no crítico e combina com Rajada: `2d6`, crítico x3, Rajada e +10 geram `6d6 + 1d6 + 10`.
+- **Disparo da Morte — regra 1.1**: exige arma de fogo ou de disparo, custa 2 PE/PD e concede +2 na margem de ameaça. **Possui afinidade** começa desmarcado e é declarado manualmente; marcado, ignora até 10 RD ao acertar, mesmo sem crítico, e informa que a cobertura leve é ignorada, com resolução manual. O custo antigo de 3 PE do Item não é usado nem alterado.
+- **Disparo Letal**: reconhece também o Item nativo **NEX 40% - Disparo Letal**. Após declarar **Mirar**, pode ser selecionado por 1 PE/PD para +2 na margem de ameaça. Desmarcar Mirar ou selecionar Tiro Intuitivo remove Disparo Letal e seu custo. O Toolkit não controla ações anteriores nem a duração.
+- Composição entre habilidades: Disparo da Morte e Disparo Letal somam +4 na margem de ameaça; as penetrações de RD de Disparo da Morte com afinidade e de Tiro Intuitivo pago pertencem a fontes distintas e somam até 20 RD, por decisão do projeto.
+- Os presets são aplicados aos Items em **Gerenciar presets**, que grava somente a flag de vínculo, preservando custo nativo, descrições e configurações manuais. Pré-requisitos de aquisição não são validados.
+
+### Compatibilidade
+
+- Preservados os workflows nativos de ataque, multiataque e dano, Tiro Intuitivo, reações, gastos de PE/PD e chat cards. Bônus fixos são aplicados apenas aos clones efêmeros, sem alterar a arma nem criar efeitos no personagem.
+- O snapshot de ataque passa ao schema 4 e continua lendo os snapshots v1, v2 e v3 em memória, sem regravar flags ao renderizar. Escolhas, distribuição, afinidade, custo e alvo sobrevivem ao reload; mudar a habilidade depois não recalcula um ataque publicado.
+- Mensagens renderizadas antes do registro dos hooks são reidratadas na inicialização, recuperando os modificadores, resumos e ações após reload.
+
+### Validação
+
+- `npm run check` aprovado: typecheck, 1.311 testes em 119 arquivos e build, com referências reais de Foundry 14.369 e Ordem 8.0.2 (commit `9aaa634`) habilitadas. As regressões cobrem progressão, distribuições, bônus fixo fora do crítico, Rajada, custos PE/PD, penetração de 20 RD sem crítico, exclusões antes da execução e compatibilidade v1–v4. O usuário confirmou o funcionamento das ações gerais e dos novos presets no Foundry VTT.
+
 ## 0.46.0
 
 ### Gerenciar presets
