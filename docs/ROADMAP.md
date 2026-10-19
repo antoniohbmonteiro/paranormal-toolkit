@@ -17,6 +17,7 @@ Versão atual: `v0.46.0`, com Tiro Intuitivo, modificadores opcionais por ataque
 
 O Toolkit já tem:
 
+- evolução local do configurador de ataques com seleção compacta de habilidades, Mirar declarativo e Rajada por ataque, incluindo soma de modificadores em cards únicos de dados de ataque e dano adicional; testes automatizados, fixture responsiva e smoke com GM/jogador da integração de Rajada no mundo Paranormal dev (Foundry 14.369) realizados, com cobertura e limites registrados em [integração com Ordem](integration-with-ordem.md#modificadores-opcionais-de-ataque);
 - automações por flags próprias do módulo;
 - uso de item via hook `ordemparanormal.itemUsed`;
 - modo `ask` com ações assistidas no chat;

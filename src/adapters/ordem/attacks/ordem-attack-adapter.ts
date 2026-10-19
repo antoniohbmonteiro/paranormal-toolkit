@@ -1,10 +1,12 @@
 import { MODULE_ID } from "../../../constants";
-import { ATTACK_ROLL_CONTEXT_KEY } from "../../foundry/foundry-attack-roll-message-bridge";
+import { ATTACK_ROLL_CONTEXT_KEY, type PublishingAttackRoll } from "../../foundry/foundry-attack-roll-message-bridge";
 import { createWorkflowTargetReference, type WorkflowTargetReference } from "../../../core/workflow/workflow-target-reference";
 import { createWorkflowTargetFromToken } from "../../../features/automation/workflow-target-resolver";
 import { parseAttackCritical, formatAttackCritical } from "../../../features/attack-modifiers/attack-modifier-composer";
 import type { AttackModifierFacts, CriticalProfile } from "../../../features/attack-modifiers/attack-modifier-preset";
 import type { AttackMessage } from "../../../features/attack-modifiers/attack-card-state";
+import type { AttackBonusDamageDie } from "../../../features/attack-modifiers/attack-general-actions";
+import { applyAttackDiceModifier, resolveWeaponDamageFaces, type AttackDicePool } from "./ordem-attack-formula";
 
 export type NativeHitResult = {
   hit?: boolean; revealed?: boolean; isCritical?: boolean; actorUuid?: string | null;
@@ -31,7 +33,45 @@ export class OrdemAttackAdapter {
   private methods: NativeAttackMethods | null = null;
   configure(methods: NativeAttackMethods): void { this.methods = methods; }
   facts(item: Item): AttackModifierFacts {
-    return { weaponType: item.type, ranged: foundry.utils.getProperty(item, "system.types.rangeType.name") === "ranged" };
+    return { weaponType: item.type, ranged: foundry.utils.getProperty(item, "system.types.rangeType.name") === "ranged",
+      firearm: foundry.utils.getProperty(item, "system.types.rangeType.subRangeType") === "fire",
+      automatic: foundry.utils.getProperty(item, "system.conditions.automatic") === true };
+  }
+  supportsWeaponAttack(item: Item): boolean {
+    const actor = this.actor(item);
+    const attr = foundry.utils.getProperty(item, "system.formulas.attack.attr");
+    const skill = foundry.utils.getProperty(item, "system.formulas.attack.skill");
+    return item.type === "armament" && !!actor && typeof attr === "string" && !!attr && typeof skill === "string" && !!skill
+      && !!foundry.utils.getProperty(actor, "system.attributes." + attr) && !!foundry.utils.getProperty(actor, "system.skills." + skill);
+  }
+  bonusDamageDie(item: Item): AttackBonusDamageDie | null {
+    const faces = resolveWeaponDamageFaces(foundry.utils.getProperty(item, "system.formulas.damage.formula"));
+    return faces === null ? null : { faces, type: this.damageType(item).type };
+  }
+  prepareAttackRoll(roll: PublishingAttackRoll, modifier: number): void {
+    const native = roll as PublishingAttackRoll & { terms?: unknown[]; resetFormula?: () => string };
+    const term = native.terms?.[0] as Partial<AttackDicePool> | undefined;
+    if (!term || typeof term.number !== "number" || typeof term.faces !== "number" || !Array.isArray(term.modifiers)
+      || typeof native.resetFormula !== "function") throw new Error("Dados nativos indisponíveis para aplicar modificadores de ataque.");
+    const pool = applyAttackDiceModifier(term as AttackDicePool, modifier);
+    term.number = pool.number; term.modifiers = pool.modifiers;
+    native.resetFormula();
+  }
+  createDamageExecutionItem(item: Item, marker: string, extra: AttackBonusDamageDie | null, count: number): NativeAttackItem {
+    if (!Number.isSafeInteger(count) || count < 0 || (count > 0) !== !!extra) throw new Error("Dados adicionais de dano inválidos.");
+    if (extra) {
+      const current = this.bonusDamageDie(item);
+      if (!current || current.faces !== extra.faces || current.type !== extra.type) {
+        throw new Error("O dado-base ou o tipo de dano da arma mudou após o ataque. Confira antes de rolar dano.");
+      }
+    }
+    const instance = this.createExecutionItem(item, marker);
+    if (extra) {
+      const parts = foundry.utils.getProperty(instance, "system.formulas.damage.parts");
+      if (!Array.isArray(parts)) throw new Error("Partes de dano da arma indisponíveis para os dados adicionais.");
+      parts.push([count + "d" + extra.faces, extra.type ?? ""]);
+    }
+    return instance;
   }
   abilities(item: Item): Item[] {
     return this.actorItems(this.actor(item));

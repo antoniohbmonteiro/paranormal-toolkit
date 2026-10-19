@@ -37,7 +37,7 @@ describe.skipIf(!root)("per-attack damage and costs using real Ordem methods", (
   });
   it("revalidates the balance after the dialog without rolling or charging", async () => {
     const h = await createAttackReference(root!);
-    h.request.mockImplementationOnce(async () => { h.actor.system.PE.value = 1; return paid; });
+    h.request.mockImplementationOnce(async () => { h.actor.system.PE.value = 1; return { generalActions: { aim: false, burst: false }, presets: paid }; });
     await h.invoke("attack");
     expect(h.attackMessages()).toHaveLength(0); expect(h.actor.system.PE.value).toBe(1);
     expect(h.cards.readBinding(h.source)!.executions[0].state).toBe("failed");

@@ -18,6 +18,7 @@ import { AttackModifierWorkflow } from "../../../src/features/attack-modifiers/a
 import { AttackDamageResolver } from "../../../src/features/attack-modifiers/attack-damage-resolver";
 import { AttackDamageWorkflow } from "../../../src/features/attack-modifiers/attack-damage-workflow";
 import { AttackAssistedDamageService } from "../../../src/features/attack-modifiers/attack-assisted-damage-service";
+import { emptyAttackConfiguration, type AttackConfigurationSelection } from "../../../src/features/attack-modifiers/attack-general-actions";
 
 export function loadAttackReference(root: string, file: string, globals: Record<string, unknown>, dependencies: Record<string, unknown> = {}): any {
   const filename = join(root, file);
@@ -52,7 +53,8 @@ class Collection<T extends { id: string }> extends Map<string, T> {
   get contents() { return [...this.values()]; }
   [Symbol.iterator](): any { return this.values(); }
 }
-export async function createAttackReference(root: string, settings: { attacks?: number; targeted?: number; bound?: boolean; pd?: boolean; choices?: any[]; rolls?: number[] } = {}) {
+export async function createAttackReference(root: string, settings: { attacks?: number; targeted?: number; bound?: boolean; pd?: boolean;
+  choices?: any[]; rolls?: number[]; automatic?: boolean; executionMode?: string } = {}) {
   let serial = 0;
   const randomID = () => "reference" + String(++serial).padStart(8, "0");
   const hooks = new Map<string, Array<(...args: any[]) => unknown>>();
@@ -67,7 +69,7 @@ export async function createAttackReference(root: string, settings: { attacks?: 
   const game: any = { user: { ...users[1], targets: new Set() }, userId: "player", users, messages, actors,
     system: { id: "ordemparanormal", version: "8.0.2" }, combat: null, modules: new Map(), packs: new Map(),
     settings: { get: (_scope: string, key: string) => key === "globalPlayingWithoutSanity" ? settings.pd === true
-      : key === "itemUse.executionMode" ? "automatic" : key === "core.rollMode" ? "publicroll" : undefined },
+      : key === "itemUse.executionMode" ? settings.executionMode ?? "automatic" : key === "core.rollMode" ? "publicroll" : undefined },
     i18n: { has: () => true, localize: (key: string) => key, format: (key: string) => key },
     socket: { emit: vi.fn() } };
   class MemoryMessage {
@@ -100,14 +102,29 @@ export async function createAttackReference(root: string, settings: { attacks?: 
   const rollQueue = [...(settings.rolls ?? [20, 20, 12])];
   class ReferenceRoll {
     data: any; options = {}; total = 0; result = ""; _evaluated = false;
-    constructor(public formula: string, data: any = {}) { this.data = data; }
+    terms: Array<{ number: number; faces: number; modifiers: string[] }> = [];
+    private tail = "";
+    constructor(public formula: string, data: any = {}) {
+      this.data = data;
+      const match = /^(\d+)d20(kh|kl)/.exec(formula);
+      if (match) {
+        this.terms = [{ number: Number(match[1]), faces: 20, modifiers: [match[2]] }];
+        this.tail = formula.slice(match[0].length);
+      }
+    }
+    resetFormula() {
+      const term = this.terms[0];
+      return this.formula = term.number + "d" + term.faces + term.modifiers.join("") + this.tail;
+    }
     async evaluate() {
       if (this._evaluated) throw new Error("Already evaluated");
       this._evaluated = true;
       if (this.formula.includes("d20")) { const die = rollQueue.shift() ?? 12; this.total = die + 10; this.result = die + " + 10"; }
       else {
         if (this.formula === "invalid") throw new Error("Invalid damage");
-        this.total = Number(this.formula.split("d")[0]) * 4; this.result = String(this.total);
+        const deterministic = this.formula.replace(/(\d+)d(\d+)/g, (_match, number) => String(Number(number) * 4));
+        if (!/^[\d\s()+\-*.]+$/.test(deterministic)) throw new Error("Unsupported reference damage: " + this.formula);
+        this.total = Function('"use strict"; return (' + deterministic + ')')(); this.result = String(this.total);
       }
       return this;
     }
@@ -183,7 +200,8 @@ export async function createAttackReference(root: string, settings: { attacks?: 
   });
   for (const token of targets.slice(0, settings.targeted ?? 1)) game.user.targets.add(token);
   const weapon = new ConfiguredItem({ _id: "weapon", name: "Fuzil", type: "armament",
-    system: { critical: "19/x3", numberOfAttacks: settings.attacks ?? 1, types: { rangeType: { name: "ranged" } },
+    system: { critical: "19/x3", numberOfAttacks: settings.attacks ?? 1,
+      types: { rangeType: { name: "ranged", subRangeType: "fire" } }, conditions: { automatic: settings.automatic ?? false },
       formulas: { attack: { attr: "dex", skill: "aim", bonus: "" }, damage: { formula: "2d6", parts: [], type: "ballisticDamage", attr: "" } } },
   }, { parent: actor });
   actor.items.set(weapon.id, weapon); documents.set(weapon.uuid, weapon);
@@ -195,7 +213,10 @@ export async function createAttackReference(root: string, settings: { attacks?: 
   const resourceAdapter = new OrdemResourceAdapter(), resourceEngine = new ResourceEngine(resourceAdapter);
   const bridge = new FoundryAttackRollMessageBridge(), adapter = new OrdemAttackAdapter(), cards = new AttackChatCardService();
   const choices = [...(settings.choices ?? [{ "attack.tiroIntuitivo": ["use", "empower"] }])];
-  const request = vi.fn(async () => choices.length ? choices.shift() : {});
+  const request = vi.fn(async (): Promise<AttackConfigurationSelection | null> => {
+    const choice = choices.length ? choices.shift() : {};
+    return choice === null || choice.generalActions ? choice : { ...emptyAttackConfiguration(), presets: choice };
+  });
   const attacks = new AttackModifierWorkflow(new AttackModifierRegistry(), adapter, cards,
     new AttackResourceService(resourceEngine, resourceAdapter), bridge, request);
   const resolver = new AttackDamageResolver(cards, adapter), damage = new AttackDamageWorkflow(cards, resolver, adapter, bridge);

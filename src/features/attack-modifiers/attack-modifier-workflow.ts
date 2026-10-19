@@ -6,14 +6,14 @@ import { resolveWorkflowTargetActor } from "../../core/workflow/workflow-target-
 import { composeAttackModifiers, formatAttackCritical } from "./attack-modifier-composer";
 import { AttackModifierRegistry } from "./attack-modifier-registry";
 import type { AttackModifierDialogInput } from "./attack-modifier-dialog-model";
-import type { AttackModifierSelection } from "./attack-modifier-preset";
+import { emptyAttackConfiguration, validateAttackGeneralActions, type AttackConfigurationSelection } from "./attack-general-actions";
 import { ATTACK_CARD_FLAG, ATTACK_EXECUTION_FLAG, type AttackExecutionFlag, type AttackExecutionLink,
   type AttackMessage, type AttackSnapshot } from "./attack-card-state";
 import { AttackChatCardService } from "./attack-chat-card-service";
 import { AttackPublicationRejected, AttackResourceService, AttackResourceUncertain } from "./attack-resource-service";
 
 export type AttackUseContext = { id: string; source: AttackMessage | null; entries: AttackExecutionLink[]; modifiersEnabled?: boolean };
-export type RequestAttackModifiers = (input: AttackModifierDialogInput) => Promise<AttackModifierSelection | null>;
+export type RequestAttackModifiers = (input: AttackModifierDialogInput) => Promise<AttackConfigurationSelection | null>;
 export class AttackModifierWorkflow {
   constructor(readonly registry: AttackModifierRegistry, readonly adapter: OrdemAttackAdapter,
     readonly cards: AttackChatCardService, private readonly resources: AttackResourceService,
@@ -41,10 +41,12 @@ export class AttackModifierWorkflow {
       const available = use.modifiersEnabled === false ? [] : this.available(item);
       let current: number | null = null;
       try { current = this.resources.current(actor, resource); } catch { /* Free attacks do not require an effort resource field. */ }
-      const selection = available.length ? await this.request({
+      const shouldConfigure = use.modifiersEnabled !== false && (available.length > 0 || !!use.source && this.adapter.supportsWeaponAttack(item));
+      const selection = shouldConfigure ? await this.request({
         weaponName: item.name, weaponImage: item.img ?? "icons/svg/sword.svg", actorName: actor.name,
         targetName: target?.name ?? null, baseCritical: base, available, resource, currentResource: current,
-      }) : {};
+        facts: this.adapter.facts(item), burstDamage: this.adapter.bonusDamageDie(item),
+      }) : emptyAttackConfiguration();
       if (!selection) {
         entry.state = "cancelled";
         await this.cards.link(use.source, use.id, entry);
@@ -55,13 +57,18 @@ export class AttackModifierWorkflow {
         || !currentCritical || formatAttackCritical(currentCritical) !== formatAttackCritical(base)) {
         throw new Error("A arma, a permissão ou o recurso mudou. Configure o ataque novamente.");
       }
-      const modifiers = composeAttackModifiers(base, this.available(item), selection);
+      const weaponDamageDie = this.adapter.bonusDamageDie(item);
+      const contribution = validateAttackGeneralActions(this.adapter.facts(item), selection, weaponDamageDie);
+      const modifiers = composeAttackModifiers(base, use.modifiersEnabled === false ? [] : this.available(item), selection.presets, contribution);
+      const bonusDamageDie = modifiers.bonusWeaponDamageDice > 0 ? weaponDamageDie : null;
+      if (modifiers.bonusWeaponDamageDice > 0 && !bonusDamageDie) throw new Error("Dano adicional exige dano-base da arma no formato NdM.");
       if (modifiers.effortCost > 0 && this.resources.current(actor, resource) < modifiers.effortCost) throw new Error("Recurso insuficiente para este ataque.");
       if (target && !await resolveWorkflowTargetActor(target)) throw new Error("O alvo original não está mais disponível.");
       const snapshot: AttackSnapshot = {
         useId: use.id, executionId: entry.executionId, sourceMessageId: use.source?.id ?? null,
         actorUuid: actor.uuid ?? "", itemUuid: item.uuid, itemName: item.name, target,
-        baseCritical: base, modifiers, rolledCritical: false, resource, resourceReceipt: null,
+        baseCritical: base, modifiers, generalActions: structuredClone(selection.generalActions), bonusDamageDie,
+        rolledCritical: false, resource, resourceReceipt: null,
         nativeAttackIndex: typeof options._attackIndex === "number" ? options._attackIndex : null,
         nativeAttackTotal: typeof options._attackTotal === "number" ? options._attackTotal : null,
         nativeVolleyId: typeof options._volleyId === "string" ? options._volleyId : null,
@@ -70,12 +77,13 @@ export class AttackModifierWorkflow {
       const instance = this.adapter.createExecutionItem(item, entry.executionId, modifiers.critical,
         value => { snapshot.rolledCritical = value; });
       release = this.bridge.register(entry.executionId, {
+        prepare: modifiers.attackDiceModifier !== 0 ? roll => this.adapter.prepareAttackRoll(roll, modifiers.attackDiceModifier) : undefined,
         publish: async (_roll, data, send) => {
           if (message) return message;
           if (use.source && this.cards.readBinding(use.source)?.activeUseId !== use.id) throw new Error("O acionamento ativo do card mudou.");
           const published = await this.resources.publish(actor, resource, modifiers.effortCost, async receipt => {
             snapshot.resourceReceipt = receipt;
-            const flag: AttackExecutionFlag = { schemaVersion: 1, revision: 0, snapshot: structuredClone(snapshot),
+            const flag: AttackExecutionFlag = { schemaVersion: 3, revision: 0, snapshot: structuredClone(snapshot),
               damage: { state: "available", messageId: null } };
             publicationStarted = true;
             const created = await send(this.adapter.stamp(data, ATTACK_EXECUTION_FLAG, flag)) as AttackMessage | null;

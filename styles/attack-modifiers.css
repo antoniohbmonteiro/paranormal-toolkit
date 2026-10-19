@@ -1,7 +1,24 @@
-.paranormal-toolkit-attack-options { display: grid; gap: 8px; }
+.paranormal-toolkit-attack-modifier-app {
+  max-height: calc(100dvh - 32px); max-width: calc(100vw - 32px);
+}
+.paranormal-toolkit-attack-modifier-app .window-content { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.paranormal-toolkit-attack-modifiers { min-height: 0; overflow: hidden; gap: 8px; padding: 10px; container-type: inline-size; }
+.paranormal-toolkit-attack-modifiers > header, .paranormal-toolkit-attack-modifiers > footer { flex-shrink: 0; }
+.paranormal-toolkit-attack-body { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-gutter: stable; }
+.paranormal-toolkit-attack-body > * { flex-shrink: 0; }
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-ritual-cast__panel { padding: 8px 10px; }
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-ability-use__image { width: 44px; height: 44px; }
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-ritual-cast__header { padding: 8px 10px; }
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-ritual-cast__summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-ritual-cast__summary > :only-child { grid-column: 1 / -1; }
+.paranormal-toolkit-attack-options, .paranormal-toolkit-attack-actions, .paranormal-toolkit-attack-abilities { display: grid; gap: 6px; }
+.paranormal-toolkit-attack-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.paranormal-toolkit-attack-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.paranormal-toolkit-attack-description { margin: 0 0 6px; font-size: .84rem; line-height: 1.4; }
+.paranormal-toolkit-attack-description:last-child { margin-bottom: 0; }
 .paranormal-toolkit-attack-option {
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 9px; align-items: start;
-  padding: 10px; border: 1px solid rgba(66,47,34,.18); border-radius: 9px;
+  padding: 7px 8px; border: 1px solid rgba(66,47,34,.18); border-radius: 7px;
   background: rgba(252,250,246,.96); cursor: pointer;
 }
 .paranormal-toolkit-attack-option:has(input:checked) { border-color: rgba(196,121,46,.72); background: linear-gradient(180deg,#fffaf3,#f5eadb); }
@@ -10,6 +27,12 @@
 .paranormal-toolkit-attack-option strong { color: rgba(36,27,24,.98); font-size: .9rem; }
 .paranormal-toolkit-attack-option small { color: rgba(36,27,24,.75); line-height: 1.35; }
 .paranormal-toolkit-attack-option.is-disabled { opacity: .58; cursor: not-allowed; }
+.paranormal-toolkit-attack-option:focus-within { outline: 2px solid #8b4c20; outline-offset: 1px; }
+@container (max-width: 430px) {
+  .paranormal-toolkit-attack-abilities,
+  .paranormal-toolkit-attack-actions,
+  .paranormal-toolkit-attack-modifiers .paranormal-toolkit-ritual-cast__summary { grid-template-columns: minmax(0, 1fr); }
+}
 .paranormal-toolkit-attack-modifiers .paranormal-toolkit-ritual-cast__summary dd { white-space: normal; overflow-wrap: anywhere; }
 .paranormal-toolkit-attack-summary { display: grid; gap: 6px; margin-top: 8px; padding: 9px; border: 1px solid rgba(89,36,42,.25); border-left: 3px solid rgba(89,36,42,.72); border-radius: 8px; }
 .paranormal-toolkit-attack-summary p { margin: 0; }

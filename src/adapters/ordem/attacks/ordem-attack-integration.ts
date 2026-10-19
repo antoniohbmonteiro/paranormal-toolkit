@@ -17,11 +17,13 @@ type NativeItemClass = {
   new(data: unknown, options: { parent: Actor }): NativeAttackItem;
   _onChatCardAction(event: Event): Promise<unknown>;
   _getChatCardActor(card: Element): Promise<Actor | null>;
+  chatListeners?(html: HTMLElement): void;
 };
 export class OrdemAttackIntegration {
   private registered = false;
   private readonly activeUses = new WeakSet<AttackUseContext>();
   private readonly directPending = new WeakMap<Item, Promise<NativeAttackResult>>();
+  private bindNativeCard?: (root: HTMLElement) => void;
   private readonly controller: AttackCardController;
   constructor(private readonly attacks: AttackModifierWorkflow, private readonly damage: AttackDamageWorkflow,
     assisted: AttackAssistedDamageService, private readonly adapter: OrdemAttackAdapter,
@@ -80,7 +82,7 @@ export class OrdemAttackIntegration {
         .find(entry => entry.id === itemId));
       if (!item) return originalAction.call(this, event);
       const managed = integration.attacks.hasManagedState(message);
-      if (button.dataset.action === "attack" && (managed || getItemUseSettings().executionMode !== "disabled" && integration.attacks.available(item).length)) {
+      if (button.dataset.action === "attack" && (managed || getItemUseSettings().executionMode !== "disabled" && integration.adapter.supportsWeaponAttack(item))) {
         event.preventDefault(); button.disabled = true;
         try { await integration.controller.attack(message, item, { event: event as unknown as { altKey?: boolean } }); }
         catch (cause) { reportAttackFailure(cause); }
@@ -113,8 +115,19 @@ export class OrdemAttackIntegration {
       }).catch(error => console.warn("Paranormal Toolkit | Atualização do card de ataque", error));
     });
     ensureModuleStylesheet("styles/attack-modifiers.css");
+    if (typeof ItemClass.chatListeners === "function") this.bindNativeCard = root => ItemClass.chatListeners!(root);
+    this.rehydrateRenderedMessages();
     prototype.__paranormalToolkitAttackIntegration = true;
     this.registered = true;
+  }
+  rehydrateRenderedMessages(roots?: Iterable<HTMLElement>): void {
+    const rendered = roots ?? (typeof document.querySelectorAll === "function" ? document.querySelectorAll<HTMLElement>("[data-message-id]") : []);
+    for (const root of rendered) {
+      const message = root.dataset.messageId ? game.messages.get?.(root.dataset.messageId) as AttackMessage | undefined : undefined;
+      if (!message) continue;
+      if (root.querySelector('.chat-card button[data-action="attack"]')) this.bindNativeCard?.(root);
+      this.controller.enhance(message, root);
+    }
   }
   private async dispatch(item: Item, options: NativeAttackOptions, use: AttackUseContext): Promise<NativeAttackResult> {
     if (this.adapter.expands(item, options)) {

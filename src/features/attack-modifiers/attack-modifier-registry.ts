@@ -13,7 +13,9 @@ export class AttackModifierRegistry {
     if (ids.size !== preset.options.length || ids.has("") || preset.options.some(option =>
       [...(option.requires ?? []), ...(option.conflicts ?? [])].some(id => !ids.has(id) || id === option.id)
       || [option.contribution.effortCost, option.contribution.threatBonus, option.contribution.multiplierBonus,
-        option.contribution.resistancePenetration?.amount].some(value => value !== undefined && (!Number.isSafeInteger(value) || value < 0)))) {
+        option.contribution.bonusWeaponDamageDice,
+        option.contribution.resistancePenetration?.amount].some(value => value !== undefined && (!Number.isSafeInteger(value) || value < 0))
+      || option.contribution.attackDiceModifier !== undefined && !Number.isSafeInteger(option.contribution.attackDiceModifier))) {
       throw new Error("Opções do preset de ataque inválidas.");
     }
     this.presets.set(preset.id, structuredClone(preset));

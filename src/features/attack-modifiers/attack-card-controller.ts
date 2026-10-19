@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../constants";
 import type { NativeAttackOptions, NativeAttackResult } from "../../adapters/ordem/attacks/ordem-attack-adapter";
-import { formatAttackCritical } from "./attack-modifier-composer";
+import { formatAttackCritical, formatAttackDiceSummary, formatBonusWeaponDamage } from "./attack-modifier-composer";
 import { ATTACK_CARD_FLAG, ATTACK_DAMAGE_FLAG, ATTACK_EXECUTION_FLAG, type AttackMessage } from "./attack-card-state";
 import { AttackModifierWorkflow, type AttackUseContext } from "./attack-modifier-workflow";
 import { AttackDamageWorkflow } from "./attack-damage-workflow";
@@ -51,6 +51,10 @@ export class AttackCardController {
       const snapshot = execution.snapshot;
       view = { title: "Configuração do ataque", details: [
         snapshot.modifiers.selected.map(entry => entry.label).join(" · ") || "Ataque normal",
+        ...(snapshot.generalActions.aim ? ["Mirar: ação declarada para este ataque."] : []),
+        ...(snapshot.generalActions.burst ? ["Rajada selecionada."] : []),
+        ...(snapshot.modifiers.attackDiceContributions.length > 0 ? ["Dados de ataque: " + formatAttackDiceSummary(snapshot.modifiers)] : []),
+        ...(snapshot.bonusDamageDie ? ["Dano adicional: " + formatBonusWeaponDamage(snapshot.modifiers, snapshot.bonusDamageDie.faces)] : []),
         "Crítico: " + formatAttackCritical(snapshot.modifiers.critical),
         "Custo adicional: " + snapshot.modifiers.effortCost + " " + snapshot.resource,
         "Alvo: " + (snapshot.target?.name ?? "Sem alvo — aplicação manual"),

@@ -1,24 +1,24 @@
 import { MODULE_ID } from "../constants";
-import { createAttackModifierDialogModel, toggleAttackModifierOption, type AttackModifierDialogInput } from "../features/attack-modifiers/attack-modifier-dialog-model";
-import type { AttackModifierSelection } from "../features/attack-modifiers/attack-modifier-preset";
+import { createAttackModifierDialogModel, toggleAttackConfigurationOption, toggleAttackGeneralAction, type AttackModifierDialogInput } from "../features/attack-modifiers/attack-modifier-dialog-model";
+import { emptyAttackConfiguration, type AttackConfigurationSelection } from "../features/attack-modifiers/attack-general-actions";
 import { renderAttackModifierDialog } from "../ui/components/attack/attack-modifier-dialog";
 import { ensureModuleStylesheet } from "../ui/styles/module-stylesheet-loader";
 
 const { ApplicationV2 } = foundry.applications.api;
 export class AttackModifierApplication extends ApplicationV2 {
-  private selection: AttackModifierSelection = {};
+  private selection = emptyAttackConfiguration();
   private resolved = false;
   static DEFAULT_OPTIONS = {
     id: MODULE_ID + "-attack-modifiers",
-    classes: [MODULE_ID, "paranormal-toolkit-ritual-cast-app", "paranormal-toolkit-ability-use-app"],
+    classes: [MODULE_ID, "paranormal-toolkit-ritual-cast-app", "paranormal-toolkit-ability-use-app", "paranormal-toolkit-attack-modifier-app"],
     tag: "section", position: { width: 540, height: "auto" },
     window: { title: "Configurar ataque", icon: "fa-solid fa-crosshairs", resizable: true },
     actions: { attack: AttackModifierApplication.onAttack, cancel: AttackModifierApplication.onCancel },
   };
-  constructor(private readonly input: AttackModifierDialogInput, private readonly resolveRequest: (value: AttackModifierSelection | null) => void) {
+  constructor(private readonly input: AttackModifierDialogInput, private readonly resolveRequest: (value: AttackConfigurationSelection | null) => void) {
     super({ id: MODULE_ID + "-attack-" + foundry.utils.randomID(), window: { title: "Atacar com " + input.weaponName } });
   }
-  static request(input: AttackModifierDialogInput): Promise<AttackModifierSelection | null> {
+  static request(input: AttackModifierDialogInput): Promise<AttackConfigurationSelection | null> {
     ensureModuleStylesheet("styles/attack-modifiers.css");
     return new Promise((resolve, reject) => {
       const app = new AttackModifierApplication(input, resolve);
@@ -32,10 +32,18 @@ export class AttackModifierApplication extends ApplicationV2 {
     return root;
   }
   _replaceHTML(result: HTMLElement, content: HTMLElement, _options: object): void {
+    const previous = content.querySelector<HTMLElement>("[data-attack-scroll]"), scrollTop = previous?.scrollTop ?? 0;
+    const active = content.contains(document.activeElement) ? (document.activeElement as HTMLElement).dataset.controlId : undefined;
     content.replaceChildren(result);
-    for (const input of result.querySelectorAll<HTMLInputElement>("input[data-option-id]")) {
+    const scroll = result.querySelector<HTMLElement>("[data-attack-scroll]");
+    if (scroll) scroll.scrollTop = scrollTop;
+    for (const input of result.querySelectorAll<HTMLInputElement>("input[data-control-id]")) {
+      if (active === input.dataset.controlId) input.focus({ preventScroll: true });
       input.addEventListener("change", () => {
-        this.selection = toggleAttackModifierOption(this.input.available, this.selection, input.dataset.presetId ?? "", input.dataset.optionId ?? "", input.checked);
+        const action = input.dataset.generalAction;
+        this.selection = action === "aim" || action === "burst"
+          ? toggleAttackGeneralAction(this.input, this.selection, action, input.checked)
+          : toggleAttackConfigurationOption(this.input.available, this.selection, input.dataset.presetId ?? "", input.dataset.optionId ?? "", input.checked);
         void this.render({ force: true });
       });
     }
@@ -46,5 +54,5 @@ export class AttackModifierApplication extends ApplicationV2 {
     this.settle(structuredClone(this.selection)); await this.close();
   }
   private static async onCancel(this: AttackModifierApplication): Promise<void> { await this.close(); }
-  private settle(value: AttackModifierSelection | null): void { if (!this.resolved) { this.resolved = true; this.resolveRequest(value); } }
+  private settle(value: AttackConfigurationSelection | null): void { if (!this.resolved) { this.resolved = true; this.resolveRequest(value); } }
 }

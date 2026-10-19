@@ -1,12 +1,14 @@
 import { INTUITIVE_SHOT_PRESET } from "../../src/features/attack-modifiers/presets/intuitive-shot";
+import type { AttackModifierDialogInput } from "../../src/features/attack-modifiers/attack-modifier-dialog-model";
+import type { AttackModifierContribution, AvailableAttackModifier } from "../../src/features/attack-modifiers/attack-modifier-preset";
 
 const preview = document.querySelector<HTMLElement>("#preview")!, result = document.querySelector<HTMLElement>("#result")!;
 class PreviewApplication {
   element: HTMLElement;
   constructor(public options: any) {
     this.element = document.createElement("section");
-    this.element.className = "application paranormal-toolkit paranormal-toolkit-ritual-cast-app paranormal-toolkit-ability-use-app";
-    this.element.innerHTML = '<header class="window-header"><span>⚔ Configurar ataque</span><span>×</span></header><div class="window-content"></div>';
+    this.element.className = "application paranormal-toolkit paranormal-toolkit-ritual-cast-app paranormal-toolkit-ability-use-app paranormal-toolkit-attack-modifier-app";
+    this.element.innerHTML = '<header class="window-header"><span>⚔ Configurar ataque</span><button data-action="cancel" aria-label="Fechar">×</button></header><div class="window-content"></div>';
     this.element.addEventListener("click", event => {
       const action = (event.target as Element).closest<HTMLElement>("[data-action]")?.dataset.action;
       const handler = (this.constructor as any).DEFAULT_OPTIONS.actions[action ?? ""];
@@ -26,33 +28,66 @@ Object.assign(globalThis, {
   ui: { notifications: { info: (text: string) => { result.textContent = text; }, warn: (text: string) => { result.textContent = text; } } },
 });
 const { AttackModifierApplication } = await import("../../src/applications/attack-modifier-application");
-const input = {
+const input: AttackModifierDialogInput = {
   weaponName: "Fuzil de assalto", weaponImage: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#79695c"/><path d="M10 32h39v7H10zm27-10h17v4H37zM25 39h8v14h-8z" fill="#eee6d9"/></svg>'),
   actorName: "Rafa Nakamura", targetName: null, baseCritical: { margin: 19, multiplier: 3 }, resource: "PE" as const, currentResource: 12,
   available: [{ preset: INTUITIVE_SHOT_PRESET, abilityUuid: "Actor.rafa.Item.ability", abilityName: "Tiro Intuitivo" }],
+  facts: { weaponType: "armament", ranged: true, firearm: true, automatic: true }, burstDamage: { faces: 10, type: "ballisticDamage" },
 };
-const open = async () => {
+const fixtureModifier = (id: string, label: string, contribution: AttackModifierContribution): AvailableAttackModifier => ({
+  abilityUuid: "Actor.rafa.Item." + id, abilityName: label,
+  preset: { id, label, version: "1", requirements: {}, options: [{ id: "use", label, description: "Habilidade fictícia para conferir a soma dos modificadores.", contribution }] },
+});
+const combined = [fixtureModifier("fixture.bonus", "Teste: +2d20", { attackDiceModifier: 2, bonusWeaponDamageDice: 2 }),
+  fixtureModifier("fixture.penalty", "Teste: −1d20", { attackDiceModifier: -1, bonusWeaponDamageDice: 1 })];
+const open = async (overrides: Partial<AttackModifierDialogInput> = {}) => {
   preview.replaceChildren();
-  const application = new AttackModifierApplication(input, value => { result.textContent = JSON.stringify(value); });
+  const application = new AttackModifierApplication({ ...input, ...overrides }, value => { result.textContent = JSON.stringify(value); });
   await application.render({ force: true });
   return application;
 };
 document.querySelector("#open")!.addEventListener("click", () => void open());
+document.querySelector("#without")!.addEventListener("click", () => void open({ available: [] }));
+document.querySelector("#combined")!.addEventListener("click", () => void open({ available: combined }));
+document.querySelector("#melee")!.addEventListener("click", () => void open({ available: [], facts: { ...input.facts, ranged: false } }));
+document.querySelector("#many")!.addEventListener("click", () => void open({ available: [...input.available, ...Array.from({ length: 16 }, (_, index) => ({
+  ...input.available[0], preset: { ...structuredClone(INTUITIVE_SHOT_PRESET), id: "fixture." + index, label: "Habilidade de teste " + (index + 1) },
+}))] }));
 document.querySelector("#check")!.addEventListener("click", async () => {
   try {
     await open();
     const check = (condition: unknown, message: string) => { if (!condition) throw new Error(message); };
     const inputAt = (id: string) => preview.querySelector<HTMLInputElement>('[data-option-id="' + id + '"]')!;
-    check(!inputAt("use").checked && !inputAt("empower").checked && inputAt("empower").disabled, "Estado inicial incorreto");
+    const actionAt = (id: string) => preview.querySelector<HTMLInputElement>('[data-general-action="' + id + '"]')!;
+    const change = async (element: HTMLInputElement) => { element.focus(); element.click(); await new Promise(resolve => requestAnimationFrame(resolve)); };
+    check(!inputAt("use").checked && !inputAt("empower") && !actionAt("aim").checked && !actionAt("burst").checked, "Estado inicial incorreto");
+    check(!preview.textContent?.includes("RD ignorada") && !preview.textContent?.includes("Custo adicional"), "Blocos vazios visíveis");
     inputAt("use").click(); await new Promise(resolve => requestAnimationFrame(resolve));
     check(!inputAt("empower").disabled && preview.textContent?.includes("17/x3"), "Opção principal incorreta");
     inputAt("empower").click(); await new Promise(resolve => requestAnimationFrame(resolve));
     check(preview.textContent?.includes("17/x4") && preview.textContent.includes("10 PE"), "Resumo pago incorreto");
-    inputAt("use").click(); await new Promise(resolve => requestAnimationFrame(resolve));
-    check(!inputAt("empower").checked && inputAt("empower").disabled && preview.textContent?.includes("19/x3"), "Dependência não foi limpa");
-    inputAt("use").click(); await new Promise(resolve => requestAnimationFrame(resolve));
-    inputAt("empower").click(); await new Promise(resolve => requestAnimationFrame(resolve));
-    result.textContent = "4 verificações aprovadas: estado inicial, seleção principal, resumo pago e limpeza de dependência.";
+    await change(actionAt("aim"));
+    check(!inputAt("use").checked && !inputAt("empower") && !preview.textContent?.includes("Custo adicional"), "Mirar não limpou a habilidade");
+    check(document.activeElement === actionAt("aim"), "Foco perdido após atualização");
+    await change(inputAt("use")); check(!actionAt("aim").checked, "Habilidade não limpou Mirar");
+    await change(inputAt("empower")); await change(inputAt("use")); await change(inputAt("use"));
+    check(!inputAt("empower").checked && !preview.textContent?.includes("Custo adicional"), "Dependência oculta permaneceu ativa");
+    await change(actionAt("burst"));
+    const summary = preview.querySelector("dl")?.textContent;
+    check(summary?.includes("Dados de ataque−1d20") && summary.includes("Dano adicional+1d10"), "Cards de Rajada ausentes");
+    preview.querySelector<HTMLButtonElement>('[data-action="attack"]')!.click();
+    check(result.textContent?.includes('"burst":true'), "Confirmação não retornou as escolhas");
+    await open(); preview.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.click();
+    check(result.textContent === "null", "Cancelamento não retornou null");
+    await open({ available: combined });
+    const presetAt = (id: string) => preview.querySelector<HTMLInputElement>('[data-preset-id="' + id + '"]')!;
+    await change(presetAt("fixture.bonus")); await change(presetAt("fixture.penalty"));
+    check(preview.querySelector("dl")?.textContent?.includes("Dados de ataque−1d20 + 2d20 = +1d20Dano adicional+1d10 + 2d10 = +3d10"), "Modificadores não foram consolidados");
+    await change(actionAt("burst"));
+    check(preview.querySelector("dl")?.textContent?.includes("Dados de ataque−1d20 − 1d20 + 2d20 = 0d20")
+      && preview.querySelector("dl")?.textContent?.includes("Dano adicional+1d10 + 1d10 + 2d10 = +4d10"), "Cancelamento de dados incorreto");
+    result.textContent = "12 verificações aprovadas: estado inicial, blocos condicionais, seleção, custo, exclusão bidirecional, foco, limpeza, Rajada, confirmação, cancelamento, soma e anulação.";
+    await open();
   } catch (error) { result.textContent = "FALHA: " + String(error); }
 });
 await open();

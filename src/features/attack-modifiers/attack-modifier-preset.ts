@@ -2,12 +2,16 @@ export type CriticalProfile = { margin: number; multiplier: number };
 export type AttackModifierFacts = {
   weaponType: string;
   ranged: boolean;
+  firearm: boolean;
+  automatic: boolean;
 };
 export type AttackModifierContribution = {
   threatBonus?: number;
   multiplierBonus?: number;
   resistancePenetration?: { amount: number; group: string; stacking: "add" | "highest" };
   effortCost?: number;
+  attackDiceModifier?: number;
+  bonusWeaponDamageDice?: number;
 };
 export type AttackModifierOption = {
   id: string;
@@ -32,5 +36,9 @@ export type ComposedAttackModifiers = {
   critical: CriticalProfile;
   effortCost: number;
   resistancePenetration: number;
+  attackDiceModifier: number;
+  attackDiceContributions: number[];
+  bonusWeaponDamageDice: number;
+  bonusWeaponDamageContributions: number[];
   selected: Array<{ presetId: string; presetVersion: string; label: string; abilityUuid: string; optionIds: string[] }>;
 };
