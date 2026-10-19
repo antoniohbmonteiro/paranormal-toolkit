@@ -4,8 +4,13 @@ export type AttackModifierFacts = {
   ranged: boolean;
   firearm: boolean;
   automatic: boolean;
+  rangedSubtype?: string | null;
 };
+export type AttackProgression = { mode: "nex" | "level"; value: number };
+export type SpecialAttackConfiguration = { attackBlocks: number; damageBlocks: number };
 export type AttackModifierContribution = {
+  attackBonus?: number;
+  damageBonus?: number;
   threatBonus?: number;
   multiplierBonus?: number;
   resistancePenetration?: { amount: number; group: string; stacking: "add" | "highest" };
@@ -27,12 +32,14 @@ export type AttackModifierPreset = {
   version: string;
   label: string;
   recognitionNames?: string[];
-  requirements: { ranged?: boolean; weaponType?: string };
+  requirements: { ranged?: boolean; weaponType?: string; rangedSubtypes?: string[] };
   options: AttackModifierOption[];
 };
 export type AvailableAttackModifier = { preset: AttackModifierPreset; abilityUuid: string; abilityName: string };
 export type AttackModifierSelection = Record<string, string[]>;
 export type ComposedAttackModifiers = {
+  attackBonus: number;
+  damageBonus: number;
   critical: CriticalProfile;
   effortCost: number;
   resistancePenetration: number;
@@ -40,5 +47,6 @@ export type ComposedAttackModifiers = {
   attackDiceContributions: number[];
   bonusWeaponDamageDice: number;
   bonusWeaponDamageContributions: number[];
-  selected: Array<{ presetId: string; presetVersion: string; label: string; abilityUuid: string; optionIds: string[] }>;
+  selected: Array<{ presetId: string; presetVersion: string; label: string; abilityUuid: string; optionIds: string[];
+    parameters?: SpecialAttackConfiguration }>;
 };

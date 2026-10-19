@@ -26,10 +26,17 @@ function formatDiceSum(contributions: readonly number[], total: number, faces: n
 
 export function composeAttackModifiers(base: CriticalProfile, available: AvailableAttackModifier[], selection: AttackModifierSelection,
   generalContribution: AttackModifierContribution = {}): ComposedAttackModifiers {
-  const result: ComposedAttackModifiers = { critical: { ...base }, effortCost: 0, resistancePenetration: 0,
+  const result: ComposedAttackModifiers = { critical: { ...base }, effortCost: 0, resistancePenetration: 0, attackBonus: 0, damageBonus: 0,
     attackDiceModifier: 0, attackDiceContributions: [], bonusWeaponDamageDice: 0, bonusWeaponDamageContributions: [], selected: [] };
   const penetration = new Map<string, { mode: "add" | "highest"; value: number }>();
   const contribute = (contribution: AttackModifierContribution) => {
+    for (const field of ["attackBonus", "damageBonus"] as const) {
+      const value = contribution[field] ?? 0;
+      if (!Number.isSafeInteger(value) || value < 0 || !Number.isSafeInteger(result[field] + value)) {
+        throw new Error("Os bônus excedem os limites numéricos do ataque.");
+      }
+      result[field] += value;
+    }
     result.critical.margin -= contribution.threatBonus ?? 0;
     result.critical.multiplier += contribution.multiplierBonus ?? 0;
     result.effortCost += contribution.effortCost ?? 0;

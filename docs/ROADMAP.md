@@ -17,6 +17,7 @@ Versão atual: `v0.46.0`, com Tiro Intuitivo, modificadores opcionais por ataque
 
 O Toolkit já tem:
 
+- Etapa 2 implementada localmente: Ataque Especial com distribuição pela progressão ativa, Disparo da Morte pela regra 1.1 e Disparo Letal dependente de Mirar; bônus fixos nos clones nativos, snapshot v4 com leitura de v1/v2/v3 e penetrações de Morte/Intuitivo acumuláveis até 20 RD. Typecheck, 1.311 testes e build passaram com referências locais do Ordem/Foundry 14.369. A fixture interativa passou, inclusive em 460 × 640 e 320 × 640; smoke desta etapa com GM/jogador em mundo real permanece pendente, pois o servidor local não estava disponível na porta 30000. A versão publicada permanece 0.46.0;
 - evolução local do configurador de ataques com seleção compacta de habilidades, Mirar declarativo e Rajada por ataque, incluindo soma de modificadores em cards únicos de dados de ataque e dano adicional; testes automatizados, fixture responsiva e smoke com GM/jogador da integração de Rajada no mundo Paranormal dev (Foundry 14.369) realizados, com cobertura e limites registrados em [integração com Ordem](integration-with-ordem.md#modificadores-opcionais-de-ataque);
 - automações por flags próprias do módulo;
 - uso de item via hook `ordemparanormal.itemUsed`;

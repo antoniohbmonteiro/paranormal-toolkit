@@ -1,0 +1,453 @@
+
+> paranormal-toolkit@0.46.0 check
+> npm run typecheck && npm run test && npm run build
+
+
+> paranormal-toolkit@0.46.0 typecheck
+> tsc --noEmit
+
+
+> paranormal-toolkit@0.46.0 test
+> vitest run
+
+
+ RUN  v3.2.6 D:/dev/paranormal-toolkit
+
+ ✓ tests/unit/features/allies/ally-actor.test.ts (39 tests) 2583ms
+ ✓ tests/reference/foundry-ally-authority.test.ts (3 tests) 2621ms
+   ✓ native v14 grant authority APIs (database and document inheritance doubled) > denies player writes to GM User flags while allowing their own User  1033ms
+   ✓ native v14 grant authority APIs (database and document inheritance doubled) > gives message ownership to its actual author and uses server-managed creation statistics  777ms
+   ✓ native v14 grant authority APIs (database and document inheritance doubled) > includes native transfer effects regardless of ability execution and omits non-transfer effects  809ms
+ ✓ tests/reference/foundry-ally-native-effects.test.ts (3 tests) 2630ms
+   ✓ native v14 effect migration and serialized comparison (document parent/database doubled) > proves old root changes are migrated into system and numeric strings become numbers  1061ms
+   ✓ native v14 effect migration and serialized comparison (document parent/database doubled) > matches five unchanged preparations with native numeric values and ignores prepared formula changes  795ms
+   ✓ native v14 effect migration and serialized comparison (document parent/database doubled) > uses the native ActorSheetV2 drop path to copy embedded effects without changing the directory Item  772ms
+ ✓ tests/reference/foundry-ally-data-model.test.ts (4 tests) 2897ms
+   ✓ AllyDataModel with native Foundry v14 fields and validation > reads real initialized and serialized fields, including an empty description  955ms
+   ✓ AllyDataModel with native Foundry v14 fields and validation > initializes defaults and preserves edited persisted data through model updates  691ms
+   ✓ AllyDataModel with native Foundry v14 fields and validation > reads persisted data when prepared properties differ, without mutating the model  662ms
+   ✓ AllyDataModel with native Foundry v14 fields and validation > rejects corrupt serialized data even if the prepared profile remains valid  586ms
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > revalidates progression mode and allocation after configuration
+Paranormal Toolkit | Ataque Error: Ataque Especial excede o limite da sua progressão.
+    at resolveSpecialAttack (D:\dev\paranormal-toolkit\src\features\attack-modifiers\presets\special-attack.ts:31:28)
+    at resolveAttackConfiguration (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-configuration-resolver.ts:21:38)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:62:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+ ✓ tests/reference/foundry-attack-roll-message-bridge.test.ts (9 tests) 2499ms
+   ✓ native Foundry v14 Roll.toMessage attack publication > prepares native 3 d20 kh once before real evaluation  627ms
+   ✓ native Foundry v14 Roll.toMessage attack publication > prepares native 1 d20 kh once before real evaluation  321ms
+   ✓ native Foundry v14 Roll.toMessage attack publication > prepares native 2 d20 kl once before real evaluation  392ms
+   ✓ native Foundry v14 Roll.toMessage attack publication > prepares native 2 d20 kl once before real evaluation  331ms
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > rejects hidden incompatible states before spending: {"generalActions":{"aim":false,"burst":false},"presets":{"attack.disparoLetal":["use"]}}
+Paranormal Toolkit | Ataque Error: Declare Mirar para usar Disparo Letal.
+    at resolveAttackConfiguration (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-configuration-resolver.ts:16:11)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:62:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > rejects hidden incompatible states before spending: {"generalActions":{"aim":true,"burst":false},"presets":{"attack.disparoLetal":["use"],"attack.tiroIntuitivo":["use"]}}
+Paranormal Toolkit | Ataque Error: Mirar e Tiro Intuitivo não podem ser combinados.
+    at validateAttackGeneralActions (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-general-actions.ts:23:11)
+    at resolveAttackConfiguration (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-configuration-resolver.ts:14:24)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:62:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+ ✓ tests/reference/foundry-attack-damage-card.test.ts (6 tests) 2956ms
+   ✓ damage card with native Foundry user collection > restores the native attack listener on an existing card without presets after startup  948ms
+   ✓ damage card with native Foundry user collection > rehydrates messages already rendered before hook registration without duplicating listeners  610ms
+   ✓ damage card with native Foundry user collection > renders the GM apply action, applies penetration to the original target and stays applied after rerender  452ms
+   ✓ damage card with native Foundry user collection > keeps the apply action GM-only and disables it for another GM  391ms
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > rejects hidden incompatible states before spending: {"generalActions":{"aim":false,"burst":false},"presets":{"attack.disparoDaMorte":["affinity"]}}
+Paranormal Toolkit | Ataque Error: Selecione uma combinação compatível de modificadores.
+    at composeAttackModifiers (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-composer.ts:68:115)
+    at resolveAttackConfiguration (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-configuration-resolver.ts:26:18)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:62:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+ ✓ tests/reference/ordem-damage-resistance-effects.test.ts (61 tests) 4014ms
+stderr | tests/reference/ordem-attack-modifier-flow.test.ts > attack modifier integration with real OrdemItem methods > does not carry modifiers across successive uses of the same card, including no target and cancellation
+Paranormal Toolkit | Ataque Error: O ataque exibido mudou. Atualize o card antes de rolar dano.
+    at AttackDamageResolver.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-resolver.ts:30:66)
+    at AttackDamageWorkflow.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:11:41)
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-card-controller.ts:24:52
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+stderr | tests/reference/ordem-attack-modifier-flow.test.ts > attack modifier integration with real OrdemItem methods > does not carry modifiers across successive uses of the same card, including no target and cancellation
+Paranormal Toolkit | Ataque Error: Este acionamento não possui ataques disponíveis para dano.
+    at AttackDamageResolver.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-resolver.ts:44:49)
+    at AttackDamageWorkflow.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:11:41)
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-card-controller.ts:24:52
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+ ✓ tests/unit/features/item-effects/item-effect-config-application.test.ts (9 tests) 1450ms
+   ✓ shared specialized editor actions > defaults to automatic application regardless of activation "" and preserves an explicit opt-out  620ms
+ ✓ tests/reference/foundry-ally-request-diff.test.ts (3 tests) 1914ms
+   ✓ native Foundry request diff and post-update hook (server doubled) > shows a full setFlag update becoming an id-only hook delta when other fields are unchanged  878ms
+   ✓ native Foundry request diff and post-update hook (server doubled) > also reads the full first submission and gets no new event for an identical setFlag  511ms
+   ✓ native Foundry request diff and post-update hook (server doubled) > atomically removes a legacy gate while replacing links and preserving managed effect identities  523ms
+ ✓ tests/reference/foundry-ally-message-admission.test.ts (2 tests) 1614ms
+   ✓ native v14.369 admission clocks and author (socket/database doubled) > admits native server stats regardless of uptime and executor clock skew  1020ms
+   ✓ native v14.369 admission clocks and author (socket/database doubled) > defaults DocumentAuthorField to the creating client and resolves the native User  586ms
+stderr | tests/reference/ordem-attack-modifier-flow.test.ts > attack modifier integration with real OrdemItem methods > rejects a corrupt persisted snapshot instead of falling back to native unmodified damage
+Paranormal Toolkit | Ataque Error: Mensagem individual de ataque ausente ou inválida.
+    at AttackDamageResolver.execution (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-resolver.ts:11:34)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackDamageResolver.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-resolver.ts:38:24)
+    at AttackDamageWorkflow.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:11:21)
+
+ ✓ tests/unit/features/allies/ally-source-routing.test.ts (5 tests) 6330ms
+ ✓ tests/unit/features/allies/ally-granted-ability-shortcut.test.ts (12 tests) 1112ms
+   ✓ source sheet shortcut through native granted Item use > opens one player dialog and uses the current recipient through both listeners (pilot=false PD=false confirm=true)  835ms
+ ✓ tests/reference/ordem-attack-modifier-flow.test.ts (15 tests) 5295ms
+   ✓ attack modifier integration with real OrdemItem methods > uses a manager-applied binding after renaming without acquisition checks and preserves the published snapshot  954ms
+   ✓ attack modifier integration with real OrdemItem methods > leaves ordinary attacks native without any dialog or resource spending  511ms
+   ✓ attack modifier integration with real OrdemItem methods > preserves one snapshot and one cost per native inner attack, keeping the volley damage loop  418ms
+   ✓ attack modifier integration with real OrdemItem methods > captures every untargeted message, even with no native hitResult  317ms
+   ✓ attack modifier integration with real OrdemItem methods > cancels native attack 2 without a roll, cost, or false hit  323ms
+   ✓ attack modifier integration with real OrdemItem methods > keeps snapshots usable with fresh services after a chat reload and weapon changes  301ms
+   ✓ attack modifier integration with real OrdemItem methods > rejects an aggregate hitResult passed to individual damage instead of applying the first snapshot to it  303ms
+ ✓ tests/reference/foundry-ally-sheet-title.test.ts (1 test) 1191ms
+   ✓ Ally title with native v14 localization and DocumentSheetV2 > localizes the full module subtype and follows Actor renames without overriding the native title  1189ms
+ ✓ tests/unit/features/allies/ally-grants.test.ts (49 tests) 1694ms
+   ✓ authorized use, checkpoints and bounded durable receipts > refuses to discard 256 unpublished receipts  1095ms
+ ✓ tests/reference/ordem-attack-modifier-reactions.test.ts (3 tests) 1637ms
+   ✓ real native reactions with persisted attack modifiers > blocks damage while pending and after a real Dodge turns the hit into a miss  784ms
+   ✓ real native reactions with persisted attack modifiers > revalidates a late real Dodge before application of an already-published damage  475ms
+   ✓ real native reactions with persisted attack modifiers > does not let an old native reaction overwrite a new use of the same card  375ms
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > revalidates the balance after the dialog without rolling or charging
+Paranormal Toolkit | Ataque Error: Recurso insuficiente para este ataque.
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:67:109)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > restores a confirmed publication veto and blocks an uncertain server response
+Paranormal Toolkit | Ataque AttackPublicationRejected [Error]: A publicação do ataque foi cancelada.
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:93:67
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-resource-service.ts:27:20
+
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > restores a confirmed publication veto and blocks an uncertain server response
+Paranormal Toolkit | Ataque AttackResourceUncertain [Error]: Publicação incerta; o recurso pode ter sido gasto. Confira a ficha e o chat antes de repetir.
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-resource-service.ts:37:42
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > restores a confirmed publication veto and blocks an uncertain server response
+Paranormal Toolkit | Ataque Error: Execução incompleta ou incerta. Confira o ataque antes de rolar dano.
+    at AttackDamageResolver.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-resolver.ts:37:70)
+    at AttackDamageWorkflow.card (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:11:41)
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-card-controller.ts:24:52
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+ ✓ tests/unit/features/allies/ally-native-effects.test.ts (20 tests) 603ms
+ ✓ tests/unit/features/allies/ally-support-requests.test.ts (7 tests) 441ms
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > preserves earlier damage on a later failure and reuses it during an explicit retry
+Paranormal Toolkit | Ataque Error: Publicação do dano cancelada.
+    at Object.publish (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:52:65)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at OrdemItem.rollDamage (D:\dev\ordemparanormal_fvtt\module\documents\item.mjs:649:13)
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:59:16
+
+ ✓ tests/unit/features/allies/ally-drone-grants.test.ts (31 tests) 750ms
+   ✓ authorized pilot use through the existing engines > opens the existing dialog only on the pilot's client, sharing both listeners (confirm=false)  373ms
+ ✓ tests/unit/features/allies/ally-message-admission.test.ts (24 tests) 655ms
+   ✓ native message admission independent of creation time and client clocks > opens the existing dialog on the clicking player once for two listeners (confirm=false)  415ms
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > does not reroll a damage publication with an ambiguous response
+Paranormal Toolkit | Ataque Error: Connection lost
+    at Object.<anonymous> (D:\dev\paranormal-toolkit\tests\reference\helpers\attack-reference.ts:99:82)
+    at Object.mockCall (file:///D:/dev/paranormal-toolkit/node_modules/@vitest/spy/dist/index.js:96:15)
+    at Object.spy [as create] (file:///D:/dev/paranormal-toolkit/node_modules/tinyspy/dist/index.js:47:80)
+    at ReferenceRoll.toMessage (D:\dev\paranormal-toolkit\tests\reference\helpers\attack-reference.ts:140:78)
+    at D:\dev\paranormal-toolkit\src\adapters\foundry\foundry-attack-roll-message-bridge.ts:37:65
+    at Object.publish (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:51:27)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at OrdemItem.rollDamage (D:\dev\ordemparanormal_fvtt\module\documents\item.mjs:649:13)
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:59:16
+
+stderr | tests/reference/ordem-attack-modifier-damage.test.ts > per-attack damage and costs using real Ordem methods > does not reroll a damage publication with an ambiguous response
+Paranormal Toolkit | Ataque Error: Rolagem de dano em execução ou incerta. Confira o chat antes de repetir.
+    at D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-damage-workflow.ts:35:71
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+stderr | tests/unit/features/abilities/ability-use-workflow.test.ts > AbilityUseWorkflow > rolls in order and stops when a later roll fails
+paranormal-toolkit | Falha técnica em rolagem de habilidade. Error: invalid formula
+    at FailingRoll.evaluate (D:\dev\paranormal-toolkit\tests\unit\features\abilities\ability-use-workflow.test.ts:366:47)
+    at evaluateAbilityRoll (D:\dev\paranormal-toolkit\src\features\abilities\ability-roll-executor.ts:45:39)
+    at executeAbilityRolls (D:\dev\paranormal-toolkit\src\features\abilities\ability-roll-executor.ts:30:29)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AbilityUseWorkflow.executePrepared (D:\dev\paranormal-toolkit\src\features\abilities\ability-use-workflow.ts:116:23)
+    at D:\dev\paranormal-toolkit\tests\unit\features\abilities\ability-use-workflow.test.ts:376:20
+    at file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stderr | tests/unit/features/abilities/ability-use-workflow.test.ts > AbilityUseWorkflow > rolls nothing after a first-roll failure and restores resource
+paranormal-toolkit | Falha técnica em rolagem de habilidade. Error: invalid formula
+    at FailingRoll.evaluate (D:\dev\paranormal-toolkit\tests\unit\features\abilities\ability-use-workflow.test.ts:395:15)
+    at evaluateAbilityRoll (D:\dev\paranormal-toolkit\src\features\abilities\ability-roll-executor.ts:45:39)
+    at executeAbilityRolls (D:\dev\paranormal-toolkit\src\features\abilities\ability-roll-executor.ts:30:29)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AbilityUseWorkflow.executePrepared (D:\dev\paranormal-toolkit\src\features\abilities\ability-use-workflow.ts:116:23)
+    at D:\dev\paranormal-toolkit\tests\unit\features\abilities\ability-use-workflow.test.ts:404:5
+    at file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stderr | tests/unit/features/abilities/ability-use-workflow.test.ts > AbilityUseWorkflow > does not overwrite a concurrent resource change during rollback
+paranormal-toolkit | Falha técnica em rolagem de habilidade. Error: invalid formula
+    at ConcurrentFailureRoll.evaluate (D:\dev\paranormal-toolkit\tests\unit\features\abilities\ability-use-workflow.test.ts:417:15)
+    at evaluateAbilityRoll (D:\dev\paranormal-toolkit\src\features\abilities\ability-roll-executor.ts:45:39)
+    at executeAbilityRolls (D:\dev\paranormal-toolkit\src\features\abilities\ability-roll-executor.ts:30:29)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AbilityUseWorkflow.executePrepared (D:\dev\paranormal-toolkit\src\features\abilities\ability-use-workflow.ts:116:23)
+    at D:\dev\paranormal-toolkit\tests\unit\features\abilities\ability-use-workflow.test.ts:426:20
+    at file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stderr | tests/unit/features/abilities/ability-use-workflow.test.ts > AbilityUseWorkflow > restores resource when publication fails
+paranormal-toolkit | Falha ao executar ou publicar habilidade. Error: chat
+    at D:\dev\paranormal-toolkit\tests\unit\features\abilities\ability-use-workflow.test.ts:434:55
+    at file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///D:/dev/paranormal-toolkit/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+ ✓ tests/unit/features/abilities/ability-use-workflow.test.ts (13 tests) 334ms
+ ✓ tests/reference/ordem-ally-compatibility.test.ts (5 tests) 472ms
+ ✓ tests/unit/features/allies/ally-lifecycle-hooks.test.ts (36 tests) 305ms
+ ✓ tests/unit/features/item-effects/item-effect-config-context.test.ts (53 tests) 141ms
+ ✓ tests/reference/ordem-effect-preset-paths.test.ts (6 tests) 436ms
+ ✓ tests/reference/ordem-attack-modifier-damage.test.ts (21 tests) 7358ms
+   ✓ per-attack damage and costs using real Ordem methods > applies 20 RD penetration from both paid powers on native roll 12  922ms
+   ✓ per-attack damage and costs using real Ordem methods > applies 20 RD penetration from both paid powers on native roll 20  608ms
+   ✓ per-attack damage and costs using real Ordem methods > combines special attack, burst, death shot and aimed lethal shot using PD  331ms
+   ✓ per-attack damage and costs using real Ordem methods > revalidates progression mode and allocation after configuration  356ms
+   ✓ per-attack damage and costs using real Ordem methods > uses damage-only bonuses without requiring a simple base and refuses a changed damage type  301ms
+   ✓ per-attack damage and costs using real Ordem methods > normalizes v3 without changing raw flags and rejects malformed v4 bonus parameters  620ms
+   ✓ per-attack damage and costs using real Ordem methods > applies independent RD penetration on critical and non-critical hits without rerolling  384ms
+   ✓ per-attack damage and costs using real Ordem methods > deduplicates concurrent damage and applications  347ms
+   ✓ per-attack damage and costs using real Ordem methods > uses PD according to the native effort setting  371ms
+   ✓ per-attack damage and costs using real Ordem methods > does not reroll a damage publication with an ambiguous response  349ms
+ ✓ tests/unit/features/abilities/ability-roll-chat-action.test.ts (2 tests) 69ms
+ ✓ tests/unit/features/allies/ally-support-service.test.ts (43 tests) 100ms
+ ✓ tests/features/presets/preset-manager-service.test.ts (22 tests) 79ms
+ ✓ tests/unit/features/allies/ally-sheet-menus.test.ts (10 tests) 26ms
+ ✓ tests/unit/features/attack-modifiers/attack-modifiers.test.ts (32 tests) 39ms
+stderr | tests/reference/ordem-attack-general-actions.test.ts > general actions with native Ordem attacks > resolves bonus damage without burst and rejects an ambiguous weapon base before rolling
+Paranormal Toolkit | Ataque Error: Dano adicional exige dano-base da arma no formato NdM.
+    at resolveAttackConfiguration (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-configuration-resolver.ts:29:69)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:62:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+ ✓ tests/unit/features/allies/ally-direct-support.test.ts (13 tests) 112ms
+ ✓ tests/unit/features/allies/ally-foundry-adapters.test.ts (14 tests) 42ms
+ ✓ tests/features/item-use/chat-card/ritual/ritual-single-target-card.test.ts (29 tests) 28ms
+ ✓ tests/unit/features/allies/ally-actor-resolution.test.ts (14 tests) 27ms
+stderr | tests/reference/ordem-attack-general-actions.test.ts > general actions with native Ordem attacks > revalidates firearm eligibility and rejects hidden incompatible selections before rolling
+Paranormal Toolkit | Ataque Error: Ação geral indisponível para esta arma.
+    at validateAttackGeneralActions (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-general-actions.ts:20:11)
+    at resolveAttackConfiguration (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-configuration-resolver.ts:14:24)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:62:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+stderr | tests/reference/ordem-attack-general-actions.test.ts > general actions with native Ordem attacks > revalidates firearm eligibility and rejects hidden incompatible selections before rolling
+Paranormal Toolkit | Ataque Error: Mirar e Tiro Intuitivo não podem ser combinados.
+    at validateAttackGeneralActions (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-general-actions.ts:23:11)
+    at resolveAttackConfiguration (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-configuration-resolver.ts:14:24)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:62:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+ ✓ tests/core/allies/ally-benefit-resolver.test.ts (14 tests) 25ms
+ ✓ tests/adapters/ordem/ordem-effect-presets.test.ts (46 tests) 21ms
+stderr | tests/features/item-use/chat-card/ritual/ritual-single-target-card-controller.test.ts > single target ritual controller > claims all available outcome conditions and applies them once
+Paranormal Toolkit: falha ao concluir interação do card ritual. {
+  messageId: 'm',
+  actionId: 'resistance-outcome-conditions',
+  stage: 'claim-or-execute',
+  cause: Error: Não há condições pendentes para aplicar.
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\ritual\ritual-single-target-card-controller.ts:44:39
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\item-use-chat-card-storage.ts:25:27
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+}
+
+stderr | tests/features/item-use/chat-card/ritual/ritual-single-target-card-controller.test.ts > single target ritual controller > rolls resistance once and resolves the opposite branch
+Paranormal Toolkit: falha ao concluir interação do card ritual. {
+  messageId: 'm',
+  actionId: 'c:resistance',
+  stage: 'claim-or-execute',
+  cause: Error: Resistência já rolada.
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\ritual\ritual-single-target-card-controller.ts:37:89
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\item-use-chat-card-storage.ts:25:27
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+}
+
+stderr | tests/features/item-use/chat-card/ritual/ritual-single-target-card-controller.test.ts > single target ritual controller > resolves and executes only the matching resistance damage alternative
+Paranormal Toolkit: falha ao concluir interação do card ritual. {
+  messageId: 'm',
+  actionId: 'half',
+  stage: 'claim-or-execute',
+  cause: Error: Ação indisponível ou já executada.
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\ritual\ritual-single-target-card-controller.ts:48:58
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\item-use-chat-card-storage.ts:25:27
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+}
+
+ ✓ tests/features/item-use/chat-card/ritual/ritual-single-target-card-controller.test.ts (6 tests) 26ms
+stderr | tests/features/item-use/chat-card/ritual/ritual-single-target-card-controller.test.ts > single target ritual controller > prevents duplicate execution after the persisted claim
+Paranormal Toolkit: falha ao concluir interação do card ritual. {
+  messageId: 'm',
+  actionId: 'one',
+  stage: 'claim-or-execute',
+  cause: Error: Ação indisponível ou já executada.
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\ritual\ritual-single-target-card-controller.ts:48:58
+      at D:\dev\paranormal-toolkit\src\features\item-use\chat-card\item-use-chat-card-storage.ts:25:27
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+}
+
+stdout | tests/ui/actor-sheet-actions/actor-sheet-preset-action.test.ts > existing preset screen and actor action > keeps the access action on an empty owned agent actor
+paranormal-toolkit | Ação de gerenciamento de presets registrada no menu da ficha de ator.
+
+stdout | tests/ui/actor-sheet-actions/actor-sheet-preset-action.test.ts > existing preset screen and actor action > keeps the access action on an empty owned threat actor
+paranormal-toolkit | Ação de gerenciamento de presets registrada no menu da ficha de ator.
+
+stdout | tests/ui/actor-sheet-actions/actor-sheet-preset-action.test.ts > existing preset screen and actor action > keeps the access action on an empty owned paranormal-toolkit.ally actor
+paranormal-toolkit | Ação de gerenciamento de presets registrada no menu da ficha de ator.
+
+stdout | tests/ui/actor-sheet-actions/actor-sheet-preset-action.test.ts > existing preset screen and actor action > lets GM use the same action and rejects nonowners or stale access
+paranormal-toolkit | Ação de gerenciamento de presets registrada no menu da ficha de ator.
+
+ ✓ tests/ui/actor-sheet-actions/actor-sheet-preset-action.test.ts (8 tests) 21ms
+stderr | tests/reference/ordem-attack-general-actions.test.ts > general actions with native Ordem attacks > rejects an unexpected native pool before evaluating or charging the paid selection
+Paranormal Toolkit | Ataque Error: Dados nativos indisponíveis para aplicar modificadores de ataque.
+    at OrdemAttackAdapter.prepareAttackRoll (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-adapter.ts:63:59)
+    at Object.release.bridge.register.prepare (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:83:76)
+    at ReferenceRoll.prototype.evaluate (D:\dev\paranormal-toolkit\src\adapters\foundry\foundry-attack-roll-message-bridge.ts:28:25)
+    at OrdemItem.rollAttack (D:\dev\ordemparanormal_fvtt\module\documents\item.mjs:360:74)
+    at OrdemAttackAdapter.attack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-adapter.ts:147:37)
+    at AttackModifierWorkflow.execute (D:\dev\paranormal-toolkit\src\features\attack-modifiers\attack-modifier-workflow.ts:102:41)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at AttackCardController.invokeAttack (D:\dev\paranormal-toolkit\src\adapters\ordem\attacks\ordem-attack-integration.ts:34:20)
+
+ ✓ tests/unit/features/attack-modifiers/special-attack.test.ts (36 tests) 20ms
+ ✓ tests/unit/features/abilities/ability-assisted-action-service.test.ts (7 tests) 20ms
+ ✓ tests/unit/features/attack-modifiers/attack-preset-combinations.test.ts (16 tests) 22ms
+ ✓ tests/unit/features/abilities/ability-use-chat-card-service.test.ts (5 tests) 17ms
+ ✓ tests/unit/features/abilities/ability-assisted-action-controller.test.ts (4 tests) 16ms
+ ✓ tests/unit/features/abilities/ability-use-card-view-model-builder.test.ts (13 tests) 15ms
+ ✓ tests/ui/components/ally/ally-sheet.test.ts (19 tests) 15ms
+ ✓ tests/reference/ordem-attack-general-actions.test.ts (30 tests) 8947ms
+   ✓ general actions with native Ordem attacks > opens from the weapon card without presets, but keeps direct calls native  845ms
+   ✓ general actions with native Ordem attacks > configures melee weapons without general actions and respects disabled automation  874ms
+   ✓ general actions with native Ordem attacks > applies burst to native attribute 3  361ms
+   ✓ general actions with native Ordem attacks > applies burst to native attribute 2  312ms
+   ✓ general actions with native Ordem attacks > adds a d10 outside the critical multiplier  301ms
+   ✓ general actions with native Ordem attacks > restores serialized burst choices without the ability and blocks incompatible weapon edits  370ms
+   ✓ general actions with native Ordem attacks > normalizes v1 in memory and rejects inconsistent current snapshots  323ms
+   ✓ general actions with native Ordem attacks > reads legacy v2 burst false without rewriting it or resolving current presets  310ms
+   ✓ general actions with native Ordem attacks > reads legacy v2 burst true without rewriting it or resolving current presets  445ms
+   ✓ general actions with native Ordem attacks > combines a +1 preset with burst on native attribute 0  302ms
+ ✓ tests/adapters/ordem/ordem-attack-resistance.test.ts (25 tests) 19ms
+ ✓ tests/ui/components/ritual/ritual-single-target-card.test.ts (8 tests) 15ms
+ ✓ tests/ui/components/ritual/ritual-conjuration-section.test.ts (15 tests) 16ms
+ ✓ tests/features/item-use/item-use-settings.test.ts (6 tests) 13ms
+ ✓ tests/ui/components/chat/roll-row.test.ts (16 tests) 16ms
+ ✓ tests/core/automation/automation-resource-executor.test.ts (11 tests) 17ms
+ ✓ tests/ui/components/ritual/ritual-damage-section.test.ts (11 tests) 16ms
+ ✓ tests/core/automation/automation-application-recorder.test.ts (4 tests) 12ms
+ ✓ tests/core/automation/automation-cost-executor.test.ts (5 tests) 12ms
+ ✓ tests/ui/components/chat/dice-action-button.test.ts (6 tests) 13ms
+ ✓ tests/ui/components/chat/status-badge.test.ts (7 tests) 14ms
+ ✓ tests/ui/components/ritual/ritual-metadata.test.ts (8 tests) 11ms
+ ✓ tests/ui/components/ritual/ritual-resistance-section.test.ts (7 tests) 13ms
+stderr | tests/features/item-use/chat-card/ritual/ritual-single-target-chat-card-service.test.ts > persisted ritual card renderer > preserves original content for corrupt v2 without safe fallback
+Paranormal Toolkit: card ritual v2 inválido e sem fallback seguro; conteúdo original preservado. { messageId: 'm', stage: 'invalid-state' }
+
+ ✓ tests/features/item-use/chat-card/ritual/ritual-single-target-chat-card-service.test.ts (5 tests) 10ms
+ ✓ tests/unit/features/allies/ally-ledger-migration.test.ts (7 tests) 12ms
+ ✓ tests/adapters/ordem/ordem-attack-formula.test.ts (33 tests) 11ms
+ ✓ tests/ui/components/chat/metadata-detail-row.test.ts (7 tests) 12ms
+ ✓ tests/ui/components/chat/assisted-action-button.test.ts (4 tests) 11ms
+ ✓ tests/ui/components/chat/chat-card-foundations-css.test.ts (3 tests) 12ms
+ ✓ tests/adapters/ordem/ordem-item-patch-adapter.test.ts (4 tests) 10ms
+ ✓ tests/unit/features/abilities/ability-roll-chat-contract.test.ts (6 tests) 10ms
+ ✓ tests/features/rituals/config/ritual-roll-config.test.ts (8 tests) 8ms
+ ✓ tests/core/allies/ally-support-state.test.ts (13 tests) 9ms
+ ✓ tests/unit/features/allies/ally-benefit-config-view.test.ts (10 tests) 10ms
+ ✓ tests/core/automation/automation-apply-lifecycle.test.ts (5 tests) 10ms
+ ✓ tests/core/workflow/workflow-target-reference.test.ts (4 tests) 10ms
+ ✓ tests/ui/item-sheet-actions/item-sheet-ability-effect-config-block.test.ts (3 tests) 11ms
+ ✓ tests/unit/features/allies/ally-sheet-edit-state.test.ts (11 tests) 10ms
+ ✓ tests/ui/components/ritual/ritual-assisted-actions-panel.test.ts (4 tests) 10ms
+ ✓ tests/unit/features/abilities/ability-roll-config.test.ts (7 tests) 11ms
+ ✓ tests/ui/components/chat/section-card.test.ts (10 tests) 10ms
+ ✓ tests/features/rituals/config/ritual-resistance-outcome-config.test.ts (6 tests) 9ms
+ ✓ tests/ui/components/chat/section-header.test.ts (6 tests) 12ms
+ ✓ tests/ui/components/chat/chat-card-shell.test.ts (4 tests) 9ms
+ ✓ tests/core/public-api/ritual-event-builder.test.ts (5 tests) 9ms
+ ✓ tests/features/item-use/chat-card/ritual/ritual-chat-card-rehydration.test.ts (4 tests) 10ms
+ ✓ tests/ui/components/chat/chat-card-header.test.ts (5 tests) 9ms
+ ✓ tests/unit/features/allies/ally-effect-sheet-integration.test.ts (4 tests) 11ms
+ ✓ tests/features/automation/automation-flag-reader.test.ts (8 tests) 9ms
+ ✓ tests/unit/features/abilities/ability-roll-executor.test.ts (2 tests) 9ms
+ ✓ tests/unit/features/allies/ally-notifications.test.ts (3 tests) 8ms
+ ✓ tests/unit/features/abilities/ability-item-resolver.test.ts (10 tests) 15ms
+ ✓ tests/ui/components/chat/metadata-pill.test.ts (4 tests) 8ms
+ ✓ tests/unit/features/allies/ally-settings.test.ts (5 tests) 7ms
+ ✓ tests/unit/features/abilities/ability-use-card-state-builder.test.ts (3 tests) 8ms
+ ✓ tests/core/resources/resource-engine.test.ts (6 tests) 9ms
+ ✓ tests/ui/components/chat/damage-type-badge.test.ts (15 tests) 8ms
+ ✓ tests/core/automation/automation-step-lifecycle-runner.test.ts (5 tests) 8ms
+ ✓ tests/core/automation/automation-roll-executor.test.ts (10 tests) 7ms
+ ✓ tests/ui/components/chat/assisted-action-row.test.ts (4 tests) 8ms
+ ✓ tests/ui/components/ally/ally-ability-config.test.ts (6 tests) 8ms
+ ✓ tests/adapters/ordem/ordem-ritual-presentation.test.ts (11 tests) 8ms
+ ✓ tests/core/automation/automation-amount-resolver.test.ts (13 tests) 7ms
+ ✓ tests/ui/components/chat/header-badge.test.ts (10 tests) 7ms
+ ✓ tests/features/item-use/chat-card/item-use-card-roll-context.test.ts (2 tests) 7ms
+ ✓ tests/core/allies/ally-ability-recipient.test.ts (9 tests) 6ms
+ ✓ tests/unit/features/abilities/ability-use-chat-card.test.ts (3 tests) 7ms
+ ✓ tests/core/allies/ally-profile.test.ts (7 tests) 5ms
+ ✓ tests/features/item-use/chat-card/ritual/item-use-chat-card-schema.test.ts (6 tests) 7ms
+ ✓ tests/features/item-use/chat-card/item-use-card-resistance-label.test.ts (5 tests) 7ms
+ ✓ tests/ui/components/chat/completion-indicator.test.ts (2 tests) 6ms
+ ✓ tests/ui/components/ritual/ritual-effect-section.test.ts (8 tests) 5ms
+ ✓ tests/unit/features/abilities/ability-use-dialog-model.test.ts (4 tests) 5ms
+ ✓ tests/core/automation/automation-chat-executor.test.ts (1 test) 5ms
+ ✓ tests/features/rituals/ritual-description-resolver.test.ts (3 tests) 5ms
+ ✓ tests/features/rituals/ritual-automation-presets.test.ts (2 tests) 5ms
+ ✓ tests/ui/components/chat/expandable-description.test.ts (3 tests) 5ms
+ ✓ tests/ui/item-sheet-actions/item-sheet-ritual-generic-config.test.ts (3 tests) 4ms
+ ✓ tests/unit/features/abilities/ability-use-chat-message-layout.test.ts (2 tests) 4ms
+ ✓ tests/adapters/ordem/ordem-ritual-formulas.test.ts (3 tests) 3ms
+ ✓ tests/ui/rendering/escape-html.test.ts (2 tests) 3ms
+ ✓ tests/features/item-use/chat-card/ritual/ritual-chat-card-storage.test.ts (1 test) 3ms
+
+ Test Files  119 passed (119)
+      Tests  1311 passed (1311)
+   Start at  14:53:49
+   Duration  16.05s (transform 10.53s, setup 1.35s, collect 32.57s, tests 64.29s, environment 30ms, prepare 30.61s)
+
+
+> paranormal-toolkit@0.46.0 build
+> vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 311 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) D:/dev/paranormal-toolkit/src/applications/ability-use-application.ts is dynamically imported by D:/dev/paranormal-toolkit/src/adapters/foundry/foundry-ally-ability-request-adapter.ts but also statically imported by D:/dev/paranormal-toolkit/src/features/abilities/ability-use-workflow.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/main.js                                        0.11 kB │ gzip:   0.12 kB │ map:     0.09 kB
+dist/ally-ability-config-application-BWU4J9j3.js    0.30 kB │ gzip:   0.22 kB │ map:     0.67 kB
+dist/attack-modifier-application-sKy0PyRs.js       11.97 kB │ gzip:   4.11 kB │ map:    31.85 kB
+dist/item-effect-config-application-D7D7Cs3y.js    12.14 kB │ gzip:   4.36 kB │ map:    29.75 kB
+dist/main-DW1tmzAc.js                             763.42 kB │ gzip: 185.93 kB │ map: 2,312.67 kB
+✓ built in 2.31s

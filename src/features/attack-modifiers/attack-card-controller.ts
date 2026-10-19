@@ -6,6 +6,7 @@ import { AttackModifierWorkflow, type AttackUseContext } from "./attack-modifier
 import { AttackDamageWorkflow } from "./attack-damage-workflow";
 import { AttackAssistedDamageService, isAttackDamageExecutor } from "./attack-assisted-damage-service";
 import { renderAttackModifierSummary, type AttackSummaryView } from "../../ui/components/attack/attack-modifier-summary";
+import { DEATH_SHOT_PRESET } from "./presets/death-shot";
 
 export class AttackCardController {
   private readonly busy = new Map<string, Promise<unknown>>();
@@ -51,6 +52,12 @@ export class AttackCardController {
       const snapshot = execution.snapshot;
       view = { title: "Configuração do ataque", details: [
         snapshot.modifiers.selected.map(entry => entry.label).join(" · ") || "Ataque normal",
+        ...snapshot.modifiers.selected.flatMap(entry => entry.parameters ? ["Ataque Especial: +"
+          + entry.parameters.attackBlocks * 5 + " no ataque e +" + entry.parameters.damageBlocks * 5 + " no dano."] : []),
+        ...(snapshot.modifiers.attackBonus > 0 ? ["Bônus fixo de ataque: +" + snapshot.modifiers.attackBonus] : []),
+        ...(snapshot.modifiers.damageBonus > 0 ? ["Bônus fixo de dano: +" + snapshot.modifiers.damageBonus + " (fora do crítico)."] : []),
+        ...(snapshot.modifiers.selected.some(entry => entry.presetId === DEATH_SHOT_PRESET.id && entry.optionIds.includes("affinity"))
+          ? ["Disparo da Morte: ignora cobertura leve e até 10 RD. Resolva a cobertura manualmente."] : []),
         ...(snapshot.generalActions.aim ? ["Mirar: ação declarada para este ataque."] : []),
         ...(snapshot.generalActions.burst ? ["Rajada selecionada."] : []),
         ...(snapshot.modifiers.attackDiceContributions.length > 0 ? ["Dados de ataque: " + formatAttackDiceSummary(snapshot.modifiers)] : []),

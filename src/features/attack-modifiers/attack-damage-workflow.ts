@@ -54,7 +54,8 @@ export class AttackDamageWorkflow {
         return published;
       } });
       try {
-        const instance = this.adapter.createDamageExecutionItem(item, marker, snapshot.bonusDamageDie, snapshot.modifiers.bonusWeaponDamageDice);
+        const instance = this.adapter.createDamageExecutionItem(item, marker, snapshot.bonusDamageDie, snapshot.modifiers.bonusWeaponDamageDice,
+          snapshot.modifiers.damageBonus, snapshot.flatDamageType);
         return await this.adapter.damage(instance, { ...options, lastId: true,
           critical: { isCritical: entry.isCritical, multiplier: snapshot.modifiers.critical.multiplier },
           hitResult: { ...entry, hit: true }, attackMessageId: id,

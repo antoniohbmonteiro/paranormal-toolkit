@@ -16,6 +16,24 @@
 .paranormal-toolkit-attack-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .paranormal-toolkit-attack-description { margin: 0 0 6px; font-size: .84rem; line-height: 1.4; }
 .paranormal-toolkit-attack-description:last-child { margin-bottom: 0; }
+.paranormal-toolkit-attack-allocation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.paranormal-toolkit-attack-stepper { display: grid; gap: 6px; min-width: 0; font-size: .86rem; }
+.paranormal-toolkit-attack-stepper > div { display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: center; gap: 4px; }
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-attack-stepper button {
+  width: 32px; height: 30px; padding: 0; border: 1px solid #6b3c27; border-radius: 4px;
+  background: #7b4932; color: #fffaf3; font-weight: 700; opacity: 1; box-shadow: none; text-shadow: none; cursor: pointer;
+}
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-attack-stepper button:not(:disabled):hover {
+  background: #5c3421; border-color: #5c3421;
+}
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-attack-stepper button:focus-visible {
+  outline: 2px solid #8b4c20; outline-offset: 2px;
+}
+.paranormal-toolkit-attack-modifiers .paranormal-toolkit-attack-stepper button:disabled {
+  background: #e4ddd4; color: #9c9184; border-color: #d0c6ba; opacity: 1; cursor: not-allowed;
+}
+.paranormal-toolkit-attack-stepper output { text-align: center; font-weight: 700; }
+@container (max-width: 270px) { .paranormal-toolkit-attack-allocation { grid-template-columns: minmax(0, 1fr); } }
 .paranormal-toolkit-attack-option {
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 9px; align-items: start;
   padding: 7px 8px; border: 1px solid rgba(66,47,34,.18); border-radius: 7px;

@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../constants";
-import { createAttackModifierDialogModel, toggleAttackConfigurationOption, toggleAttackGeneralAction, type AttackModifierDialogInput } from "../features/attack-modifiers/attack-modifier-dialog-model";
+import { adjustSpecialAttack, createAttackModifierDialogModel, toggleAttackConfigurationOption, toggleAttackGeneralAction, type AttackModifierDialogInput } from "../features/attack-modifiers/attack-modifier-dialog-model";
 import { emptyAttackConfiguration, type AttackConfigurationSelection } from "../features/attack-modifiers/attack-general-actions";
 import { renderAttackModifierDialog } from "../ui/components/attack/attack-modifier-dialog";
 import { ensureModuleStylesheet } from "../ui/styles/module-stylesheet-loader";
@@ -37,8 +37,21 @@ export class AttackModifierApplication extends ApplicationV2 {
     content.replaceChildren(result);
     const scroll = result.querySelector<HTMLElement>("[data-attack-scroll]");
     if (scroll) scroll.scrollTop = scrollTop;
+    for (const control of result.querySelectorAll<HTMLElement>("[data-control-id]")) {
+      if (active !== control.dataset.controlId) continue;
+      const target = control instanceof HTMLButtonElement && control.disabled && control.dataset.specialField
+        ? result.querySelector<HTMLButtonElement>('button[data-special-field="' + control.dataset.specialField + '"]:not(:disabled)') : control;
+      target?.focus({ preventScroll: true });
+    }
+    for (const button of result.querySelectorAll<HTMLButtonElement>("button[data-special-field]")) {
+      button.addEventListener("click", () => {
+        const field = button.dataset.specialField;
+        if (field !== "attackBlocks" && field !== "damageBlocks") return;
+        this.selection = adjustSpecialAttack(this.input, this.selection, field, Number(button.dataset.delta));
+        void this.render({ force: true });
+      });
+    }
     for (const input of result.querySelectorAll<HTMLInputElement>("input[data-control-id]")) {
-      if (active === input.dataset.controlId) input.focus({ preventScroll: true });
       input.addEventListener("change", () => {
         const action = input.dataset.generalAction;
         this.selection = action === "aim" || action === "burst"

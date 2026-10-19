@@ -81,7 +81,7 @@ describe.skipIf(!root)("general actions with native Ordem attacks", () => {
     delete old.snapshot.generalActions; delete old.snapshot.bonusDamageDie;
     delete old.snapshot.modifiers.attackDiceModifier; delete old.snapshot.modifiers.bonusWeaponDamageDice;
     const before = JSON.stringify(old), normalized = readAttackExecution(old)!;
-    expect(JSON.stringify(old)).toBe(before); expect(normalized.schemaVersion).toBe(3);
+    expect(JSON.stringify(old)).toBe(before); expect(normalized.schemaVersion).toBe(4);
     expect(normalized.snapshot.generalActions).toEqual({ aim: false, burst: false });
     h.attackMessages()[0].flags[MODULE_ID].attackExecution = old;
     await h.invoke("damage"); expect(h.damageMessages()).toHaveLength(1);
@@ -102,7 +102,7 @@ describe.skipIf(!root)("general actions with native Ordem attacks", () => {
     legacy.snapshot.modifiers.attackDicePenalty = active ? 1 : 0;
     delete legacy.snapshot.bonusDamageDie; delete legacy.snapshot.modifiers.attackDiceModifier;
     const before = JSON.stringify(legacy), normalized = readAttackExecution(legacy)!;
-    expect(normalized.schemaVersion).toBe(3); expect(JSON.stringify(legacy)).toBe(before);
+    expect(normalized.schemaVersion).toBe(4); expect(JSON.stringify(legacy)).toBe(before);
     expect(normalized.snapshot.modifiers.attackDiceModifier).toBe(active ? -1 : 0);
     expect(normalized.snapshot).not.toHaveProperty("burstDamage");
     expect(readAttackExecution({ ...legacy, snapshot: { ...legacy.snapshot, modifiers: {

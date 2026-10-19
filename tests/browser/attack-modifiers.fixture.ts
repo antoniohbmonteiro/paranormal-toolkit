@@ -1,4 +1,7 @@
 import { INTUITIVE_SHOT_PRESET } from "../../src/features/attack-modifiers/presets/intuitive-shot";
+import { SPECIAL_ATTACK_PRESET } from "../../src/features/attack-modifiers/presets/special-attack";
+import { DEATH_SHOT_PRESET } from "../../src/features/attack-modifiers/presets/death-shot";
+import { LETHAL_SHOT_PRESET } from "../../src/features/attack-modifiers/presets/lethal-shot";
 import type { AttackModifierDialogInput } from "../../src/features/attack-modifiers/attack-modifier-dialog-model";
 import type { AttackModifierContribution, AvailableAttackModifier } from "../../src/features/attack-modifiers/attack-modifier-preset";
 
@@ -31,8 +34,10 @@ const { AttackModifierApplication } = await import("../../src/applications/attac
 const input: AttackModifierDialogInput = {
   weaponName: "Fuzil de assalto", weaponImage: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#79695c"/><path d="M10 32h39v7H10zm27-10h17v4H37zM25 39h8v14h-8z" fill="#eee6d9"/></svg>'),
   actorName: "Rafa Nakamura", targetName: null, baseCritical: { margin: 19, multiplier: 3 }, resource: "PE" as const, currentResource: 12,
-  available: [{ preset: INTUITIVE_SHOT_PRESET, abilityUuid: "Actor.rafa.Item.ability", abilityName: "Tiro Intuitivo" }],
-  facts: { weaponType: "armament", ranged: true, firearm: true, automatic: true }, burstDamage: { faces: 10, type: "ballisticDamage" },
+  available: [INTUITIVE_SHOT_PRESET, SPECIAL_ATTACK_PRESET, DEATH_SHOT_PRESET, LETHAL_SHOT_PRESET].map(preset => ({
+    preset, abilityUuid: "Actor.rafa.Item." + preset.id, abilityName: preset.label })),
+  facts: { weaponType: "armament", ranged: true, firearm: true, automatic: true, rangedSubtype: "fire" },
+  progression: { mode: "nex", value: 55 }, burstDamage: { faces: 10, type: "ballisticDamage" },
 };
 const fixtureModifier = (id: string, label: string, contribution: AttackModifierContribution): AvailableAttackModifier => ({
   abilityUuid: "Actor.rafa.Item." + id, abilityName: label,
@@ -54,10 +59,11 @@ document.querySelector("#many")!.addEventListener("click", () => void open({ ava
   ...input.available[0], preset: { ...structuredClone(INTUITIVE_SHOT_PRESET), id: "fixture." + index, label: "Habilidade de teste " + (index + 1) },
 }))] }));
 document.querySelector("#check")!.addEventListener("click", async () => {
+  result.textContent = "";
   try {
     await open();
     const check = (condition: unknown, message: string) => { if (!condition) throw new Error(message); };
-    const inputAt = (id: string) => preview.querySelector<HTMLInputElement>('[data-option-id="' + id + '"]')!;
+    const inputAt = (id: string) => preview.querySelector<HTMLInputElement>('[data-preset-id="attack.tiroIntuitivo"][data-option-id="' + id + '"]')!;
     const actionAt = (id: string) => preview.querySelector<HTMLInputElement>('[data-general-action="' + id + '"]')!;
     const change = async (element: HTMLInputElement) => { element.focus(); element.click(); await new Promise(resolve => requestAnimationFrame(resolve)); };
     check(!inputAt("use").checked && !inputAt("empower") && !actionAt("aim").checked && !actionAt("burst").checked, "Estado inicial incorreto");
@@ -86,7 +92,34 @@ document.querySelector("#check")!.addEventListener("click", async () => {
     await change(actionAt("burst"));
     check(preview.querySelector("dl")?.textContent?.includes("Dados de ataque−1d20 − 1d20 + 2d20 = 0d20")
       && preview.querySelector("dl")?.textContent?.includes("Dano adicional+1d10 + 1d10 + 2d10 = +4d10"), "Cancelamento de dados incorreto");
-    result.textContent = "12 verificações aprovadas: estado inicial, blocos condicionais, seleção, custo, exclusão bidirecional, foco, limpeza, Rajada, confirmação, cancelamento, soma e anulação.";
+    await open();
+    const stageAt = (preset: string, option = "use") => preview.querySelector<HTMLInputElement>('[data-preset-id="' + preset + '"][data-option-id="' + option + '"]')!;
+    const step = async (field: string, delta: number) => {
+      const button = preview.querySelector<HTMLButtonElement>('button[data-special-field="' + field + '"][data-delta="' + delta + '"]')!;
+      button.focus(); button.click(); await new Promise(resolve => requestAnimationFrame(resolve));
+    };
+    const confirm = () => preview.querySelector<HTMLButtonElement>('[data-action="attack"]')!;
+    check(stageAt(LETHAL_SHOT_PRESET.id).disabled, "Disparo Letal deve exigir Mirar");
+    await change(stageAt(SPECIAL_ATTACK_PRESET.id));
+    check(confirm().disabled && !preview.textContent?.includes("Custo adicional"), "Zero blocos deve impedir confirmação sem custo");
+    await step("attackBlocks", 1);
+    check(document.activeElement?.getAttribute("data-control-id") === "special:attackBlocks:1", "Foco do incremento perdido");
+    await step("damageBlocks", 1); await step("damageBlocks", 1);
+    check(!confirm().disabled && preview.textContent?.includes("4 PE") && preview.textContent.includes("+10 (fora do crítico)"), "Distribuição e custo incorretos");
+    check(preview.querySelector<HTMLButtonElement>('[data-special-field="attackBlocks"][data-delta="1"]')!.disabled, "Limite não bloqueou incremento");
+    check(document.activeElement?.getAttribute("data-control-id") === "special:damageBlocks:-1", "Foco não preservado no limite");
+    await change(stageAt(DEATH_SHOT_PRESET.id));
+    check(!stageAt(DEATH_SHOT_PRESET.id, "affinity").checked && preview.textContent?.includes("6 PE"), "Afinidade inicial ou custo incorreto");
+    await change(stageAt(DEATH_SHOT_PRESET.id, "affinity"));
+    await change(actionAt("aim")); await change(stageAt(LETHAL_SHOT_PRESET.id));
+    check(preview.textContent?.includes("15/x3") && preview.textContent.includes("7 PE"), "Composição com Mirar incorreta");
+    await change(actionAt("aim"));
+    check(!stageAt(LETHAL_SHOT_PRESET.id).checked && preview.textContent?.includes("6 PE"), "Disparo Letal não limpou custo");
+    await change(inputAt("use")); await change(inputAt("empower"));
+    check(preview.textContent?.includes("Até 20 RD") && preview.textContent.includes("8 PE"), "Penetração conjunta incorreta");
+    await change(stageAt(SPECIAL_ATTACK_PRESET.id)); await change(stageAt(SPECIAL_ATTACK_PRESET.id));
+    check(confirm().disabled && preview.querySelector("output")?.textContent === "+0", "Distribuição antiga reapareceu");
+    result.textContent = "Etapas 1 e 2 aprovadas: ações gerais, custo, foco, limite, bônus fixos, afinidade, Mirar/Letal, 20 RD, persistência da seleção e cancelamento.";
     await open();
   } catch (error) { result.textContent = "FALHA: " + String(error); }
 });

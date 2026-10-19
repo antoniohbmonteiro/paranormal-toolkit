@@ -54,7 +54,8 @@ class Collection<T extends { id: string }> extends Map<string, T> {
   [Symbol.iterator](): any { return this.values(); }
 }
 export async function createAttackReference(root: string, settings: { attacks?: number; targeted?: number; bound?: boolean; pd?: boolean;
-  choices?: any[]; rolls?: number[]; automatic?: boolean; executionMode?: string } = {}) {
+  choices?: any[]; rolls?: number[]; automatic?: boolean; executionMode?: string;
+  nex?: number; level?: number; progressRule?: number; presetIds?: string[] } = {}) {
   let serial = 0;
   const randomID = () => "reference" + String(++serial).padStart(8, "0");
   const hooks = new Map<string, Array<(...args: any[]) => unknown>>();
@@ -69,6 +70,7 @@ export async function createAttackReference(root: string, settings: { attacks?: 
   const game: any = { user: { ...users[1], targets: new Set() }, userId: "player", users, messages, actors,
     system: { id: "ordemparanormal", version: "8.0.2" }, combat: null, modules: new Map(), packs: new Map(),
     settings: { get: (_scope: string, key: string) => key === "globalPlayingWithoutSanity" ? settings.pd === true
+      : key === "globalProgressRules" ? settings.progressRule ?? 1
       : key === "itemUse.executionMode" ? settings.executionMode ?? "automatic" : key === "core.rollMode" ? "publicroll" : undefined },
     i18n: { has: () => true, localize: (key: string) => key, format: (key: string) => key },
     socket: { emit: vi.fn() } };
@@ -106,6 +108,8 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     private tail = "";
     constructor(public formula: string, data: any = {}) {
       this.data = data;
+      this.formula = ReferenceRoll.replaceFormulaData(formula, data);
+      formula = this.formula;
       const match = /^(\d+)d20(kh|kl)/.exec(formula);
       if (match) {
         this.terms = [{ number: Number(match[1]), faces: 20, modifiers: [match[2]] }];
@@ -119,7 +123,12 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     async evaluate() {
       if (this._evaluated) throw new Error("Already evaluated");
       this._evaluated = true;
-      if (this.formula.includes("d20")) { const die = rollQueue.shift() ?? 12; this.total = die + 10; this.result = die + " + 10"; }
+      if (this.formula.includes("d20")) {
+        const die = rollQueue.shift() ?? 12;
+        if (!/^[\d\s()+\-*.]*$/.test(this.tail)) throw new Error("Unsupported reference attack bonus: " + this.tail);
+        const bonus = this.tail.trim() ? Function('"use strict"; return (0 ' + this.tail + ')')() : 0;
+        this.total = die + bonus; this.result = die + " + " + bonus;
+      }
       else {
         if (this.formula === "invalid") throw new Error("Invalid damage");
         const deterministic = this.formula.replace(/(\d+)d(\d+)/g, (_match, number) => String(Number(number) * 4));
@@ -130,6 +139,12 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     }
     async toMessage(data: any = {}, _options: any = {}) { return ChatMessage.create({ ...data, rolls: [this] }); }
     static validate() { return true; }
+    static replaceFormulaData(formula: string, data: any) {
+      return formula.replace(/@([a-zA-Z0-9_.]+)/g, (_match, path) => {
+        const value = referenceGet(data, path) ?? 0;
+        return typeof value === "number" ? String(value) : "(" + value + ")";
+      });
+    }
   }
   class ActorBase {
     flags: any = {}; items = new Collection<any>(); isOwner = true; prototypeToken = { actorLink: true };
@@ -158,7 +173,7 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     async unsetFlag(scope: string, key: string) { delete this.flags[scope]?.[key]; }
     canUserModify() { return true; }
   }
-  const foundry = { utils: { getProperty: referenceGet, deepClone: structuredClone, randomID, getType: (value: unknown) => typeof value,
+  const foundry = { utils: { getProperty: referenceGet, setProperty: set, deepClone: structuredClone, randomID, getType: (value: unknown) => typeof value,
     mergeObject: (a: any, b: any) => merge(a, b), escapeHTML: (value: string) => value } };
   const notifications = { warn: vi.fn(), info: vi.fn(), error: vi.fn() };
   const globals: any = { console, game, Hooks, ChatMessage, foundry, Item: ItemBase, Actor: ActorBase, Roll: ReferenceRoll,
@@ -174,9 +189,10 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     "../helpers/actor-calculations.mjs": calculations, "../dice/basic-roll.mjs": dummy,
     "../applications/skill-tool-configuration-dialog.mjs": dummy, "../applications/attribute-configuration-dialog.mjs": dummy,
   });
-  const CONFIG: any = { Item: { documentClass: OrdemItem }, Dice: { BasicRoll: {
-    constructParts: () => ({ parts: ["10"], data: {} }),
-  } } };
+  const BasicRoll = loadAttackReference(root, "module/dice/basic-roll.mjs", {
+    ...globals, foundry: { ...foundry, dice: { terms: { DiceTerm: class {}, NumericTerm: class {} } } },
+  }, { "../applications/dialog.mjs": dummy }).default;
+  const CONFIG: any = { Item: { documentClass: OrdemItem }, Dice: { BasicRoll } };
   globals.CONFIG = CONFIG;
   // The module globals object is copied by the VM; CONFIG must be injected before methods run.
   const { OrdemItem: ConfiguredItem } = loadAttackReference(root, "module/documents/item.mjs", globals, {
@@ -191,6 +207,7 @@ export async function createAttackReference(root: string, settings: { attacks?: 
   const actor = new OrdemActor("attacker", "agent", {
     attributes: { dex: { value: 2 }, str: { value: 1 } }, skills: { aim: { degree: { value: 10 }, value: 0, mod: 0 } },
     PE: { value: 20, max: 20 }, PD: { value: 20, max: 20 }, PV: { value: 100, max: 100 }, defense: { value: 10 },
+    NEX: { value: settings.nex ?? 55 }, nivel: { value: settings.level ?? 11 },
   });
   const targets = [0, 1, 2].map(index => {
     const target = new OrdemActor("target" + index, "threat", { attributes: { hp: { value: 100, max: 100 } },
@@ -205,9 +222,9 @@ export async function createAttackReference(root: string, settings: { attacks?: 
       formulas: { attack: { attr: "dex", skill: "aim", bonus: "" }, damage: { formula: "2d6", parts: [], type: "ballisticDamage", attr: "" } } },
   }, { parent: actor });
   actor.items.set(weapon.id, weapon); documents.set(weapon.uuid, weapon);
-  if (settings.bound !== false) {
-    const ability = new ConfiguredItem({ _id: "ability", name: "Habilidade renomeada", type: "ability", system: {},
-      flags: { [MODULE_ID]: { attackModifier: { schemaVersion: 1, presetId: "attack.tiroIntuitivo", presetVersion: "1.0.0" } } } }, { parent: actor });
+  for (const [index, presetId] of (settings.presetIds ?? (settings.bound !== false ? ["attack.tiroIntuitivo"] : [])).entries()) {
+    const ability = new ConfiguredItem({ _id: index === 0 ? "ability" : "ability" + index, name: "Habilidade renomeada", type: "ability", system: {},
+      flags: { [MODULE_ID]: { attackModifier: { schemaVersion: 1, presetId, presetVersion: "1.0.0" } } } }, { parent: actor });
     actor.items.set(ability.id, ability);
   }
   const resourceAdapter = new OrdemResourceAdapter(), resourceEngine = new ResourceEngine(resourceAdapter);

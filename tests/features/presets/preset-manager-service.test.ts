@@ -45,6 +45,26 @@ function setup(role: "gm" | "owner" | "observer" = "owner") {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("existing preset manager expansion", () => {
+  it.each([["Ataque Especial", "attack.ataqueEspecial", "1.0.0"],
+    ["Disparo da Morte", "attack.disparoDaMorte", "1.1.0"], ["Disparo Letal", "attack.disparoLetal", "1.0.0"],
+    ["NEX 40% - Disparo Letal", "attack.disparoLetal", "1.0.0"]])
+    ("applies and upgrades %s without changing manual data or requiring acquisition facts", async (name, presetId, version) => {
+      const h = setup();
+      const item = h.add(name, "ability", { abilityRollConfig: { custom: true } });
+      item.system.cost = "3";
+      const system = structuredClone(item.system);
+      expect(h.manager.analyzeActor(h.actor).available[0].preset?.id).toBe(presetId);
+      await h.manager.applyPending(h.actor);
+      expect(readAttackModifierBinding(item)).toEqual({ schemaVersion: 1, presetId, presetVersion: version });
+      item.name = "Renomeado";
+      expect(h.manager.analyzeActor(h.actor).upToDate).toHaveLength(1);
+      item.getFlag(MODULE_ID, "attackModifier").presetVersion = "0.0.1";
+      expect(h.manager.analyzeActor(h.actor).outdated).toHaveLength(1);
+      await h.manager.applyPending(h.actor);
+      expect(item.system).toEqual(system); expect(item.update).not.toHaveBeenCalled();
+      expect(item.getFlag(MODULE_ID, "abilityRollConfig")).toEqual({ custom: true });
+      expect(readAttackModifierBinding(item)?.presetVersion).toBe(version);
+    });
   it("keeps empty and generic-only actors empty without writes", () => {
     const h = setup();
     expect(h.manager.analyzeActor(h.actor)).toMatchObject({ total: 0, canApply: false });

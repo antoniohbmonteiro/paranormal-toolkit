@@ -3,6 +3,9 @@ import type { WorkflowTargetReference } from "../../core/workflow/workflow-targe
 import type { ComposedAttackModifiers, CriticalProfile } from "./attack-modifier-preset";
 import type { AttackGeneralActions, AttackBonusDamageDie } from "./attack-general-actions";
 import { INTUITIVE_SHOT_PRESET } from "./presets/intuitive-shot";
+import { SPECIAL_ATTACK_PRESET } from "./presets/special-attack";
+import { LETHAL_SHOT_PRESET } from "./presets/lethal-shot";
+import { DEATH_SHOT_PRESET } from "./presets/death-shot";
 
 export const ATTACK_CARD_FLAG = "attackModifierState";
 export const ATTACK_EXECUTION_FLAG = "attackExecution";
@@ -45,6 +48,7 @@ export type AttackSnapshot = {
   modifiers: ComposedAttackModifiers;
   generalActions: AttackGeneralActions;
   bonusDamageDie: AttackBonusDamageDie | null;
+  flatDamageType: string | null;
   rolledCritical: boolean;
   resource: "PE" | "PD";
   resourceReceipt: AttackResourceReceipt | null;
@@ -52,7 +56,7 @@ export type AttackSnapshot = {
   nativeAttackTotal: number | null;
   nativeVolleyId: string | null;
 };
-export type AttackExecutionFlag = { schemaVersion: 3; revision: number; snapshot: AttackSnapshot; damage: AttackOperationState };
+export type AttackExecutionFlag = { schemaVersion: 4; revision: number; snapshot: AttackSnapshot; damage: AttackOperationState };
 export type AttackDamageFlag = {
   schemaVersion: 1;
   revision: number;
@@ -116,7 +120,7 @@ export function readAttackCardBinding(value: unknown): AttackCardBinding | null 
 }
 export function readAttackExecution(value: unknown): AttackExecutionFlag | null {
   const raw = object(value), snapshot = object(raw?.snapshot), modifiers = object(snapshot?.modifiers);
-  if (!raw || !snapshot || !modifiers || !isJsonData(raw) || ![1, 2, 3].includes(raw.schemaVersion as number) || !integer(raw.revision)
+  if (!raw || !snapshot || !modifiers || !isJsonData(raw) || ![1, 2, 3, 4].includes(raw.schemaVersion as number) || !integer(raw.revision)
     || !operation(raw.damage) || !["useId", "executionId", "actorUuid", "itemUuid", "itemName"].every(key => text(snapshot[key]))
     || !nullableText(snapshot.sourceMessageId) || (snapshot.target !== null && !isAttackTargetReference(snapshot.target))
     || !critical(snapshot.baseCritical) || !critical(modifiers.critical) || !integer(modifiers.effortCost)
@@ -135,7 +139,7 @@ export function readAttackExecution(value: unknown): AttackExecutionFlag | null 
       || !integer(receipt.amount) || typeof receipt.before !== "number" || typeof receipt.after !== "number"
       || receipt.before < receipt.amount || receipt.after !== receipt.before - receipt.amount) return null;
   } else if (modifiers.effortCost > 0) return null;
-  if (raw.schemaVersion === 2 || raw.schemaVersion === 3) {
+  if (raw.schemaVersion === 2 || raw.schemaVersion === 3 || raw.schemaVersion === 4) {
     const actions = object(snapshot.generalActions);
     if (!actions || typeof actions.aim !== "boolean" || typeof actions.burst !== "boolean"
       || actions.aim && modifiers.selected.some(value => {
@@ -155,8 +159,31 @@ export function readAttackExecution(value: unknown): AttackExecutionFlag | null 
     if ((modifiers.bonusWeaponDamageDice as number) > 0
       ? !die || !integer(die.faces) || die.faces < 1 || !nullableText(die.type) : dieValue !== null) return null;
   } else if (raw.schemaVersion !== 1) return null;
+  if (raw.schemaVersion === 4) {
+    if (!integer(modifiers.attackBonus) || !integer(modifiers.damageBonus) || !nullableText(snapshot.flatDamageType)
+      || modifiers.damageBonus === 0 && snapshot.flatDamageType !== null) return null;
+    for (const value of modifiers.selected) {
+      const entry = object(value)!;
+      if (entry.presetId === LETHAL_SHOT_PRESET.id && object(snapshot.generalActions)?.aim !== true) return null;
+      if (entry.presetId === DEATH_SHOT_PRESET.id && (entry.optionIds as string[]).includes("affinity")
+        && !(entry.optionIds as string[]).includes("use")) return null;
+      if (entry.presetId === SPECIAL_ATTACK_PRESET.id) {
+        const parameters = object(entry.parameters);
+        if (!parameters || !integer(parameters.attackBlocks) || !integer(parameters.damageBlocks)
+          || parameters.attackBlocks + parameters.damageBlocks < 1 || parameters.attackBlocks + parameters.damageBlocks > 4
+          || !(entry.optionIds as string[]).includes("use")
+          || modifiers.attackBonus < parameters.attackBlocks * 5 || modifiers.damageBonus < parameters.damageBlocks * 5) return null;
+      } else if (entry.parameters !== undefined) return null;
+    }
+  }
   const normalized = structuredClone(raw) as AttackExecutionFlag;
-  normalized.schemaVersion = 3;
+  normalized.schemaVersion = 4;
+  if (raw.schemaVersion !== 4) {
+    normalized.snapshot.modifiers.attackBonus = 0;
+    normalized.snapshot.modifiers.damageBonus = 0;
+    normalized.snapshot.flatDamageType = null;
+    for (const entry of normalized.snapshot.modifiers.selected) delete entry.parameters;
+  }
   if (raw.schemaVersion === 1) {
     normalized.snapshot.generalActions = { aim: false, burst: false };
     normalized.snapshot.bonusDamageDie = null;
@@ -171,9 +198,9 @@ export function readAttackExecution(value: unknown): AttackExecutionFlag | null 
     delete (normalized.snapshot.modifiers as unknown as Record<string, unknown>).attackDicePenalty;
   }
   const current = normalized.snapshot.modifiers;
-  current.attackDiceContributions = raw.schemaVersion === 3 && Array.isArray(modifiers.attackDiceContributions)
+  current.attackDiceContributions = (raw.schemaVersion === 3 || raw.schemaVersion === 4) && Array.isArray(modifiers.attackDiceContributions)
     ? [...modifiers.attackDiceContributions] : current.attackDiceModifier !== 0 ? [current.attackDiceModifier] : [];
-  current.bonusWeaponDamageContributions = raw.schemaVersion === 3 && Array.isArray(modifiers.bonusWeaponDamageContributions)
+  current.bonusWeaponDamageContributions = (raw.schemaVersion === 3 || raw.schemaVersion === 4) && Array.isArray(modifiers.bonusWeaponDamageContributions)
     ? [...modifiers.bonusWeaponDamageContributions] : current.bonusWeaponDamageDice > 0 ? [current.bonusWeaponDamageDice] : [];
   return normalized;
 }

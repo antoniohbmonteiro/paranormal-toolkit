@@ -3,7 +3,7 @@ import { ATTACK_ROLL_CONTEXT_KEY, type PublishingAttackRoll } from "../../foundr
 import { createWorkflowTargetReference, type WorkflowTargetReference } from "../../../core/workflow/workflow-target-reference";
 import { createWorkflowTargetFromToken } from "../../../features/automation/workflow-target-resolver";
 import { parseAttackCritical, formatAttackCritical } from "../../../features/attack-modifiers/attack-modifier-composer";
-import type { AttackModifierFacts, CriticalProfile } from "../../../features/attack-modifiers/attack-modifier-preset";
+import type { AttackModifierFacts, AttackProgression, CriticalProfile } from "../../../features/attack-modifiers/attack-modifier-preset";
 import type { AttackMessage } from "../../../features/attack-modifiers/attack-card-state";
 import type { AttackBonusDamageDie } from "../../../features/attack-modifiers/attack-general-actions";
 import { applyAttackDiceModifier, resolveWeaponDamageFaces, type AttackDicePool } from "./ordem-attack-formula";
@@ -35,7 +35,15 @@ export class OrdemAttackAdapter {
   facts(item: Item): AttackModifierFacts {
     return { weaponType: item.type, ranged: foundry.utils.getProperty(item, "system.types.rangeType.name") === "ranged",
       firearm: foundry.utils.getProperty(item, "system.types.rangeType.subRangeType") === "fire",
-      automatic: foundry.utils.getProperty(item, "system.conditions.automatic") === true };
+      automatic: foundry.utils.getProperty(item, "system.conditions.automatic") === true,
+      rangedSubtype: String(foundry.utils.getProperty(item, "system.types.rangeType.subRangeType") ?? "") };
+  }
+  progression(item: Item): AttackProgression | null {
+    const rule = game.settings.get("ordemparanormal", "globalProgressRules");
+    const mode = rule === 1 ? "nex" : rule === 2 ? "level" : null;
+    if (!mode) return null;
+    const value = foundry.utils.getProperty(this.actor(item), mode === "nex" ? "system.NEX.value" : "system.nivel.value");
+    return typeof value === "number" ? { mode, value } : null;
   }
   supportsWeaponAttack(item: Item): boolean {
     const actor = this.actor(item);
@@ -57,7 +65,8 @@ export class OrdemAttackAdapter {
     term.number = pool.number; term.modifiers = pool.modifiers;
     native.resetFormula();
   }
-  createDamageExecutionItem(item: Item, marker: string, extra: AttackBonusDamageDie | null, count: number): NativeAttackItem {
+  createDamageExecutionItem(item: Item, marker: string, extra: AttackBonusDamageDie | null, count: number,
+    damageBonus = 0, flatDamageType: string | null = null): NativeAttackItem {
     if (!Number.isSafeInteger(count) || count < 0 || (count > 0) !== !!extra) throw new Error("Dados adicionais de dano inválidos.");
     if (extra) {
       const current = this.bonusDamageDie(item);
@@ -65,11 +74,16 @@ export class OrdemAttackAdapter {
         throw new Error("O dado-base ou o tipo de dano da arma mudou após o ataque. Confira antes de rolar dano.");
       }
     }
+    if (!Number.isSafeInteger(damageBonus) || damageBonus < 0) throw new Error("Bônus fixo de dano inválido.");
+    if (damageBonus > 0 && this.damageType(item).type !== flatDamageType) {
+      throw new Error("O tipo de dano da arma mudou após o ataque. Confira antes de rolar dano.");
+    }
     const instance = this.createExecutionItem(item, marker);
-    if (extra) {
+    if (extra || damageBonus > 0) {
       const parts = foundry.utils.getProperty(instance, "system.formulas.damage.parts");
       if (!Array.isArray(parts)) throw new Error("Partes de dano da arma indisponíveis para os dados adicionais.");
-      parts.push([count + "d" + extra.faces, extra.type ?? ""]);
+      if (extra) parts.push([count + "d" + extra.faces, extra.type ?? ""]);
+      if (damageBonus > 0) parts.push([String(damageBonus), flatDamageType ?? ""]);
     }
     return instance;
   }
@@ -104,10 +118,19 @@ export class OrdemAttackAdapter {
     const actor = this.actor(item);
     return !!actor && !!game.user && (game.user.isGM === true || actor.canUserModify(game.user, "update"));
   }
-  createExecutionItem(item: Item, marker: string, critical?: CriticalProfile, onCritical?: (value: boolean) => void): NativeAttackItem {
+  createExecutionItem(item: Item, marker: string, critical?: CriticalProfile, onCritical?: (value: boolean) => void, attackBonus = 0): NativeAttackItem {
     const native = item as NativeAttackItem;
     if (typeof native.clone !== "function" || typeof native.isCritical !== "function") throw new Error("API de arma incompatível com modificadores de ataque.");
     const clone = native.clone({ system: item.toObject(false).system }, { keepId: true });
+    if (!Number.isSafeInteger(attackBonus) || attackBonus < 0) throw new Error("Bônus fixo de ataque inválido.");
+    if (attackBonus > 0) {
+      const attack = foundry.utils.getProperty(clone, "system.formulas.attack") as { bonus?: unknown } | undefined;
+      if (!attack || attack.bonus != null && typeof attack.bonus !== "string" && typeof attack.bonus !== "number") {
+        throw new Error("Bônus nativo de ataque indisponível.");
+      }
+      const previous = String(attack.bonus ?? "").trim();
+      attack.bonus = previous ? "(" + previous + ") + " + attackBonus : String(attackBonus);
+    }
     const originalData = clone.getRollData.bind(clone);
     clone.getRollData = () => ({ ...originalData(), [ATTACK_ROLL_CONTEXT_KEY]: marker });
     if (critical) {

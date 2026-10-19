@@ -1,8 +1,9 @@
-import type { AttackModifierContribution, AttackModifierFacts, AttackModifierSelection } from "./attack-modifier-preset";
+import type { AttackModifierContribution, AttackModifierFacts, AttackModifierSelection, SpecialAttackConfiguration } from "./attack-modifier-preset";
 import { INTUITIVE_SHOT_PRESET } from "./presets/intuitive-shot";
 
 export type AttackGeneralActions = { aim: boolean; burst: boolean };
-export type AttackConfigurationSelection = { generalActions: AttackGeneralActions; presets: AttackModifierSelection };
+export type AttackConfigurationSelection = { generalActions: AttackGeneralActions; presets: AttackModifierSelection;
+  specialAttack?: SpecialAttackConfiguration };
 export type AttackBonusDamageDie = { faces: number; type: string | null };
 
 export function emptyAttackConfiguration(): AttackConfigurationSelection {
