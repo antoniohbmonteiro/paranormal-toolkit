@@ -8,7 +8,7 @@ O Paranormal Toolkit ajuda mestres e jogadores com conjuração de rituais, cust
 
 ## Status
 
-Versão atual: `0.47.0`, com o novo configurador de ataque, as ações gerais Mirar e Rajada e os presets Ataque Especial, Disparo da Morte e Disparo Letal. Veja o [`CHANGELOG.md`](CHANGELOG.md).
+Versão atual: `0.48.0`, com o hook público `paranormal-toolkit.attack.published` para integração visual de ataques nativos e gerenciados. Mantém o configurador de ataque, Mirar, Rajada e os presets existentes. Veja o [`CHANGELOG.md`](CHANGELOG.md).
 
 O módulo está em desenvolvimento ativo. Algumas automações ainda são assistidas: o Toolkit ajuda a calcular, rolar e organizar informações, mas o mestre continua decidindo quando aplicar efeitos, dano ou condições.
 

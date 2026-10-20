@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.48.0
+
+### Integração pública de ataques
+
+- Adiciona o hook local `paranormal-toolkit.attack.published` v1 após a publicação confirmada de ataques com armas, tanto nos fluxos nativos do Ordem quanto nos gerenciados pelo Toolkit, inclusive com automação mecânica desativada.
+- O payload serializável identifica acionamento, mensagem, executor, arma, origem, alvo e visibilidade. Chamadas internas do mesmo acionamento compartilham `actionId`, sem repetir a publicação do retorno agregado.
+- Preserva o alvo original dos ataques gerenciados e resolve alvos nativos somente quando há referência confiável. Cancelamentos e publicações incertas não emitem eventos; resultados, defesa, crítico e estado de reação não integram o contrato.
+- Permite que consumidores como o Paranormal FX reproduzam animações sem alterar rolagens, dano, recursos ou reações. Não adiciona flags persistidas, migrações nem dependências visuais ao Toolkit.
+- Documenta o contrato em `docs/integration-with-ordem.md` e acrescenta testes de regressão com as fontes reais do Ordem. Typecheck, 1.331 testes e build aprovados com as referências locais do Ordem 8.0.2 e Foundry 14.369; testes manuais no Foundry confirmados pelo usuário antes da release.
+
 ## 0.47.0
 
 ### Configurar ataque

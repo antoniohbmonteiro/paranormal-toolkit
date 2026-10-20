@@ -13,10 +13,11 @@ Este roadmap organiza as próximas frentes do Paranormal Toolkit por prioridade 
 
 ## Estado atual
 
-Versão atual: `v0.47.0`, com o configurador de ataque redesenhado, as ações gerais Mirar e Rajada e os presets Ataque Especial, Disparo da Morte e Disparo Letal. Mantém Tiro Intuitivo, o gerenciador compartilhado de presets, as correções de Aliados e os presets de Efeitos da Habilidade das versões anteriores. Consulte o README para configuração e limites.
+Versão atual: `v0.48.0`, com o hook público de publicação de ataques para consumidores visuais como o Paranormal FX. Mantém o configurador de ataque, as ações gerais e presets da 0.47.0, o gerenciador compartilhado de presets, Aliados e Efeitos da Habilidade. Consulte o README para configuração e limites.
 
 O Toolkit já tem:
 
+- Hook local `paranormal-toolkit.attack.published` v1 para ataques nativos e gerenciados confirmados, com identidade do acionamento, referências serializáveis e visibilidade, sem alterações mecânicas; contrato documentado e testes manuais no Foundry confirmados pelo usuário antes da release 0.48.0;
 - Etapa 2 publicada na 0.47.0: Ataque Especial com distribuição pela progressão ativa, Disparo da Morte pela regra 1.1 e Disparo Letal dependente de Mirar; bônus fixos nos clones nativos, snapshot v4 com leitura de v1/v2/v3 e penetrações de Morte/Intuitivo acumuláveis até 20 RD. Typecheck, 1.311 testes e build passaram com referências locais do Ordem/Foundry 14.369, e o usuário confirmou o funcionamento da etapa no Foundry VTT;
 - configurador de ataques com seleção compacta de habilidades, Mirar declarativo e Rajada por ataque, incluindo soma de modificadores em cards únicos de dados de ataque e dano adicional; testes automatizados, fixture responsiva e smoke com GM/jogador da integração de Rajada no mundo Paranormal dev (Foundry 14.369) realizados, com cobertura e limites registrados em [integração com Ordem](integration-with-ordem.md#modificadores-opcionais-de-ataque);
 - automações por flags próprias do módulo;

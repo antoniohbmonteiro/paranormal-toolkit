@@ -148,6 +148,9 @@ A aplicação de ritual continua com as chamadas de persistência existentes, se
 
 ## Evento público de ataque publicado
 
+Disponível desde a versão **0.48.0**. A integração visual foi testada manualmente
+no Foundry e confirmada pelo usuário antes desta release.
+
 `paranormal-toolkit.attack.published` comunica uma publicação individual confirmada
 de ataque com arma `armament`. O hook é local ao cliente executor; não é um evento
 de rede, não cancela o ataque e não aguarda efeitos visuais. Consumidores devem
