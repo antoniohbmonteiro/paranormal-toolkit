@@ -12,13 +12,15 @@ import { ATTACK_CARD_FLAG, ATTACK_EXECUTION_FLAG, type AttackExecutionFlag, type
   type AttackMessage, type AttackSnapshot } from "./attack-card-state";
 import { AttackChatCardService } from "./attack-chat-card-service";
 import { AttackPublicationRejected, AttackResourceService, AttackResourceUncertain } from "./attack-resource-service";
+import { OrdemAttackObserver } from "../../adapters/ordem/attacks/ordem-attack-observer";
 
 export type AttackUseContext = { id: string; source: AttackMessage | null; entries: AttackExecutionLink[]; modifiersEnabled?: boolean };
 export type RequestAttackModifiers = (input: AttackModifierDialogInput) => Promise<AttackConfigurationSelection | null>;
 export class AttackModifierWorkflow {
   constructor(readonly registry: AttackModifierRegistry, readonly adapter: OrdemAttackAdapter,
     readonly cards: AttackChatCardService, private readonly resources: AttackResourceService,
-    private readonly bridge: FoundryAttackRollMessageBridge, private readonly request: RequestAttackModifiers) {}
+    private readonly bridge: FoundryAttackRollMessageBridge, private readonly request: RequestAttackModifiers,
+    readonly observer = new OrdemAttackObserver()) {}
 
   available(item: Item) { return this.registry.resolve(this.adapter.abilities(item), this.adapter.facts(item)); }
   async begin(source: AttackMessage | null): Promise<AttackUseContext> {
@@ -27,6 +29,7 @@ export class AttackModifierWorkflow {
     return context;
   }
   async execute(item: Item, options: NativeAttackOptions, use: AttackUseContext): Promise<NativeAttackResult> {
+    options = this.observer.options(options, use.id);
     const entry: AttackExecutionLink = { executionId: foundry.utils.randomID(), ordinal: use.entries.length, attackMessageId: null, state: "preparing" };
     use.entries.push(entry);
     await this.cards.link(use.source, use.id, entry);
@@ -95,6 +98,7 @@ export class AttackModifierWorkflow {
             return created;
           });
           entry.attackMessageId = published.id; entry.state = "published";
+          this.observer.published(item, options, published, snapshot.target, snapshot.itemName);
           await this.cards.link(use.source, use.id, entry);
           return published;
         },

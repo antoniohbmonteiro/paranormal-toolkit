@@ -21,6 +21,7 @@ export type NativeAttackOptions = Record<string | symbol, unknown> & {
 };
 export type NativeAttackResult = { roll: Roll | null; criticalStatus: { isCritical: boolean; multiplier?: number }; hitResult: NativeHitResult | null };
 export type NativeAttackItem = Item & {
+  lastAttackMessageId?: string | null;
   clone(data: Record<string, unknown>, context: Record<string, unknown>): NativeAttackItem;
   rollAttack(options?: NativeAttackOptions): Promise<NativeAttackResult>;
   rollDamage(options?: NativeAttackOptions): Promise<Roll>;

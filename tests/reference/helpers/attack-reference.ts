@@ -54,7 +54,7 @@ class Collection<T extends { id: string }> extends Map<string, T> {
   [Symbol.iterator](): any { return this.values(); }
 }
 export async function createAttackReference(root: string, settings: { attacks?: number; targeted?: number; bound?: boolean; pd?: boolean;
-  choices?: any[]; rolls?: number[]; automatic?: boolean; executionMode?: string;
+  choices?: any[]; rolls?: number[]; automatic?: boolean; executionMode?: string; rollMode?: string;
   nex?: number; level?: number; progressRule?: number; presetIds?: string[] } = {}) {
   let serial = 0;
   const randomID = () => "reference" + String(++serial).padStart(8, "0");
@@ -71,13 +71,15 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     system: { id: "ordemparanormal", version: "8.0.2" }, combat: null, modules: new Map(), packs: new Map(),
     settings: { get: (_scope: string, key: string) => key === "globalPlayingWithoutSanity" ? settings.pd === true
       : key === "globalProgressRules" ? settings.progressRule ?? 1
-      : key === "itemUse.executionMode" ? settings.executionMode ?? "automatic" : key === "core.rollMode" ? "publicroll" : undefined },
+      : key === "itemUse.executionMode" ? settings.executionMode ?? "automatic" : key === "rollMode" ? settings.rollMode ?? "publicroll" : undefined },
     i18n: { has: () => true, localize: (key: string) => key, format: (key: string) => key },
     socket: { emit: vi.fn() } };
   class MemoryMessage {
+    speaker: any; whisper: string[]; blind: boolean;
     id: string; flags: any = {}; rolls: any[]; content: string; author: any = { id: game.user.id };
     constructor(data: any = {}) {
       this.id = randomID(); this.rolls = data.rolls ?? []; this.content = data.content ?? "";
+      this.speaker = data.speaker; this.whisper = data.whisper ?? []; this.blind = data.blind ?? false;
       merge(this.flags, data.flags ?? {});
       messages.set(this.id, this); documents.set("ChatMessage." + this.id, this);
     }
@@ -99,7 +101,8 @@ export async function createAttackReference(root: string, settings: { attacks?: 
       if (publication.failDamage && data.flags?.[MODULE_ID]?.attackDamage) throw new Error("Connection lost");
       return new MemoryMessage(data);
     }),
-    getSpeaker: ({ actor }: any) => ({ actor: actor?.id }), getWhisperRecipients: () => ["gm"],
+    getSpeaker: ({ actor }: any) => ({ actor: actor?.id, scene: actor?.getActiveTokens()[0]?.scene?.id,
+      token: actor?.getActiveTokens()[0]?.id }), getWhisperRecipients: () => ["gm"],
   };
   const rollQueue = [...(settings.rolls ?? [20, 20, 12])];
   class ReferenceRoll {
@@ -137,7 +140,11 @@ export async function createAttackReference(root: string, settings: { attacks?: 
       }
       return this;
     }
-    async toMessage(data: any = {}, _options: any = {}) { return ChatMessage.create({ ...data, rolls: [this] }); }
+    async toMessage(data: any = {}, options: any = {}) {
+      const mode = options.rollMode ?? "publicroll";
+      return ChatMessage.create({ ...data, rolls: [this], blind: mode === "blindroll",
+        whisper: mode === "selfroll" ? [game.user.id] : ["gmroll", "blindroll"].includes(mode) ? ["gm"] : [] });
+    }
     static validate() { return true; }
     static replaceFormulaData(formula: string, data: any) {
       return formula.replace(/@([a-zA-Z0-9_.]+)/g, (_match, path) => {
@@ -215,6 +222,10 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     const token = { id: "token" + index, name: target.name, actor: target, scene: { id: "scene" } };
     documents.set("Scene.scene.Token." + token.id, { actor: target }); return token;
   });
+  const sourceToken = { id: "source", name: actor.name, actor, scene: { id: "scene" } };
+  actor.getActiveTokens = () => [sourceToken];
+  const canvas = { ready: true, scene: { id: "scene" }, tokens: { placeables: [sourceToken, ...targets] }, grid: { size: 100 } };
+  vi.stubGlobal("canvas", canvas);
   for (const token of targets.slice(0, settings.targeted ?? 1)) game.user.targets.add(token);
   const weapon = new ConfiguredItem({ _id: "weapon", name: "Fuzil", type: "armament",
     system: { critical: "19/x3", numberOfAttacks: settings.attacks ?? 1,
@@ -248,7 +259,7 @@ export async function createAttackReference(root: string, settings: { attacks?: 
     await ConfiguredItem._onChatCardAction({ target: button, preventDefault() {} });
   };
   return { actor, weapon, targets, source, invoke, request, cards, attacks, resolver, damage, assisted, integration,
-    game, documents, messages, publication, notifications, reactions, users, rollQueue, ChatMessage,
+    game, documents, messages, publication, notifications, reactions, users, rollQueue, ChatMessage, Hooks, canvas, sourceToken,
     attackMessages: () => messages.contents.filter(message => message.getFlag(MODULE_ID, "attackExecution")),
     damageMessages: () => messages.contents.filter(message => message.getFlag(MODULE_ID, "attackDamage")) };
 }

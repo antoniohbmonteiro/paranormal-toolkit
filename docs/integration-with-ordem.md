@@ -146,6 +146,67 @@ O acesso usa **Actor.testUserPermission(user, "OWNER")** e **canUserModify(user,
 
 A aplicação de ritual continua com as chamadas de persistência existentes, sem transação ou merge histórico. O **itemPatch** conserva os campos declarados pelo preset, inclusive o nome quando presente, e não altera descrições ou flags de configurações genéricas. Falhas exigem conferir o item antes de tentar novamente. Configurar presets não altera snapshots de ataques ou cards já publicados.
 
+## Evento público de ataque publicado
+
+`paranormal-toolkit.attack.published` comunica uma publicação individual confirmada
+de ataque com arma `armament`. O hook é local ao cliente executor; não é um evento
+de rede, não cancela o ataque e não aguarda efeitos visuais. Consumidores devem
+executar somente quando `event.userId === game.user.id`. O Paranormal FX utiliza
+esse contrato e deixa a propagação visual a cargo do Sequencer.
+
+```ts
+type AttackTokenReference = {
+  sceneId: string;
+  tokenId: string;
+  tokenUuid: string;
+  actorUuid: string | null;
+};
+
+type AttackPublishedEvent = {
+  version: 1;
+  actionId: string;
+  messageId: string;
+  userId: string;
+  item: { uuid: string; name: string; type: "armament" };
+  source: AttackTokenReference | null;
+  target: AttackTokenReference | null;
+  visibility: "public" | "private";
+};
+```
+
+Um acionamento externo recebe um contexto efêmero em um `Symbol` nas opções de
+`rollAttack()`. A expansão nativa preserva esse contexto por `...options`: várias
+mensagens podem compartilhar `actionId`, mas cada `messageId` é emitido uma vez.
+O retorno agregado não é outra publicação. Consumidores que desejem um efeito
+por acionamento devem reservar `actionId` antes de iniciar operações assíncronas.
+Não existe replay ao renderizar, atualizar ou recarregar o chat.
+
+O caminho gerenciado emite após a confirmação de `resources.publish()` e antes
+da atualização auxiliar do card. Nome e alvo vêm do snapshot original. O caminho
+nativo, inclusive com automação mecânica desativada, observa o retorno original,
+confere `messageRoll.type`, `itemUuid` e a mensagem correlacionada por
+`hitResult.attackMessageId`. Sem esse ID, `lastAttackMessageId` somente é aceito
+quando mudou e a rolagem persistida corresponde ao retorno da chamada.
+
+A origem vem do token do `speaker`, conferido contra o Actor da arma no canvas.
+O alvo gerenciado preserva a referência do snapshot. O alvo nativo forçado é
+conferido contra o Actor publicado. Nos demais ataques nativos, só se resolve o
+Actor publicado quando há um único token correspondente na cena de origem;
+múltiplos tokens vinculados ao mesmo Actor deixam `target: null`. Não se consulta
+a seleção atual do usuário após o ataque. Referências indisponíveis também são
+nulas, permitindo ao consumidor omitir o efeito com segurança.
+
+`visibility` considera os campos finais `whisper` e `blind`. O payload não contém
+Documents, defesa, resultado, crítico ou estado da reação. Ataques privados ainda
+podem emitir o contrato local, mas consumidores precisam respeitar sua visibilidade;
+o FX os ignora. O evento não aplica dano, condições ou gasto adicional.
+
+Cancelamento, criação vetada e publicação incerta não emitem eventos. Uma
+publicação gerenciada confirmada não perde seu evento se a atualização posterior
+do card falhar. Exceções nativas sem confirmação confiável não produzem efeito.
+Falhas de observação ou de listeners não alteram o retorno nem a contabilidade
+de recursos. Não foram adicionadas flags persistidas nem migrações de cards.
+
 ## Refatoração do sistema
 
 O mantenedor do sistema informou que pretende refatorar bastante os dados para melhorar compatibilidade, intuição e integração com módulos.

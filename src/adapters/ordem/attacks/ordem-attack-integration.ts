@@ -31,7 +31,7 @@ export class OrdemAttackIntegration {
     this.controller = new AttackCardController(attacks, damage, assisted, async (item, options, use) => {
       use.modifiersEnabled = getItemUseSettings().executionMode !== "disabled";
       this.activeUses.add(use);
-      try { return await (item as NativeAttackItem).rollAttack({ ...options, [USE_CONTEXT]: use }); }
+      try { return await (item as NativeAttackItem).rollAttack(this.attacks.observer.options({ ...options, [USE_CONTEXT]: use }, use.id)); }
       finally { this.activeUses.delete(use); }
     });
   }
@@ -51,13 +51,15 @@ export class OrdemAttackIntegration {
     prototype.rollAttack = function(options = {}) {
       const passed = options[USE_CONTEXT] as AttackUseContext | undefined;
       if (passed && integration.activeUses.has(passed)) return integration.dispatch(this, options, passed);
-      if (getItemUseSettings().executionMode === "disabled" || !integration.attacks.available(this).length) return originalAttack.call(this, options);
+      if (getItemUseSettings().executionMode === "disabled" || !integration.attacks.available(this).length) {
+        return integration.attacks.observer.native(this, options, observed => originalAttack.call(this, observed));
+      }
       const previous = integration.directPending.get(this);
       if (previous) return previous;
       const pending = (async () => {
         const use = await integration.attacks.begin(null);
         integration.activeUses.add(use);
-        try { return await integration.dispatch(this, { ...options, [USE_CONTEXT]: use }, use); }
+        try { return await integration.dispatch(this, integration.attacks.observer.options({ ...options, [USE_CONTEXT]: use }, use.id), use); }
         finally { integration.activeUses.delete(use); }
       })();
       integration.directPending.set(this, pending);

@@ -34,6 +34,7 @@ import { RitualPresetDiagnosticService } from "./features/rituals/presets/ritual
 import { ChatMessageService } from "./ui/chat-message-service";
 import { FoundryAttackRollMessageBridge } from "./adapters/foundry/foundry-attack-roll-message-bridge";
 import { OrdemAttackAdapter } from "./adapters/ordem/attacks/ordem-attack-adapter";
+import { OrdemAttackObserver } from "./adapters/ordem/attacks/ordem-attack-observer";
 import { OrdemAttackIntegration } from "./adapters/ordem/attacks/ordem-attack-integration";
 import { AttackModifierRegistry } from "./features/attack-modifiers/attack-modifier-registry";
 import { PresetManagerService } from "./features/presets/preset-manager-service";
@@ -88,7 +89,8 @@ export function createToolkitServices(): ToolkitServices {
   const attackRegistry = new AttackModifierRegistry();
   const attackWorkflow = new AttackModifierWorkflow(attackRegistry, attackAdapter, attackCards,
     new AttackResourceService(resources, resourceAdapter), attackBridge,
-    async input => (await import("./applications/attack-modifier-application")).AttackModifierApplication.request(input));
+    async input => (await import("./applications/attack-modifier-application")).AttackModifierApplication.request(input),
+    new OrdemAttackObserver());
   const attackResolver = new AttackDamageResolver(attackCards, attackAdapter);
   const attackDamage = new AttackDamageWorkflow(attackCards, attackResolver, attackAdapter, attackBridge);
   const attackModifiers = new OrdemAttackIntegration(attackWorkflow, attackDamage,
