@@ -53,6 +53,20 @@ Do not add legacy Foundry v13 compatibility unless there is a demonstrated requi
 
 ---
 
+## Code quality
+
+Write professional, readable, maintainable code. Prefer simple, correct solutions and evolve the existing architecture before proposing rewrites.
+
+- Keep functions and classes focused, with clear responsibilities, high cohesion, and low coupling.
+- Keep TypeScript strict. Prefer explicit domain types and narrow `unknown` at external boundaries; do not use `any`, unsafe casts, or error suppressions to bypass typing problems.
+- Reuse existing components, services, engines, and adapters before introducing abstractions. Avoid duplication and unnecessary complexity.
+- Handle failures explicitly. Distinguish cancellation, unavailable integrations, and execution errors; do not hide important failures or retry uncertain mutations automatically.
+- Keep state, dependencies, and side effects explicit. Avoid fragile DOM or template dependencies.
+- Add dependencies only when existing code and platform APIs are insufficient, and explain why.
+- Keep changes within the task. Do not refactor unrelated code without a concrete justification.
+
+---
+
 ## Language
 
 Internal code must use English:
@@ -212,6 +226,20 @@ Do not resolve chat actions against whatever token happens to be targeted at cli
 
 ---
 
+## Attacks and public events
+
+Before changing attacks, inspect `src/features/attack-modifiers/`, `src/adapters/ordem/attacks/`, `src/adapters/foundry/`, and `src/core/public-api/`. Read `docs/integration-with-ordem.md` for native attack behavior, modifier composition, persistence, and the public attack event contract.
+
+- Preserve native rolls, weapon data, per-execution choices, resource accounting, reactions, and original target references.
+- Preserve defensive normalization of older attack snapshots. Rendering must not rewrite flags or recalculate published choices from current presets.
+- Reuse persisted damage rolls and the existing assisted damage service, permission policy, executor, claims, and receipts. Uncertain execution requires manual verification, not replay.
+- Preserve the versioned `paranormal-toolkit.attack.published` contract: confirmed publications only, local to the executor, serializable references, and explicit visibility. Do not emit again on chat rendering or reload.
+- Keep audiovisual execution in external consumers such as Paranormal FX. Listener failures must not change attack results or resource spending.
+
+Read `docs/PUBLIC_API.md` for ritual lifecycle hooks. Preserve relevant public and internal contracts; make intentional contract changes explicit and consider consumers and backward compatibility.
+
+---
+
 ## Assisted actions
 
 Assisted actions must remain manual unless a task explicitly changes that policy.
@@ -304,11 +332,19 @@ When changing a persisted schema:
 
 Malformed persisted data should fail safely without destroying the original chat content.
 
+Consider existing Active Effects, condition durations, ownership, and cleanup when changing effect behavior. Reuse the condition engine and effect infrastructure; do not introduce a parallel mutation path in cards.
+
 ---
 
 ## Testing
 
-Before considering implementation complete, run:
+For implementation changes, run the full validation defined in `package.json`:
+
+```bash
+npm run check
+```
+
+It runs TypeScript checking, Vitest, and the Vite build. Individual commands are available for focused investigation:
 
 ```bash
 npm run typecheck
@@ -316,17 +352,15 @@ npm run test
 npm run build
 ```
 
-Prefer the full validation command when available:
+Add or update tests proportional to changed behavior and risk. Important regressions should receive a dedicated test. Use `npm run check:unused` when investigating unused source files; review its conservative results before deleting anything.
 
-```bash
-npm run check
-```
-
-Add or update tests for behavior changes.
-
-Important regressions should receive a dedicated test.
+Reference tests under `tests/reference/` can use `PARANORMAL_TOOLKIT_ORDEM_REFERENCE` and `PARANORMAL_TOOLKIT_FOUNDRY_REFERENCE` for read-only local sources. Report which references were available and which checks were skipped.
 
 Do not add browser/DOM dependencies to otherwise pure unit tests merely to solve a small parsing problem unless there is a strong architectural reason.
+
+Typecheck, tests, and build do not replace Foundry v14 validation for sheets, canvas, permissions, Active Effects, sockets, or multiplayer workflows. Report what was actually verified, remaining manual scenarios, known risks, and limitations. Compilation alone does not establish completion.
+
+For documentation-only changes, review content, referenced paths/scripts, and the diff; do not run builds or full test suites unnecessarily.
 
 ---
 
@@ -338,7 +372,13 @@ Important references may include:
 
 - `README.md`
 - `docs/ROADMAP.md`
-- architecture documents under `docs/`
+- `docs/ARCHITECTURE-ENGINES.md`
+- `docs/ITEM-USE-CARD-ARCHITECTURE.md`
+- `docs/integration-with-ordem.md`
+- `docs/PUBLIC_API.md`
+- `docs/RELEASE.md`
+
+Some architecture documents describe a desired or historical structure. Check current code before treating those descriptions or roadmap entries as implemented behavior; do not impose an arbitrary directory layout.
 
 Update documentation when a change affects:
 
@@ -369,7 +409,17 @@ Use semantic versioning based on the actual scope:
 - minor for new backward-compatible features;
 - major only for intentional breaking releases.
 
-Do not bump versions during planning-only tasks unless explicitly requested.
+Version updates, tag creation/push, and release publication require an explicit user request. Routine implementation, planning, and documentation tasks do not authorize a release.
+
+For an explicitly requested release, follow `docs/RELEASE.md` and inspect `.github/workflows/release.yml` before acting:
+
+1. Check the actual current version; synchronize the three metadata files above, including both root version entries in `package-lock.json`. Update `CHANGELOG.md` and relevant documentation when appropriate.
+2. Run `npm run check` and relevant Foundry validation before publication. Commit the intended release changes and ensure they are on the updated default branch (`main` currently).
+3. Create and push the matching `vX.Y.Z` tag only when authorized. Do not create the GitHub Release manually beforehand.
+4. The tag-triggered workflow uses Node.js 22, installs with `npm ci`, runs `npm run check`, validates tag/metadata consistency, and packages the module. It publishes `module.json` and `paranormal-toolkit.zip` to GitHub Releases, then calls the Foundry Package Release API in dry-run and publish modes using the repository secret `FOUNDRY_RELEASE_TOKEN`.
+5. Verify the workflow result, downloadable artifacts, and Foundry publication. The Foundry API uses the version-specific manifest URL, while the module manifest uses the latest-release URL. GitHub publication alone does not confirm Foundry publication.
+
+Never commit or expose release tokens. Keep this summary aligned with the real workflow rather than duplicating its implementation.
 
 ---
 
@@ -397,6 +447,10 @@ test(abilities): cover persisted target actions
 ```
 
 Keep commits focused when implementing larger features.
+
+Check status and the actual default branch before branch-sensitive work. Stage only task-related files, preserve pre-existing changes, and do not overwrite others' work or force-push.
+
+Respect `LICENSE`, copyright notices, and third-party licenses. Do not copy code or redistribute assets without appropriate rights.
 
 ---
 
@@ -429,3 +483,5 @@ Before adding a dependency, justify why repository-native APIs are insufficient.
 Before growing a workflow significantly, consider extracting responsibility.
 
 Prefer a small safe increment over a large rewrite.
+
+Before finalizing, review the diff for scope, correctness, typing, error handling, contract compatibility, persisted flags, Active Effects, and workflow regressions. Confirm that only intended files are included and report validation evidence and unresolved limitations.
